@@ -100,6 +100,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tonejs/piano@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "@tonejs/piano@npm:0.2.1"
+  dependencies:
+    tslib: ^1.11.1
+  peerDependencies:
+    tone: ^14.6.1
+    webmidi: ^2.5.1
+  checksum: d61132d41dfaf303cea4cf6f30c84791c80f7865e9f8300dc535098c2ae0dbc0e314a28e82492a0e05fa2ff4a9be9af1b5db3d1842aeec3602cc0094086cce6a
+  languageName: node
+  linkType: hard
+
 "@tootallnate/once@npm:2":
   version: 2.0.0
   resolution: "@tootallnate/once@npm:2.0.0"
@@ -1882,6 +1894,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "nya-dual-app@workspace:."
   dependencies:
+    "@tonejs/piano": ^0.2.1
     "@types/isomorphic-fetch": ^0.0.36
     "@types/jsmidgen": ^0.1.0
     esbuild: ^0.14.38
@@ -2496,6 +2509,13 @@ __metadata:
   bin:
     tree-kill: cli.js
   checksum: 49117f5f410d19c84b0464d29afb9642c863bc5ba40fcb9a245d474c6d5cc64d1b177a6e6713129eb346b40aebb9d4631d967517f9fbe8251c35b21b13cd96c7
+  languageName: node
+  linkType: hard
+
+"tslib@npm:^1.11.1":
+  version: 1.14.1
+  resolution: "tslib@npm:1.14.1"
+  checksum: dbe628ef87f66691d5d2959b3e41b9ca0045c3ee3c7c7b906cc1e328b39f199bb1ad9e671c39025bd56122ac57dfbf7385a94843b1cc07c60a4db74795829acd
   languageName: node
   linkType: hard
 

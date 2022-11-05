@@ -11,6 +11,7 @@
         "cli"
     ],
     "dependencies": {
+        "@tonejs/piano": "^0.2.1",
         "@types/jsmidgen": "^0.1.0",
         "http-server": "^14.1.0",
         "jsmidgen": "^0.1.5",
