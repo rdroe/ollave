@@ -16,7 +16,9 @@
         "http-server": "^14.1.0",
         "jsmidgen": "^0.1.5",
         "nodemon": "^2.0.16",
-        "nyargs": "^1.0.0"
+        "nyargs": "^1.0.0",
+        "tone": "14.6.1",
+        "webmidi": "2.*"
     },
     "devDependencies": {
         "@types/isomorphic-fetch": "^0.0.36",

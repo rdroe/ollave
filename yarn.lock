@@ -32,7 +32,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/runtime@npm:^7.12.5":
+"@babel/runtime@npm:^7.11.2, @babel/runtime@npm:^7.12.5":
   version: 7.20.1
   resolution: "@babel/runtime@npm:7.20.1"
   dependencies:
@@ -319,6 +319,16 @@ __metadata:
   dependencies:
     lodash: ^4.17.14
   checksum: a52083fb32e1ebe1d63e5c5624038bb30be68ff07a6c8d7dfe35e47c93fc144bd8652cbec869e0ac07d57dde387aa5f1386be3559cdee799cb1f789678d88e19
+  languageName: node
+  linkType: hard
+
+"automation-events@npm:^2.0.19":
+  version: 2.0.19
+  resolution: "automation-events@npm:2.0.19"
+  dependencies:
+    "@babel/runtime": ^7.11.2
+    tslib: ^2.0.1
+  checksum: a51bf9d8ab94c25d0a167aa7c5a4ab87d9d450fae56edf663a67591bcd6be6946323383f14aab25fded5eff60c8f60fa22ce86508b70132698aa8548fb79b8db
   languageName: node
   linkType: hard
 
@@ -1902,7 +1912,9 @@ __metadata:
     jsmidgen: ^0.1.5
     nodemon: ^2.0.16
     nyargs: ^1.0.0
+    tone: 14.6.1
     typescript: ^4.6.4
+    webmidi: 2.*
   languageName: unknown
   linkType: soft
 
@@ -2383,6 +2395,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"standardized-audio-context@npm:^24.1.5":
+  version: 24.1.26
+  resolution: "standardized-audio-context@npm:24.1.26"
+  dependencies:
+    "@babel/runtime": ^7.11.2
+    automation-events: ^2.0.19
+    tslib: ^2.0.1
+  checksum: 4c94510f94433601201acfd2bd0d4128aabebcdb82234ad69e6e54190bb14a5d233d0df47e699b1725c01d41760c5fec3337ccaa0592d049e66241a9ba617705
+  languageName: node
+  linkType: hard
+
 "string-argv@npm:^0.3.1":
   version: 0.3.1
   resolution: "string-argv@npm:0.3.1"
@@ -2476,6 +2499,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tone@npm:14.6.1":
+  version: 14.6.1
+  resolution: "tone@npm:14.6.1"
+  dependencies:
+    standardized-audio-context: ^24.1.5
+    tslib: ^1.10.0
+  checksum: 96cfea1cae118476b4ba721fb6b54443e3c26d97d5076ebf84a1cf3a16fbdfd9e9439d8f5915738d52a0bffe91b47e03d112db546ed5001bd837339773424c91
+  languageName: node
+  linkType: hard
+
 "touch@npm:^3.1.0":
   version: 3.1.0
   resolution: "touch@npm:3.1.0"
@@ -2512,14 +2545,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^1.11.1":
+"tslib@npm:^1.10.0, tslib@npm:^1.11.1":
   version: 1.14.1
   resolution: "tslib@npm:1.14.1"
   checksum: dbe628ef87f66691d5d2959b3e41b9ca0045c3ee3c7c7b906cc1e328b39f199bb1ad9e671c39025bd56122ac57dfbf7385a94843b1cc07c60a4db74795829acd
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.1.0":
+"tslib@npm:^2.0.1, tslib@npm:^2.1.0":
   version: 2.4.1
   resolution: "tslib@npm:2.4.1"
   checksum: 19480d6e0313292bd6505d4efe096a6b31c70e21cf08b5febf4da62e95c265c8f571f7b36fcc3d1a17e068032f59c269fab3459d6cd3ed6949eafecf64315fca
@@ -2637,6 +2670,13 @@ __metadata:
   version: 6.1.0
   resolution: "webidl-conversions@npm:6.1.0"
   checksum: 1f526507aa491f972a0c1409d07f8444e1d28778dfa269a9971f2e157182f3d496dc33296e4ed45b157fdb3bf535bb90c90bf10c50dcf1dd6caacb2a34cc84fb
+  languageName: node
+  linkType: hard
+
+"webmidi@npm:2.*":
+  version: 2.5.3
+  resolution: "webmidi@npm:2.5.3"
+  checksum: efbb9906fd6eb459639267c51f7cc2950ddbe0d9834e69c65cb22abd28d9da191f6272097f7abf0837854cec5e13dcfa42eb32117c89f29debe07fdc872732cb
   languageName: node
   linkType: hard
 
