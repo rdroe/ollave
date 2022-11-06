@@ -2,6 +2,9 @@ import * as tone from 'tone'
 const port = window?.location?.port ?? '8080'
 export type Triad = [note: string, dur: number, timing?: number] // e.g. C5, 0.125 , 29.0078125
 // import { Piano } from '@tonejs/piano'
+
+// see both https://github.com/tambien/Piano/issues/48#issuecomment-1214324134
+// and https://github.com/tambien/Piano/issues/48#issuecomment-1289622804
 import { Piano } from "@tonejs/piano/build/piano/Piano";
 
 const piano = new Piano({
@@ -40,7 +43,6 @@ const isPromise = (arg: any): arg is Promise<any> => {
 }
 
 const playMusic = async (json: Triad[]) => {
-    console.log('json sample:', json && json.length ? json[json.length - 1] : null)
 
     if (isPromise(samplerState.sampler)) await samplerState.sampler
     if (samplerState.sampler === null) throw new Error(`Piano was not initialized.`)
@@ -52,8 +54,6 @@ const playMusic = async (json: Triad[]) => {
             const [note, t1, t2] = triad
             const start = `+${t2}`
             const stop = `+${t2 + 0.25}`
-            console.log('tri', note, t1, t2, start, stop)
-            // samplerState.sampler.triggerAttackRelease([note], t1, t2 + time);
             piano.keyDown({ note: note, time: start })
             piano.keyUp({ note: note, time: stop })
         })

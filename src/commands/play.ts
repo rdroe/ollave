@@ -3,6 +3,7 @@
 import Midi, { MidiChannel } from 'jsmidgen'
 import { Module } from 'nyargs';
 import { playTriads, Triad } from '../lib/music'
+import { makeModule } from '../lib/helpers'
 
 type ChanneledTriad = [channel: MidiChannel, note: string, dur: number, timing?: number]
 function saveRaw(bytes: any, name = 'sample-2.midi') {
