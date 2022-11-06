@@ -1,4 +1,5 @@
 import * as tone from 'tone'
+
 const port = window?.location?.port ?? '8080'
 export type Triad = [note: string, dur: number, timing?: number] // e.g. C5, 0.125 , 29.0078125
 // import { Piano } from '@tonejs/piano'
@@ -24,13 +25,16 @@ export const samplerState: {
 }
 
 export const getSampler = async () => {
+    if (samplerState.loaded === true) return Promise.resolve({})
     samplerState.loaded = false
     piano.toDestination()
     await piano.load().then(() => {
         console.log('loaded!')
+
     })
     await tone.start()
     console.log('start complete')
+    samplerState.loaded = true
     return Promise.resolve({})
 
 }
