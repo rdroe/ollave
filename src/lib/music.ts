@@ -1,7 +1,7 @@
 import * as tone from 'tone'
 const port = 8081
-export type Triad = [note: string, dur: number, timing?: number] // e.g. C5, 0.125 , 29.0078125
-// import { Piano } from '@tonejs/piano'
+
+export type Triad = [note: string, dur: number, timing?: number]
 import { Piano } from "@tonejs/piano/build/piano/Piano";
 
 const piano = new Piano({
@@ -20,13 +20,16 @@ export const samplerState: {
 }
 
 export const getSampler = async () => {
+    if (samplerState.loaded === true) return Promise.resolve({})
     samplerState.loaded = false
     piano.toDestination()
     await piano.load().then(() => {
         console.log('loaded!')
+
     })
     await tone.start()
     console.log('start complete')
+    samplerState.loaded = true
     return Promise.resolve({})
 
 }
@@ -51,8 +54,6 @@ const playMusic = async (json: Triad[]) => {
             const [note, t1, t2] = triad
             const start = `+${t2}`
             const stop = `+${t2 + 0.25}`
-            console.log('tri', note, t1, t2, start, stop)
-            // samplerState.sampler.triggerAttackRelease([note], t1, t2 + time);
             piano.keyDown({ note: note, time: start })
             piano.keyUp({ note: note, time: stop })
         })
