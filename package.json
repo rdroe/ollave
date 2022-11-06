@@ -1,10 +1,40 @@
 {
-  "name": "ollave",
-  "version": "0.0.1",
-  "description": "framework for developing musical streams",
-  "main": "index.ts",
-  "repository": "git@github.com:rdroe/ollave.git",
-  "author": "rdroe <d@vidroe.com>",
-  "license": "MIT",
-  "packageManager": "yarn@3.2.4"
+    "name": "ollave",
+    "version": "0.0.2",
+    "main": "index.js",
+    "repository": "git@github.com:rdroe/ollave.git",
+    "license": "MIT",
+    "description": "framework for developing musical streams",
+    "keywords": [
+        "yargs",
+        "node",
+        "browser",
+        "cli"
+    ],
+    "dependencies": {
+        "@tonejs/piano": "^0.2.1",
+        "@types/jsmidgen": "^0.1.0",
+        "http-server": "^14.1.0",
+        "jsmidgen": "^0.1.5",
+        "nodemon": "^2.0.16",
+        "nyargs": "^1.0.0",
+        "tone": "14.6.1",
+        "webmidi": "2.*"
+    },
+    "devDependencies": {
+        "@types/isomorphic-fetch": "^0.0.36",
+        "esbuild": "^0.14.38",
+        "typescript": "^4.6.4"
+    },
+    "scripts": {
+        "note": "echo \"first build typescript; then build javascript, which will work off of typescript output; at any time, build css. to understand the goal of the build, see main.js. main.js imports the results of the build.",
+        "ts-dev": "tsc -w",
+        "ts-build": "tsc",
+        "js-build": "node build.js",
+        "css-build": "esbuild --bundle css/main.css --outfile=public/css/style.css",
+        "mon": "yarn nodemon --exec \"yarn ts-build && yarn css-build && yarn js-build\" --watch ../../dist-browser --watch ./src --watch ./css --ext js,ts,mjs,ts,css  --ignore public",
+        "start": "yarn http-server --mimetypes mime.types",
+        "mon2": "yarn nodemon --exec \"yarn ts-build && yarn js-build\" --watch ../../dist-browser --watch ./src --ext js,ts,mjs,ts --ignore public"
+    },
+    "packageManager": "yarn@3.2.4"
 }
