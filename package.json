@@ -1,0 +1,10 @@
+{
+  "name": "ollave",
+  "version": "0.0.1",
+  "description": "framework for developing musical streams",
+  "main": "index.js",
+  "repository": "git@github.com:rdroe/ollave.git",
+  "author": "rdroe <d@vidroe.com>",
+  "license": "MIT",
+  "private": false
+}
