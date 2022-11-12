@@ -75,6 +75,7 @@ const initAndPlay = async (json: Triad[] /*, setLink*/) => {
 }
 
 export const playTriads = (notes: Triad[]) => {
-    console.log('trying to play, now', notes[0])
     return initAndPlay(notes)
 }
+
+

@@ -1,50 +1,11 @@
-
-// var fs = require('fs');
-
 import { Module, SyncChildCalls } from 'nyargs';
 import { isString, isStringNumNum, makeSubmodule, passivelyNumberize } from '../lib/helpers'
-import { Observable, interval, take, share, filter, Subscription } from 'rxjs'
-import { playNotes } from 'src/lib/midi';
+import { interval, filter, Subscription, concatMap, Observable, map } from 'rxjs'
 import { playTriads, Triad } from 'src/lib/music';
-
-const test1 = makeSubmodule('test', async ({ positional }) => {
-    const foo = new Observable((subscriber) => {
-        console.log('Hello');
-        subscriber.next(42);
-        subscriber.next(100); // "return" another value
-        subscriber.next(200); // "return" yet another
-    });
-
-    console.log('before');
-    foo.subscribe((x) => {
-        console.log(x);
-    });
-    console.log('after');
-
-    return 'child a'
-})
-
-const test2 = makeSubmodule('test2', async ({ positional }) => {
-    const first5SpacedNumbers = interval(1000).pipe(take(5), share())
-
-    first5SpacedNumbers.subscribe((v) => console.log("A", v))
-    // Will start logging A1... A2...
-
-    setTimeout(() => {
-        first5SpacedNumbers.subscribe((v) => console.log("B", v))
-    }, 2000)
-    // Will 
-})
-
-const nts = makeSubmodule('nts', async ({ positional }) => {
-    const [str, num1, num2] = positional.map(passivelyNumberize)
-    console.log('input', str, num1, num2, 'all', positional)
-    const tri = [str, num1, num2]
-    return isStringNumNum(tri) ? playNotes([tri]) : null
-})
-
+import { playNotes } from 'src/lib/midi';
 
 type Fraction = [number, number]
+
 const PROCESS_DELAY = 0.1
 const time = Date.now() / 1000
 const elapsed = () => (Date.now() / 1000) - time
@@ -67,9 +28,29 @@ const notesNamespace: {
 const masterIntervalInSeconds = 3
 const masterInterval = masterIntervalInSeconds * 1000
 
-const observables = {
-    play: interval(1000)
+let currBar = 0
+const bar = {
+    play: interval(1).pipe(concatMap(() => {
+        const prev = currBar
+        currBar = Math.floor(elapsed() * 1000) % masterInterval
+        if (currBar > prev) return interval(1)
+    }), filter((x) => {
+        return x !== undefined
+    }))
 }
+
+const ntsHelp = {
+    description: 'Play note',
+    examples: {
+        'c4 64 1': 'Play C4 note with one second delay (64 is currently ignored'
+    }
+}
+
+const nts = makeSubmodule('nts', async ({ positional }) => {
+    const [str, num1, num2] = positional.map(passivelyNumberize)
+    const tri = [str, num1, num2]
+    return isStringNumNum(tri) ? playNotes([tri]) : null
+}, ntsHelp)
 
 
 const noteAndName = (str: string): [note: string, names?: string] => {
@@ -77,6 +58,13 @@ const noteAndName = (str: string): [note: string, names?: string] => {
     const parsed = str.split(',')
     const [note, ...names] = parsed
     return names.length ? [note, names.join(',')] : [note, ','];
+}
+
+const stopHelp = {
+    description: 'stop a single-note stream',
+    examples: {
+        'ch,myNoteName': 'stop the note named by this string'
+    }
 }
 
 const stop = makeSubmodule('stop', async ({ positional }) => {
@@ -93,6 +81,34 @@ const stop = makeSubmodule('stop', async ({ positional }) => {
     }
     return null
 
+}, stopHelp)
+
+const startHelp = {
+    description: 'start a single-note stream',
+    examples: {
+        'ch,myNoteName 1 9': 'start a note stream; it will issue the note at frequency 1/9 * master interval '
+    }
+}
+
+
+const timeInterval = (start: Date, size: number): Observable<number> => {
+
+    let curr = 0
+    return interval(100).pipe(filter((num) => {
+        const prev = curr
+        curr = (Date.now() - start.valueOf()) % size
+        console.log('curr', curr)
+        return prev === 0 || curr < prev
+    }), map(() => Date.now() - start.valueOf()))
+}
+
+const subscribablePart = (size: number) => timeInterval(new Date(), size)
+
+const test = makeSubmodule('test', async () => {
+    const observable = subscribablePart(2500)
+    observable.subscribe((num) => {
+        console.log('a section ended', num)
+    })
 })
 
 const start = makeSubmodule('start', async ({ positional }) => {
@@ -114,24 +130,28 @@ const start = makeSubmodule('start', async ({ positional }) => {
         subscription: null,
         interval: [numerator, divisor]
     }
+
     let curr = 0
-    const subscribable = observables.play
-        .pipe(filter((/* idealMs */) => {
-            const prev = curr
-            const subInterval = Math.round(masterInterval * numerator / divisor)
-            curr = Math.floor(elapsed() % subInterval)
-            return curr > prev
+    const s = bar.play.pipe(filter((idealMs) => {
 
-        }))
+        const prev = curr
+        const subInterval = Math.floor(masterInterval * numerator / divisor)
+        const elap = elapsed() * 1000
 
-    const sub = subscribable.subscribe((x) => {
+        curr = Math.floor(elap) % subInterval
+
+        return curr < prev
+
+    }))
+
+    const sub = s.subscribe(() => {
         const triad = [note, 0.25, PROCESS_DELAY] as Triad
         playTriads([triad])
     })
 
     notesNamespace.names[noteName].subscription = sub
     notesNamespace.names[noteName].interval = [numerator, divisor]
-})
+}, startHelp)
 
 
 const module: Module<{}> = {
@@ -142,10 +162,10 @@ const module: Module<{}> = {
         }
     },
     fn: async (args, childCalls: SyncChildCalls) => {
-        console.log('child calls', childCalls)
+
         return null
     },
-    submodules: Object.fromEntries([nts, test1, test2, start, stop]),
+    submodules: Object.fromEntries([nts, start, stop, test]),
 
 }
 
