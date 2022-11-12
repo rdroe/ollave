@@ -1,5 +1,6 @@
 import { platformIsNode, createApp } from 'nyargs'
 import play from './commands/play'
+import cue from './commands/cue'
 const creator = () => createApp(
     async function nyargsApp({
         cache,
@@ -36,7 +37,8 @@ const creator = () => createApp(
             pr: program,
             pro: program,
             prog: program,
-            play
+            play,
+            cue
 
         }, 'app > ')
 
