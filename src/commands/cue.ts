@@ -1,17 +1,17 @@
 import { Module, SyncChildCalls } from 'nyargs';
+import { fakeCli } from 'nyargs/runtime';
 import { isStringNumNum, makeSubmodule, passivelyNumberize } from '../lib/helpers'
-import { Subscription, Observable, } from 'rxjs'
+import { Observable, Subscriber, } from 'rxjs'
 
-type Fraction = [number, number]
-
+type NamedObservable = {
+    observable: InstanceType<typeof Observable> | null,
+    interval: null | number,
+    started: number
+}
 export const cuesNamespace: {
     initialized: boolean,
     names: {
-        [noteName: string]: {
-            observable: InstanceType<typeof Observable> | null,
-            interval: null | Fraction, //fraction of master interval
-            subscription: InstanceType<typeof Subscription> | null,
-        }
+        [noteName: string]: NamedObservable
     }
 } = {
     initialized: false,
@@ -19,55 +19,72 @@ export const cuesNamespace: {
 }
 
 
-const masterIntervalInSeconds = 3
-const masterInterval = masterIntervalInSeconds * 1000
+const masterInterval = 3000
+const startTime = Date.now()
+const makeSubscribe = (ownCtx: NamedObservable, parent = 'default') => {
 
-const ntsHelp = {
-    description: 'Play note',
-    examples: {
-        'c4 64 1': 'Play C4 note with one second delay (64 is currently ignored'
-    }
-}
-
-
-
-const startCueObservable = (name: string, [numerator, divisor]: [number, number], size = masterInterval) => {
-
-    let curr = Date.now()
     let currCardinal = 0
-    const sizeSeconds = size * numerator / divisor
+    return function subscribe(subscriber: Subscriber<any>) {
 
-    const observable = new Observable(function subscribe(subscriber) {
-
-        // Keep track of the interval resource
         const intervalId = setInterval(() => {
-            const now = Date.now()
-            const portion = now - curr
 
-            if (portion > sizeSeconds) {
-                curr += sizeSeconds
+            const sizeMs = ownCtx.interval
+            const now = Date.now()
+            const portion = now - ownCtx.started
+
+            if (portion >= sizeMs) {
+                console.log('ticking; child of ', parent, 'size v portion', sizeMs, portion)
+                ownCtx.started += sizeMs
                 currCardinal++
-                subscriber.next({ count: currCardinal, size: [numerator, divisor] })
+                try {
+                    subscriber.next({ count: currCardinal, sizeMs, started: ownCtx.started })
+                } catch (e) {
+                    subscriber.error(e)
+                }
+
             }
 
         }, 5);
 
-        // Provide a way of canceling and disposing the interval resource
         return function unsubscribe() {
             clearInterval(intervalId);
+            subscriber.complete()
         };
-    });
+    }
+}
 
-    if (cuesNamespace.names[name]) {
-        cuesNamespace.names[name]?.subscription.unsubscribe()
 
+const cues = {
+    get(nm: string) {
+        if (nm === 'default') return {
+            observable: null,
+            interval: masterInterval,
+            started: startTime
+        }
+        return cuesNamespace.names[nm] ?? null
+    }
+}
+
+const startCueObservable = (name: string, [numerator, divisor]: [number, number], contextName = 'default') => {
+    const parentCtx = cues.get(contextName)
+    const size = cues.get(contextName).interval
+
+    const ownCtx: { observable: null | InstanceType<typeof Observable>, interval: number, started: number } = {
+        interval: size * numerator / divisor,
+        observable: null,
+        started: parentCtx.started
     }
 
-    cuesNamespace.names[name] = {
-        interval: [numerator, divisor],
-        observable,
-        subscription: null
-    }
+    cuesNamespace.names[name] = ownCtx
+
+    const observable = new Observable(makeSubscribe(ownCtx, contextName));
+    /*
+    parentCtx.observable.subscribe(() => {
+        ownCtx.started = Date.now()
+    })
+    */
+    ownCtx.observable = observable
+    console.log('started cue obs', cuesNamespace)
 
 }
 
@@ -78,26 +95,53 @@ const cuesHelp = {
     }
 }
 
-const start = makeSubmodule('start', async ({ positional }) => {
+
+const start = makeSubmodule('start', async ({ positional, parent }: { positional: (string | number)[], parent?: string }) => {
 
     const [str, num1, num2] = positional.map(passivelyNumberize)
-
     const tri = [str, num1, num2]
 
+    if (!isStringNumNum([str, num1, num2])) return null
+
+    if (parent) {
+
+        const parentCtx = cues.get(parent)?.observable ? cues.get(parent) : null
+
+        if (!parentCtx) {
+
+            return {
+                message: `Could not locate requested parent namespace "${parent}" for ${str}`
+            }
+        }
+
+        const compoundName = `${parent}.${str}`
+
+        return isStringNumNum(tri) ? startCueObservable(compoundName, [num1, num2] as [number, number], parent) : null
+    }
+
     return isStringNumNum(tri) ? startCueObservable(str as string, [num1, num2] as [number, number]) : null
-}, cuesHelp)
+
+}, cuesHelp, [makeSubmodule('sub', async ({ positional }) => {
 
 
+    const parent = positional.shift()
+    const result = await fakeCli.handle(`cue start ${positional.join(' ')} --parent ${parent}`)
+
+    return result
+
+
+})])
 
 const module: Module<{}> = {
     help: {
         description: 'Create a subscribable time interval',
     },
+
     fn: async (args, childCalls: SyncChildCalls) => {
+
         return null
     },
     submodules: Object.fromEntries([start]),
-
 }
 
 export default module

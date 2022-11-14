@@ -54,7 +54,7 @@ const initializeOrClear = (noteNameData: string) => {
 const st = makeSubmodule('st', async ({ positional }) => {
 
     const positionalArgs = positional.map(passivelyNumberize)
-    if (!isStringNumNum(positionalArgs)) return null
+    if (!isStringNumNum(positionalArgs)) return { message: 'invalid arguments' }
 
     const [noteNameData, numerator, divisor] = positionalArgs
     const [note, nm] = noteAndName(noteNameData)
@@ -64,11 +64,17 @@ const st = makeSubmodule('st', async ({ positional }) => {
     // possible unsubscribe
     initializeOrClear(noteNameData)
 
-    notesNamespace.names[noteNameData].subscription = observable.subscribe(() => {
-        const triad = [note, 0.25, 0] as Triad
-        playTriads([triad])
+    notesNamespace.names[noteNameData].subscription = observable.subscribe({
+        next: (...args: unknown[]) => {
+            const triad = [note, 0.25, 0] as Triad
+            playTriads([triad])
+            console.log('played', noteNameData)
+        },
+        error: (e) => {
+            console.error('subsciber error', e)
+        }
     })
-
+    console.log('called subscribe on', observable)
     notesNamespace.names[noteNameData].interval = [numerator, divisor]
 
 }, {
@@ -91,7 +97,6 @@ const module: Module<{}> = {
         return null
     },
     submodules: Object.fromEntries([nts, st]),
-
 }
 
 
