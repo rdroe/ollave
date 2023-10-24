@@ -34,8 +34,8 @@
         "js-build": "node build.js",
         "css-build": "esbuild --bundle css/main.css --outfile=public/css/style.css",
         "mon": "yarn nodemon --exec \"yarn ts-build && yarn css-build && yarn js-build\" --watch ../../dist-browser --watch ./src --watch ./css --ext js,ts,mjs,ts,css  --ignore public",
-        "start": "yarn http-server --mimetypes mime.types",
+        "start": "yarn http-server --mimetypes mime.types --cors",
         "mon2": "yarn nodemon --exec \"yarn ts-build && yarn js-build\" --watch ../../dist-browser --watch ./src --ext js,ts,mjs,ts --ignore public"
     },
-    "packageManager": "yarn@3.2.4"
+    "packageManager": "yarn@4.0.0"
 }

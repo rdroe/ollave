@@ -6,12 +6,13 @@ import { playNotes } from 'src/lib/midi';
 import { cuesNamespace } from '../data'
 type Fraction = [number, number]
 
+// in-memory namespace for notes
 export const notesNamespace: {
-    initialized: boolean,
-    names: {
-        [noteName: string]: {
-            interval: null | Fraction,
-            subscription: Subscription
+    initialized: boolean, // whether the namespace has been initialized
+    names: { // the actual namespace
+        [noteName: string]: { // the note name
+            interval: null | Fraction, // the interval at which the note should be played
+            subscription: Subscription | null // the subscription to the cue
         }
     }
 } = {
@@ -26,14 +27,21 @@ const ntsHelp = {
     }
 }
 
-const nts = makeSubmodule('nts', async ({ positional }) => {
+
+// Cli subcommand definition "nts" (the user types "play nts <arg1> <arg2> ..." to call this)
+const nts = makeSubmodule('nts', async (cliArgs) => {
+    // example: cliArgs = { positional: ['c4', '64', '1'] }
+    const { positional } = cliArgs
+
     const [str, num1, num2] = positional.map(passivelyNumberize)
     const tri = [str, num1, num2]
-    return isStringNumNum(tri) ? playNotes([tri]) : null
+    return isStringNumNum(tri)
+        ? playNotes([tri])
+        : null
 }, ntsHelp)
 
-const noteAndName = (str: string): [note: string, names?: string] => {
 
+const parseNoteAndName = (str: string): [note: string, names?: string] => {
     const parsed = str.split(',')
     const [note, ...names] = parsed
     return names.length ? [note, names.join(',')] : [note, ','];
@@ -41,11 +49,12 @@ const noteAndName = (str: string): [note: string, names?: string] => {
 
 
 const initializeOrClear = (noteNameData: string) => {
-
     if (notesNamespace.names[noteNameData]) {
+        console.log('unsubscribing', noteNameData, notesNamespace.names[noteNameData])
         notesNamespace.names[noteNameData].subscription.unsubscribe()
         notesNamespace.names[noteNameData].interval = null
     } else {
+        console.log('initializing', noteNameData)
         notesNamespace.names[noteNameData] = { interval: null, subscription: null }
     }
 
@@ -57,24 +66,31 @@ const st = makeSubmodule('st', async ({ positional }) => {
     if (!isStringNumNum(positionalArgs)) return { message: 'invalid arguments' }
 
     const [noteNameData, numerator, divisor] = positionalArgs
-    const [note, nm] = noteAndName(noteNameData)
+    const [note, nm] = parseNoteAndName(noteNameData)
 
-    const observable = cuesNamespace.names[nm] ? cuesNamespace.names[nm].observable : null
+    const observable = cuesNamespace.names[nm]
+        ? cuesNamespace.names[nm].observable
+        : null
+
+
     if (!observable) return { message: `observable ${nm} not found for note ${note}` }
+
     // possible unsubscribe
     initializeOrClear(noteNameData)
 
     notesNamespace.names[noteNameData].subscription = observable.subscribe({
+        // this is the callback that will be called when the observable emits
+        // actually play the note
         next: (...args: unknown[]) => {
             const triad = [note, 0.25, 0] as Triad
             playTriads([triad])
-            console.log('played', noteNameData)
+
         },
         error: (e) => {
             console.error('subsciber error', e)
         }
     })
-    console.log('called subscribe on', observable)
+
     notesNamespace.names[noteNameData].interval = [numerator, divisor]
 
 }, {

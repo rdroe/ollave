@@ -1,6 +1,7 @@
 import * as tone from 'tone'
 
 const port = window?.location?.port ?? '8080'
+const host = window?.location?.hostname ?? 'localhost'
 export type Triad = [note: string, dur: number, timing?: number] // e.g. C5, 0.125 , 29.0078125
 // import { Piano } from '@tonejs/piano'
 
@@ -10,7 +11,7 @@ import { Piano } from "@tonejs/piano/build/piano/Piano";
 
 const piano = new Piano({
     velocities: 2,
-    url: `http://localhost:${port}/audio`
+    url: `http://${host}:${port}/audio`
 })
 
 
@@ -67,8 +68,7 @@ const playMusic = async (json: Triad[]) => {
 
 
 
-////////////// consumer fns
-
+////////////// api for outside world
 const initAndPlay = async (json: Triad[] /*, setLink*/) => {
     samplerState.sampler = await getSampler()
     return playMusic(json)
