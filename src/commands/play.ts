@@ -1,9 +1,10 @@
 import { Module, SyncChildCalls } from 'nyargs';
 import { isStringNumNum, makeSubmodule, passivelyNumberize } from '../lib/helpers'
-import { Subscription } from 'rxjs'
+import { find, Subscription } from 'rxjs'
 import { playTriads, Triad } from 'src/lib/music';
 import { playNotes } from 'src/lib/midi';
 import { cuesNamespace } from '../data'
+import { findCue } from './cue2';
 type Fraction = [number, number]
 
 // in-memory namespace for notes
@@ -68,9 +69,7 @@ const st = makeSubmodule('st', async ({ positional }) => {
     const [noteNameData, numerator, divisor] = positionalArgs
     const [note, nm] = parseNoteAndName(noteNameData)
 
-    const observable = cuesNamespace.names[nm]
-        ? cuesNamespace.names[nm].observable
-        : null
+    const [, , , observable = null] = findCue(nm) ?? []
 
 
     if (!observable) return { message: `observable ${nm} not found for note ${note}` }
@@ -83,6 +82,7 @@ const st = makeSubmodule('st', async ({ positional }) => {
         // actually play the note
         next: (...args: unknown[]) => {
             const triad = [note, 0.25, 0] as Triad
+            console.log('playing triad', triad)
             playTriads([triad])
 
         },

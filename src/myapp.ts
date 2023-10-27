@@ -1,6 +1,8 @@
 import { platformIsNode, createApp } from 'nyargs'
 import play from './commands/play'
 import cue from './commands/cue'
+import cue2 from './commands/cue2'
+import { playTriads } from './lib/music'
 const creator = () => createApp(
     async function nyargsApp({
         cache,
@@ -13,7 +15,11 @@ const creator = () => createApp(
         element,
         configure,
     }) {
-
+        document.body.onclick = () => {
+            console.log('click')
+            playTriads([['c4', 0.25, 0]])
+            document.body.onclick = null
+        }
         // dynamicall import your own modules here, e.g.
         // const myModule = (await import('./myModule')).default
 
@@ -38,9 +44,11 @@ const creator = () => createApp(
             pro: program,
             prog: program,
             play,
-            cue
+            cue,
+            cue2: cue2
 
         }, 'app > ')
+
 
     })
 

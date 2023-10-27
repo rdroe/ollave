@@ -18,7 +18,7 @@ type NamedObservable = {
 export const cuesNamespace: {
     initialized: boolean,
     names: {
-        [noteName: string]: NamedObservable
+        [cueName: string]: NamedObservable
     }
 } = {
     initialized: false,
