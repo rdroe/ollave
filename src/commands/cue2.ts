@@ -17,36 +17,45 @@ type CuesNamespace = {
 const cues2Namespace: CuesNamespace = {
     cues: []
 }
+/*
+The formula is 60000 / (BPM * PPQ) (milliseconds).
+Where BPM is the tempo of the track (Beats Per Minute).
+(i.e. a 120 BPM track would have a MIDI time of (60000 / (120 * 192)) or 2.604 ms for 1 tick.i
+*/
+
+const PPQ = 192
+const TICK_COUNTS = {
+    beat: PPQ,
+    eighth: PPQ / 2,
+    sixteenth: PPQ / 4,
+    thirtysecond: PPQ / 8,
+    sixtyfourth: PPQ / 16,
+}
 
 let tempo = 120
-const msPerBeat = 60000 / tempo
-const barLen = 384
-const beatUnitCnt = barLen / 4
+let speed = 1
+const msPerTick = () => 60000 / (tempo * PPQ) * speed
+const msPerBeat = () => msPerTick() * PPQ
 
+const barLen = PPQ * 4
+
+type TempoChange = [
+    tickCount: number,
+
+    tempo: number]
 const timings = {
-    tempo,
-    barLen,
-
-    tickCounts: {
-        beat: beatUnitCnt,
-        eighth: beatUnitCnt / 2,
-        sixteenth: beatUnitCnt / 4,
-        thirtysecond: beatUnitCnt / 8,
-        sixtyfourth: beatUnitCnt / 16,
-    },
     msCounts: {
-        beat: msPerBeat,
-        eighth: msPerBeat / 2,
-        sixteenth: msPerBeat / 4,
-        thirtysecond: msPerBeat / 8,
-        sixtyfourth: msPerBeat / 16,
+        beat: () => msPerBeat(),
+        eighth: () => msPerBeat() / 2,
+        sixteenth: () => msPerBeat() / 4,
+        thirtysecond: () => msPerBeat() / 8,
+        sixtyfourth: () => msPerBeat() / 16,
     }
 }
 
-console.log('seconds in bar', msPerBeat * 4)
+console.log('seconds in bar', msPerBeat() * 4)
 console.log('beat length', msPerBeat)
 console.log('timings', timings)
-
 
 type TimeMarker = [time: number, sixtyFourth: number]
 const fileStart = Date.now()
@@ -61,53 +70,48 @@ let curr: TimeMarker = [fileStart, 0]
 const lastChange = () => tempoChanges[tempoChanges.length - 1][0]
 const priorTicksTot = () => tempoChanges.reduce((acc, [, sixtyFourth]) => acc + sixtyFourth, 0)
 
-
+// runtime mode: run the clock, produce the sixtyfourth notes.
 const masterTicks = setInterval(() => {
     const [lastTime, prev64] = curr
     const newTime = Date.now()
     const sinceLastTime = newTime - lastChange()
-
-    const newTickMs = Math.trunc(sinceLastTime / timings.msCounts.sixtyfourth)
-    const newTicks = newTickMs * timings.tickCounts.sixtyfourth + priorTicksTot()
-
+    const newTickMs = Math.trunc(sinceLastTime / timings.msCounts.sixtyfourth())
+    const newTicks = newTickMs * TICK_COUNTS.sixtyfourth + priorTicksTot()
     if (newTicks !== prev64) {
-
         curr = [newTime, newTicks]
     }
+}, 1) // watch for changes every millisecond
 
-}, 1)
+// generation mode: tick the sixtyfourth notes, produce the time markers.
+
+
 
 const sixtyFourthNotes = new Observable(function subscribe(subscriber: Subscriber<any>) {
-
     let lastPlayedAt = curr[1]
-
     const intervalId = setInterval(() => {
-
         if (curr[1] > lastPlayedAt) {
             lastPlayedAt = curr[1]
             subscriber.next(curr[1])
         }
 
     }, 1)
-
     return function unsubscribe() {
         clearInterval(intervalId);
         subscriber.complete()
     };
 })
 
-const barLen32s = timings.barLen / timings.tickCounts.thirtysecond
 // utility function to create an observable (cue) that subscribing notes can use. the subscribers (notes) will be triggered at every observables interval passing.
 const makeSubscribe = (parent: null | Cue) => {
     return function subscribe(subscriber: Subscriber<any>) {
 
         sixtyFourthNotes.subscribe({
             next: (sixtyFourth) => {
-                console.log('parent called', sixtyFourth % timings.barLen)
-                if (sixtyFourth % timings.barLen === 0) {
+                console.log('parent called', sixtyFourth % barLen)
+                if (sixtyFourth % barLen === 0) {
                     subscriber.next({
                         count: sixtyFourth,
-                        sizeMs: timings.barLen,
+                        sizeMs: barLen,
                         started: fileStart
                     })
                 }
