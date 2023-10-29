@@ -32,51 +32,77 @@ const TICK_COUNTS = {
     sixtyfourth: PPQ / 16,
 }
 
-let tempo = 120
+
 let speed = 1
-const msPerTick = () => 60000 / (tempo * PPQ) * speed
-const msPerBeat = () => msPerTick() * PPQ
+
+let tick = 0
+
+const msPerTick = (tick: number) => {
+    const newTempo = currTempo(tick)
+    return 60000 / (newTempo * PPQ) * speed
+}
+const msPerBeat = (
+    tick: number
+) => msPerTick(tick) * PPQ
 
 const barLen = PPQ * 4
 
 type TempoChange = [
     tickCount: number,
+    tempo: number
+]
 
-    tempo: number]
+const currTempo = (tickCnt: number) => {
+    if (tickCnt < 0) {
+        throw new Error('tickCnt must be positive')
+    }
+    const prev = plannedTempoChanges.find(([tick]) => tick <= tickCnt) ?? [0, 120]
+    const next = plannedTempoChanges.find(([tick]) => tick > tickCnt) ?? [Infinity, prev[1]]
+
+    const targetedChange = next[1] - prev[1]
+    if (targetedChange === 0) return prev[1]
+    const proportion = (tickCnt - prev[0]) / (next[0] - prev[0])
+    return prev[1] + (targetedChange * proportion)
+}
+
+const plannedTempoChanges: TempoChange[] = [
+    [0, 120],
+]
+
 const timings = {
     msCounts: {
-        beat: () => msPerBeat(),
-        eighth: () => msPerBeat() / 2,
-        sixteenth: () => msPerBeat() / 4,
-        thirtysecond: () => msPerBeat() / 8,
-        sixtyfourth: () => msPerBeat() / 16,
+        beat: (tick: number) => msPerBeat(tick),
+        eighth: (tick: number) => msPerBeat(tick) / 2,
+        sixteenth: (tick: number) => msPerBeat(tick) / 4,
+        thirtysecond: (tick: number) => msPerBeat(tick) / 8,
+        sixtyfourth: (tick: number) => msPerBeat(tick) / 16,
     }
 }
 
-console.log('seconds in bar', msPerBeat() * 4)
+console.log('seconds in bar', msPerBeat(0) * 4)
 console.log('beat length', msPerBeat)
 console.log('timings', timings)
 
 type TimeMarker = [time: number, sixtyFourth: number]
-const fileStart = Date.now()
 
-const tempoChanges: TimeMarker[
 
-] = [
-        [fileStart, 0]
-    ]
+const tempoChanges: TimeMarker[] = [
+    [0, 0]
+]
 
-let curr: TimeMarker = [fileStart, 0]
-const lastChange = () => tempoChanges[tempoChanges.length - 1][0]
-const priorTicksTot = () => tempoChanges.reduce((acc, [, sixtyFourth]) => acc + sixtyFourth, 0)
+let curr: TimeMarker = [0, 0]
+const lastChange = () => tempoChanges[tempoChanges.length - 1]
+
+
+const MODE: 'air' | 'paper' = 'air'
 
 // runtime mode: run the clock, produce the sixtyfourth notes.
 const masterTicks = setInterval(() => {
     const [lastTime, prev64] = curr
     const newTime = Date.now()
-    const sinceLastTime = newTime - lastChange()
-    const newTickMs = Math.trunc(sinceLastTime / timings.msCounts.sixtyfourth())
-    const newTicks = newTickMs * TICK_COUNTS.sixtyfourth + priorTicksTot()
+    const sinceLastTime = newTime - lastChange()[0]
+    const newTickMs = Math.trunc(sinceLastTime / timings.msCounts.sixtyfourth(tick))
+    const newTicks = newTickMs * TICK_COUNTS.sixtyfourth + lastChange()[1]
     if (newTicks !== prev64) {
         curr = [newTime, newTicks]
     }
@@ -117,7 +143,6 @@ const makeSubscribe = (parent: null | Cue) => {
                 }
             }
         })
-
 
         return function unsubscribe() {
             subscriber.complete()
