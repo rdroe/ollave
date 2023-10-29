@@ -32,15 +32,13 @@ const TICK_COUNTS = {
     sixtyfourth: PPQ / 16,
 }
 
-
-let speed = 1
-
 let tick = 0
 
 const msPerTick = (tick: number) => {
-    const newTempo = currTempo(tick)
-    return 60000 / (newTempo * PPQ) * speed
+    const newSpeed = currSpeed(tick)
+    return 60000 / (trackTempo * PPQ) * newSpeed
 }
+
 const msPerBeat = (
     tick: number
 ) => msPerTick(tick) * PPQ
@@ -52,21 +50,21 @@ type TempoChange = [
     tempo: number
 ]
 
-const currTempo = (tickCnt: number) => {
+const currSpeed = (tickCnt: number) => {
     if (tickCnt < 0) {
         throw new Error('tickCnt must be positive')
     }
-    const prev = plannedTempoChanges.find(([tick]) => tick <= tickCnt) ?? [0, 120]
-    const next = plannedTempoChanges.find(([tick]) => tick > tickCnt) ?? [Infinity, prev[1]]
+    const prev = plannedSpeedChanges.find(([tick]) => tick <= tickCnt) ?? [0, trackTempo]
+    const next = plannedSpeedChanges.find(([tick]) => tick > tickCnt) ?? [Infinity, prev[1]]
 
     const targetedChange = next[1] - prev[1]
     if (targetedChange === 0) return prev[1]
     const proportion = (tickCnt - prev[0]) / (next[0] - prev[0])
     return prev[1] + (targetedChange * proportion)
 }
-
-const plannedTempoChanges: TempoChange[] = [
-    [0, 120],
+const trackTempo = 120
+const plannedSpeedChanges: TempoChange[] = [
+    [0, 1],
 ]
 
 const timings = {
@@ -126,7 +124,7 @@ const sixtyFourthNotes = new Observable(function subscribe(subscriber: Subscribe
         subscriber.complete()
     };
 })
-
+const fileStart = Date.now()
 // utility function to create an observable (cue) that subscribing notes can use. the subscribers (notes) will be triggered at every observables interval passing.
 const makeSubscribe = (parent: null | Cue) => {
     return function subscribe(subscriber: Subscriber<any>) {
