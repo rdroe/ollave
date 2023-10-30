@@ -1,10 +1,10 @@
 import { Module, SyncChildCalls } from 'nyargs';
-import { isStringNumNum, makeSubmodule, passivelyNumberize } from '../lib/helpers'
-import { find, Subscription } from 'rxjs'
+import { isStringNumNum, makeSubmodule, passivelyNumberize } from '../../lib/helpers'
+import { Subscription } from 'rxjs'
 import { playTriads, Triad } from 'src/lib/music';
 import { playNotes } from 'src/lib/midi';
-import { cuesNamespace } from '../data'
-import { findCue } from './cue2';
+import { findCue } from '../cue/cue';
+
 type Fraction = [number, number]
 
 // in-memory namespace for notes
