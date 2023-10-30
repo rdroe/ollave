@@ -1,8 +1,8 @@
 import { Module, SyncChildCalls } from 'nyargs';
 import { fakeCli } from 'nyargs/runtime';
 import { isStringNumNum, makeSubmodule, passivelyNumberize } from '../lib/helpers'
-import { interval, Observable, Subscriber, } from 'rxjs'
-
+import { interval, Observable, Subject, Subscriber, } from 'rxjs'
+const fileStart = Date.now()
 type Cue = [
     name: string,
     start: number,
@@ -30,6 +30,7 @@ const TICK_COUNTS = {
     sixteenth: PPQ / 4,
     thirtysecond: PPQ / 8,
     sixtyfourth: PPQ / 16,
+    oneTwentyEigth: PPQ / 32,
 }
 
 let tick = 0
@@ -62,6 +63,7 @@ const currSpeed = (tickCnt: number) => {
     const proportion = (tickCnt - prev[0]) / (next[0] - prev[0])
     return prev[1] + (targetedChange * proportion)
 }
+
 const trackTempo = 120
 const plannedSpeedChanges: TempoChange[] = [
     [0, 1],
@@ -74,6 +76,7 @@ const timings = {
         sixteenth: (tick: number) => msPerBeat(tick) / 4,
         thirtysecond: (tick: number) => msPerBeat(tick) / 8,
         sixtyfourth: (tick: number) => msPerBeat(tick) / 16,
+        oneTwentyEigth: (tick: number) => msPerBeat(tick) / 32
     }
 }
 
@@ -81,60 +84,83 @@ console.log('seconds in bar', msPerBeat(0) * 4)
 console.log('beat length', msPerBeat)
 console.log('timings', timings)
 
-type TimeMarker = [time: number, sixtyFourth: number]
+type TimeMarker = [time: number, quotient: number]
 
-
-const tempoChanges: TimeMarker[] = [
-    [0, 0]
+const midiTicksQueue: number[] = [0]
+let curr: TimeMarker = [0,
+    midiTicksQueue[midiTicksQueue.length - 1]
 ]
-
-let curr: TimeMarker = [0, 0]
-const lastChange = () => tempoChanges[tempoChanges.length - 1]
 
 
 const MODE: 'air' | 'paper' = 'air'
 
-// runtime mode: run the clock, produce the sixtyfourth notes.
+
+
+
+// This interval 
 const masterTicks = setInterval(() => {
-    const [lastTime, prev64] = curr
-    const newTime = Date.now()
-    const sinceLastTime = newTime - lastChange()[0]
-    const newTickMs = Math.trunc(sinceLastTime / timings.msCounts.sixtyfourth(tick))
-    const newTicks = newTickMs * TICK_COUNTS.sixtyfourth + lastChange()[1]
-    if (newTicks !== prev64) {
-        curr = [newTime, newTicks]
-    }
-}, 1) // watch for changes every millisecond
+    const [lastTime, tick] = curr
+    const newTime = Date.now() - fileStart
+    const newTicks = Math.round(newTime / msPerTick(tick))
+    let diff = newTicks - tick
+    while (diff > 0) {
 
-// generation mode: tick the sixtyfourth notes, produce the time markers.
+        const nextPush =
+            midiTicksQueue[midiTicksQueue.length - 1] !== undefined
+                &&
+                !isNaN(midiTicksQueue[midiTicksQueue.length - 1])
+                ? midiTicksQueue[midiTicksQueue.length - 1] + 1 : (tick + 1)
 
+        if (!isNaN(nextPush)) {
+            midiTicksQueue.push(
+                nextPush
+            )
 
-
-const sixtyFourthNotes = new Observable(function subscribe(subscriber: Subscriber<any>) {
-    let lastPlayedAt = curr[1]
-    const intervalId = setInterval(() => {
-        if (curr[1] > lastPlayedAt) {
-            lastPlayedAt = curr[1]
-            subscriber.next(curr[1])
         }
+        diff -= 1
+    }
 
+    curr = [newTime,
+        midiTicksQueue[midiTicksQueue.length - 1] ?? tick
+    ]
+}, 0) // watch for changes every millisecond
+
+const allTicksSubject = new Subject<number>();
+
+// Uses the master loop (above) to multicast every single midi tick.
+// The global "speed" variable determines how rapidly midi ticks are issued; however every single tick is guaranteed to be fired for subscribers to the subject of this (i.e. allTicksSubject) observable.
+const allTicksObservable = new Observable(function subscribe(subscriber: Subscriber<any>) {
+    const intervalId = setInterval(() => {
+        let tick1 = midiTicksQueue.pop()
+        while (tick1 !== undefined && !isNaN(tick1)) {
+            new Promise((res) => {
+                res(subscriber.next(tick1))
+            })
+
+            tick1 = midiTicksQueue.pop()
+
+            if (tick1 % 200 === 0) {
+                const sinceStart = Date.now() - fileStart
+            }
+        }
     }, 1)
+
     return function unsubscribe() {
         clearInterval(intervalId);
         subscriber.complete()
     };
 })
-const fileStart = Date.now()
+
+allTicksObservable.subscribe(allTicksSubject)
+
 // utility function to create an observable (cue) that subscribing notes can use. the subscribers (notes) will be triggered at every observables interval passing.
 const makeSubscribe = (parent: null | Cue) => {
     return function subscribe(subscriber: Subscriber<any>) {
-
-        sixtyFourthNotes.subscribe({
-            next: (sixtyFourth) => {
-                console.log('parent called', sixtyFourth % barLen)
-                if (sixtyFourth % barLen === 0) {
+        allTicksSubject.subscribe({
+            next: (aTick) => {
+                if (aTick % barLen === 0) {
                     subscriber.next({
-                        count: sixtyFourth,
+                        count: aTick,
                         sizeMs: barLen,
                         started: fileStart
                     })
@@ -174,7 +200,8 @@ export const findCue = (name: string) => {
 }
 
 const start = makeSubmodule('start', async ({ positional, parent }: { positional: (string | number)[], parent?: string }) => {
-    console.log('trying to start')
+
+
     const [str, num1, num2] = positional.map(passivelyNumberize)
     const tri = [str, num1, num2]
 
