@@ -24,6 +24,7 @@ Where BPM is the tempo of the track (Beats Per Minute).
 */
 
 const PPQ = 192
+
 const TICK_COUNTS = {
     beat: PPQ,
     eighth: PPQ / 2,
@@ -97,32 +98,41 @@ const MODE: 'air' | 'paper' = 'air'
 
 
 
-// This interval 
+// This interval is the sole source of midi ticks.
+// It is accessed through an Observerble -> Subject pairing below (or elsewhere if they've been moved).
 const masterTicks = setInterval(() => {
     const [lastTime, tick] = curr
+    // This first bit of arithmetic is to determine how many ticks have passed since the last time this interval was fired.
+    // (even though this interval is fired every millisecond, the number of ticks that have passed since the last time this interval was fired is not stable. setInterval is not a real-time clock.)
     const newTime = Date.now() - fileStart
+    // Given that amount of time, how many ticks should have passed?
     const newTicks = Math.round(newTime / msPerTick(tick))
     let diff = newTicks - tick
+    // push new ticks (which we'll calculate the numbers of, below) until we've caught up to the current time
     while (diff > 0) {
-
         const nextPush =
+            // if the last tick in the queue is defined and is a number, then add 1 and push the next
             midiTicksQueue[midiTicksQueue.length - 1] !== undefined
                 &&
                 !isNaN(midiTicksQueue[midiTicksQueue.length - 1])
-                ? midiTicksQueue[midiTicksQueue.length - 1] + 1 : (tick + 1)
+                ? midiTicksQueue[midiTicksQueue.length - 1] + 1 :
+                // if the queue is empty, then push the current tick + 1
+                (tick + 1)
 
         if (!isNaN(nextPush)) {
             midiTicksQueue.push(
                 nextPush
             )
-
         }
+        // one tick down; now we're closer to the current time
         diff -= 1
     }
-
+    // update the current time and tick count.
+    // do this here in case no ticks were pushed in the while loop above.
     curr = [newTime,
         midiTicksQueue[midiTicksQueue.length - 1] ?? tick
     ]
+
 }, 0) // watch for changes every millisecond
 
 const allTicksSubject = new Subject<number>();
@@ -131,17 +141,14 @@ const allTicksSubject = new Subject<number>();
 // The global "speed" variable determines how rapidly midi ticks are issued; however every single tick is guaranteed to be fired for subscribers to the subject of this (i.e. allTicksSubject) observable.
 const allTicksObservable = new Observable(function subscribe(subscriber: Subscriber<any>) {
     const intervalId = setInterval(() => {
+        // The ticks are pushed in in the master loop (above, unless it was moved).
         let tick1 = midiTicksQueue.pop()
         while (tick1 !== undefined && !isNaN(tick1)) {
             new Promise((res) => {
                 res(subscriber.next(tick1))
             })
-
+            // pop a tick for the next time around
             tick1 = midiTicksQueue.pop()
-
-            if (tick1 % 200 === 0) {
-                const sinceStart = Date.now() - fileStart
-            }
         }
     }, 1)
 
@@ -200,8 +207,6 @@ export const findCue = (name: string) => {
 }
 
 const start = makeSubmodule('start', async ({ positional, parent }: { positional: (string | number)[], parent?: string }) => {
-
-
     const [str, num1, num2] = positional.map(passivelyNumberize)
     const tri = [str, num1, num2]
 
