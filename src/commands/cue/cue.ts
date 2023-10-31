@@ -2,7 +2,14 @@ import { Module, SyncChildCalls } from 'nyargs';
 import { fakeCli } from 'nyargs/runtime';
 import { isStringNumNum, makeSubmodule, passivelyNumberize } from '../../lib/helpers'
 import { Observable, } from 'rxjs'
-import { Cue, makeSubscribe } from './subjects/masterTicksSubject';
+import { makeSubscribe } from './subjects/masterTicksSubject';
+
+export type Cue = [
+    name: string,
+    start: number,
+    interval: number,
+    observable: Observable<any> | null,
+]
 
 type CuesNamespace = {
     cues: Cue[]
@@ -22,7 +29,7 @@ Where BPM is the tempo of the track (Beats Per Minute).
 const startCueObservable = (name: string, [numerator, divisor]: [number, number], contextName = 'default') => {
     // this cue, a child cue, relates to the parent in that it is a fraction of the parent's interval
     const parentCue = findCue(contextName)
-    const observable = new Observable(makeSubscribe(parentCue));
+    const observable = new Observable(makeSubscribe());
     cues2Namespace.cues.push([name, numerator, divisor, observable])
 }
 
@@ -37,6 +44,16 @@ export const findCue = (name: string) => {
     return cues2Namespace.cues.find(([nm]) => nm === name) || null
 }
 
+/**
+Should work like this:
+a cue equls a "phase" from notes.
+this command should be renamed "phase" or possibly "phases". 
+start cue aphro should start a new subject that subscribes to the master ticks subject. the arguments include (at least) a length in bars.
+a new command 
+
+phases and tracks
+we need to add the track, song, entities and the track-song (or song-track) property on one ofthose. these should be stored in idb, imo.  use userTables
+*/
 const start = makeSubmodule('start', async ({ positional, parent }: { positional: (string | number)[], parent?: string }) => {
     const [str, num1, num2] = positional.map(passivelyNumberize)
     const tri = [str, num1, num2]

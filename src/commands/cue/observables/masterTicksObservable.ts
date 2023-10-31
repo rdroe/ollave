@@ -8,7 +8,7 @@ Where BPM is the tempo of the track (Beats Per Minute).
 */
 
 // at the moment, PPQ stays constant.
-// although user can change speed to increase playback speed, this PPQ var may be editabled per track in the future. this would alter the number of ticks laid down per musical entity. (e.g. a 64th note would end up on a different tick). at the time of writing this note, a 64th note is always going to fall on the same number of tick (but a different ms when the speed is tweaked).
+// although user can already change speed to increase playback speed, this PPQ var may be variable based on tempo in the future. this would alter the number of ticks laid down per musical entity. (e.g. a 64th note would end up on a different tick). at the time of writing this note, a 64th note is always going to fall on the same number of tick (but a different ms when the speed is tweaked).
 const ppq = 192
 
 // The number of ticks per musical entity dos not change. if the user wants to speed up the pace of the music, increase the "speed" variable.
@@ -47,6 +47,8 @@ const currSpeed = (tickCnt: number) => {
     return prev[1] + (targetedChange * proportion)
 }
 
+// should be changeable in the future.
+// right now speed can only be altered via the "plannedSpeedChanges" array, which does not change trackTempo.
 const trackTempo = 120
 const plannedSpeedChanges: TempoChange[] = [
     [0, 1],
