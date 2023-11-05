@@ -18,6 +18,7 @@ type CuesNamespace = {
 const cues2Namespace: CuesNamespace = {
     cues: []
 }
+
 /*
 The formula is 60000 / (BPM * PPQ) (milliseconds).
 Where BPM is the tempo of the track (Beats Per Minute).
@@ -46,13 +47,13 @@ export const findCue = (name: string) => {
 
 /**
 Should work like this:
-a cue equls a "phase" from notes.
+a cue equals a "phase" from notes.
 this command should be renamed "phase" or possibly "phases". 
 start cue aphro should start a new subject that subscribes to the master ticks subject. the arguments include (at least) a length in bars.
 a new command 
 
 phases and tracks
-we need to add the track, song, entities and the track-song (or song-track) property on one ofthose. these should be stored in idb, imo.  use userTables
+we need to add the track, song, entities and the track-song (or song-track) property on one of those. 
 */
 const start = makeSubmodule('start', async ({ positional, parent }: { positional: (string | number)[], parent?: string }) => {
     const [str, num1, num2] = positional.map(passivelyNumberize)

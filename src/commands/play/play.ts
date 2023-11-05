@@ -115,6 +115,4 @@ const module: Module<{}> = {
     submodules: Object.fromEntries([nts, st]),
 }
 
-
-
 export default module

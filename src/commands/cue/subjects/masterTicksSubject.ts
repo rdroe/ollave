@@ -4,7 +4,7 @@ export const masterTicksSubject = new Subject<number>();
 
 masterTicksObservable.subscribe(masterTicksSubject)
 
-// utility function to create an observable (cue) that subscribing notes can use. the subscribers (notes) will be triggered at every observables interval passing.
+// utility function to subscribe on a bar-length basis
 export const makeSubscribe = () => {
     return function subscribe(subscriber: Subscriber<any>) {
         masterTicksSubject.subscribe({

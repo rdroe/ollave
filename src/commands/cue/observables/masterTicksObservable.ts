@@ -26,6 +26,7 @@ type TempoChange = [
     tickCount: number,
     tempo: number
 ]
+
 const MODE: 'air' | 'paper' = 'paper'
 // by default, this system presumes that speed only changes in pre-planned ways, with a linear interpolation between the planned changes.
 // the user will have loaded those into the "plannedSpeedChanges" array.
@@ -33,12 +34,15 @@ const MODE: 'air' | 'paper' = 'paper'
 // to get the speed based on pre-planned changes, this function bases it on the ticks (which are constant).
 const currSpeed = (tickCnt: number) => {
     if (MODE !== 'paper') {
-        throw new Error('At the moment, only air paper mode is supported.')
+        throw new Error('At the moment, only paper mode is supported.')
     }
+
     if (tickCnt < 0) {
         throw new Error('tickCnt must be positive')
     }
+
     const prev = plannedSpeedChanges.find(([tick]) => tick <= tickCnt) ?? [0, trackTempo]
+
     const next = plannedSpeedChanges.find(([tick]) => tick > tickCnt) ?? [Infinity, prev[1]]
 
     const targetedChange = next[1] - prev[1]
@@ -65,7 +69,6 @@ export const tickCounts = {
 
 export const timings = {
     msCounts: {
-
         quarter: (tick: number) => msPerQuarter(tick),
         eighth: (tick: number) => msPerQuarter(tick) / 2,
         sixteenth: (tick: number) => msPerQuarter(tick) / 4,
@@ -86,12 +89,7 @@ export let curr: TimeMarker = [0,
     midiTicksQueue[midiTicksQueue.length - 1]
 ]
 
-// paper mode is the default mode. plannedSpeedChanges is used.
-// air mode is the mode where the user can change the speed in real time, or has switched over to do so (at which point the plannedSpeedChanges array is ignored).
-
-
-// This interval is the sole source of midi ticks.
-// It is accessed through an Observerble -> Subject pairing below (or elsewhere if they've been moved).
+// To a clock, push midi ticks to be ticked into a queue.
 const masterTicks = setInterval(() => {
     const [lastTime, tick] = curr
     // This first bit of arithmetic is to determine how many ticks have passed since the last time this interval was fired.
@@ -127,12 +125,12 @@ const masterTicks = setInterval(() => {
 
 }, 0) // watch for changes every millisecond
 
-// Uses the master loop (above) to multicast every single midi tick.
-// The global "speed" variable determines how rapidly midi ticks are issued; however every single tick is guaranteed to be fired for subscribers to the subject of this (i.e. allTicksSubject) observable.
+// pop ticks from theq queue. fire the ticks to the subscribers (which should be multi-casting subjects, btw)
 export const masterTicksObservable = new Observable(function subscribe(subscriber: Subscriber<any>) {
     const intervalId = setInterval(() => {
-        // The ticks are pushed in in the master loop (above, unless it was moved).
+        // pop a tick initially, if it's there.
         let tick1 = midiTicksQueue.pop()
+        // if tick was there, and it's a number, then fire it to the subscribers
         while (tick1 !== undefined && !isNaN(tick1)) {
             new Promise((res) => {
                 res(subscriber.next(tick1))
