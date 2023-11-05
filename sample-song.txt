@@ -1,11 +1,10 @@
 The following can be entered all at once into the textarea.
-
-cue start aphro 
+phase start aphro 
 play st c4,aphro 
 play st e4,aphro 
-cue start beto
+phase start beto
 play st g4,beto   
 play st a4,beto  
-cue start ceto 
+phase start ceto 
 play st e3,ceto   
 play st a3,ceto 

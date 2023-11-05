@@ -34,14 +34,14 @@ const startCueObservable = (name: string) => {
     observables[name] = new Observable(makeSubscribe());
 }
 
-const cuesHelp = {
+const phaseHelp = {
     description: 'Start a subscribable cue',
     examples: {
         'aphrodite 5 1': 'Start a starter. Subscribers will receive the elapsed cardinality (and other info) at 5 * 1 * length of a master interval'
     }
 }
 
-export const findCue = (name: string) => {
+export const findPhase = (name: string) => {
     return observables[name] || null
 }
 
@@ -61,9 +61,7 @@ const start = makeSubmodule('start', async ({ positionalNonCommands: positional 
     return startCueObservable(
         str as string
     )
-
-
-}, cuesHelp)
+}, phaseHelp)
 
 const module: Module = {
     help: {

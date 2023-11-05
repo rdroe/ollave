@@ -1,6 +1,6 @@
 import { createApp, fakeCli } from 'peprn/browser'
 import play from './commands/play/play'
-import cue from './commands/cue/cue'
+import phase from './commands/phase/phase'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
 
@@ -43,7 +43,7 @@ document.body.onload = () => {
     createApp({
         id: "cli",
         modules: {
-            play, cue, match
+            play, phase, match
         },
         catch: (e) => {
             console.error('error', e)

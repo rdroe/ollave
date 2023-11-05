@@ -1,7 +1,7 @@
 import { Module } from 'peprn/util'
 import { Subscription } from 'rxjs'
 import { playTriads, Triad } from 'src/lib/music';
-import { findCue } from '../cue/cue';
+import { findPhase } from '../phase/phase';
 import { subscriptions } from 'src/mem';
 import { z } from 'zod';
 
@@ -61,7 +61,7 @@ const module: Module = {
                 const [note, nm] = z.tuple([z.string()]).transform(([nnd]) => {
                     return parseNoteAndName(nnd)
                 }).parse(positionalNonCommands)
-                const observable = findCue(nm)
+                const observable = findPhase(nm)
                 if (!observable) return { message: `observable ${nm} not found for note ${note}` }
 
 
