@@ -1,5 +1,6 @@
 import { Subject, Subscriber, } from 'rxjs'
 import { masterTicksObservable, tickCounts, } from '../observables/masterTicksObservable'
+
 export const masterTicksSubject = new Subject<number>();
 
 masterTicksObservable.subscribe(masterTicksSubject)

@@ -119,7 +119,8 @@ const masterTicks = setInterval(() => {
     }
     // update the current time and tick count.
     // do this here in case no ticks were pushed in the while loop above.
-    curr = [newTime,
+    curr = [
+        newTime,
         midiTicksQueue[midiTicksQueue.length - 1] ?? tick
     ]
 

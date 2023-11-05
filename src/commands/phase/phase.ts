@@ -12,16 +12,11 @@ export type Cue = [
 ]
 
 
-/*
-The formula is 60000 / (BPM * PPQ) (milliseconds).
-Where BPM is the tempo of the track (Beats Per Minute).
-(i.e. a 120 BPM track would have a MIDI time of (60000 / (120 * 192)) or 2.604 ms for 1 tick.i
-*/
-
 
 // Create a new cue observable; start it; add it to the namespace
 const startCueObservable = (name: string) => {
     // make a new observable that subscribes to master ticks
+    // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
     observables[name] = new Observable(makeSubscribe());
 }
 
