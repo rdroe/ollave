@@ -1,9 +1,11 @@
-import { Module, SyncChildCalls } from 'nyargs';
-import { fakeCli } from 'nyargs/runtime';
-import { isStringNumNum, makeSubmodule, passivelyNumberize } from '../../lib/helpers'
+import { Module, makeSubmodule } from 'peprn/util';
+import { fakeCli } from 'peprn/browser';
+import { isString, isStringNumNum, passivelyNumberize } from '../../lib/helpers'
 import { Observable, } from 'rxjs'
 import { makeSubscribe } from './subjects/masterTicksSubject';
+import { z } from 'zod';
 
+import { observables } from '../../mem';
 export type Cue = [
     name: string,
     start: number,
@@ -27,11 +29,9 @@ Where BPM is the tempo of the track (Beats Per Minute).
 
 
 // Create a new cue observable; start it; add it to the namespace
-const startCueObservable = (name: string, [numerator, divisor]: [number, number], contextName = 'default') => {
-    // this cue, a child cue, relates to the parent in that it is a fraction of the parent's interval
-    const parentCue = findCue(contextName)
-    const observable = new Observable(makeSubscribe());
-    cues2Namespace.cues.push([name, numerator, divisor, observable])
+const startCueObservable = (name: string) => {
+    // make a new observable that subscribes to master ticks
+    observables[name] = new Observable(makeSubscribe());
 }
 
 const cuesHelp = {
@@ -42,7 +42,7 @@ const cuesHelp = {
 }
 
 export const findCue = (name: string) => {
-    return cues2Namespace.cues.find(([nm]) => nm === name) || null
+    return observables[name] || null
 }
 
 /**
@@ -55,55 +55,22 @@ a new command
 phases and tracks
 we need to add the track, song, entities and the track-song (or song-track) property on one of those. 
 */
-const start = makeSubmodule('start', async ({ positional, parent }: { positional: (string | number)[], parent?: string }) => {
-    const [str, num1, num2] = positional.map(passivelyNumberize)
-    const tri = [str, num1, num2]
-
-    if (!isStringNumNum([str, num1, num2])) return null
-
-    if (parent) {
-        const parentCtx = findCue(parent) ?? null
-        if (!parentCtx) {
-            return {
-                message: `Could not locate requested parent namespace "${parent}" for ${str}`
-            }
-        }
-
-        const compoundName = `${parent}.${str}`
-
-        return isStringNumNum(tri)
-            ? startCueObservable(
-                compoundName,
-                [num1, num2] as [number, number],
-                parent
-            )
-            : null
-    }
-
-    return isStringNumNum(tri)
-        ? startCueObservable(
-            str as string,
-            [num1, num2] as [number, number]
-        )
-        : null
-
-}, cuesHelp, [makeSubmodule('sub', async ({ positional }) => {
+const start = makeSubmodule('start', async ({ positionalNonCommands: positional }) => {
+    const [str] = positional.map(passivelyNumberize)
+    if (!isString(str)) return null
+    return startCueObservable(
+        str as string
+    )
 
 
-    const parent = positional.shift()
-    const result = await fakeCli.handle(`cue start ${positional.join(' ')} --parent ${parent}`)
+}, cuesHelp)
 
-    return result
-
-
-})])
-
-const module: Module<{}> = {
+const module: Module = {
     help: {
         description: 'Create a subscribable time interval',
     },
 
-    fn: async (args, childCalls: SyncChildCalls) => {
+    fn: async (args) => {
 
         return null
     },

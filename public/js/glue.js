@@ -1,2 +1,2 @@
-import { app } from './myapp.js'
-app()
+import './myapp.js'
+
