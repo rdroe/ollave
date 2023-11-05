@@ -1,16 +1,15 @@
-
 import { createApp, fakeCli } from 'peprn/browser'
 import play from './commands/play/play'
 import cue from './commands/cue/cue'
-import { match, Opts } from 'peprn'
+import { match } from 'peprn'
 import { playTriads } from './lib/music'
 
 let queue: string[] = [];
 
 function preprocessInput(snt: string): string | null {
-    console.log('preproc, que,snt', snt, queue)
+
     if (snt.trim() === '') {
-        console.log("returning null")
+
         return null;
     }
     if (snt.includes('"')) {
@@ -28,10 +27,8 @@ function preprocessInput(snt: string): string | null {
         const snt1 = snts.shift();
         queue = queue.concat(snts);
         const call = `${snt1}`;
-        console.log('returning:', call)
         return call;
     } else {
-        console.log('returning (no newlines):', snt)
         return snt;
     }
 }
@@ -39,11 +36,11 @@ function preprocessInput(snt: string): string | null {
 
 document.body.onload = () => {
     document.body.onclick = () => {
-        console.log('click')
+
         playTriads([['c4', 0.25, 0]])
         document.body.onclick = null
     }
-    console.log('doc loaded; creating app')
+
     createApp({
         id: "cli",
         modules: {
