@@ -36,8 +36,7 @@ function preprocessInput(snt: string): string | null {
 
 document.body.onload = () => {
     document.body.onclick = () => {
-
-        playTriads([['c4', 0.25, 0]])
+        playTriads([['c4', .05, 0]])
         document.body.onclick = null
     }
 
@@ -51,7 +50,7 @@ document.body.onload = () => {
         },
         preprocessInput,
         userEffects: [
-            async (args, data, appId) => {
+            async () => {
                 const shifted = queue.shift()
                 if (shifted) {
                     fakeCli(shifted, "cli")

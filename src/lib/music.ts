@@ -58,7 +58,7 @@ const playMusic = async (json: Triad[]) => {
         json.forEach((triad) => {
             const [note, t1, t2] = triad
             const start = `+${t2}`
-            const stop = `+${t2 + 0.25}`
+            const stop = `+${t2 + t1}`
             piano.keyDown({ note: note, time: start })
             piano.keyUp({ note: note, time: stop })
         })
@@ -71,7 +71,7 @@ const playMusic = async (json: Triad[]) => {
 ////////////// api for outside world
 const initAndPlay = async (json: Triad[] /*, setLink*/) => {
     samplerState.sampler = await getSampler()
-    console.log('calling playMusic')
+
     return playMusic(json)
 }
 
