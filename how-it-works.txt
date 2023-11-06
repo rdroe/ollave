@@ -1,0 +1,6 @@
+At the top level of the data model are songs. Songs have name, id, tempo, and a list of song-tracks. A song-track has a track id and a start (a start time).
+
+A track has track-phases. A track-phase has an id, speed, note-data-id, and a "follows-id". The follows-id refers to another track-phase-id under this track.
+
+note-data has id, note (e.g. c4), tags, and bar-tag. the bar tag is the primary identifying tag. tags is a rich variety of data about how to play and or locate the note relatively.
+

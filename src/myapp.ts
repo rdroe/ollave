@@ -3,6 +3,24 @@ import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
+import { songNames } from './mem'
+
+let namesResolver: Function | null = null
+const namesPromise = new Promise((res) => {
+    namesResolver = res
+});
+
+(() => {
+    import('./lib/words').then((w) => {
+        const wordList = w.words.split('\n')
+        for (let i = 0; i < 100; i++) {
+            const rand = Math.floor(Math.random() * wordList.length);
+            songNames.push(wordList[rand])
+        }
+        namesResolver()
+
+    })
+})()
 
 let queue: string[] = [];
 
@@ -42,6 +60,9 @@ document.body.onload = () => {
 
     createApp({
         id: "cli",
+        init: () => {
+
+        },
         modules: {
             play, phase, match
         },

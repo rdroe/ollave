@@ -48,7 +48,7 @@ const module: Module = {
             help: {
                 description: 'Start a subscribable cue',
                 examples: {
-                    'aphrodite': 'Start a starter. Subscribers will receive the elapsed cardinality (and other info) at 5 * 1 * length of a master interval'
+                    'aphrodite': 'start a phase'
                 }
             },
             fn: async ({ positionalNonCommands: positional }) => {

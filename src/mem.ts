@@ -8,3 +8,5 @@ export const subscriptions: {
 export const observables: {
     [key: string]: Observable<any>
 } = {}
+
+export const songNames: string[] = []
