@@ -4,12 +4,6 @@ import { Observable, } from 'rxjs'
 import { makeSubscribe } from './subjects/masterTicksSubject';
 
 import { observables } from '../../mem';
-export type Cue = [
-    name: string,
-    start: number,
-    interval: number,
-    observable: Observable<any> | null,
-]
 
 
 
