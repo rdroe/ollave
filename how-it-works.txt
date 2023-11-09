@@ -1,6 +1,23 @@
+## data
+
 At the top level of the data model are songs. Songs have name, id, tempo, and a list of song-tracks. A song-track has a track id and a start (a start time).
 
-A track has track-phases. A track-phase has an id, speed, note-data-id, and a "follows-id". The follows-id refers to another track-phase-id under this track.
+A track has track-phases. A track-phase has speed, note-data-id, and a "follows-id". The follows-id refers to another track-phase-id under this track.
 
-note-data has id, note (e.g. c4), tags, and bar-tag. the bar tag is the primary identifying tag. tags is a rich variety of data about how to play and or locate the note relatively.
+note-data block has elements with id, note (e.g. c4), tags, and bar-tag. the bar tag is the primary identifying tag. tags is a rich variety of data about how to play and or locate the note relatively.
+
+these are stored in indexed db when it's available. if it is not available, they are stored in fake-indexeddb.
+
+## runtime
+
+the very core of the runtime is an rxjs observable that emits midi ticks. the rate of these ticks is determined by the tempo of the song that is loaded.
+
+(temporary note: atm, all songs have a 120 tempo. variable tempo is a little down the road; but for now, the track-phase's speed can change the pace of emission.
+
+the observable song emits its tempoized ticks. a track is a thin layer with a start time that does not mean very much at this early developmental stage. of more meaning are phases. the track is the direct owner of the phases.
+
+the phases, which belong to a track, follow one another. when a song is first started, then, a midi-event becomes subscribable. the subscribed phases are powered by the ticks and begin to issue their note data.
+
+### phase chronology.
+- the phase with a 
 

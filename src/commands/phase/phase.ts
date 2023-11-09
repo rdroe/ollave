@@ -1,12 +1,12 @@
-import { Module, } from 'peprn/util';
-import { isString, passivelyNumberize } from '../../lib/helpers'
+
+import { Module, ParsedCli } from 'peprn/util';
+import { isNum, isString, passivelyNumberize } from '../../lib/helpers'
 import { Observable, } from 'rxjs'
 import { makeSubscribe } from './subjects/masterTicksSubject';
-
 import { observables } from '../../mem';
-
-
-
+import { browser } from 'user-tables';
+import { z } from 'zod';
+import { phaseFollowsPhase, phaseUnfollows } from 'src/mem-db';
 // Create a new cue observable; start it; add it to the namespace
 const startCueObservable = (name: string) => {
     // make a new observable that subscribes to master ticks
@@ -29,12 +29,91 @@ phases and tracks
 we need to add the track, song, entities and the track-song (or song-track) property on one of those. 
 */
 
+type Subcommand = {
+    match: (args: ParsedCli["positionalNonCommands"]) => boolean,
+    do: Module["fn"]
+}
+
+type SubcommandPatterns = {
+    [name: string]: Subcommand
+}
+
+const subcommandPatterns: SubcommandPatterns = {
+    follows: {
+        match: (positionalNonCommands) => {
+            if (positionalNonCommands.length < 3) return false
+            if (typeof positionalNonCommands[1] === "string" && ['follows', 'foll'].includes(positionalNonCommands[1])) return true
+        },
+        // phase <new-phase> follows <existing-phase>
+        // phase <new-phase> follows <existing-phase> <existing-phase> <existing-phase>
+        // phase <new-phase> foll <existing-phase>
+        // phase <new-phase> foll <existing-phase> <existing-phase> <existing-phase>
+        // phase <existing-phase> foll <existing-phase> [--off=<boolean>]
+        // phase <existing-phase> foll <existing-phase> <existing-phase> <existing-phase> [--off=<boolean>]
+        // phase <existing-phase> foll --off=<boolean>
+        // if the new-phase track-phase does not already exist, create it.
+        // if the new-phase track-phase does not already follow the existing-phase, add a follows-id (for each, if a list)
+        // if "-off", and  the new-phase track-phase already follows the existing-phase, remove the follows-id (for each, if a list)
+        // if "-off", and only one phase argument, remove all follows-ids from the new-phase track-phase
+        do: async ({ positionalNonCommands, off }: ParsedCli & { off: boolean }) => {
+            const [rawSubject, _, ...rawObjects] = positionalNonCommands
+            const {
+                subject,
+                objects,
+            } = z.object({
+                ["parsing follows args"]: z.object({
+                    subject: z.string(),
+                    objects: z.array(z.string())
+                })
+            }
+            ).parse({
+                ["parsing follows args"]: {
+                    subject: rawSubject,
+                    objects: rawObjects ?? []
+                }
+            })['parsing follows args']
+
+            const { off: offParsed = false } = z.object({
+                off: z.boolean().optional()
+            }).parse({
+                off
+            })
+
+            if (off) {
+                return phaseUnfollows(subject, objects)
+            }
+
+            return phaseFollowsPhase(subject, objects)
+        }
+
+
+    }
+}
 
 const module: Module = {
     help: {
         description: 'Create a subscribable time interval',
     },
     fn: async (args) => {
+
+        const matched = Object.entries(subcommandPatterns).find(([name, scp]: [name: string, scp: Subcommand]) => {
+            if (scp.match(args.positionalNonCommands)) {
+                return true
+            }
+        })
+
+        if (matched) {
+            return matched[1].do(args)
+        }
+
+        const [phaseName, barCnt] = args.positionalNonCommands
+
+        if (isString(phaseName) && isNum(barCnt)) {
+            return null
+        }
+
+        console.error('no match for cmd phase')
+
         return null
     },
     submodules: {

@@ -1,9 +1,11 @@
 import { createApp, fakeCli } from 'peprn/browser'
 import play from './commands/play/play'
 import phase from './commands/phase/phase'
+import song from './commands/song/song'
+
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
-import { songNames } from './mem'
+import { currentSong, songNames } from './mem'
 
 let namesResolver: Function | null = null
 const namesPromise = new Promise((res) => {
@@ -60,11 +62,14 @@ document.body.onload = () => {
 
     createApp({
         id: "cli",
-        init: () => {
+        init: async () => {
+            await namesPromise
+            fakeCli('song init', 'cli').then(() => {
 
+            })
         },
         modules: {
-            play, phase, match
+            play, phase, song, match
         },
         catch: (e) => {
             console.error('error', e)
