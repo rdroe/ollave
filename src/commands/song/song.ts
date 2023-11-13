@@ -1,8 +1,9 @@
 import { Module } from 'peprn/util'
-import { song, track, songNames } from '../../mem'
+import { mem } from '../../mem'
 import { browser } from 'user-tables'
 import { fakeCli } from 'peprn/browser'
 import { userTables } from 'user-tables/browser'
+const { song, track, songNames } = mem()
 
 type SongRecord = {
     name: string,

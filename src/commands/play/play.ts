@@ -2,9 +2,9 @@ import { Module } from 'peprn/util'
 import { Subscription } from 'rxjs'
 import { playTriads, Triad } from 'src/lib/music';
 import { findPhase } from '../phase/phase';
-import { subscriptions } from 'src/mem';
+import { mem } from '../../mem';
 import { z } from 'zod';
-
+const { subscriptions } = mem()
 type Fraction = [number, number]
 
 // in-memory namespace for notes

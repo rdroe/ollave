@@ -2,10 +2,12 @@ import { createApp, fakeCli } from 'peprn/browser'
 import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import song from './commands/song/song'
-
+import bars from './commands/bars/bars'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
-import { currentSong, songNames } from './mem'
+import { mem } from './mem'
+const { songNames } = mem()
+
 
 let namesResolver: Function | null = null
 const namesPromise = new Promise((res) => {
@@ -26,7 +28,7 @@ const namesPromise = new Promise((res) => {
 
 let queue: string[] = [];
 
-function preprocessInput(snt: string): string | null {
+export function preprocessInput(snt: string): string | null {
 
     if (snt.trim() === '') {
 
@@ -69,7 +71,11 @@ document.body.onload = () => {
             })
         },
         modules: {
-            play, phase, song, match
+            play, phase, song, match, bars, test: {
+                fn: async () => {
+                    playTriads([['cb4', 2, 0]])
+                }
+            }
         },
         catch: (e) => {
             console.error('error', e)

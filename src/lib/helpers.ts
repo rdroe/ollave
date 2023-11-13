@@ -1,3 +1,4 @@
+import { isNumber } from "peprn/util"
 
 export const isString = (arg: any): arg is string => {
     return typeof arg === 'string'
@@ -11,7 +12,7 @@ export const isStringNumNum = (arr: any[]): arr is [string, number, number] => {
 
 
 
-
+export const peprnIsNum = isNumber
 
 export const passivelyNumberize = (arg: string | number): number | string => {
     if (typeof arg === 'number') return arg

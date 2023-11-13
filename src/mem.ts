@@ -1,46 +1,54 @@
 import { Observable, Subscription } from "rxjs"
-
-export const subscriptions: {
-    [key: string]: Subscription
-} = {}
-
-export const observables: {
-    [key: string]: Observable<any>
-} = {}
-
-export const songNames: string[] = []
-
-export const song: {
-    name: string | null
-    id: null | number,
-    extraTracks?: {
-        [id: number]: string | number
+type Mem = {
+    subscriptions: {
+        [key: string]: Subscription
     }
-} = {
-    name: null,
-    id: null
+    observables: {
+        [key: string]: Observable<any>
+    }
+    songNames: string[]
+    song: {
+        name: string | null
+        id: null | number,
+        extraTracks?: {
+            [id: number]: string | number
+        }
+    }
+    track: {
+        id: number | null
+        start: number | null
+    }
+    phases: {
+        [phaseName: string]: {
+            id: number | null;
+            "temp-id": number | null;
+            "follows-ids": number[];
+        }
+    }
+    notesByBar: {
+        [barTag: string]: {
+            barTag: string;
+            note: string;
+            tags: string[];
+        }[]
+    },
 }
 
-export const track: {
-    id: number | null
-    start: number | null
-} = {
-    id: null,
-    start: null
-}
+const mem_: Mem = {
+    subscriptions: {},
+    observables: {},
+    song: {
+        name: null,
+        id: null
+    },
+    track: {
+        id: null,
+        start: null
+    },
+    phases: {},
+    notesByBar: {},
+    songNames: []
+};
 
-export const phases: {
-    [phaseName: string]: {
-        id: number | null;
-        "temp-id": number | null;
-        "follows-ids": number[];
-    }
-} = {}
-
-export const notesByBar: {
-    [barTag: string]: {
-        "bar-tag": string;
-        note: string;
-        tags: string[];
-    }[]
-} = {}
+(window as any).mem = mem_
+export const mem = () => (window as any).mem as Mem
