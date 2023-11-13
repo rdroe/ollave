@@ -18,10 +18,6 @@ export const msPerQuarter = (tick: number) => {
     return 60000 / (trackTempo * ppq) * newSpeed
 }
 
-const msPerBeat = (
-    tick: number
-) => msPerQuarter(tick) * ppq
-
 type TempoChange = [
     tickCount: number,
     tempo: number
@@ -57,6 +53,7 @@ const trackTempo = 120
 const plannedSpeedChanges: TempoChange[] = [
     [0, 1],
 ]
+
 export const tickCounts = {
     bar: ppq * 4,
     quarter: ppq,
@@ -65,7 +62,7 @@ export const tickCounts = {
     thirtysecond: ppq / 8,
     sixtyfourth: ppq / 16,
     oneTwentyEigth: ppq / 32,
-}
+};
 
 export const timings = {
     msCounts: {
@@ -78,8 +75,7 @@ export const timings = {
     }
 }
 
-console.log('seconds in bar', msPerBeat(0) * 4)
-console.log('beat length', msPerBeat)
+
 console.log('timings', timings)
 
 type TimeMarker = [time: number, quotient: number]
@@ -87,7 +83,11 @@ type TimeMarker = [time: number, quotient: number]
 const midiTicksQueue: number[] = [0]
 export let curr: TimeMarker = [0,
     midiTicksQueue[midiTicksQueue.length - 1]
-]
+];
+(window as any).tickCounts = tickCounts;
+(window as any).curr = curr;
+
+
 
 // To a clock, push midi ticks to be ticked into a queue.
 const masterTicks = setInterval(() => {

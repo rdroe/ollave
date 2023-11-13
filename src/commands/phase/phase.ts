@@ -1,25 +1,44 @@
 import { Module, ParsedCli } from 'peprn/util';
 import { isNum, isString, passivelyNumberize } from '../../lib/helpers'
 import { Observable, } from 'rxjs'
-import { makeSubscribe } from './subjects/masterTicksSubject';
+import { makeTickSubscribe } from './subjects/masterTicksSubject';
 import { mem } from '../../mem';
-
-import { browser } from 'user-tables';
+import { curr } from './observables/masterTicksObservable'
 import { z } from 'zod';
 import { getAllPhaseBarNotes, getAllPhaseBars, phaseCount, phaseFollowsPhase, phaseUnfollows } from 'src/mem-db';
 import { SubcommandPatterns, runSubcommandsOrNull } from 'src/lib/subcommands';
+import { mapSongToMidiTicks } from 'src/mapSongToTicks';
+import { playTriads } from 'src/lib/music';
 const { observables, phases } = mem()
 // Create a new cue observable; start it; add it to the namespace
 const startCueObservable = () => {
+
     // make a new observable that subscribes to master ticks
     // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
 
     const song = mem().song.name
+
     if (!song) {
         throw new Error(`Song not initialized`)
     }
-    observables[song] = new Observable(makeSubscribe());
+    const midiMappedNotes = mapSongToMidiTicks()
+    console.log(curr)
+    observables[song] = new Observable(makeTickSubscribe(curr[0]))
+    console.log('start tick', curr[0])
+    observables[song].subscribe({
+        next: ({ tick }) => {
+            if (tick % 192 === 0) {
+                console.log("tick", tick)
+            }
+            midiMappedNotes[tick]?.forEach((note) => {
+                console.log("playing triad", note)
+                playTriads([[note.note, 0.25, 1]])
+            })
+        }
+    })
+    return midiMappedNotes
 }
+
 
 export const findPhase = (name: string) => {
     return observables[name] || null
@@ -116,14 +135,12 @@ const module: Module = {
     submodules: {
         start: {
             help: {
-                description: 'Start a subscribable cue',
+                description: 'Start playing the song',
                 examples: {
-                    'aphrodite': 'start a phase'
+                    '': 'start playing the song'
                 }
             },
-            fn: async ({ positionalNonCommands: positional }) => {
-                const [str] = positional.map(passivelyNumberize)
-                if (!isString(str)) return null
+            fn: async () => {
                 return startCueObservable()
             }
         }

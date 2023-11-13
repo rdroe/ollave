@@ -1,10 +1,5 @@
 The following can be entered all at once into the textarea.
-phase start aphro 
-play st c4,aphro 
-play st e4,aphro 
-phase start beto
-play st g4,beto   
-play st a4,beto  
-phase start ceto 
-play st e3,ceto   
-play st a3,ceto 
+phase aphrodite 10
+bars aphrodite fill Em,3 Am,3
+phase aphrodite 20
+phase start

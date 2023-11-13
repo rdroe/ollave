@@ -1,5 +1,5 @@
 import { Observable, Subscription } from "rxjs"
-type Mem = {
+export type Mem = {
     subscriptions: {
         [key: string]: Subscription
     }
@@ -52,3 +52,4 @@ const mem_: Mem = {
 
 (window as any).mem = mem_
 export const mem = () => (window as any).mem as Mem
+
