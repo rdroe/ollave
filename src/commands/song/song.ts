@@ -3,32 +3,28 @@ import { mem } from '../../mem'
 import { browser } from 'user-tables'
 import { fakeCli } from 'peprn/browser'
 import { userTables } from 'user-tables/browser'
-const { song, track, songNames } = mem()
-
-type SongRecord = {
+import { startCueObservable } from './observables'
+const { songNames } = mem()
+// kebab-case ids props; camelCase data props
+export type SongRecord = {
+    id?: number,
     name: string,
     tempo: number,
     "track-ids": number[]
 }
 
-type TrackRecord = {
+export type TrackRecord = {
+    id?: number,
     start: number,
     "phase-ids": number[],
 }
 
-export type TrackPhaseRecord = {
-    name: string,
+export type PhaseRecord = {
+    id?: number,
     "follows-ids": number[],
     speed: number,
-    "note-ids": number[],
+    barSizeMultiplier: number
 }
-
-type NoteRecord = {
-    note: string,
-    "bar-tag": string,
-    tags: string[]
-}
-
 
 export default {
     fn: async () => {
@@ -38,15 +34,21 @@ export default {
         init: {
             fn: async () => {
                 const shiftedOff = songNames.shift()
-                song.name = shiftedOff
+
+
                 const data: SongRecord = {
                     name: shiftedOff,
                     tempo: 120,
                     "track-ids": []
                 }
-                song.id = await browser.userTables.add('song', {
+                const createdId = await browser.userTables.add('song', {
                     data
                 })
+
+                mem().song = {
+                    id: createdId,
+                    ...data
+                }
                 await fakeCli(`song track init`, 'cli')
             }
         },
@@ -58,38 +60,53 @@ export default {
                 init: {
                     fn: async () => {
 
-                        if (song.id === null) {
-                            console.error("Error; no current song")
-                            return null
-                        }
+
                         const trackRecord: TrackRecord = {
                             "start": 0,
                             "phase-ids": []
                         }
                         const trackId = await browser.userTables.add('track', { data: trackRecord })
                         const songId = await browser.userTables.update('song', {
-                            id: song.id,
+                            id: mem().song.id,
                             data: {
                                 "song-tracks": [[
                                     trackId, 0
                                 ]]
                             },
-
                         }, {})
 
-                        const coll = await (userTables.where('song', { id: song.id }))
+                        const coll = await (userTables.where('song', { id: mem().song.id }))
                         const fetched = await coll.first()
 
                         const { "song-tracks": songTracks } = fetched.data
                         if (songTracks) {
-                            track.id = songTracks[0][0]
+                            mem().track = {
+                                id: songTracks[0][0],
+                                start: 0,
+                                "phase-ids": []
+                            }
                         } else {
-                            console.error("no tracks for song", song.id)
+                            console.error("no tracks for song", mem().song.id)
                         }
-                        console.log('currentSongTrack', track)
+                        console.log('currentSongTrack', mem().track.id)
                     }
+                },
+
+
+
+            }
+        },
+        start: {
+            help: {
+                description: 'Start playing the song',
+                examples: {
+                    '': 'start playing the song'
                 }
+            },
+            fn: async () => {
+                return startCueObservable()
             }
         }
+
     }
 } as Module

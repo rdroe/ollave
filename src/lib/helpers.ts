@@ -42,3 +42,7 @@ export const randId = (prefix = "", length = 10) => {
 export function randomNumber(min: number, max: number) {
     return Math.floor(Math.random() * (max - min) + min);
 }
+
+export function randomInt(min: number = 1, max: number = 900000) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+}

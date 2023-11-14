@@ -1,44 +1,10 @@
 import { Module, ParsedCli } from 'peprn/util';
-import { isNum, isString, passivelyNumberize } from '../../lib/helpers'
-import { Observable, } from 'rxjs'
-import { makeTickSubscribe } from './subjects/masterTicksSubject';
+import { isNum, isString } from '../../lib/helpers'
 import { mem } from '../../mem';
-import { curr } from './observables/masterTicksObservable'
 import { z } from 'zod';
-import { getAllPhaseBarNotes, getAllPhaseBars, phaseCount, phaseFollowsPhase, phaseUnfollows } from 'src/mem-db';
+import { getAllPhaseBarNotes, phaseCount, phaseFollowsPhase, phaseUnfollows } from 'src/mem-db';
 import { SubcommandPatterns, runSubcommandsOrNull } from 'src/lib/subcommands';
-import { mapSongToMidiTicks } from 'src/mapSongToTicks';
-import { playTriads } from 'src/lib/music';
-const { observables, phases } = mem()
-// Create a new cue observable; start it; add it to the namespace
-const startCueObservable = () => {
-
-    // make a new observable that subscribes to master ticks
-    // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
-
-    const song = mem().song.name
-
-    if (!song) {
-        throw new Error(`Song not initialized`)
-    }
-    const midiMappedNotes = mapSongToMidiTicks()
-    console.log(curr)
-    observables[song] = new Observable(makeTickSubscribe(curr[0]))
-    console.log('start tick', curr[0])
-    observables[song].subscribe({
-        next: ({ tick }) => {
-            if (tick % 192 === 0) {
-                console.log("tick", tick)
-            }
-            midiMappedNotes[tick]?.forEach((note) => {
-                console.log("playing triad", note)
-                playTriads([[note.note, 0.25, 1]])
-            })
-        }
-    })
-    return midiMappedNotes
-}
-
+const { observables } = mem()
 
 export const findPhase = (name: string) => {
     return observables[name] || null
@@ -132,19 +98,6 @@ const module: Module = {
         return null
 
     },
-    submodules: {
-        start: {
-            help: {
-                description: 'Start playing the song',
-                examples: {
-                    '': 'start playing the song'
-                }
-            },
-            fn: async () => {
-                return startCueObservable()
-            }
-        }
-    }
 }
 
 export default module

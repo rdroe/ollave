@@ -7,19 +7,28 @@ import { Chord, Note } from 'tonal'
 import { z } from 'zod'
 
 const { notesByBar } = mem()
-
+const isRestArg = (arg: any): arg is string => {
+    return isString(arg)
+        && (
+            arg === 'rest'
+            || arg === '[]'
+            || arg === '~'
+            || arg === '_'
+        )
+}
 const isNoteName = (nm: any): nm is string => {
     return isString(nm) && nm.toLocaleLowerCase() === nm && peprnIsNum(nm[nm.length - 1]) && !!Note.get(nm)?.pc
 }
 
 const isNoteNameArray = (arr: any[]): arr is string[] => {
-    return arr.every(isNoteName)
+    return arr.every((arg) => isNoteName(arg) || isRestArg(arg))
 }
+
 const isNoteArray = (arr: any[]): arr is string[] => {
-    return arr.every(isNoteCsvArg)
+    return arr.every((arg) => isNoteCsvArg || isRestArg(arg))
 }
 const isChordArray = (arr: any[]): arr is string[] => {
-    return arr.every(isChordCsvArg)
+    return arr.every((arg) => isChordCsvArg(arg) || isRestArg(arg))
 }
 
 const parseNoteName = (nm: string): [name: string, octave: number] => {
@@ -62,6 +71,7 @@ const isChordCsvArg = (str: string): str is string => {
 
     return true
 }
+
 const isNoteCsvArg = (str: string): str is string => {
 
     if (!isCsvArg(str)) return false
@@ -92,51 +102,55 @@ const subcommands: SubcommandPatterns = {
 
         },
         do: async ({ positionalNonCommands }) => {
-
             const [phaseName, _, ...rawObjects] = positionalNonCommands
             if (isString(phaseName)) {
-                console.log("all notes", notesByBar)
+
                 const bars = getAllPhaseBars(phaseName)
 
                 if (bars.length === 0) throw new Error(`Phase ${phaseName} has no bars`)
 
                 let noteGroups: (ReturnType<typeof Note['get']>)[][] = []
                 if (isChordArray(rawObjects)) {
-
                     rawObjects.forEach((chordCsvArg) => {
+                        if (isRestArg(chordCsvArg)) {
+                            noteGroups.push([])
+                            return
+                        }
                         const [chordName, octave] = parseCsvArg(chordCsvArg)
                         const notes = parseChordCsvArg(chordCsvArg)
                         noteGroups.push(notes.map((note) => Note.get(note)))
-
                     })
                 } else if (isNoteNameArray(rawObjects)) {
 
                     rawObjects.forEach((noteName) => {
+                        if (isRestArg(noteName)) {
+                            noteGroups.push([])
+                            return
+                        }
+                        if (isRestArg(noteName)) return
                         const noteData = Note.get(noteName)
 
                         noteGroups.push([noteData])
                     })
                 } else if (isNoteArray(rawObjects)) {
-
                     rawObjects.forEach((noteCsvArg) => {
+                        if (isRestArg(noteCsvArg)) {
+                            noteGroups.push([])
+                            return
+                        }
                         const noteData = parseNoteCsvArg(noteCsvArg)
-
                         noteGroups.push(noteData)
                     })
                 }
-
 
                 let noteGroupToUse = 0
                 const newGroupName = randId("", 3)
                 bars.forEach((barTag) => {
                     const barNotes = noteGroups[noteGroupToUse]
                     noteGroupToUse = (noteGroupToUse + 1) % noteGroups.length
-
                     notesByBar[barTag].push(
                         ...barNotes.map((noteProperties) => {
-                            console.log("note properties", noteProperties)
                             const { name, oct, letter, acc } = noteProperties
-
                             return {
                                 barTag,
                                 note: `${letter}${acc}${oct}`,
@@ -144,10 +158,7 @@ const subcommands: SubcommandPatterns = {
                             }
                         }))
                 })
-
-
             }
-
         }
     },
 }

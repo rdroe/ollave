@@ -1,7 +1,8 @@
 // using the currently loaded song, do any of the following.
 // updated both mem.ts and the database.
-import { randId } from "./lib/helpers"
+import { randId, randomInt } from "./lib/helpers"
 import { mem } from "./mem"
+import { StartEndTuple, phaseBeginningsAndEnds } from "./startEndData"
 const { phases, notesByBar } = mem()
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>
@@ -18,11 +19,12 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
 
         // if subject does not exist, create it with a default note block (1 empty bar) and the specified  follows-ids.
     } else {
-
         phases[subject] = {
             id: null,
             "temp-id": null,
-            "follows-ids": objects.map((obj) => phases[obj].id)
+            "follows-ids": objects.map((obj) => phases[obj].id),
+            barSizeMultiplier: null,
+            speed: null
         }
     }
 }
@@ -38,21 +40,46 @@ const sortByNumberAfterColon = (a: string, b: string) => {
     return aNumber - bNumber
 }
 
+export const startEndData = (phaseName: string): StartEndTuple[] => {
+    const startEndData = phaseBeginningsAndEnds()
+    return startEndData[phaseName] || []
+}
+
+export const lastTick = () => {
+    const songStartEndData = phaseBeginningsAndEnds()
+    const lastTick = Object.values(songStartEndData).reduce((acc, curr) => {
+        const lastPhaseTick = curr[curr.length - 1][1]
+        return Math.max(acc, lastPhaseTick)
+    }, 0)
+    return lastTick
+}
+
+
 export const getAllPhaseBars = (phase: string) => {
     const lookedUp = Object.keys(notesByBar).filter((barTag) => barTag.startsWith(`${phase}:`)).sort(sortByNumberAfterColon)
     return lookedUp
 }
+
 export const getAllPhaseBarNotes = (phase: string) => {
     const barNames = getAllPhaseBars(phase)
     return barNames.map((barName) => notesByBar[barName])
 }
+export const getFollowingPhases = (phaseName: string) => {
+    const phase = mem().phases[phaseName]
+    const followsPhases = Object.entries(mem().phases).filter((
+        [,
+            { "follows-ids": followsIds }
+        ]) => phase.id !== null && followsIds.includes(phase.id) || phase["temp-id"] !== null && followsIds.includes(phase["temp-id"]))
+    return followsPhases
+}
 export async function phaseCount(phase: string, size: number) {
-
     if (!phases[phase]) {
         phases[phase] = {
             id: null,
-            "temp-id": Math.random(),
+            "temp-id": randomInt(),
             "follows-ids": [],
+            barSizeMultiplier: null,
+            speed: null
         }
     }
     // get all the phase bars.

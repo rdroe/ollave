@@ -1,6 +1,6 @@
-import { msPerQuarter, tickCounts } from './commands/phase/observables/masterTicksObservable'
+import { tickCounts } from './commands/phase/observables/masterTicksObservable'
 import { Mem, mem } from './mem'
-import { getAllPhaseBarNotes } from './mem-db'
+import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
 
 type MidiMap = {
     [tick: number]: {
@@ -34,7 +34,9 @@ export const mapSongToMidiTicks = () => {
 
     return midiMap
 }
+
 const DEFAULT_STRUM_MODE = true
+
 function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: MidiMap[] = []) {
 
     const barTickFactor = tickCounts.bar
@@ -46,7 +48,8 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
     const phaseMidi: MidiMap = {}
     // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick. 
     phaseBars.forEach((barNotes, barIndex) => {
-        const thisBarOffset = barIndex * barTickFactor
+        // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
+        const thisBarOffset = barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
         barNotes.forEach((note, idx) => {
             if (DEFAULT_STRUM_MODE) {
                 const thisNoteOffset = idx * sixtyFourthNoteTickFactor
@@ -62,17 +65,8 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
             }
         })
     })
-
-    if (phase["follows-ids"].length === 0) {
-        collector.push(phaseMidi)
-        return
-    }
-
-
-    const followsPhases = Object.entries(mem().phases).filter((
-        [phaseName,
-            { id, "temp-id": tempId }
-        ]) => id === phase.id || tempId === phase["temp-id"])
+    collector.push(phaseMidi)
+    const followsPhases = getFollowingPhases(phaseName)
 
     followsPhases.forEach(([followsPhaseName, followsPhase]) => {
         mapPhaseTicks(followsPhaseName, followsPhase, phaseBars.length * barTickFactor + barTickFactor, collector)

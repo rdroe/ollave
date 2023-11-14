@@ -1,4 +1,5 @@
 import { Observable, Subscription } from "rxjs"
+import { PhaseRecord, SongRecord, TrackRecord } from "./commands/song/song"
 export type Mem = {
     subscriptions: {
         [key: string]: Subscription
@@ -7,22 +8,11 @@ export type Mem = {
         [key: string]: Observable<any>
     }
     songNames: string[]
-    song: {
-        name: string | null
-        id: null | number,
-        extraTracks?: {
-            [id: number]: string | number
-        }
-    }
-    track: {
-        id: number | null
-        start: number | null
-    }
+    song: Exclude<SongRecord, "id"> & { id: number } | null,
+    track: Exclude<TrackRecord, "id"> & { id: number } | null,
     phases: {
-        [phaseName: string]: {
-            id: number | null;
-            "temp-id": number | null;
-            "follows-ids": number[];
+        [phaseName: string]: PhaseRecord & {
+            "temp-id": number | null
         }
     }
     notesByBar: {
@@ -37,14 +27,8 @@ export type Mem = {
 const mem_: Mem = {
     subscriptions: {},
     observables: {},
-    song: {
-        name: null,
-        id: null
-    },
-    track: {
-        id: null,
-        start: null
-    },
+    song: null,
+    track: null,
     phases: {},
     notesByBar: {},
     songNames: []
