@@ -9,13 +9,22 @@ Where BPM is the tempo of the track (Beats Per Minute).
 
 // at the moment, PPQ stays constant.
 // although user can already change speed to increase playback speed, this PPQ var may be variable based on tempo in the future. this would alter the number of ticks laid down per musical entity. (e.g. a 64th note would end up on a different tick). at the time of writing this note, a 64th note is always going to fall on the same number of tick (but a different ms when the speed is tweaked).
-const ppq = 192
+const ppq = 128 // 128 matches GarageBand's default
 
 // The number of ticks per musical entity dos not change. if the user wants to speed up the pace of the music, increase the "speed" variable.
 // This function calculated how many ms each tick should last. notice it accesess the capable-of-changing-in-real-time "speed" variable.
-export const msPerQuarter = (tick: number) => {
+export const msPerTick = (tick: number) => {
     const newSpeed = currSpeed(tick)
-    return 60000 / (trackTempo * ppq) * newSpeed
+    const msPer =
+        60000 / (trackTempo * ppq) * newSpeed
+    return msPer
+}
+
+export const msPerQuarterNote = (tick: number) => {
+
+    const msPerMidiTick = msPerTick(tick)
+    const msPerQuarterNote = msPerMidiTick * ppq
+    return msPerQuarterNote
 }
 
 type TempoChange = [
@@ -66,12 +75,12 @@ export const tickCounts = {
 
 export const timings = {
     msCounts: {
-        quarter: (tick: number) => msPerQuarter(tick),
-        eighth: (tick: number) => msPerQuarter(tick) / 2,
-        sixteenth: (tick: number) => msPerQuarter(tick) / 4,
-        thirtysecond: (tick: number) => msPerQuarter(tick) / 8,
-        sixtyfourth: (tick: number) => msPerQuarter(tick) / 16,
-        oneTwentyEigth: (tick: number) => msPerQuarter(tick) / 32
+        quarter: (tick: number) => msPerQuarterNote(tick),
+        eighth: (tick: number) => msPerQuarterNote(tick) / 2,
+        sixteenth: (tick: number) => msPerQuarterNote(tick) / 4,
+        thirtysecond: (tick: number) => msPerQuarterNote(tick) / 8,
+        sixtyfourth: (tick: number) => msPerQuarterNote(tick) / 16,
+        oneTwentyEigth: (tick: number) => msPerQuarterNote(tick) / 32
     }
 }
 
@@ -96,7 +105,7 @@ const masterTicks = setInterval(() => {
     // (even though this interval is fired every millisecond, the number of ticks that have passed since the last time this interval was fired is not stable. setInterval is not a real-time clock.)
     const newTime = Date.now() - fileStart
     // Given that amount of time, how many ticks should have passed?
-    const newTicks = Math.round(newTime / msPerQuarter(tick))
+    const newTicks = Math.round(newTime / msPerTick(tick))
     let diff = newTicks - tick
     // push new ticks (which we'll calculate the numbers of, below) until we've caught up to the current time
     while (diff > 0) {

@@ -4,6 +4,8 @@ import { browser } from 'user-tables'
 import { fakeCli } from 'peprn/browser'
 import { userTables } from 'user-tables/browser'
 import { startCueObservable } from './observables'
+import { downloadNotes } from 'src/lib/midi'
+import { downloadSong } from 'src/download'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props
 export type SongRecord = {
@@ -91,9 +93,6 @@ export default {
                         console.log('currentSongTrack', mem().track.id)
                     }
                 },
-
-
-
             }
         },
         start: {
@@ -105,6 +104,11 @@ export default {
             },
             fn: async () => {
                 return startCueObservable()
+            }
+        },
+        dl: {
+            fn: async () => {
+                return downloadSong()
             }
         }
 

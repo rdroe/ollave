@@ -2,7 +2,7 @@ import { tickCounts } from './commands/phase/observables/masterTicksObservable'
 import { Mem, mem } from './mem'
 import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
 
-type MidiMap = {
+export type MidiMap = {
     [tick: number]: {
         note: string,
         velocity?: number,
