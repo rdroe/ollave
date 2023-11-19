@@ -6,6 +6,17 @@ import { z } from 'zod'
 // Mode.triads("major", "C");
 // => ["C", "Dm", "Em", "F", "G", "Am", "Bdim"];
 
+const rotations = <T>(arr: Array<T>): T[][] => {
+    const len = arr.length
+    let rotation = 1
+    const rotations: T[][] = []
+    while (rotation < len) {
+        const rotated = Collection.rotate(rotation, arr)
+        rotations.push(rotated)
+        rotation++
+    }
+    return rotations
+}
 
 export default {
     fn: async () => {
@@ -69,7 +80,7 @@ export default {
                                     fn: async (args, moduleCalls) => {
                                         const chordName = await moduleCalls['chord $']
                                         const notes = Chord.get(chordName)?.notes || []
-                                        const notesPermuted = Collection.permutations(notes)
+                                        const notesPermuted = rotations(notes)
                                         const aliases = notesPermuted.map((notes1) => Chord.detect(notes1)).flat()
                                         console.log('aliases', aliases)
                                         const scaleNames = notesPermuted.map((notes1) => Scale.detect(notes1)).flat()
@@ -92,22 +103,47 @@ export default {
                                 const scaleNames = Scale.detect(notes)
                                 return { scaleNames }
 
-                                /*
-  "scaleNames": [
-    "C minor",
-    "C major blues",
-    "C minor blues",              */
                             }
                         }
                     }
                 },
 
-                next: {
+                get: {
                     fn: async (args, moduleCalls) => {
-                        const chordName = await moduleCalls['chord $']
-
-                        return Chord.get(chordName)
-                    }
+                        const [chordName] = await moduleCalls['chord $']
+                        if (!chordName) return null
+                        const gotten = Chord.get(chordName)
+                        if (chordName.includes('/')) {
+                            return 'SLASH_CHORD'
+                        }
+                        console.log('chordName', chordName)
+                        return gotten
+                    },
+                    submodules: {
+                        notes: {
+                            fn: async (args, moduleCalls) => {
+                                const [chordName] = await moduleCalls['chord $']
+                                const got = await moduleCalls['chord $ get']
+                                if (got === 'SLASH_CHORD') {
+                                    const [main, bass] = chordName.split('/')
+                                    if (!main || !bass) return null
+                                    const mainNotes = Chord.get(main)?.notes || []
+                                    const permutations = Collection.permutations(mainNotes)
+                                    const bassNames = Chord.get(bass)?.notes || []
+                                    const bassNote = bassNames[0]
+                                    const bassLetter = Note.get(bassNote).letter
+                                    const permutedNotes = permutations.find((notes) => {
+                                        return notes[0].startsWith(bassLetter)
+                                    })
+                                    if (!permutedNotes) {
+                                        throw new Error(`Could not ad-hoc provide the slash chord ${chordName}`)
+                                    }
+                                    return permutedNotes
+                                }
+                                return got?.notes || []
+                            }
+                        }
+                    },
                 }
             }
         }
