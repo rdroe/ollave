@@ -3,6 +3,7 @@ import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import song from './commands/song/song'
 import bars from './commands/bars/bars'
+import chord from './commands/chord/chord'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
 import { mem } from './mem'
@@ -29,9 +30,7 @@ const namesPromise = new Promise((res) => {
 let queue: string[] = [];
 
 export function preprocessInput(snt: string): string | null {
-
     if (snt.trim() === '') {
-
         return null;
     }
     if (snt.includes('"')) {
@@ -71,7 +70,7 @@ document.body.onload = () => {
             })
         },
         modules: {
-            play, phase, song, match, bars, test: {
+            chord, play, phase, song, match, bars, test: {
                 fn: async () => {
                     playTriads([['cb4', 2, 0]])
                 }

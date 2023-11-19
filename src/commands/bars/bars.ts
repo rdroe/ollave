@@ -97,6 +97,7 @@ const isChordName = (nm: any) => {
 const subcommands: SubcommandPatterns = {
     fill: {
         match: (args) => {
+
             if (args.positionalNonCommands.length < 2) return false
             if (typeof args.positionalNonCommands[1] === "string" && ['fill', 'f'].includes(args.positionalNonCommands[1])) return true
 
