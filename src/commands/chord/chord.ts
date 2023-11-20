@@ -1,6 +1,6 @@
 import { fakeCli } from 'peprn/browser'
-import { Module } from 'peprn/util'
-import { Chord, Note, Scale, Mode, Collection } from 'tonal'
+import { Module, awaitAll } from 'peprn/util'
+import { Chord, Note, Scale, Mode, Collection, Progression } from 'tonal'
 import { z } from 'zod'
 
 // Mode.triads("major", "C");
@@ -17,6 +17,51 @@ const rotations = <T>(arr: Array<T>): T[][] => {
     }
     return rotations
 }
+const whereTriad = (scaleNames: string[], aliases: string[]) => {
+
+    const tonicScaleArr: [tonic: string, scaleName: string][] = z.array(z.string()).transform((strs) => {
+        return strs.map((str) => {
+            const split = str.split(' ')
+            const tonic = split.shift()
+            return [tonic, split.join(' ')] as [tonic: string, scaleName: string]
+
+        })
+    }).parse(scaleNames)
+
+    const triadsWhereInScale = tonicScaleArr.map(([tonic, scaleName]) => {
+        const triads = Mode.triads(scaleName, tonic)
+        return { tonic, scaleName, triads }
+    }).filter(({ triads }) => {
+        const includedAlias = aliases.find((alias) => {
+            return triads.includes(alias)
+        })
+        return includedAlias !== undefined
+    })
+
+    return triadsWhereInScale
+
+}
+const vectorize = (whereInScale: string[], aliases: string[]) => {
+    const triadsWhereInScale = whereTriad(whereInScale, aliases)
+    const withRomanizedTriads = triadsWhereInScale.map(({ triads, ...rest }) => {
+        console.log('to roman', rest.tonic, triads)
+        const romanizedTriads = Progression.toRomanNumerals(rest.tonic, triads)
+        let myIndex: null | number = null
+        for (let i = 0; i < triads.length; i++) {
+            if (aliases.includes(triads[i])) {
+                myIndex = i
+                break
+            }
+        }
+
+        return { ...rest, triads, romanizedTriads, myIndex }
+    })
+    return withRomanizedTriads
+}
+const vecotrizedSchema = z.object({
+    mode: z.string(), // e.g. major,
+    romanNumberal: z.string(), // e.g. I
+})
 
 export default {
     fn: async () => {
@@ -28,13 +73,53 @@ export default {
                 return args['$']
             },
             submodules: {
+                next: {
+                    fn: async (args, moduleCalls) => {
+                        console.log('moduleCalls at chord $ next', moduleCalls)
+                        const stopHere = moduleCalls['chord $ next $'] === undefined
+                        const [chordName] = await moduleCalls['chord $']
+                        const aliases = (await fakeCli(`chord ${chordName} aliases`, 'cli')).aliases
+                        const whereInScale = (await fakeCli(`chord ${chordName} where in scale`, 'cli')).scaleNames
+                        const withRomanizedTriads = vectorize(whereInScale, aliases)
+                        if (stopHere) {
+                            return { "stopped at next": withRomanizedTriads }
+                        }
+                        return withRomanizedTriads
+                    },
+                    submodules: {
+
+                        '$': {
+                            // e.g. chord C next G major
+                            fn: async ({ "$": dollar, positionalNonCommands }, moduleCalls) => {
+                                const [chordName] = await moduleCalls['chord $']
+                                const [, tonicRaw] = dollar
+                                const [modeRaw] = positionalNonCommands
+                                const tonic = z.string({ invalid_type_error: "tonic is required" }).parse(tonicRaw)
+                                const mode = z.string({ invalid_type_error: "mode is required" }).parse(modeRaw)
+                                const romanizedTriads = await fakeCli(`chord ${chordName} vectorized`, 'cli')
+
+                                console.log('parent call from tonic and mode', tonic, mode, romanizedTriads)
+
+                            }
+                        }
+                    }
+                },
+                vectorized: {
+                    fn: async (args, moduleCalls) => {
+                        const [chordName] = await moduleCalls['chord $']
+                        const aliases = (await fakeCli(`chord ${chordName} aliases`, 'cli')).aliases
+                        const whereInScale = (await fakeCli(`chord ${chordName} where in scale`, 'cli')).scaleNames
+                        const withRomanizedTriads = vectorize(whereInScale, aliases)
+                        return { vectorizing: withRomanizedTriads }
+                    }
+                },
                 aliases: {
                     fn: async (args, moduleCalls) => {
-                        const chordName = await moduleCalls['chord $']
+                        const [chordName] = await moduleCalls['chord $']
                         const notes = Chord.get(chordName)?.notes || []
                         const notesPermuted = Collection.permutations(notes)
-                        const aliases = notesPermuted.map((notes1) => Chord.detect(notes1)).flat()
-                        return { aliases }
+                        const aliases = [notes, ...notesPermuted].map((notes1) => Chord.detect(notes1)).flat()
+                        return { aliases: aliases.concat([chordName]) }
                     },
 
                 },
@@ -44,33 +129,14 @@ export default {
                         triad: {
                             fn: async (args, moduleCalls) => {
                                 const [chordName] = await moduleCalls['chord $']
-                                let retVar: any
-                                const whereInScale = await fakeCli(`chord ${chordName} where in scale`, 'cli').then((data: any) => {
-                                    return data['chord $ where in scale']
-                                })
-                                console.log('whereInScale', whereInScale)
-                                if (whereInScale.scaleNames) {
-                                    const tonicScaleArr = z.array(z.string()).transform((strs) => {
-                                        return strs.map((str) => {
-                                            const split = str.split(' ')
-                                            const tonic = split.shift()
-                                            return [tonic, split.join(' ')]
+                                const aliasesProm = fakeCli(`chord ${chordName} aliases`, 'cli').then((({ aliases }) => aliases))
+                                const whereInScaleProm = fakeCli(`chord ${chordName} where in scale`, 'cli').then(({ scaleNames }) => scaleNames)
+                                const triadData = await awaitAll({ aliases: aliasesProm, whereInScale: whereInScaleProm })
+                                const { aliases, whereInScale } =
+                                    z.object({ aliases: z.array(z.string()), whereInScale: z.array(z.string()) }).parse(triadData)
 
-                                        })
-                                    }).parse(whereInScale.scaleNames)
-                                    const triadsWhereInScale = tonicScaleArr.map(([tonic, scaleName]) => {
-                                        const triads = Mode.triads(scaleName, tonic)
+                                return { triadsWhereInScale: whereTriad(whereInScale, aliases) }
 
-                                        return { tonic, scaleName, triads }
-                                    }).filter(({ triads }) => {
-                                        console.log('triads', triads, 'includes', chordName, triads.includes(chordName))
-                                        return triads.includes(chordName)
-                                    })
-
-                                    return { triadsWhereInScale }
-                                }
-
-                                return { "where triad": `Could not get scale names for chord ${chordName}` }
                             }
                         },
                         in: {
