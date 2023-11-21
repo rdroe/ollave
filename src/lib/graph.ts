@@ -1,7 +1,31 @@
+import { Chord, Note, Scale, Progression, Collection } from "tonal"
+export const getNeapolitan = (tonic: string, scaleName: string) => {
+    const secondDegree = Scale.degrees(`${tonic} ${scaleName}`)(2)
+    const neoRoot = Note.simplify(`${secondDegree}b`.replace('#b', ''))
+    const notes = ['1P', '3M', '5P'].map(Note.transposeFrom(neoRoot))
+    return Collection.rotate(1, notes)
+}
 
-type GraphName = "iii" | "iv" | "iio" | "i" | "viio" | "vi" | "I" | "II" | "III" | "viio/IV" | "viio/VII" | "viio/III" | "viio/vi" | "viio/V" | "V7/vi" | "V/V" | "V64" | "V" | "N6" | "+6" | "VII" | "VI" | "V7/IV" | "V7/VII" | "V7/III" | "V7/vi"
+export const getV64 = (tonic: string) => {
+    const [chordName] = Progression.fromRomanNumerals(tonic, ["V"])
+    console.log('chord to get', chordName)
+    const V = Chord.get(chordName)?.notes
+    return Collection.rotate(1, V)
+}
 
-const translated = {
+export const getAug6th = (tonic: string, scaleName: string) => {
+    /*
+Think of your key as C. The formula for the chord is (using scale degrees) b6, 1, #4, or in C, this would be Ab, C, F#. https://www.reddit.com/r/musictheory/comments/2vhagj/eli5_augmented_sixth_chords/
+*/
+    const six = Scale.degrees(`${tonic} ${scaleName}`)(6)
+    const flatSix = Note.simplify(`${six}b`.replace('#b', ''))
+    const one = Scale.degrees(`${tonic} ${scaleName}`)(1)
+    const four = Scale.degrees(`${tonic} ${scaleName}`)(4)
+    const sharpFour = Note.simplify(`${four}#`.replace('b#', ''))
+    return [flatSix, one, sharpFour]
+}
+
+const translated: { [graphName: string]: string[] | ((t: string, s?: string) => string[]) } = {
     "iii": ["IIIm", "bIIIm"],
     "iv": ["IVm"],
     "iio": ["IImdim"],
@@ -17,23 +41,29 @@ const translated = {
     "viio/vi": ["VIImdim/VIm"],
     "viio/V": ["VIImdim/V"],
     "V7/vi": ["V7/VIm"],
-    "V/V": ["V"]
+    "V/V": ["V"],
+    "V64": getV64,
+    "N6": getNeapolitan,
+    "+6": getAug6th
+}
 
-    // https://www.hearandplay.com/main/who-else-wants-to-learn-what-6-4-chords-are
-    // "V64": function romanFiveWithFifthNoteJammed(tonic: string) {}
-    // any first inversion: https://www.hearandplay.com/main/who-else-wants-to-learn-what-6-4-chords-are
-    // "N6": function neopolitan6(tonic: string) {}
-    // https://music.stackexchange.com/questions/29255/what-is-the-symbol-mean-in-a-chord
-    // "+6": function augmented6(tonic: string) {}
-    // Any: function anyTriad(tonic: string) {}
+// for an array entry in translated values, find the key (the property at which it is stored)
+export const reverseTranslate = (tonalName: string) => {
+    const keys = Object.keys(translated)
+    const key = keys.find((key) => {
+        const vals = translated[key]
+        return Array.isArray(vals) && vals.includes(tonalName)
+    })
+    return key
 }
 
 type ProgressionNode = {
-    name: GraphName,
+    name: string,
     prev?: string[],
     next: string[] | "Any",
     dotted?: string[]
 }
+
 export const minor: ProgressionNode[] = [
     {
         name: "iv",
@@ -147,3 +177,26 @@ export const minor: ProgressionNode[] = [
     },
     { name: "i", next: "Any" },
 ]
+
+export const romanizedOptions = (mode: string, name: string, prev: string) => {
+    console.log('input to romanized opts', mode, name, prev)
+    const graphName = reverseTranslate(name)
+    console.log('reverse translated romanized opts', graphName)
+    if (!graphName) return []
+    return minor.filter((node) => {
+        console.log('looking for', graphName, 'in', node)
+        if (node.name !== graphName) return false
+        if (node.prev && !node.prev.includes(prev)) return false
+        console.log('matched', node)
+        return true
+    }).map((node) => {
+        if (node.next === "Any") {
+            return Object.values(translated)
+        }
+        console.log('178', node.next)
+        return node.next.map((nextOption) => {
+            const arr = translated[nextOption]
+            return arr ?? [nextOption]
+        })
+    }).flat().flat()
+}

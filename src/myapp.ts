@@ -1,4 +1,4 @@
-import { createApp, fakeCli } from 'peprn/browser'
+import { apps, createApp, fakeCli } from 'peprn/browser'
 import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import song from './commands/song/song'
@@ -80,6 +80,17 @@ document.body.onload = () => {
             console.error('error', e)
         },
         preprocessInput,
+        dataHandler: async (parsedCli, data, id) => {
+            const app = apps[id].dataEl
+            console.log('data in handler', data)
+            if (apps[id].dataEl) {
+                apps[id].dataEl.innerHTML = `${JSON.stringify(data, null, 2)} 
+${apps[id].dataEl.innerHTML}
+`
+
+            }
+
+        },
         userEffects: [
             async () => {
                 const shifted = queue.shift()
