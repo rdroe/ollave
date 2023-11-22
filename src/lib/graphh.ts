@@ -1,19 +1,28 @@
+import { reverseTrans } from "../commands/chord"
+
 import { Chord, Note, Scale, Progression, Collection } from "tonal"
-export const getNeapolitan = (tonic: string, scaleName: string) => {
+// for an array entry in translated values, find the key (the property at which it is stored)
+
+export const N6 = function N6(tonic: string, scaleName: string) {
     const secondDegree = Scale.degrees(`${tonic} ${scaleName}`)(2)
     const neoRoot = Note.simplify(`${secondDegree}b`.replace('#b', ''))
     const notes = ['1P', '3M', '5P'].map(Note.transposeFrom(neoRoot))
+    if (Note.octave(notes[0]) !== undefined) {
+        throw new Error(`Neapolitan chord ${notes} has octave`)
+    }
     return Collection.rotate(1, notes)
 }
 
-export const getV64 = (tonic: string) => {
+export const V64 = function V64(tonic: string) {
     const [chordName] = Progression.fromRomanNumerals(tonic, ["V"])
-    console.log('chord to get', chordName)
     const V = Chord.get(chordName)?.notes
+    if (Note.octave(V[0]) !== undefined) {
+        throw new Error(`V64 chord ${V} has octave`)
+    }
     return Collection.rotate(1, V)
 }
 
-export const getAug6th = (tonic: string, scaleName: string) => {
+export const Aug6 = function Aug6(tonic: string, scaleName: string) {
     /*
 Think of your key as C. The formula for the chord is (using scale degrees) b6, 1, #4, or in C, this would be Ab, C, F#. https://www.reddit.com/r/musictheory/comments/2vhagj/eli5_augmented_sixth_chords/
 */
@@ -22,10 +31,13 @@ Think of your key as C. The formula for the chord is (using scale degrees) b6, 1
     const one = Scale.degrees(`${tonic} ${scaleName}`)(1)
     const four = Scale.degrees(`${tonic} ${scaleName}`)(4)
     const sharpFour = Note.simplify(`${four}#`.replace('b#', ''))
+    if (Note.octave(one) !== undefined || Note.octave(four) !== undefined || Note.octave(sharpFour) !== undefined) {
+        throw new Error(`Aug6th chord ${[flatSix, one, sharpFour]} has octave`)
+    }
     return [flatSix, one, sharpFour]
 }
 
-const translated: { [graphName: string]: string[] | ((t: string, s?: string) => string[]) } = {
+export const translated: { [graphName: string]: string[] | ((t: string, s?: string) => string[]) } = {
     "iii": ["IIIm", "bIIIm"],
     "iv": ["IVm"],
     "iio": ["IImdim"],
@@ -42,19 +54,9 @@ const translated: { [graphName: string]: string[] | ((t: string, s?: string) => 
     "viio/V": ["VIImdim/V"],
     "V7/vi": ["V7/VIm"],
     "V/V": ["V"],
-    "V64": getV64,
-    "N6": getNeapolitan,
-    "+6": getAug6th
-}
-
-// for an array entry in translated values, find the key (the property at which it is stored)
-export const reverseTranslate = (tonalName: string) => {
-    const keys = Object.keys(translated)
-    const key = keys.find((key) => {
-        const vals = translated[key]
-        return Array.isArray(vals) && vals.includes(tonalName)
-    })
-    return key
+    "V64": V64,
+    "N6": N6,
+    "+6": Aug6,
 }
 
 type ProgressionNode = {
@@ -105,7 +107,6 @@ export const minor: ProgressionNode[] = [
         name: "V64",
         dotted: ["I"],
         next: ["N6", "+6", "i"],
-
     },
     // big confusing box viio (must play V before leaving ???)
     {
@@ -178,25 +179,44 @@ export const minor: ProgressionNode[] = [
     { name: "i", next: "Any" },
 ]
 
-export const romanizedOptions = (mode: string, name: string, prev: string) => {
-    console.log('input to romanized opts', mode, name, prev)
-    const graphName = reverseTranslate(name)
-    console.log('reverse translated romanized opts', graphName)
+const allNexts = minor.map(({ next }) => next).flat()
+
+export const romanizedOptions = (name: string, prev: string, scaleName: string): string[] => {
+    const graphName = reverseTrans(name)
     if (!graphName) return []
-    return minor.filter((node) => {
+
+
+    const resultsForThisScale = minor.filter((node) => {
         console.log('looking for', graphName, 'in', node)
         if (node.name !== graphName) return false
-        if (node.prev && !node.prev.includes(prev)) return false
-        console.log('matched', node)
         return true
-    }).map((node) => {
-        if (node.next === "Any") {
-            return Object.values(translated)
-        }
-        console.log('178', node.next)
-        return node.next.map((nextOption) => {
-            const arr = translated[nextOption]
-            return arr ?? [nextOption]
+    })
+    const filteredForPrev = resultsForThisScale.filter((node) => {
+        if (node.prev && !node.prev.includes(prev)) return false
+
+        return true
+    })
+
+    const nexts = filteredForPrev
+        .map((node) => {
+            if (node.next === "Any") {
+                return allNexts
+            }
+            const translatedNextOptions =
+                node.next.map((nextOption) => {
+
+                    const arrOrFn = translated[nextOption]
+                    if (typeof arrOrFn === 'function') {
+                        const fnName = arrOrFn.name
+                        const notes = arrOrFn(name, scaleName)
+                        return [`${fnName}|${notes.join(',')}`]
+                    }
+                    return arrOrFn ? arrOrFn : null
+                }).filter((x) => x !== null).flat()
+            return translatedNextOptions
         })
-    }).flat().flat()
+
+    console.log('romanized options return 1', nexts)
+    return nexts
+        .flat()
 }

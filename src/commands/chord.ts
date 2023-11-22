@@ -1,9 +1,18 @@
 import { fakeCli } from 'peprn/browser'
 import { Module, awaitAll } from 'peprn/util'
-import { minor, reverseTranslate, romanizedOptions, getNeapolitan, getV64, getAug6th } from 'src/lib/graph'
+import { romanizedOptions, minor, translated as translatedd } from '../lib/graphh'
 import { Chord, Note, Scale, Mode, Collection, Progression } from 'tonal'
+
 import { z } from 'zod'
 
+export const reverseTrans = (tonalName: string) => {
+    const keysss = Object.keys(translatedd)
+    const key1 = keysss.find((key2) => {
+        const vals = translatedd[key2]
+        return Array.isArray(vals) && vals.includes(tonalName)
+    })
+    return key1
+}
 
 // Mode.triads("major", "C");
 // => ["C", "Dm", "Em", "F", "G", "Am", "Bdim"];
@@ -72,7 +81,6 @@ const vectorize = (triadsWhereInScale: { triads: string[], tonic: string, scaleN
                 break
             }
         }
-
         return { ...rest, triads, romanizedTriads, myIndex }
     })
     return withRomanizedTriads
@@ -83,8 +91,40 @@ const vecotrizedSchema = z.object({
     romanNumberal: z.string(), // e.g. I
 })
 
+type ChordNameWithNotes = {
+    name: string
+    notes: string[]
+    history?: (Vector & { myName: string })[]
+}
 
-export default {
+const chordNameWithNotes = (chordName: string): ChordNameWithNotes => {
+    if (chordName.includes('/')) {
+        const [main, bass] = chordName.split('/')
+        if (!main || !bass) return null
+        const mainNotes = Chord.get(main)?.notes || []
+        const permutations = Collection.permutations(mainNotes)
+        const bassNames = Chord.get(bass)?.notes || []
+        const bassNote = bassNames[0]
+        const bassLetter = Note.get(bassNote).letter
+        const permutedNotes = permutations.find((notes) => {
+            return notes[0].startsWith(bassLetter)
+        })
+        if (!permutedNotes) {
+            throw new Error(`Could not ad-hoc provide the slash chord ${chordName}`)
+        }
+        return {
+            name: chordName,
+            notes: permutedNotes,
+        }
+    }
+    return {
+        name: chordName,
+        notes: Chord.get(chordName)?.notes || [],
+
+    }
+
+}
+export const chord: Module = {
     fn: async () => {
         return null
     },
@@ -93,39 +133,54 @@ export default {
             fn: async (args, moduleCalls) => { },
             submodules: {
                 starters: {
-                    fn: async (): Promise<(Vector & { myName: string }
-                    )[]> => {
+                    fn: async () /*: Promise<ChordNameWithNotes[]> */ => {
+
                         return triadsWithRomanized.filter(({ scaleName }) => scaleName === "minor").map(({ tonic, scaleName, romanizedTriads, triads }) => {
+
                             // for each romanized triad
                             return romanizedTriads.map((rt, i) => {
                                 // get it as a graph node name
-                                const graphTranslated = reverseTranslate(rt)
+                                const graphTranslated = reverseTrans(rt)
                                 // where it's a name in the graph
                                 if (minor.find((node) => {
                                     return node.name === graphTranslated
                                 })) {
+                                    console.log("find for", graphTranslated)
                                     return { tonic, scaleName, romanizedTriads, triads, myIndex: i, myName: graphTranslated }
+                                } else {
+                                    console.log("could not find for", graphTranslated)
+                                }
+                            }).filter(x => !!x).map(({ tonic, myName }) => {
+                                if (myName.includes('/')) {
+                                    const [main, bass] = myName.split('/')
+                                    if (!main || !bass) return null
+                                    const [mainName] = Progression.fromRomanNumerals(tonic, [main])
+                                    const [bassName] = Progression.fromRomanNumerals(tonic, [bass])
+                                    const chordWithNotes = chordNameWithNotes(`${mainName}/${bassName}}`)
+                                    return {
+                                        ...chordWithNotes,
+                                        history: [{ myName, triads, romanizedTriads, myIndex: 0, tonic, scaleName }]
+                                    }
+                                }
+                                const [nonRomanName] = reverseTrans(myName)
+                                const [nameFromRoman] = Progression.fromRomanNumerals(tonic, [nonRomanName])
+                                const chordWithNotes = chordNameWithNotes(nameFromRoman)
+
+                                return {
+                                    ...chordWithNotes,
+                                    history: [{ myName, triads, romanizedTriads, myIndex: 0, tonic, scaleName }]
                                 }
                             })
 
-                        }).flat().filter(x => !!x)
+
+
+
+                        }).flat()
                     },
                 },
             }
         },
-        test: {
-            fn: async (args) => {
-                const [tonic, scaleName] = args.positionalNonCommands
-                const augSixth = getAug6th(tonic, scaleName)
-                return augSixth
-            }
-        },
-        neap: {
-            fn: async (args) => {
-                const [tonic, scaleName] = args.positionalNonCommands
-                return getNeapolitan(tonic, scaleName)
-            },
-        },
+
         '$': {
             fn: async (args) => {
                 return args['$']
@@ -157,15 +212,14 @@ export default {
                                     vectorized.filter((args) => {
                                         return args.scaleName === "minor"
                                     }).map((vector) => {
-                                        const { romanizedTriads, myIndex, scaleName } = vector
+                                        const { romanizedTriads, myIndex, scaleName, tonic } = vector
                                         const me = romanizedTriads[myIndex]
-                                        const opts = romanizedOptions(scaleName, me, "")
+                                        const opts = romanizedOptions(me, tonic, scaleName)
                                         return opts
                                     })
 
-                                //console.log('options', romanizedOptions(romanizedTriads))
-                                //                                console.log('parent call from tonic and mode', tonic, mode, vectorized)
-                                return { next: options }
+
+                                return { next: options.flat() }
 
                             }
                         }

@@ -12,7 +12,7 @@ Where BPM is the tempo of the track (Beats Per Minute).
 const ppq = 128 // 128 matches GarageBand's default
 
 // The number of ticks per musical entity dos not change. if the user wants to speed up the pace of the music, increase the "speed" variable.
-// This function calculated how many ms each tick should last. notice it accesess the capable-of-changing-in-real-time "speed" variable.
+// This function calculated how many ms each tick should last. notice it accesess the capable-of-changing-in-real-time "speed" variable.x
 export const msPerTick = (tick: number) => {
     const newSpeed = currSpeed(tick)
     const msPer =

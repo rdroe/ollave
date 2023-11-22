@@ -108,7 +108,7 @@ export default {
         },
         dl: {
             fn: async () => {
-                return downloadSong()
+                downloadSong()
             }
         }
 

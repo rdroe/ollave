@@ -31,7 +31,6 @@ export const startCueObservable = () => {
             const adjustedCursor = (tick - subscribedAt) % startOver
 
             midiMappedNotes[adjustedCursor]?.forEach((note) => {
-
                 playTriads([[note.note, 0.25, 1]])
             })
         }
