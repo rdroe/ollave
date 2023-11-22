@@ -1,6 +1,6 @@
-import { reverseTrans } from "../commands/chord"
 
 import { Chord, Note, Scale, Progression, Collection } from "tonal"
+
 // for an array entry in translated values, find the key (the property at which it is stored)
 
 export const N6 = function N6(tonic: string, scaleName: string) {
@@ -179,44 +179,4 @@ export const minor: ProgressionNode[] = [
     { name: "i", next: "Any" },
 ]
 
-const allNexts = minor.map(({ next }) => next).flat()
-
-export const romanizedOptions = (name: string, prev: string, scaleName: string): string[] => {
-    const graphName = reverseTrans(name)
-    if (!graphName) return []
-
-
-    const resultsForThisScale = minor.filter((node) => {
-        console.log('looking for', graphName, 'in', node)
-        if (node.name !== graphName) return false
-        return true
-    })
-    const filteredForPrev = resultsForThisScale.filter((node) => {
-        if (node.prev && !node.prev.includes(prev)) return false
-
-        return true
-    })
-
-    const nexts = filteredForPrev
-        .map((node) => {
-            if (node.next === "Any") {
-                return allNexts
-            }
-            const translatedNextOptions =
-                node.next.map((nextOption) => {
-
-                    const arrOrFn = translated[nextOption]
-                    if (typeof arrOrFn === 'function') {
-                        const fnName = arrOrFn.name
-                        const notes = arrOrFn(name, scaleName)
-                        return [`${fnName}|${notes.join(',')}`]
-                    }
-                    return arrOrFn ? arrOrFn : null
-                }).filter((x) => x !== null).flat()
-            return translatedNextOptions
-        })
-
-    console.log('romanized options return 1', nexts)
-    return nexts
-        .flat()
-}
+export const allNexts = minor.map(({ next }) => next).flat()

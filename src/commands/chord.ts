@@ -1,17 +1,55 @@
 import { fakeCli } from 'peprn/browser'
 import { Module, awaitAll } from 'peprn/util'
-import { romanizedOptions, minor, translated as translatedd } from '../lib/graphh'
-import { Chord, Note, Scale, Mode, Collection, Progression } from 'tonal'
+import { allNexts, minor, translated } from 'src/lib/graphh'
 
+import { Chord, Note, Scale, Mode, Collection, Progression } from 'tonal'
 import { z } from 'zod'
 
-export const reverseTrans = (tonalName: string) => {
-    const keysss = Object.keys(translatedd)
-    const key1 = keysss.find((key2) => {
-        const vals = translatedd[key2]
-        return Array.isArray(vals) && vals.includes(tonalName)
+const romanizedOptions = (name: string, prev: string, scaleName: string): string[] => {
+
+    const keysss = Object.keys(translated)
+    const graphName = keysss.find((key2) => {
+        const vals = translated[key2]
+        return Array.isArray(vals) && vals.includes(name)
     })
-    return key1
+    if (!graphName) return []
+
+
+    const resultsForThisScale = minor.filter((node) => {
+        console.log('looking for', graphName, 'in', node)
+        if (node.name !== graphName) return false
+        return true
+    })
+    const filteredForPrev = resultsForThisScale.filter((node) => {
+        if (node.prev && !node.prev.includes(prev)) return false
+
+        return true
+    })
+
+    const nexts = filteredForPrev
+        .map((node) => {
+            if (node.next === "Any") {
+                return allNexts
+
+
+            }
+            const translatedNextOptions =
+                node.next.map((nextOption) => {
+
+                    const arrOrFn = translated[nextOption]
+                    if (typeof arrOrFn === 'function') {
+                        const fnName = arrOrFn.name
+                        const notes = arrOrFn(name, scaleName)
+                        return [`${fnName}|${notes.join(',')}`]
+                    }
+                    return arrOrFn ? arrOrFn : null
+                }).filter((x) => x !== null).flat()
+            return translatedNextOptions
+        })
+
+    console.log('romanized options return 1', nexts)
+    return nexts
+        .flat()
 }
 
 // Mode.triads("major", "C");
@@ -67,7 +105,6 @@ const whereTriad = (scaleNames: string[], aliases: string[]) => {
         return includedAlias !== undefined
     })
     return triadsWhereInScale
-
 }
 
 const vectorize = (triadsWhereInScale: { triads: string[], tonic: string, scaleName: string }[], aliases: string[]) => {
@@ -122,8 +159,8 @@ const chordNameWithNotes = (chordName: string): ChordNameWithNotes => {
         notes: Chord.get(chordName)?.notes || [],
 
     }
-
 }
+
 export const chord: Module = {
     fn: async () => {
         return null
@@ -140,7 +177,13 @@ export const chord: Module = {
                             // for each romanized triad
                             return romanizedTriads.map((rt, i) => {
                                 // get it as a graph node name
-                                const graphTranslated = reverseTrans(rt)
+                                //                                const graphTranslated = global.reverseTrans(rt)
+                                //const graphTranslated = Object.keys(translated)
+                                const keysss = Object.keys(translated)
+                                const graphTranslated = keysss.find((key2) => {
+                                    const vals = translated[key2]
+                                    return Array.isArray(vals) && vals.includes(rt)
+                                })
                                 // where it's a name in the graph
                                 if (minor.find((node) => {
                                     return node.name === graphTranslated
@@ -162,7 +205,13 @@ export const chord: Module = {
                                         history: [{ myName, triads, romanizedTriads, myIndex: 0, tonic, scaleName }]
                                     }
                                 }
-                                const [nonRomanName] = reverseTrans(myName)
+                                const keysss = Object.keys(translated)
+                                const nonRomanName = keysss.find((key2) => {
+                                    const vals = translated[key2]
+                                    return Array.isArray(vals) && vals.includes(myName)
+                                })
+
+                                //                                const [nonRomanName] = global.reverseTrans(myName)
                                 const [nameFromRoman] = Progression.fromRomanNumerals(tonic, [nonRomanName])
                                 const chordWithNotes = chordNameWithNotes(nameFromRoman)
 
