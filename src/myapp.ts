@@ -9,7 +9,6 @@ import { playTriads } from './lib/music'
 import { mem } from './mem'
 const { songNames } = mem()
 
-
 let namesResolver: Function | null = null
 const namesPromise = new Promise((res) => {
     namesResolver = res
@@ -57,14 +56,19 @@ export function preprocessInput(snt: string): string | null {
 
 document.body.onload = () => {
     document.body.onclick = () => {
-        playTriads([['c4', .05, 0]])
+        playTriads([['c3', .05, 0]])
         document.body.onclick = null
     }
-
     createApp({
         id: "cli",
         init: async () => {
             await namesPromise
+            const doc = document.querySelector('body')
+            if (doc) {
+                doc.style.backgroundColor =
+                    "darkblue"
+
+            }
             fakeCli('song init', 'cli').then(() => {
 
             })
@@ -89,7 +93,6 @@ ${apps[id].dataEl.innerHTML}
 `
 
             }
-
         },
         userEffects: [
             async () => {

@@ -1,11 +1,16 @@
 import { Observable, Subscription } from "rxjs"
 import { PhaseRecord, SongRecord, TrackRecord } from "./commands/song/song"
+import { BarTagPercent } from "./mapSongToTicks"
+type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
 export type Mem = {
     subscriptions: {
         [key: string]: Subscription
     }
     observables: {
-        [key: string]: Observable<any>
+        [key: string]: Unsubscribe
+    }
+    songPauses: {
+        [key: string]: BarTagPercent
     }
     songNames: string[]
     song: Exclude<SongRecord, "id"> & { id: number } | null,
@@ -26,6 +31,7 @@ export type Mem = {
 
 const mem_: Mem = {
     subscriptions: {},
+    songPauses: {},
     observables: {},
     song: null,
     track: null,

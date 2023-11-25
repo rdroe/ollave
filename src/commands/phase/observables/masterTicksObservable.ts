@@ -62,7 +62,9 @@ const trackTempo = 120
 const plannedSpeedChanges: TempoChange[] = [
     [0, 1],
 ]
-
+export const updateCurr = (timeMarker: TimeMarker) => {
+    curr = [timeMarker[0] - fileStart, timeMarker[1]]
+}
 export const tickCounts = {
     bar: ppq * 4,
     quarter: ppq,

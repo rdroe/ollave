@@ -4,8 +4,11 @@ import { browser } from 'user-tables'
 import { fakeCli } from 'peprn/browser'
 import { userTables } from 'user-tables/browser'
 import { startCueObservable } from './observables'
-import { downloadNotes } from 'src/lib/midi'
+
 import { downloadSong } from 'src/download'
+
+import { curr, } from '../phase/observables/masterTicksObservable'
+import { barsAtMidi, midiAtBar } from 'src/mapSongToTicks'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props
 export type SongRecord = {
@@ -28,11 +31,23 @@ export type PhaseRecord = {
     barSizeMultiplier: number
 }
 
+
 export default {
     fn: async () => {
         return null
     },
     submodules: {
+        test: {
+            fn: () => {
+                return fakeCli(`
+phase aphrodite 10
+bars aphrodite fill C,3 Dm,3 Em,3 F,4 G,4 Am,4 Bdim,4
+phase aphrodite 20
+song start
+`, "cli")
+
+            }
+        },
         init: {
             fn: async () => {
                 const shiftedOff = songNames.shift()
@@ -79,8 +94,8 @@ export default {
 
                         const coll = await (userTables.where('song', { id: mem().song.id }))
                         const fetched = await coll.first()
-
                         const { "song-tracks": songTracks } = fetched.data
+
                         if (songTracks) {
                             mem().track = {
                                 id: songTracks[0][0],
@@ -90,7 +105,7 @@ export default {
                         } else {
                             console.error("no tracks for song", mem().song.id)
                         }
-                        console.log('currentSongTrack', mem().track.id)
+
                     }
                 },
             }
@@ -103,7 +118,31 @@ export default {
                 }
             },
             fn: async () => {
-                return startCueObservable()
+
+                const songPause = mem().songPauses[mem().song.name]
+                if (!songPause) {
+                    return startCueObservable()
+                }
+                const pauseMidi = midiAtBar(songPause) ?? 0
+                return startCueObservable(pauseMidi)
+            }
+        },
+        stop: {
+            help: {
+                description: 'Stop playing the song',
+                examples: {
+                    '': 'start playing the song'
+                }
+            },
+            fn: async () => {
+                const songName = mem().song.name
+                const observable =
+                    mem().observables[songName]
+                if (observable) {
+                    mem().songPauses[songName] = barsAtMidi(curr[1])[0]
+                    observable.unsubscribe()
+                }
+
             }
         },
         dl: {

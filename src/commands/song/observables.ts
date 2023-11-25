@@ -5,7 +5,8 @@ import { Observable } from 'rxjs'
 import { makeTickSubscribe } from '../phase/subjects/masterTicksSubject'
 import { playTriads } from 'src/lib/music'
 import { lastTick } from 'src/mem-db'
-export const startCueObservable = () => {
+
+export const startCueObservable = (startAt?: number) => {
 
     // make a new observable that subscribes to master ticks
     // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
@@ -15,12 +16,14 @@ export const startCueObservable = () => {
     if (!song) {
         throw new Error(`Song not initialized`)
     }
+
     const midiMappedNotes = mapSongToMidiTicks()
+
     const startOver = lastTick()
-    mem().observables[song] = new Observable(makeTickSubscribe(curr[0]))
+    const songObservable = new Observable(makeTickSubscribe())
 
     let subscribedAt: null | number = null
-    mem().observables[song].subscribe({
+    mem().observables[song] = songObservable.subscribe({
         next: ({ tick }) => {
             // cache the first world midi tick.
             // we need to subtract this to make sure we start at 0 of the song's midi tick
@@ -35,5 +38,6 @@ export const startCueObservable = () => {
             })
         }
     })
+
     return midiMappedNotes
 }

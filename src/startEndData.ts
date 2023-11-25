@@ -34,10 +34,10 @@ function relativeStartEnd(phaseName: string, phase: Mem['phases'][string], start
     // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick.
     // this is used multiple places; needs abstraction to separate file and exportable module
     let endTick = startTick
-    phaseBars.forEach((barNotes, barIndex) => {
+    phaseBars.forEach(() => {
         // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
-        const thisBarOffset = barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
-        endTick += thisBarOffset
+        const thisBarLen = barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
+        endTick += thisBarLen
     })
 
     myStartEnds.push([startTick, endTick])

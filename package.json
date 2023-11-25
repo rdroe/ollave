@@ -27,6 +27,7 @@
     "devDependencies": {
         "@types/isomorphic-fetch": "^0.0.36",
         "@types/react": "^18",
+        "concurrently": "^8.2.2",
         "esbuild": "^0.14.38",
         "nodemon": "^2.0.16",
         "typescript": "^5.0.0"
@@ -37,9 +38,9 @@
         "ts-build": "tsc",
         "js-build": "node build.js",
         "css-build": "esbuild --bundle css/main.css --outfile=public/css/style.css",
-        "mon": "yarn nodemon --exec \"yarn ts-build && yarn css-build && yarn js-build\" --watch ../../dist-browser --watch ./src --watch ./css --ext js,ts,mjs,ts,css  --ignore public",
+        "mon-sub": "yarn nodemon --exec \"yarn ts-build && yarn css-build && yarn js-build\" --watch ../../dist-browser --watch ./src --watch ./css --ext js,ts,mjs,ts,css  --ignore public",
         "start": "yarn http-server --mimetypes mime.types --cors",
-        "mon2": "yarn nodemon --exec \"yarn ts-build && yarn js-build\" --watch ../../dist-browser --watch ./src --ext js,ts,mjs,ts --ignore public"
+        "mon": "yarn concurrently \"yarn http-server\" \"yarn mon-sub\""
     },
-    "packageManager": "yarn@4.0.0"
+    "packageManager": "yarn@4.0.2"
 }
