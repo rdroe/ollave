@@ -7,17 +7,23 @@ masterTicksObservable.subscribe(masterTicksSubject)
 
 
 // utility function to subscribe on a bar-length basis
-export const makeTickSubscribe = () => {
+export const makeTickSubscribe = (initTick: number = 0) => {
     return function subscribe(subscriber: Subscriber<any>) {
-        masterTicksSubject.subscribe({
-            next: (aTick) => {
+        let tick = initTick
+        const subjectUnsubscribe = masterTicksSubject.subscribe({
+            next: () => {
+
                 subscriber.next({
-                    tick: aTick,
+                    tick,
                 })
+                tick += 1
             }
         })
+
         return function unsubscribe() {
+
             subscriber.complete()
+            subjectUnsubscribe.unsubscribe()
         };
     }
 }

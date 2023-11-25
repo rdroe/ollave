@@ -12,6 +12,7 @@ export type Mem = {
     songPauses: {
         [key: string]: BarTagPercent
     }
+    publishedCursor: number
     songNames: string[]
     song: Exclude<SongRecord, "id"> & { id: number } | null,
     track: Exclude<TrackRecord, "id"> & { id: number } | null,
@@ -32,6 +33,7 @@ export type Mem = {
 const mem_: Mem = {
     subscriptions: {},
     songPauses: {},
+    publishedCursor: 0,
     observables: {},
     song: null,
     track: null,

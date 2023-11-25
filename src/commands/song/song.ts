@@ -124,11 +124,13 @@ song start
                     return startCueObservable()
                 }
                 const pauseMidi = midiAtBar(songPause) ?? 0
+
                 return startCueObservable(pauseMidi)
             }
         },
         stop: {
             help: {
+
                 description: 'Stop playing the song',
                 examples: {
                     '': 'start playing the song'
@@ -136,10 +138,14 @@ song start
             },
             fn: async () => {
                 const songName = mem().song.name
+                const publishedCursro = mem().publishedCursor
+
                 const observable =
                     mem().observables[songName]
+
                 if (observable) {
-                    mem().songPauses[songName] = barsAtMidi(curr[1])[0]
+                    mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
+
                     observable.unsubscribe()
                 }
 

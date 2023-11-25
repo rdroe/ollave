@@ -87,7 +87,7 @@ export const timings = {
 }
 
 
-console.log('timings', timings)
+
 
 type TimeMarker = [time: number, quotient: number]
 
