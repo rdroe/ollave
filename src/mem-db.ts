@@ -1,6 +1,7 @@
 // using the currently loaded song, do any of the following.
 // updated both mem.ts and the database.
 import { randId, randomInt } from "./lib/helpers"
+import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { mem } from "./mem"
 import { StartEndTuple, phaseBeginningsAndEnds } from "./startEndData"
 const { phases, notesByBar } = mem()
@@ -27,11 +28,13 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
             speed: null
         }
     }
+    mem().latestMap = mapSongToMidiTicks()
 }
 
 export async function phaseUnfollows(subject: string, objects: string[]) {
     // where this subject is followed, remove this subject from the follows-ids
     // remove all follows-ids from subject
+    mem().latestMap = mapSongToMidiTicks()
 }
 
 const sortByNumberAfterColon = (a: string, b: string) => {
@@ -70,8 +73,11 @@ export const getFollowingPhases = (phaseName: string) => {
         [,
             { "follows-ids": followsIds }
         ]) => phase.id !== null && followsIds.includes(phase.id) || phase["temp-id"] !== null && followsIds.includes(phase["temp-id"]))
+
     return followsPhases
 }
+
+// update phase to have n bars.
 export async function phaseCount(phase: string, size: number) {
     if (!phases[phase]) {
         phases[phase] = {
@@ -119,5 +125,6 @@ export async function phaseCount(phase: string, size: number) {
             })
         }
     }
+    mem().latestMap = mapSongToMidiTicks()
 }
 

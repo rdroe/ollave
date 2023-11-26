@@ -18,7 +18,7 @@ export const startCueObservable = (startAt?: number) => {
         throw new Error(`Song not initialized`)
     }
 
-    const midiMappedNotes = mapSongToMidiTicks()
+
 
     const startOver = lastTick()
     const songObservable = new Observable(makeTickSubscribe(startAt))
@@ -28,11 +28,12 @@ export const startCueObservable = (startAt?: number) => {
             // get the midi tick relative to the start of the song
             const adjustedCursor = tick % startOver
             mem().publishedCursor = adjustedCursor
-            midiMappedNotes[adjustedCursor]?.forEach((note) => {
+
+            mem().latestMap[adjustedCursor]?.forEach((note) => {
                 playTriads([[note.note, 0.25, 1]])
             })
         }
     })
 
-    return midiMappedNotes
+
 }

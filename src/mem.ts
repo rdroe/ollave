@@ -1,6 +1,6 @@
 import { Observable, Subscription } from "rxjs"
 import { PhaseRecord, SongRecord, TrackRecord } from "./commands/song/song"
-import { BarTagPercent } from "./mapSongToTicks"
+import { BarTagPercent, MidiMap } from "./mapSongToTicks"
 type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
 export type Mem = {
     subscriptions: {
@@ -28,6 +28,7 @@ export type Mem = {
             tags: string[];
         }[]
     },
+    latestMap: MidiMap
 }
 
 const mem_: Mem = {
@@ -39,7 +40,8 @@ const mem_: Mem = {
     track: null,
     phases: {},
     notesByBar: {},
-    songNames: []
+    songNames: [],
+    latestMap: {}
 };
 
 (window as any).mem = mem_

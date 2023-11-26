@@ -1,10 +1,11 @@
-import { Module } from 'peprn/util'
+import { Module, awaitAll } from 'peprn/util'
 import { isString, peprnIsNum, randId } from 'src/lib/helpers'
 import { SubcommandPatterns, runSubcommandsOrNull } from 'src/lib/subcommands'
 import { getAllPhaseBars } from 'src/mem-db'
 import { mem } from '../../mem'
 import { Chord, Note } from 'tonal'
 import { z } from 'zod'
+import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 
 const { notesByBar } = mem()
 const isRestArg = (arg: any): arg is string => {
@@ -27,15 +28,9 @@ const isNoteNameArray = (arr: any[]): arr is string[] => {
 const isNoteArray = (arr: any[]): arr is string[] => {
     return arr.every((arg) => isNoteCsvArg || isRestArg(arg))
 }
+
 const isChordArray = (arr: any[]): arr is string[] => {
     return arr.every((arg) => isChordCsvArg(arg) || isRestArg(arg))
-}
-
-const parseNoteName = (nm: string): [name: string, octave: number] => {
-    if (!isNoteName(nm)) throw new Error(`"${nm}" is not a valid note name`)
-    const name = nm.slice(0, nm.length - 1)
-    const octave = parseInt(nm[nm.length - 1])
-    return [name, octave]
 }
 
 const isCsvArg = (str: string): str is string => {
@@ -54,6 +49,8 @@ const parseChordCsvArg = (str: string): string[] => {
     if (!peprnIsNum(csv[1])) throw new Error(`${str} is not a chord csv arg; second part is not an octave (number)`)
     const notes = Chord.get(csv[0])?.notes
     if (!notes) throw new Error(`${str} is not a chord csv arg; could not get notes`)
+
+    // this is wrong. will give the correct root, but not necessarily correct other notes.
     return notes.map((note) => {
         return `${note}${csv[1]}`
     })
@@ -88,8 +85,8 @@ const parseNoteCsvArg = (str: string): ReturnType<typeof Note["get"]>[] => {
     return csv.map((note) => {
         return Note.get(note)
     })
-
 }
+
 const isChordName = (nm: any) => {
     return isString(nm) && !isNoteName(nm) && !!Chord.get(nm)?.name
 }
@@ -97,10 +94,8 @@ const isChordName = (nm: any) => {
 const subcommands: SubcommandPatterns = {
     fill: {
         match: (args) => {
-
             if (args.positionalNonCommands.length < 2) return false
             if (typeof args.positionalNonCommands[1] === "string" && ['fill', 'f'].includes(args.positionalNonCommands[1])) return true
-
         },
         do: async ({ positionalNonCommands }) => {
             const [phaseName, _, ...rawObjects] = positionalNonCommands
@@ -117,7 +112,6 @@ const subcommands: SubcommandPatterns = {
                             noteGroups.push([])
                             return
                         }
-                        const [chordName, octave] = parseCsvArg(chordCsvArg)
                         const notes = parseChordCsvArg(chordCsvArg)
                         noteGroups.push(notes.map((note) => Note.get(note)))
                     })
@@ -146,6 +140,7 @@ const subcommands: SubcommandPatterns = {
 
                 let noteGroupToUse = 0
                 const newGroupName = randId("", 3)
+
                 bars.forEach((barTag) => {
                     const barNotes = noteGroups[noteGroupToUse]
                     noteGroupToUse = (noteGroupToUse + 1) % noteGroups.length
@@ -165,20 +160,17 @@ const subcommands: SubcommandPatterns = {
 }
 
 export default {
-    fn: async (args) => {
-        const result = await runSubcommandsOrNull(subcommands, args)
+    fn: async (args, subCalls) => {
 
-        if (result !== null) return ["RAN SUBCOMMAND", result]
-        return z.string().parse(args.positionalNonCommands[0])
+        const sc = await runSubcommandsOrNull(subcommands, args)
+
+        awaitAll({
+            ...subCalls,
+            sc
+        }).then(() => {
+            mem().latestMap = mapSongToMidiTicks()
+        })
 
     },
-    submodules: {
-        init: {
-            fn: async (args, moduleCalls) => {
-                const parent = await moduleCalls['bars']
-                if (parent === "RAN SUBCOMMAND") return null
-                return "init " + parent
-            }
-        },
-    }
+
 } as Module
