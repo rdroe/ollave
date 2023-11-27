@@ -89,34 +89,6 @@ Think of your key as C. The formula for the chord is (using scale degrees) b6, 1
 }
 
 
-const nameTranslations: {
-    [graphName: string]: string[] | ((t:
-        string, s: string, chordName: string) => string[])
-} = {
-    "iii": ["IIIm", "bIIIm"],
-    "iv": ["IVm"],
-    "iio": ["IImdim"],
-    "i": ["Im"],
-    "viio": ["VIImdim"],
-    "vi": ["VIm"],
-    "I": ["I", "bI"],
-    "II": ["II", "bII"],
-    "III": ["bIII", "III"],
-    "viio/IV": ["VIImdim/IV"],
-    "viio/VII": ["VIImdim/VII"],
-    "viio/III": ["VIImdim/III"],
-    "viio/vi": ["VIImdim/VIm"],
-    "viio/V": ["VIImdim/V"],
-    "V7/vi": ["V7/VIm"],
-    "V/V": ["V"],
-    "V64": V64,
-    "N6": N6,
-    "+6": Aug6,
-}
-
-
-
-
 type ProgressionNode = {
     name: string,
     prev?: string[],
@@ -126,7 +98,7 @@ type ProgressionNode = {
 
 export const minor: ProgressionNode[] = [
     {
-        name: "iv",
+        name: "IVm",
         next: ["VII"],
         dotted: ["VIImdim/VI", "V7/III"]
     },
@@ -141,12 +113,12 @@ export const minor: ProgressionNode[] = [
     },
     {
         name: "VI",
-        next: ["IImdim", "IVm", /* N6 +6 */],
+        next: ["IImdim", "IVm", /* N6 Aug6 */],
 
     },
     // double-box top                                                                                        
     {
-        name: "iv",
+        name: "IVm",
         prev: ["VI"],
         next: [
             "VIImdim/V", "V/V", // small upper fork                                                          
@@ -154,7 +126,7 @@ export const minor: ProgressionNode[] = [
     },
     // double-box bottom                      
     {
-        name: "iio",
+        name: "IImdim",
         prev: ["VI"],
         next: [
             "VIImdim/V", "V/V", // small upper fork                                                         
@@ -164,18 +136,18 @@ export const minor: ProgressionNode[] = [
     {
         name: "V64",
         dotted: ["I"],
-        next: ["N6", "+6", "I"],
+        next: ["N6", "Aug6", "I"],
     },
     // big confusing box viio (must play V before leaving ???)                                     
     {
-        name: "viio",
-        prev: ["iv", "iimdim"],
+        name: "VIImdim",
+        prev: ["IVm", "IImdim"],
         next: ["V"],
     },
     // big confusing box V                                     
     {
         name: "V",
-        next: ["V64", "+6"],
+        next: ["V64", "Aug6"],
         dotted: ["I"],
     },
     // non-box with sixes N6   
@@ -183,15 +155,15 @@ export const minor: ProgressionNode[] = [
         name: "N6",
         next: ["V"],
     },
-    // non-box with sixes +6
+    // non-box with sixes Aug6
     {
-        name: "+6",
+        name: "Aug6",
         next: ["V"],
     },
     // upper boxesssssss ltr                                                                                
     // 1                                                                                 
     {
-        name: "viio/IV",
+        name: "VIImdim/IV",
         next: ["VIImdim/VII", "V7/VII"],
     },
     {
@@ -200,7 +172,7 @@ export const minor: ProgressionNode[] = [
     },
     // 2
     {
-        name: "viio/VII",
+        name: "VIImdim/VII",
         next: ["VIImdim/III", "V7/III", /*downward arrow*/ "VII"],
     },
     {
@@ -209,33 +181,34 @@ export const minor: ProgressionNode[] = [
     },
     // 3                 
     {
-        name: "viio/III",
-        next: ["VIImdim/vi", "V7/vi", /*downward arrow*/ "III"],
+        name: "VIImdim/III",
+        next: ["VIImdim/VIm", "V7/VIm", /*downward arrow*/ "III"],
     },
     {
         name: "V7/III",
-        next: ["VIImdim/VIm", "V7/vi", /*downward arrow*/ "III"],
+        next: ["VIImdim/VIm", "V7/VIm", /*downward arrow*/ "III"],
     },
     // 4                   
     {
-        name: "viio/vi",
+        name: "VIImdim/VIm",
         next: ["IVm", "IImdim", /*downward arrow */ "VI"],
     },
     {
-        name: "V7/vi",
+        name: "V7/VIm",
         next: ["IVm", "IImdim", /*downward arrow */ "VI"],
     },
     // 5                   
     {
-        name: "viio/V",
+        name: "VIImdim/V",
         next: ["V64", "VIImdim"],
     },
     {
         name: "V/V",
         next: ["V64", "VIImdim"],
     },
-    { name: "i", next: "Any" },
+    { name: "Im", next: "Any" },
 ]
+
 const oneIndexedArr = (len: number) => {
     if (len <= 0) return []
     const arr: number[] = []
