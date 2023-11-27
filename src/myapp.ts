@@ -85,14 +85,15 @@ document.body.onload = () => {
         },
         preprocessInput,
         dataHandler: async (parsedCli, data, id) => {
-            const app = apps[id].dataEl
-            console.log('data in handler', data)
-            if (apps[id].dataEl) {
 
-                apps[id].dataEl.innerHTML = `${JSON.stringify(data, null, 2)} 
+            const app = apps[id].dataEl
+            if (apps[id].dataEl) {
+                if (parsedCli['peprn:childmost'] === true && !parsedCli['peprn:automated']) {
+                    const printable = data?.formatted ?? data
+                    apps[id].dataEl.innerHTML = `${parsedCli.rawIn}\n${JSON.stringify(printable, null, 2)} 
 ${apps[id].dataEl.innerHTML}
 `
-
+                }
             }
         },
         userEffects: [

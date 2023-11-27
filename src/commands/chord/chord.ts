@@ -59,7 +59,7 @@ export const chord: Module = {
                         [romanNum]: triads[idx]
                     }))
                 })
-                console.log('all progs', formatted)
+
                 return { formatted }
             }
         },

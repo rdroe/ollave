@@ -431,20 +431,20 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 20.9.3
-  resolution: "@types/node@npm:20.9.3"
+  version: 20.10.0
+  resolution: "@types/node@npm:20.10.0"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 5d2a3a6b2b900814eab8c5093dabb7aa10895928719ec0074b9ac5584bcc83f5b680e2d2cb6c8b9751511b7b1b7fdd8586d2fc827b156f0263fdb65c4741bdef
+  checksum: c7d5ddbdbf3491e2363135c9611eb6bfae90eda2957279237fa232bcb29cd0df1cc3ee149d6de9915b754262a531ee2d57d33c9ecd58d763e8ad4856113822f3
   languageName: node
   linkType: hard
 
 "@types/node@npm:^18.16.17":
-  version: 18.18.11
-  resolution: "@types/node@npm:18.18.11"
+  version: 18.18.13
+  resolution: "@types/node@npm:18.18.13"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 05fe069846ae6accdaad2e4381dfd024c44b84010d5f213725009a34769f346cbb7b38d36931b4ff64f3af57b5fe0a3ccc33d0ef207a1ed9d76c1115b0d559a4
+  checksum: 5dcab799e39570a858741a13373a584529d0e6b81120c8a2118e158749d9ace291748644d760af554fe73ab3cebdd91500314bf1ecd17a746fabcae06ebf9eea
   languageName: node
   linkType: hard
 
@@ -456,22 +456,22 @@ __metadata:
   linkType: hard
 
 "@types/react-dom@npm:^18.0.0":
-  version: 18.2.16
-  resolution: "@types/react-dom@npm:18.2.16"
+  version: 18.2.17
+  resolution: "@types/react-dom@npm:18.2.17"
   dependencies:
     "@types/react": "npm:*"
-  checksum: c0be61864a9f50bb8cd29c719d170b03b36149f4fbe308faa40194d15492c4a13814a2f344fc5ceb99b4747bfa11cdfb2d15a141ed37218a32ec0edf98b90f2b
+  checksum: fe0dbb3224b48515da8fe25559e3777d756a27c3f22903f0b1b020de8d68bd57eb1f0af62b52ee65d9632637950afed8cbad24d158c4f3d910d083d49bd73fba
   languageName: node
   linkType: hard
 
 "@types/react@npm:*":
-  version: 18.2.38
-  resolution: "@types/react@npm:18.2.38"
+  version: 18.2.39
+  resolution: "@types/react@npm:18.2.39"
   dependencies:
     "@types/prop-types": "npm:*"
     "@types/scheduler": "npm:*"
     csstype: "npm:^3.0.2"
-  checksum: 9f9b9925c979e848d572dce6fff34951708127ba6b1fd4306c93fbcab74f5c6cff2b2e47d4222339eeb6c19d264e93450cb2ad6b255c73c536d0a1e2093cc98a
+  checksum: 870f7774c676ae0f3ab6339a62b3315f5a296e89412358b15a5249a61e781a8807a2253ef7ad2ec98e7a5bea1e8c3ddd95b02226d6b8ac4a085da59b4a496564
   languageName: node
   linkType: hard
 
@@ -2341,7 +2341,7 @@ __metadata:
     http-server: "npm:^14.1.0"
     jsmidgen: "npm:^0.1.5"
     nodemon: "npm:^2.0.16"
-    peprn: "npm:^0.4.2"
+    peprn: "npm:^0.4.7"
     react: "npm:^18.2.0"
     rxjs: "npm:^7.5.7"
     tonal: "npm:^5.0.0"
@@ -2393,9 +2393,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"peprn@npm:^0.4.2":
-  version: 0.4.2
-  resolution: "peprn@npm:0.4.2"
+"peprn@npm:^0.4.7":
+  version: 0.4.7
+  resolution: "peprn@npm:0.4.7"
   dependencies:
     "@testing-library/react": "npm:^14.0.0"
     "@types/node": "npm:^18.16.17"
@@ -2408,7 +2408,7 @@ __metadata:
     zod: "npm:3.21.4"
   peerDependencies:
     react: "*"
-  checksum: 1dd668f7c33046aa298e61582b57575db0e87c5135e6050159baa276a42e8d5e058ca24a10462ccf861456d6516ca7e277ac595c14f7194cbede95e9564065cb
+  checksum: 0c018adc1d4974369a64a5430c2c316c5d3d3d74917aae56a1f03216f203ce86651cbc6e11a6f8277ce1e1ca9077c3983efa1d53dfa394be8fc15827c6fa568d
   languageName: node
   linkType: hard
 
