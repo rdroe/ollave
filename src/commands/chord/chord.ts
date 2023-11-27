@@ -1,28 +1,8 @@
 import { fakeCli } from 'peprn/browser'
 import { Module, awaitAll } from 'peprn/util'
-import {
-    minor, romanizedOptions, ChordNameWithNotes, progressionNodeToTonalOptions, rotations, chordNameWithNotes, getProgressionNodes, detectScales, noteNames
-} from 'src/lib/graphh'
+import { detectScales } from 'src/lib/graphh'
 import { Chord, Note, Scale, Mode, Collection, Progression } from 'tonal'
 import { z } from 'zod'
-
-// Mode.triads("major", "C");
-// => ["C", "Dm", "Em", "F", "G", "Am", "Bdim"];
-
-
-
-const modesWeCareAbout = ['major', 'minor']
-const triadLookup = modesWeCareAbout.map((mode) => {
-    return noteNames.map((noteName) => {
-        const triads = Mode.triads(mode, noteName)
-        return { scaleName: mode, tonic: noteName, triads }
-    })
-}).flat()
-
-const triadsWithRomanized = triadLookup.map(({ tonic, triads, scaleName }) => {
-    return { tonic, scaleName, triads, romanizedTriads: Progression.toRomanNumerals(tonic, triads) }
-})
-
 
 const whereTriad = (scaleNames: string[], aliases: string[]) => {
     const tonicScaleArr: [tonic: string, scaleName: string][] = z.array(z.string()).transform((strs) => {
@@ -46,25 +26,6 @@ const whereTriad = (scaleNames: string[], aliases: string[]) => {
     return triadsWhereInScale
 }
 
-const vectorize = (triadsWhereInScale: { triads: string[], tonic: string, scaleName: string }[], aliases: string[]) => {
-    const withRomanizedTriads = triadsWhereInScale.map(({ triads, ...rest }) => {
-
-        const romanizedTriads = Progression.toRomanNumerals(rest.tonic, triads)
-        let myIndex: null | number = null
-        for (let i = 0; i < triads.length; i++) {
-            if (aliases.includes(triads[i])) {
-                myIndex = i
-                break
-            }
-        }
-        return { ...rest, triads, romanizedTriads, myIndex }
-    })
-    return withRomanizedTriads
-}
-
-
-
-
 export const chord: Module = {
     fn: async () => {
         return null
@@ -75,64 +36,13 @@ export const chord: Module = {
             fn: async (args, moduleCalls) => { },
             submodules: {
                 test: {
-                    fn: async (args) => {
-                        const [name1, name2] = args.positionalNonCommands
-                        if (!name1 || name2 === undefined) return null
-
-                        return progressionNodeToTonalOptions(
-                            minor[0], "C", "minor", "Cm", 4
-                        )
-
-                    }
+                    fn: async (args) => { }
                 },
                 starters: {
                     fn: async ({ positionalNonCommands }) => {
                         const manyChordNames = new Set<string>()
                         const [userLetter = "", userScale = ""] = positionalNonCommands
-                        triadsWithRomanized.forEach(({
-                            triads
-                        }) => {
-                            triads.forEach(tri => {
-                                manyChordNames.add(tri)
-                            })
-                        })
-                        const chordNamesWithNotes = [...manyChordNames].map((chordName) => {
-                            return chordNameWithNotes(chordName)
-
-                        }).reduce((accum, curr) => {
-                            const { notes } = curr
-                            const scales = detectScales(notes, userLetter, userScale).map(scale => scale.name)
-                            if (scales.length > 0) {
-                                return [
-                                    ...accum,
-                                    ...scales.map((minorScaleName) => ({
-                                        ...curr,
-                                        scale: minorScaleName
-                                    }))
-                                ]
-                            }
-                            return accum
-                        }, [] as (ChordNameWithNotes & { scale: string })[])
-
-                        const opts = chordNamesWithNotes.map((cnwn) => {
-                            const [scaleTonic, scaleName] = cnwn.scale.split(' ')
-
-                            const progNodes = getProgressionNodes(cnwn, scaleTonic, scaleName)
-                            console.log('around opts', {
-                                cnwn, progNodes
-                            })
-
-                            return {
-                                options: progNodes.map((pn) => progressionNodeToTonalOptions(pn, scaleTonic, scaleName, cnwn.name)),
-                                scaleName,
-                                scaleTonic
-                            }
-                        }).flat()
-                        console.log('opts', {
-                            opts,
-                        })
-                        return chordNamesWithNotes
-                    },
+                    }
                 },
             }
         },
@@ -151,16 +61,6 @@ export const chord: Module = {
                 },
                 next: {
                     fn: async (args, moduleCalls) => {
-                        const stopHere = moduleCalls['chord $ next $'] === undefined
-                        const [chordName] = await moduleCalls['chord $']
-                        const aliases = (await fakeCli(`chord ${chordName} aliases`, 'cli')).aliases
-                        const whereTriad = (await fakeCli(`chord ${chordName} where triad`, 'cli')).triadsWhereInScale
-                        const withRomanizedTriads = vectorize(whereTriad, aliases)
-
-                        if (stopHere) {
-                            return { "stopped at next": withRomanizedTriads }
-                        }
-                        return withRomanizedTriads
                     },
                     submodules: {
                         '$': {
@@ -169,40 +69,9 @@ export const chord: Module = {
                                 '$': {
                                     // e.g. chord C next G major
                                     fn: async ({ "$": dollar, positionalNonCommands, ...rest }, moduleCalls) => {
-                                        const [chordName, tonic, scaleName] = dollar
-                                        const vectorized: ReturnType<typeof vectorize> = await moduleCalls['chord $ next']
-                                        if (['minor'].includes(scaleName) === false) {
-                                            console.error(JSON.stringify({
-                                                ...rest,
-                                                $: dollar,
-                                                positionalNonCommands
-
-                                            }, null, 2))
-                                            throw new Error(`Only the minor prog scale is set up yet.`)
-                                        }
-
-
-                                        const options =
-                                            vectorized.filter((args) => {
-                                                return args.scaleName === "minor"
-                                            }).map((vector) => {
-
-                                                const { romanizedTriads, triads, myIndex, scaleName, tonic: scaleTonic } = vector
-                                                const me = triads[myIndex]
-                                                const opts = romanizedOptions(me, scaleTonic, scaleName, "")
-                                                return opts
-                                            })
-
-
-                                        return {
-                                            formatted: options.join(','),
-                                            next: options.flat()
-                                        }
 
                                     }
                                 }
-
-
                             }
                         },
                     },
@@ -222,27 +91,6 @@ export const chord: Module = {
                     submodules: {
                         triad: {
                             fn: async (args, moduleCalls) => {
-                                const [chordName] = await moduleCalls['chord $']
-                                const aliasesProm = fakeCli(`chord ${chordName} aliases`, 'cli').then((({ aliases }) => aliases))
-                                const whereInScaleProm = fakeCli(`chord ${chordName} where in scale`, 'cli').then(({ scaleNames }) => scaleNames)
-                                const triadData = await awaitAll({ aliases: aliasesProm, whereInScale: whereInScaleProm })
-                                const { aliases, whereInScale } =
-                                    z.object({ aliases: z.array(z.string()), whereInScale: z.array(z.string()) }).parse(triadData)
-
-                                const byLookup = triadLookup.filter(({ scaleName, tonic, triads }) => {
-                                    return !!triads.find((triad) => {
-                                        return aliases.includes(triad)
-                                    })
-                                })
-
-                                const triadsWhereInScale = whereTriad(whereInScale, aliases)
-                                const deduped = [...byLookup, ...triadsWhereInScale.filter(({ tonic, scaleName }) => {
-                                    return !byLookup.find(({ tonic: tonic1, scaleName: scaleName1 }) => {
-                                        return scaleName === scaleName1 && tonic === tonic1
-                                    })
-                                })]
-                                return { triadsWhereInScale: deduped }
-
                             }
                         },
                         in: {
@@ -250,13 +98,6 @@ export const chord: Module = {
                             submodules: {
                                 scale: {
                                     fn: async (args, moduleCalls) => {
-                                        const chordName = await moduleCalls['chord $']
-                                        const notes = Chord.get(chordName)?.notes || []
-                                        const notesPermuted = rotations(notes)
-                                        const aliases = notesPermuted.map((notes1) => Chord.detect(notes1)).flat()
-
-                                        const scaleNames = notesPermuted.map((notes1) => Scale.detect(notes1)).flat()
-                                        return { scaleNames }
                                     },
                                 }
                             }
