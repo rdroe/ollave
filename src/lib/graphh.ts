@@ -1,4 +1,5 @@
 import { Chord, Note, Mode, Scale, Progression, Collection } from "tonal"
+
 export const noteNames = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', "A", "Bb", "B"]
 const allModes = Mode.all()
 export const allScales = allModes.map((m) => {
@@ -89,14 +90,23 @@ Think of your key as C. The formula for the chord is (using scale degrees) b6, 1
 }
 
 
-type ProgressionNode = {
+type ProgressionGraphNode = {
     name: string,
     prev?: string[],
     next: string[] | "Any",
     dotted?: string[]
 }
 
-export const minor: ProgressionNode[] = [
+export type PlayedAs = {
+    chordWithNotes: ChordNameWithNotes
+    scaleTonic: string
+    scaleName: string
+    fromRomanized: string
+    unusedContemporaries: PlayedAs[]
+    previous: PlayedAs | null
+}
+
+export const minor: ProgressionGraphNode[] = [
     {
         name: "IVm",
         next: ["VII"],
