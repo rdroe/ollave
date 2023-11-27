@@ -3,7 +3,7 @@ import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import song from './commands/song/song'
 import bars from './commands/bars/bars'
-import { chord } from './commands/chord'
+import { chord } from './commands/chord/chord'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
 import { mem } from './mem'
@@ -88,6 +88,7 @@ document.body.onload = () => {
             const app = apps[id].dataEl
             console.log('data in handler', data)
             if (apps[id].dataEl) {
+
                 apps[id].dataEl.innerHTML = `${JSON.stringify(data, null, 2)} 
 ${apps[id].dataEl.innerHTML}
 `
