@@ -1,6 +1,6 @@
 import { fakeCli } from 'peprn/browser'
 import { Module, awaitAll } from 'peprn/util'
-import { detectScales } from 'src/lib/graphh'
+import { allScales, detectScales } from 'src/lib/graphh'
 import { Chord, Note, Scale, Mode, Collection, Progression } from 'tonal'
 import { z } from 'zod'
 
@@ -32,6 +32,37 @@ export const chord: Module = {
     },
 
     submodules: {
+        allTriads: {
+            fn: async () => {
+                const formatted = allScales.map((sc) => ({
+                    scaleTonic: sc.tonic,
+                    scaleType: sc.type,
+                    triads: Mode.triads(sc.type, sc.tonic)
+                }))
+                return { formatted }
+            }
+        },
+        allProgressions: {
+            fn: async () => {
+
+                const allTriadsRaw = await fakeCli('chord allTriads', 'cli')
+                const allTriads = z.array(z.object({
+                    scaleTonic: z.string(),
+                    triads: z.array(z.string()),
+                    scaleType: z.string()
+                })).parse(allTriadsRaw.formatted)
+
+                const formatted = allTriads.map(({ scaleTonic, triads, scaleType }) => {
+                    return Progression.toRomanNumerals(scaleTonic, triads).map((romanNum, idx) => ({
+                        scaleTonic,
+                        scaleType,
+                        [romanNum]: triads[idx]
+                    }))
+                })
+                console.log('all progs', formatted)
+                return { formatted }
+            }
+        },
         graph: {
             fn: async (args, moduleCalls) => { },
             submodules: {
@@ -52,6 +83,7 @@ export const chord: Module = {
                 return args['$']
             },
             submodules: {
+
                 detectScales: {
                     fn: async (args) => {
                         const [chordName] = args['$']

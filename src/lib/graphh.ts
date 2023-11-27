@@ -1,5 +1,5 @@
-
 import { Chord, Note, Mode, Scale, Progression, Collection } from "tonal"
+export const noteNames = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', "A", "Bb", "B"]
 const allModes = Mode.all()
 export const allScales = allModes.map((m) => {
     const scales = noteNames.map(nn => `${nn} ${m.name}`)
@@ -41,15 +41,12 @@ export const detectAllScales = (notes: string[]) => {
     } else {
         sorted = notes
     }
-
-
-
     return allScales.filter((sc) => {
         return inScale(sorted, sc)
     })
 }
 
-export const noteNames = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', "A", "Bb", "B"]
+
 export type ChordNameWithNotes = {
     name: string
     notes: string[]
