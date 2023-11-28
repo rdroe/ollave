@@ -58,26 +58,34 @@ export type ChordNameWithNotes = {
 type EnabledChordNameWithNotes = ChordNameWithNotes & {
     enabler: string[] | null
 }
-export const N6 = function N6(tonic: string, scaleName: string) {
+export const N6 = function N6(tonic: string, scaleName: string): EnabledChordNameWithNotes[] {
     const secondDegree = Scale.degrees(`${tonic} ${scaleName}`)(2)
     const neoRoot = Note.simplify(`${secondDegree}b`.replace('#b', ''))
     const notes = ['1P', '3M', '5P'].map(Note.transposeFrom(neoRoot))
     if (Note.octave(notes[0]) !== undefined) {
         throw new Error(`Neapolitan chord ${notes} has octave`)
     }
-    return Collection.rotate(1, notes)
+    return [{
+        name: "N6",
+        notes: Collection.rotate(1, notes),
+        enabler: null
+    }]
 }
 
-export const V64 = function V64(tonic: string) {
+export const V64 = function V64(tonic: string): EnabledChordNameWithNotes[] {
     const [chordName] = Progression.fromRomanNumerals(tonic, ["V"])
     const V = Chord.get(chordName)?.notes
     if (Note.octave(V[0]) !== undefined) {
         throw new Error(`V64 chord ${V} has octave`)
     }
-    return Collection.rotate(1, V)
+    return [{
+        name: "V64",
+        notes: Collection.rotate(1, V),
+        enabler: null
+    }]
 }
 
-export const Aug6 = function Aug6(tonic: string, scaleName: string) {
+export const Aug6 = function Aug6(tonic: string, scaleName: string): EnabledChordNameWithNotes[] {
     /*
 Think of your key as C. The formula for the chord is (using scale degrees) b6, 1, #4, or in C, this would be Ab, C, F#. https://www.reddit.com/r/musictheory/comments/2vhagj/eli5_augmented_sixth_chords/
 */
@@ -89,18 +97,45 @@ Think of your key as C. The formula for the chord is (using scale degrees) b6, 1
     if (Note.octave(one) !== undefined || Note.octave(four) !== undefined || Note.octave(sharpFour) !== undefined) {
         throw new Error(`Aug6th chord ${[flatSix, one, sharpFour]} has octave`)
     }
-    return [flatSix, one, sharpFour]
+
+    return [{
+        name: "Aug6",
+        notes: [flatSix, one, sharpFour],
+        enabler: null
+    }]
 }
+
+
+export const All = function Aug6(tonic: string, scaleName: string): EnabledChordNameWithNotes[] {
+    /*
+Think of your key as C. The formula for the chord is (using scale degrees) b6, 1, #4, or in C, this would be Ab, C, F#. https://www.reddit.com/r/musictheory/comments/2vhagj/eli5_augmented_sixth_chords/
+*/
+    const six = Scale.degrees(`${tonic} ${scaleName}`)(6)
+    const flatSix = Note.simplify(`${six}b`.replace('#b', ''))
+    const one = Scale.degrees(`${tonic} ${scaleName}`)(1)
+    const four = Scale.degrees(`${tonic} ${scaleName}`)(4)
+    const sharpFour = Note.simplify(`${four}#`.replace('b#', ''))
+    if (Note.octave(one) !== undefined || Note.octave(four) !== undefined || Note.octave(sharpFour) !== undefined) {
+        throw new Error(`Aug6th chord ${[flatSix, one, sharpFour]} has octave`)
+    }
+    return [{
+        name: "All",
+        notes: [],
+        enabler: null
+    }]
+}
+
 
 export const fns = {
     V64,
     Aug6,
-    N6
+    N6,
+    Any: All
 }
 
 export type ProgressionGraphNode = {
-    name: string,
-    next: string[] | "Any",
+    name: string, // may be a function name 
+    next: string[],
     dotted?: string[]
     prev?: string[],
 }
@@ -169,27 +204,23 @@ export const romanizeSlashChord = (tonic: string, slashRoman: string) => {
 }
 
 
-
+const isFnName = (arg: string): arg is keyof typeof fns => {
+    return Object.keys(fns).includes(arg)
+}
 export const optionalRomans = ["IImdim"]
 export function makeProgNodeTranslator(
     userLetter: string,
     userScale: string
 ): (progNode: ProgressionGraphNode) => ProgressionOptions | null {
 
-    const notesAreInScale = (notes: string[]) => {
-        const strippedNotes = notes.map(nt => Note.get(nt).pc)
-        const scaleNames = Scale.detect(strippedNotes, { tonic: userLetter })
-
-        return scaleNames.includes(`${userLetter} ${userScale}`)
-    }
-
     return (progNodeIn) => {
         let translatedSource: ChordNameWithNotes | undefined
 
         if (fns[progNodeIn.name as keyof typeof fns]) {
+
             translatedSource = {
                 name: progNodeIn.name,
-                notes: fns[progNodeIn.name as keyof typeof fns](userLetter, userScale)
+                notes: []
             }
         } else {
             const newName = romanChordNameToReal(userLetter, userScale, progNodeIn.name)
@@ -202,21 +233,25 @@ export function makeProgNodeTranslator(
             return null
         }
 
-        const next = progNodeIn.next === "Any" ? "Any" : progNodeIn.next.map((romanName) => {
+        const next = progNodeIn.next.reduce((accum, romanName) => {
+            if (isFnName(romanName)) {
+                const fnRes = fns[romanName](userLetter, userScale)
+                return [...accum, ...fnRes]
+            }
             const realizedName = romanChordNameToReal(userLetter, userScale, romanName)
-            const initCnwn = chordNameWithNotes(realizedName)
-            //            const cnwn = initCnwn && notesAreInScale(initCnwn.notes) ? initCnwn : null
-            const cnwn = initCnwn
-            if (cnwn === null || cnwn.notes.length === 0) return null
+            const cnwn = chordNameWithNotes(realizedName)
 
+            if (cnwn === null || cnwn.notes.length === 0) return accum
 
-            return {
+            const newNode = {
                 ...cnwn,
                 enabler: progNodeIn.prev ? progNodeIn.prev.map((romanName: string) => {
                     return romanChordNameToReal(userLetter, userScale, romanName)
                 }) : null
             }
-        }).filter(n => n !== null)
+            return [...accum, newNode]
+
+        }, [] as EnabledChordNameWithNotes[])
 
         const dotted = progNodeIn?.dotted?.map((romanName) => {
             const realizedName = romanChordNameToReal(userLetter, userScale, romanName)
@@ -375,7 +410,7 @@ export const minor: { [name: string]: ProgressionGraphNode[] } = {
         name: "V/V",
         next: ["V64", "VIIdim"],
     }],
-    'Im': [{ name: "Im", next: "Any" }],
+    'Im': [{ name: "Im", next: ["Any"] }],
 }
 
 const oneIndexedArr = (len: number) => {
