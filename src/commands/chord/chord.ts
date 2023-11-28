@@ -1,7 +1,7 @@
 import { fakeCli } from 'peprn/browser'
 import { Module } from 'peprn/util'
-import { fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions } from 'src/lib/graphh'
-import { randomInt } from 'src/lib/helpers'
+import { fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, ProgressionOptionsEntry, EnabledChordNameWithNotes } from 'src/lib/graphh'
+
 import { Chord, Note, Scale, Mode, Collection, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
 
@@ -71,6 +71,72 @@ export const chord: Module = {
                     fn: async ({ positionalNonCommands }) => {
                         const [userLetter = "", userScale = ""] = positionalNonCommands
                         return scaleLetters(userLetter, userScale)
+                    }
+                },
+                test2: {
+                    fn: async ({ positionalNonCommands }) => {
+                        const [userLetter = "", userScale = ""] = positionalNonCommands
+                        const graph: {
+                            [chordName: string]: ProgressionOptions
+                        } = (await fakeCli(`chord graph test ${userLetter} ${userScale}`)).formatted
+
+                        const allNexts = Object.entries(graph).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
+                            if (po === null) {
+                                console.log('null po found', { nm, po })
+                                return accum
+                            }
+                            return [...accum, ...po.next]
+                        }, [] as EnabledChordNameWithNotes[])
+
+                        const prunedNexts1 = allNexts.filter((enabledChordWithNotes) => {
+                            const fromGraph = graph[enabledChordWithNotes.name] ?? null
+                            if (fromGraph) {
+                                return fromGraph.next.filter(({ name }) => {
+                                    return !!graph[name]
+                                }).length > 0
+
+                            }
+                            return false
+                        })
+
+
+                        // next, get any with a next in the prunedNexts
+                        const prunedEntries = Object.entries(graph).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
+                            if (prunedNexts1.find(
+                                ({ name }) => name === nm
+                            )) {
+                                return [...accum, [nm, [po]]]
+                            }
+                            return accum
+                        }, [] as ProgressionOptionsEntry[])
+                        const pruned = Object.fromEntries(prunedEntries) as { [nm: string]: ProgressionOptions }
+                        const allNexts2 = prunedEntries.reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
+                            if (po === null || !po.next) {
+                                console.log('null po found', { nm, po })
+                                return accum
+                            }
+                            return [...accum, ...po.next]
+                        }, [] as EnabledChordNameWithNotes[])
+                        const aErrors = allNexts2.filter((ec) => {
+                            const po = pruned[ec.name]
+                            if (!po) return true
+                            if (!po.next) return true
+                            if (po.next.find((someNext) => {
+                                const subPruned = pruned[someNext.name]
+                                return !subPruned || subPruned.next.length < 1
+                            })) {
+                                return true
+                            }
+                            return false
+                        })
+                        if (aErrors.length) {
+                            const aErrorsStr = JSON.stringify(aErrors, null, 2)
+                            throw new Error(`Found  unusuable "next" array element(s): ${aErrorsStr}`)
+                        }
+                        return {
+                            formatted: { aErrors, pruned }
+                        }
+
                     }
                 },
                 test: {

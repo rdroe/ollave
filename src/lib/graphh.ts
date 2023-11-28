@@ -55,7 +55,7 @@ export type ChordNameWithNotes = {
     notes: string[]
 }
 
-type EnabledChordNameWithNotes = ChordNameWithNotes & {
+export type EnabledChordNameWithNotes = ChordNameWithNotes & {
     enabler: string[] | null
 }
 export const N6 = function N6(tonic: string, scaleName: string): EnabledChordNameWithNotes[] {
@@ -276,7 +276,7 @@ export function makeProgNodeTranslator(
         }
     }
 }
-
+export type ProgressionOptionsEntry = [name: string, po: ProgressionOptions]
 export type ProgressionOptions = {
     roman: string
     scaleTonic: string
