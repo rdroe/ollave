@@ -1,6 +1,8 @@
 import { fakeCli } from 'peprn/browser'
 import { Module } from 'peprn/util'
-import { fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, ProgressionOptionsEntry, EnabledChordNameWithNotes } from 'src/lib/graphh'
+import { fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, ProgressionOptionsEntry, EnabledChordNameWithNotes, unromanizeSecondaryChord } from '../../lib/graphh'
+import { randomInt } from '../../lib/helpers'
+
 
 import { Chord, Note, Scale, Mode, Collection, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
@@ -11,42 +13,40 @@ export const chord: Module = {
         return null
     },
     submodules: {
-        allTriads: {
-            fn: async () => {
+        triads: {
+            fn: async (args) => {
+                const [userLetter = "", userScale = "", noteLetter = null] = args.positionalNonCommands
                 const formatted = allScales.map((sc) => ({
                     scaleTonic: sc.tonic,
                     scaleType: sc.type,
                     triads: Mode.triads(sc.type, sc.tonic)
                 }))
-                return { formatted }
+                if (!userLetter && !userScale) {
+                    return { formatted }
+                }
+                return {
+                    formatted: formatted.filter(
+                        ({ scaleTonic, scaleType }) => scaleTonic === userLetter && scaleType === userScale)
+                }
             }
         },
-        translateLetter: {
-            fn: async (args) => {
-                const [userLetter = "", userScale = "", noteLetter = null] = args.positionalNonCommands
-                /*
-                const translateFn = letterToRomanNumeralMap(userLetter, userScale)
-                if (typeof noteLetter !== 'string') throw new Error(`translatable note is required; instead ${noteLetter}`)
-
-                return translateFn(noteLetter)
-*/
-            }
-        },
-
         fromRoman: {
             fn: async (args, moduleCalls) => {
+
                 const [userLetter = "", userScale = "", romanName = null] = args.positionalNonCommands
                 return romanChordNameToReal(userLetter, userScale, romanName)
             },
         },
-        allProgressions: {
-            fn: async () => {
-                const allTriadsRaw = await fakeCli('chord allTriads', 'cli')
+        progressions: {
+            fn: async (args) => {
+                const [userLetter = "", userScale = "", noteLetter = null] = args.positionalNonCommands
+                const allTriadsRaw = await fakeCli(`chord triads ${userLetter} ${userScale}`, 'cli')
                 const allTriads = z.array(z.object({
                     scaleTonic: z.string(),
                     triads: z.array(z.string()),
                     scaleType: z.string()
                 })).parse(allTriadsRaw.formatted)
+
                 const formatted = allTriads.map(({ scaleTonic, triads, scaleType }) => {
                     return Progression.toRomanNumerals(scaleTonic, triads).map((romanNum, idx) => ({
                         scaleTonic,
@@ -55,6 +55,11 @@ export const chord: Module = {
                     }))
                 })
                 return { formatted }
+            }
+        },
+        progression: {
+            fn: async (a, b) => {
+
             }
         },
         roman: {
@@ -73,6 +78,7 @@ export const chord: Module = {
                         return scaleLetters(userLetter, userScale)
                     }
                 },
+
                 test2: {
                     fn: async ({ positionalNonCommands }) => {
                         const [userLetter = "", userScale = ""] = positionalNonCommands
@@ -98,43 +104,124 @@ export const chord: Module = {
                             }
                             return false
                         })
-
-
                         // next, get any with a next in the prunedNexts
                         const prunedEntries = Object.entries(graph).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
                             if (prunedNexts1.find(
                                 ({ name }) => name === nm
                             )) {
-                                return [...accum, [nm, [po]]]
+                                return [...accum, [nm, po]]
                             }
                             return accum
                         }, [] as ProgressionOptionsEntry[])
-                        const pruned = Object.fromEntries(prunedEntries) as { [nm: string]: ProgressionOptions }
-                        const allNexts2 = prunedEntries.reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
+                        /*
+ 
+                        // next, get any with a next in the prunedNexts
+                        const prunedEntries = Object.entries(graph).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
+                            const foundNext = prunedNexts1.find(
+                                ({ name }) => name === nm
+                            )
+ 
+                            if (foundNext && graph[foundNext.name]) {
+                                const subNexts = graph[foundNext.name]?.next
+                                if (subNexts) {
+                                    const badSubnexts = subNexts.filter((ecn) => {
+                                        return !graph[ecn.name] || !graph[ecn.name].next || graph[ecn.name].next.length === 0
+                                    })
+                                    if (badSubnexts.length > 0) {
+                                        console.error('badSubnexts', { badSubnexts })
+                                    } else {
+                                        return [...accum, [nm, po]]
+                                    }
+                                }
+                            }
+ 
+                            return accum
+                        }, [] as ProgressionOptionsEntry[])
+*/
+
+                        console.log('prunedEntries', { prunedEntries })
+
+                        const allNexts2 = (prunedEntries as ProgressionOptionsEntry[]).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
                             if (po === null || !po.next) {
-                                console.log('null po found', { nm, po })
+                                console.log('null po found (allNexts2', { nm, po })
                                 return accum
                             }
+
+
                             return [...accum, ...po.next]
                         }, [] as EnabledChordNameWithNotes[])
+
                         const aErrors = allNexts2.filter((ec) => {
-                            const po = pruned[ec.name]
+
+                            const po = prunedEntries.find(([nm, obj]: ProgressionOptionsEntry) => {
+                                return nm === ec.name
+                            }) as undefined | ProgressionOptionsEntry
+
                             if (!po) return true
-                            if (!po.next) return true
-                            if (po.next.find((someNext) => {
-                                const subPruned = pruned[someNext.name]
-                                return !subPruned || subPruned.next.length < 1
+
+                            if (!po[1].next) return true
+                            if (po[1].next.find((someNext) => {
+                                const subPruned = prunedEntries.find(([nm, obj]: ProgressionOptionsEntry) => {
+                                    return nm === someNext.name
+                                }) as undefined | ProgressionOptionsEntry
+                                return !subPruned || subPruned[1].next.length < 1
                             })) {
                                 return true
                             }
                             return false
+                        }).map((ecn) => {
+                            return ecn.name
                         })
+                        //                            ..aErrors.push("Aug6")
                         if (aErrors.length) {
                             const aErrorsStr = JSON.stringify(aErrors, null, 2)
-                            throw new Error(`Found  unusuable "next" array element(s): ${aErrorsStr}`)
+                            console.error(`Found  unusuable "next" array element(s): ${aErrorsStr}`)
                         }
+
+                        const pruned = Object.fromEntries((
+                            prunedEntries as ProgressionOptionsEntry[]
+                        ).reduce((accum, e: ProgressionOptionsEntry) => {
+                            if (aErrors.includes(e[0])) { return accum }
+                            const filtered = e[1].next.filter(({ name }) => {
+                                return !aErrors.includes(name)
+                            })
+                            if (filtered.length > 0) {
+                                const newE = [e[0], {
+                                    ...e[1],
+                                    next: filtered
+                                }]
+                                return [...accum, newE]
+                            }
+                            return accum
+                        }, [] as ProgressionOptionsEntry[])) as { [nm: string]: ProgressionOptions }
+
+                        const chords: string[] = [Object.keys(pruned)[0]]
+                        let error: undefined | string
+
+                        while (chords.length < 100 && !error) {
+                            const prev = chords[chords.length - 1]
+                            if (!pruned[prev]) {
+                                console.log('error;', chords, { prev })
+                                error = chords.toString()
+                                break
+                            }
+                            const nexts = pruned[prev].next
+                            const nextIdx = randomInt(0, nexts.length - 1)
+                            const nextChordName = nexts[nextIdx].name
+                            chords.push(nextChordName)
+                        }
+
                         return {
-                            formatted: { aErrors, pruned }
+
+                            formatted: {
+                                chords: chords.join(' '),
+                                aaProgram: `\n\
+phase aphrodite 100\n\
+bars aphrodite fill ${chords.join(' ')}\n\
+song start\n\
+`
+                                , aErrors, pruned
+                            }
                         }
 
                     }
@@ -281,7 +368,17 @@ export const chord: Module = {
                     }
                 },
 
+                unromanize: {
+                    fn: async ({ $, positionalNonCommands }) => {
+                        const [chordName] = $
+                        const [tonic, root] = positionalNonCommands
 
+                        //                      if (typeof root === "string" && typeof tonic !== "string") return "a value for tonic is required if a value for root is passed"
+
+                        return unromanizeSecondaryChord(tonic, chordName)
+
+                    }
+                },
                 getChord: {
                     fn: async ({ $, positionalNonCommands }) => {
                         const [tonic, root] = positionalNonCommands
