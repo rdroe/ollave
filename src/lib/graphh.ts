@@ -1,8 +1,8 @@
-import { fakeCli } from "peprn/browser"
+import fakeCli from "peprn/fakeCli"
+
 import { Chord, Note, Mode, Scale, Progression, Collection } from "tonal"
 export const sharpNoteNames = ['C#', 'D#', 'F#', 'G#', "A#"]
 export const noteNames = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', "A", "Bb", "B"].concat(sharpNoteNames)
-
 const allModes = Mode.all()
 
 export const allScales = allModes.map((m) => {
@@ -197,7 +197,8 @@ export const romanChordNameToReal = (scaleTonic: string, scaleName: string, roma
     return romanChordNameToReal_(scaleTonic, scaleName, romanName)
 }
 
-const romanChordNameToReal2 = async (scaleTonic: string, scaleName: string, romanName: string) => {
+export const getTriadByRomanNumeral = async (scaleTonic: string, scaleName: string, romanNum: string) => {
+
     const indicesStartsFlat = Object.entries({
         bI: 0,
         bII: 1,
@@ -207,6 +208,7 @@ const romanChordNameToReal2 = async (scaleTonic: string, scaleName: string, roma
         bVI: 5,
         bVII: 6,
     })
+
     const indicesStarts = Object.entries({
         I: 0,
         II: 1,
@@ -218,46 +220,107 @@ const romanChordNameToReal2 = async (scaleTonic: string, scaleName: string, roma
     })
 
     const matchableFlats = indicesStartsFlat.sort((a, b) => {
-        return a[0].length - b[0].length
+        return b[0].length - a[0].length
     })
 
     const matchableNats = indicesStarts.sort((a, b) => {
-        return a[0].length - b[0].length
+        return b[0].length - a[0].length
     })
 
     const lookup = matchableFlats.concat(matchableNats)
-    const prog = (await fakeCli(`chord progressions A minor`)).formatted[0]
-    const matcher = (str: string) => str.startsWith(romanName) || str.startsWith(`b${romanName}`);
 
-    const progElem = prog.find(() => {
+    const prog = (await fakeCli(`chord progressions ${scaleTonic} ${scaleName.toLocaleLowerCase()}`)).formatted[0]
 
+
+    const progEntries = Object.entries(prog as { [idx: string]: { roman: string, chordName: string } })
+
+    console.log('progEntries', { progEntries: Object.fromEntries(progEntries), romanNum, scaleTonic, scaleName })
+    const found = progEntries.find(([, progElem]) => {
+        return progElem.roman === romanNum
     })
 
+    return found[1].chordName
 
-    return newName
+
+    //    return newName
 
 }
-export const unromanizeSecondaryChord = async (tonic: string, slashRoman: string) => {
+export const guessRoman = function romanOnly(romNum: string, chord: string) {
+    const chord1 = Chord.get(chord)
+    const alias = chord1.aliases.find((a) => {
+        return romNum.includes(a)
+    })
+    if (alias) {
+        return romNum.split(alias)[0]
+    }
+}
+// given e.g. IImdim, return II
+// given e.g. bIIImdim, return bIII
+export function romanFromProgRoman(progRoman: string) {
+
+    const indicesStartsFlat = Object.entries({
+        bI: 0,
+        bII: 1,
+        bIII: 2,
+        bIV: 3,
+        bV: 4,
+        bVI: 5,
+        bVII: 6,
+    })
+
+    const indicesStarts = Object.entries({
+        I: 0,
+        II: 1,
+        III: 2,
+        IV: 3,
+        V: 4,
+        VI: 5,
+        VII: 6,
+    })
+    console.log('progRoman', { progRoman })
+    const longestMatch = indicesStartsFlat.concat(indicesStarts).filter(([roman1, idx]) => {
+
+        return progRoman.startsWith(roman1)
+    }).sort(([roman1, idx1], [roman2, idx2]) => {
+        return roman2.length - roman1.length
+    })
+    if (!longestMatch || !longestMatch.length) {
+        throw new Error(`Could not find roman numeral for ${progRoman}`)
+    }
+    return longestMatch[0][0]
+}
+
+export const unromanizeSecondaryChord = async (tonic: string, scale: string, slashRoman: string) => {
 
     const slashed = slashRoman.split('/')
-    const [name1] = Progression.fromRomanNumerals(tonic, [slashed[0]])
-    const rightHandChord = Chord.get(name1)
-    const secondaryTonic = rightHandChord.tonic
-    const secondaryScale = rightHandChord.quality
-    console.log('unromanize', { secondaryTonic, secondaryScale, 'slashed': slashed, 'slashed[1]': slashed[1] })
-    const secondaryChord = Progression.fromRomanNumerals(secondaryTonic, [slashed[1]])
-    console.log('fromRomanNumerals', { secondaryChord })
+    console.log('slashed', { slashed })
+    const dominantRoman = slashed[0]
+    const secondaryRoman = slashed[1]
+    const dominantChord = await getTriadByRomanNumeral(tonic, scale, dominantRoman)
+    console.log('296', { dominantChord, dominantRoman, secondaryRoman, slashRoman })
+    const domChordData = Chord.get(dominantChord)
 
-    return `${secondaryChord[0]} -> ${rightHandChord.symbol}`
-    // const [name2] = Progression.fromRomanNumerals(tonic, slashed)
-    //    if (!name1 || !name2) return ''
-    //    return `${name1}/${name2}`
+    const secondaryScaleTonic = domChordData.tonic
+    const secondaryScaleName = domChordData.quality
+    console.log('secondaryScaleTonic', { secondaryScaleTonic, secondaryScaleName })
+    const secondaryChord = await getTriadByRomanNumeral(secondaryScaleTonic, secondaryScaleName, secondaryRoman)
+    console.log("unromanizeSecondaryChord", {
+        secondaryChord,
+        secondaryScaleTonic,
+        secondaryScaleName,
+        secondaryRoman,
+        dominantChord,
+        dominantRoman,
+        slashRoman
+    })
+    return `${dominantChord}/${secondaryChord}`
+
 }
-
 
 const isFnName = (arg: string): arg is keyof typeof fns => {
     return Object.keys(fns).includes(arg)
 }
+
 export const optionalRomans = ["IImdim"]
 export function makeProgNodeTranslator(
     userLetter: string,
@@ -529,6 +592,7 @@ export const detectScales = (notes: string[], userLetter?: string, userScale?: s
     const scales = allScales.reduce((accum, scale) => {
         const split = scale.name.split(' ')
         const scaleTonic = Note.get(split[0])
+
         const nameOnly = split.slice(1).join(' ').toLocaleLowerCase()
         const nameMatch = scaleTonic.pc === split[0] && userScale.toLowerCase().includes(nameOnly)
         const notAlready = !accum.find(({ name }) => name === scale.name)

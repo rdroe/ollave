@@ -1,6 +1,6 @@
-import { fakeCli } from 'peprn/browser'
+import fakeCli from 'peprn/fakeCli'
 import { Module } from 'peprn/util'
-import { fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, ProgressionOptionsEntry, EnabledChordNameWithNotes, unromanizeSecondaryChord } from '../../lib/graphh'
+import { fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, ProgressionOptionsEntry, EnabledChordNameWithNotes, unromanizeSecondaryChord, getTriadByRomanNumeral, guessRoman, romanFromProgRoman } from '../../lib/graphh'
 import { randomInt } from '../../lib/helpers'
 
 
@@ -34,8 +34,10 @@ export const chord: Module = {
             fn: async (args, moduleCalls) => {
 
                 const [userLetter = "", userScale = "", romanName = null] = args.positionalNonCommands
-                return romanChordNameToReal(userLetter, userScale, romanName)
+                //                return getTriadByRomanNumeral(userLetter, userScale, romanName)
+                return unromanizeSecondaryChord(userLetter, userScale, romanName)
             },
+
         },
         progressions: {
             fn: async (args) => {
@@ -48,11 +50,23 @@ export const chord: Module = {
                 })).parse(allTriadsRaw.formatted)
 
                 const formatted = allTriads.map(({ scaleTonic, triads, scaleType }) => {
-                    return Progression.toRomanNumerals(scaleTonic, triads).map((romanNum, idx) => ({
-                        scaleTonic,
-                        scaleType,
-                        [romanNum]: triads[idx]
-                    }))
+                    return Progression.toRomanNumerals(scaleTonic, triads).map((romanNum, idx) => {
+
+                        let roman: string | undefined = RomanNumeral.get(romanNum).roman
+                        if (!roman) {
+                            roman = guessRoman(romanNum, triads[idx])
+                        }
+
+                        return {
+                            scaleTonic,
+                            scaleType,
+                            [romanNum]: triads[idx],
+                            roman,
+                            progressionName: romanNum,
+                            chordName: triads[idx]
+
+                        }
+                    })
                 })
                 return { formatted }
             }
@@ -375,7 +389,7 @@ song start\n\
 
                         //                      if (typeof root === "string" && typeof tonic !== "string") return "a value for tonic is required if a value for root is passed"
 
-                        return unromanizeSecondaryChord(tonic, chordName)
+                        //                        return unromanizeSecondaryChord(tonic, chordName)
 
                     }
                 },

@@ -1,4 +1,4 @@
-import { apps, createApp, fakeCli } from 'peprn/browser'
+import { apps, createApp } from 'peprn/browser'
 import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import song from './commands/song/song'
@@ -7,6 +7,7 @@ import { chord } from './commands/chord/chord'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
 import { mem } from './mem'
+import fakeCli from 'peprn/fakeCli'
 const { songNames } = mem()
 
 let namesResolver: Function | null = null

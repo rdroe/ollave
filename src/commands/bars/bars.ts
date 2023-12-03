@@ -4,7 +4,6 @@ import { SubcommandPatterns, runSubcommandsOrNull } from 'src/lib/subcommands'
 import { getAllPhaseBars } from 'src/mem-db'
 import { mem } from '../../mem'
 import { Chord, Note } from 'tonal'
-import { z } from 'zod'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 
 const { notesByBar } = mem()

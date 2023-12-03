@@ -1,7 +1,7 @@
 import { Module } from 'peprn/util'
 import { mem } from '../../mem'
 import { browser } from 'user-tables'
-import { fakeCli } from 'peprn/browser'
+import fakeCli from 'peprn/fakeCli'
 import { userTables } from 'user-tables/browser'
 import { startCueObservable } from './observables'
 
