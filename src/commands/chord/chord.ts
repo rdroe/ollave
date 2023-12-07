@@ -1,12 +1,12 @@
 import fakeCli from 'peprn/fakeCli'
 import { Module } from 'peprn/util'
-import { fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, ProgressionOptionsEntry, EnabledChordNameWithNotes, unromanizeSecondaryChord, getTriadByRomanNumeral, guessRoman, romanFromProgRoman } from '../../lib/graphh'
+import {
+    fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, romanFromProgRoman, isChordFn, unromanizeSecondaryChords, randomElement, chordNameWithNotes, fnChordNameWithNotes, ChordNameWithNotes,
+} from '../../lib/graphh'
+
 import { randomInt } from '../../lib/helpers'
-
-
 import { Chord, Note, Scale, Mode, Collection, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
-
 
 export const chord: Module = {
     fn: async () => {
@@ -16,14 +16,17 @@ export const chord: Module = {
         triads: {
             fn: async (args) => {
                 const [userLetter = "", userScale = "", noteLetter = null] = args.positionalNonCommands
+
                 const formatted = allScales.map((sc) => ({
                     scaleTonic: sc.tonic,
                     scaleType: sc.type,
                     triads: Mode.triads(sc.type, sc.tonic)
                 }))
+
                 if (!userLetter && !userScale) {
                     return { formatted }
                 }
+
                 return {
                     formatted: formatted.filter(
                         ({ scaleTonic, scaleType }) => scaleTonic === userLetter && scaleType === userScale)
@@ -31,18 +34,16 @@ export const chord: Module = {
             }
         },
         fromRoman: {
-            fn: async (args, moduleCalls) => {
-
+            fn: async (args) => {
                 const [userLetter = "", userScale = "", romanName = null] = args.positionalNonCommands
-                //                return getTriadByRomanNumeral(userLetter, userScale, romanName)
-                return unromanizeSecondaryChord(userLetter, userScale, romanName)
+                return unromanizeSecondaryChords(userLetter, userScale, romanName)
             },
-
         },
         progressions: {
             fn: async (args) => {
-                const [userLetter = "", userScale = "", noteLetter = null] = args.positionalNonCommands
+                const [userLetter = "", userScale = ""] = args.positionalNonCommands
                 const allTriadsRaw = await fakeCli(`chord triads ${userLetter} ${userScale}`, 'cli')
+
                 const allTriads = z.array(z.object({
                     scaleTonic: z.string(),
                     triads: z.array(z.string()),
@@ -51,12 +52,7 @@ export const chord: Module = {
 
                 const formatted = allTriads.map(({ scaleTonic, triads, scaleType }) => {
                     return Progression.toRomanNumerals(scaleTonic, triads).map((romanNum, idx) => {
-
-                        let roman: string | undefined = RomanNumeral.get(romanNum).roman
-                        if (!roman) {
-                            roman = guessRoman(romanNum, triads[idx])
-                        }
-
+                        const roman = romanFromProgRoman(romanNum)
                         return {
                             scaleTonic,
                             scaleType,
@@ -100,115 +96,7 @@ export const chord: Module = {
                             [chordName: string]: ProgressionOptions
                         } = (await fakeCli(`chord graph test ${userLetter} ${userScale}`)).formatted
 
-                        const allNexts = Object.entries(graph).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
-                            if (po === null) {
-                                console.log('null po found', { nm, po })
-                                return accum
-                            }
-                            return [...accum, ...po.next]
-                        }, [] as EnabledChordNameWithNotes[])
-
-                        const prunedNexts1 = allNexts.filter((enabledChordWithNotes) => {
-                            const fromGraph = graph[enabledChordWithNotes.name] ?? null
-                            if (fromGraph) {
-                                return fromGraph.next.filter(({ name }) => {
-                                    return !!graph[name]
-                                }).length > 0
-
-                            }
-                            return false
-                        })
-                        // next, get any with a next in the prunedNexts
-                        const prunedEntries = Object.entries(graph).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
-                            if (prunedNexts1.find(
-                                ({ name }) => name === nm
-                            )) {
-                                return [...accum, [nm, po]]
-                            }
-                            return accum
-                        }, [] as ProgressionOptionsEntry[])
-                        /*
- 
-                        // next, get any with a next in the prunedNexts
-                        const prunedEntries = Object.entries(graph).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
-                            const foundNext = prunedNexts1.find(
-                                ({ name }) => name === nm
-                            )
- 
-                            if (foundNext && graph[foundNext.name]) {
-                                const subNexts = graph[foundNext.name]?.next
-                                if (subNexts) {
-                                    const badSubnexts = subNexts.filter((ecn) => {
-                                        return !graph[ecn.name] || !graph[ecn.name].next || graph[ecn.name].next.length === 0
-                                    })
-                                    if (badSubnexts.length > 0) {
-                                        console.error('badSubnexts', { badSubnexts })
-                                    } else {
-                                        return [...accum, [nm, po]]
-                                    }
-                                }
-                            }
- 
-                            return accum
-                        }, [] as ProgressionOptionsEntry[])
-*/
-
-                        console.log('prunedEntries', { prunedEntries })
-
-                        const allNexts2 = (prunedEntries as ProgressionOptionsEntry[]).reduce((accum, [nm, po]: ProgressionOptionsEntry) => {
-                            if (po === null || !po.next) {
-                                console.log('null po found (allNexts2', { nm, po })
-                                return accum
-                            }
-
-
-                            return [...accum, ...po.next]
-                        }, [] as EnabledChordNameWithNotes[])
-
-                        const aErrors = allNexts2.filter((ec) => {
-
-                            const po = prunedEntries.find(([nm, obj]: ProgressionOptionsEntry) => {
-                                return nm === ec.name
-                            }) as undefined | ProgressionOptionsEntry
-
-                            if (!po) return true
-
-                            if (!po[1].next) return true
-                            if (po[1].next.find((someNext) => {
-                                const subPruned = prunedEntries.find(([nm, obj]: ProgressionOptionsEntry) => {
-                                    return nm === someNext.name
-                                }) as undefined | ProgressionOptionsEntry
-                                return !subPruned || subPruned[1].next.length < 1
-                            })) {
-                                return true
-                            }
-                            return false
-                        }).map((ecn) => {
-                            return ecn.name
-                        })
-                        //                            ..aErrors.push("Aug6")
-                        if (aErrors.length) {
-                            const aErrorsStr = JSON.stringify(aErrors, null, 2)
-                            console.error(`Found  unusuable "next" array element(s): ${aErrorsStr}`)
-                        }
-
-                        const pruned = Object.fromEntries((
-                            prunedEntries as ProgressionOptionsEntry[]
-                        ).reduce((accum, e: ProgressionOptionsEntry) => {
-                            if (aErrors.includes(e[0])) { return accum }
-                            const filtered = e[1].next.filter(({ name }) => {
-                                return !aErrors.includes(name)
-                            })
-                            if (filtered.length > 0) {
-                                const newE = [e[0], {
-                                    ...e[1],
-                                    next: filtered
-                                }]
-                                return [...accum, newE]
-                            }
-                            return accum
-                        }, [] as ProgressionOptionsEntry[])) as { [nm: string]: ProgressionOptions }
-
+                        const pruned = graph
                         const chords: string[] = [Object.keys(pruned)[0]]
                         let error: undefined | string
 
@@ -225,16 +113,38 @@ export const chord: Module = {
                             chords.push(nextChordName)
                         }
 
+                        const chordsWithNotes = chords.map((someChord: string) => {
+                            const oct = randomElement([3])
+                            let chord: ChordNameWithNotes | undefined
+                            if (isChordFn(someChord)) {
+                                const tmp = fnChordNameWithNotes(someChord, userLetter, userScale)
+                                chord = {
+                                    ...tmp,
+                                    notes: tmp.notes.map((n) => { return `${n}${oct}`.toLowerCase() })
+
+                                }
+                            } else {
+                                chord = chordNameWithNotes(someChord, oct)
+                            }
+
+                            return chord
+                        })
+                        const noteStr = chordsWithNotes.map(
+                            (
+                                ({ notes }) => notes.map(Note.simplify).join(',').toLowerCase()
+                            )
+                        ).join(' ')
                         return {
 
                             formatted: {
-                                chords: chords.join(' '),
-                                aaProgram: `\n\
-phase aphrodite 100\n\
-bars aphrodite fill ${chords.join(' ')}\n\
-song start\n\
+                                notes: noteStr,
+                                chords: chordsWithNotes.map(({ name }) => name).join(' '),
+                                aaProgram: `
+phase aphrodite 100
+bars aphrodite fill ${noteStr}
+song start
 `
-                                , aErrors, pruned
+                                , pruned
                             }
                         }
 
@@ -248,10 +158,8 @@ song start\n\
                         const names = Object.keys(minor)
                         const untranslatable = names.map((romanName) => {
 
-                            if (fns[romanName as keyof typeof fns]) { return null }
+                            if (isChordFn(romanName)) { return null }
                             const translated = romanChordNameToReal(userLetter, userScale, romanName)
-
-
                             if (!translated) {
                                 return romanName
                             }
@@ -269,8 +177,6 @@ song start\n\
                                 const realizedName = fns[romanName as keyof typeof fns]
                                     ? romanName
                                     : romanChordNameToReal(userLetter, userScale, romanName)
-
-
 
                                 if (accum.find(([x, _]) => x === realizedName)) {
                                     console.error(`prog node already translated; ${romanName} in ${userLetter} ${userScale} ${JSON.stringify({ romanName, realizedName, progNodes }, null, 2)}`)
@@ -385,8 +291,8 @@ song start\n\
                 unromanize: {
                     fn: async ({ $, positionalNonCommands }) => {
                         const [chordName] = $
-                        const [tonic, root] = positionalNonCommands
-
+                        const [tonic, scale] = positionalNonCommands
+                        return romanChordNameToReal(tonic, scale, chordName)
                         //                      if (typeof root === "string" && typeof tonic !== "string") return "a value for tonic is required if a value for root is passed"
 
                         //                        return unromanizeSecondaryChord(tonic, chordName)

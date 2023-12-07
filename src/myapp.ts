@@ -3,6 +3,7 @@ import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import song from './commands/song/song'
 import bars from './commands/bars/bars'
+
 import { chord } from './commands/chord/chord'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
@@ -11,6 +12,7 @@ import fakeCli from 'peprn/fakeCli'
 const { songNames } = mem()
 
 let namesResolver: Function | null = null
+
 const namesPromise = new Promise((res) => {
     namesResolver = res
 });
@@ -86,14 +88,23 @@ document.body.onload = () => {
         },
         preprocessInput,
         dataHandler: async (parsedCli, data, id) => {
-
-            const app = apps[id].dataEl
-            if (apps[id].dataEl) {
+            const dataContainer = apps[id].dataEl
+            if (dataContainer) {
                 if (parsedCli['peprn:childmost'] === true && !parsedCli['peprn:automated']) {
+
                     const printable = data?.formatted ?? data
-                    apps[id].dataEl.innerHTML = `${parsedCli.rawIn}\n${JSON.stringify(printable, null, 2)} 
-${apps[id].dataEl.innerHTML}
+                    dataContainer.innerHTML = `${parsedCli.rawIn}\n${JSON.stringify(printable, null, 2)} 
+${dataContainer.innerHTML}
 `
+
+                    if (data?.formatted?.aaProgram) {
+                        const program = document.querySelector('.program')
+                        if (program) {
+                            (program as HTMLTextAreaElement).value = data.formatted.aaProgram
+                        }
+                    }
+
+
                 }
             }
         },

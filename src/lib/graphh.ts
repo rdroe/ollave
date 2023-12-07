@@ -1,8 +1,9 @@
 import fakeCli from "peprn/fakeCli"
-
 import { Chord, Note, Mode, Scale, Progression, Collection } from "tonal"
+
 export const sharpNoteNames = ['C#', 'D#', 'F#', 'G#', "A#"]
 export const noteNames = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', "A", "Bb", "B"].concat(sharpNoteNames)
+
 const allModes = Mode.all()
 
 export const allScales = allModes.map((m) => {
@@ -26,12 +27,10 @@ const inScale = (notes: string[], scale: { notes: string[] }) => {
     return false
 }
 
-
 export const detectAllScales = (notes: string[]) => {
     if (notes.length === 0) return []
     let sorted: string[] | null = null
     if (Note.get(notes[0]).oct !== undefined) {
-
         const sortMe = notes.concat()
         sortMe.sort((ntA, ntB) => {
             const ntDataA = Note.get(ntA)
@@ -42,7 +41,6 @@ export const detectAllScales = (notes: string[]) => {
         sorted = sortMe.map((nt) => {
             return Note.get(nt).pc
         })
-
     } else {
         sorted = notes
     }
@@ -50,7 +48,6 @@ export const detectAllScales = (notes: string[]) => {
         return inScale(sorted, sc)
     })
 }
-
 
 export type ChordNameWithNotes = {
     name: string
@@ -60,6 +57,7 @@ export type ChordNameWithNotes = {
 export type EnabledChordNameWithNotes = ChordNameWithNotes & {
     enabler: string[] | null
 }
+
 export const N6 = function N6(tonic: string, scaleName: string): EnabledChordNameWithNotes[] {
     const secondDegree = Scale.degrees(`${tonic} ${scaleName}`)(2)
     const neoRoot = Note.simplify(`${secondDegree}b`.replace('#b', ''))
@@ -107,32 +105,17 @@ Think of your key as C. The formula for the chord is (using scale degrees) b6, 1
     }]
 }
 
+export type ChordFunction = 'V64' | 'Aug6' | 'N6'
 
-export const All = function Aug6(tonic: string, scaleName: string): EnabledChordNameWithNotes[] {
-    /*
-Think of your key as C. The formula for the chord is (using scale degrees) b6, 1, #4, or in C, this would be Ab, C, F#. https://www.reddit.com/r/musictheory/comments/2vhagj/eli5_augmented_sixth_chords/
-*/
-    const six = Scale.degrees(`${tonic} ${scaleName}`)(6)
-    const flatSix = Note.simplify(`${six}b`.replace('#b', ''))
-    const one = Scale.degrees(`${tonic} ${scaleName}`)(1)
-    const four = Scale.degrees(`${tonic} ${scaleName}`)(4)
-    const sharpFour = Note.simplify(`${four}#`.replace('b#', ''))
-    if (Note.octave(one) !== undefined || Note.octave(four) !== undefined || Note.octave(sharpFour) !== undefined) {
-        throw new Error(`Aug6th chord ${[flatSix, one, sharpFour]} has octave`)
-    }
-    return [{
-        name: "All",
-        notes: [],
-        enabler: null
-    }]
+export const isChordFn = (arg: any): arg is ChordFunction => {
+    return ['V64', 'Aug6', 'N6'].includes(arg)
 }
-
 
 export const fns = {
     V64,
     Aug6,
     N6,
-    Any: All
+
 }
 
 export type ProgressionGraphNode = {
@@ -171,12 +154,9 @@ export const romanToLetterEntries = (scaleTonic: string, scaleName: string) => {
         return [`${acc}${roman}`, flatOrSharpLetter]
     })
     return all1.concat(flatAndSharpRomans)
-
 }
 
-
 const romanChordNameToReal_ = (scaleTonic: string, scaleName: string, romanName: string) => {
-
     const entries = romanToLetterEntries(scaleTonic, scaleName)
     const newName = entries.reduce((accum, curr) => {
         return accum.replace(curr[0], curr[1])
@@ -185,14 +165,9 @@ const romanChordNameToReal_ = (scaleTonic: string, scaleName: string, romanName:
     return newName
 }
 
-
 export const romanChordNameToReal = (scaleTonic: string, scaleName: string, romanName: string,): string => {
     if (romanName.includes('/')) {
-        const [main, bass] = romanName.split('/')
-        const mainChordName = romanChordNameToReal_(scaleTonic, scaleName, main)
-        const bassChordName = romanChordNameToReal_(scaleTonic, scaleName, bass)
-        if (!mainChordName || !bassChordName) return ""
-        return `${mainChordName}/${bassChordName}`
+        return unromanizeSecondaryChords(scaleTonic, scaleName, romanName)[0]
     }
     return romanChordNameToReal_(scaleTonic, scaleName, romanName)
 }
@@ -226,37 +201,28 @@ export const getTriadByRomanNumeral = async (scaleTonic: string, scaleName: stri
     const matchableNats = indicesStarts.sort((a, b) => {
         return b[0].length - a[0].length
     })
-
-    const lookup = matchableFlats.concat(matchableNats)
-
+    console.log('fawef', {
+        romanNum, scaleTonic, scaleName
+    })
     const prog = (await fakeCli(`chord progressions ${scaleTonic} ${scaleName.toLocaleLowerCase()}`)).formatted[0]
 
-
+    console.log('in getTriad', prog)
     const progEntries = Object.entries(prog as { [idx: string]: { roman: string, chordName: string } })
 
     console.log('progEntries', { progEntries: Object.fromEntries(progEntries), romanNum, scaleTonic, scaleName })
     const found = progEntries.find(([, progElem]) => {
+        console.log('comparing', { left: progElem.roman, romanNum, progElem })
         return progElem.roman === romanNum
     })
-
+    console.log('comparing; found', { found })
     return found[1].chordName
 
 
     //    return newName
 
 }
-export const guessRoman = function romanOnly(romNum: string, chord: string) {
-    const chord1 = Chord.get(chord)
-    const alias = chord1.aliases.find((a) => {
-        return romNum.includes(a)
-    })
-    if (alias) {
-        return romNum.split(alias)[0]
-    }
-}
-// given e.g. IImdim, return II
-// given e.g. bIIImdim, return bIII
-export function romanFromProgRoman(progRoman: string) {
+
+function romanEntry(progRoman: string) {
 
     const indicesStartsFlat = Object.entries({
         bI: 0,
@@ -277,49 +243,54 @@ export function romanFromProgRoman(progRoman: string) {
         VI: 5,
         VII: 6,
     })
-    console.log('progRoman', { progRoman })
-    const longestMatch = indicesStartsFlat.concat(indicesStarts).filter(([roman1, idx]) => {
 
+    const longestMatch = indicesStartsFlat.concat(indicesStarts).filter(([roman1, idx]) => {
         return progRoman.startsWith(roman1)
-    }).sort(([roman1, idx1], [roman2, idx2]) => {
+    }).sort(([roman1], [roman2,]) => {
         return roman2.length - roman1.length
     })
-    if (!longestMatch || !longestMatch.length) {
-        throw new Error(`Could not find roman numeral for ${progRoman}`)
-    }
-    return longestMatch[0][0]
+
+    return longestMatch[0]
 }
 
-export const unromanizeSecondaryChord = async (tonic: string, scale: string, slashRoman: string) => {
+// given e.g. IImdim, return II
+// given e.g. bIIImdim, return bIII
+export function romanFromProgRoman(progRoman: string) {
+    const longestMatch = romanEntry(progRoman)
+    return longestMatch[0]
+}
+
+
+const unromanizeSecondaryChord = (tonic: string, scale: string, romanChord: string) => {
+
+    const romGuess1 = romanFromProgRoman(romanChord)
+    const type = romanChord.replace(romGuess1, '')
+
+    const letters = scaleLetters(tonic, scale)
+    const romanDegreeIndex = romanEntry(romGuess1)
+
+    const letter = letters[romanDegreeIndex[1]]
+    const finalDom = Chord.getChord(type, letter).symbol
+
+    return finalDom
+}
+
+export const unromanizeSecondaryChords = (tonic: string, scale: string, slashRoman: string) => {
 
     const slashed = slashRoman.split('/')
-    console.log('slashed', { slashed })
-    const dominantRoman = slashed[0]
-    const secondaryRoman = slashed[1]
-    const dominantChord = await getTriadByRomanNumeral(tonic, scale, dominantRoman)
-    console.log('296', { dominantChord, dominantRoman, secondaryRoman, slashRoman })
-    const domChordData = Chord.get(dominantChord)
+    const dominantRoman = slashed[1]
+    const dominantChord = unromanizeSecondaryChord(tonic, scale, dominantRoman)
 
-    const secondaryScaleTonic = domChordData.tonic
-    const secondaryScaleName = domChordData.quality
-    console.log('secondaryScaleTonic', { secondaryScaleTonic, secondaryScaleName })
-    const secondaryChord = await getTriadByRomanNumeral(secondaryScaleTonic, secondaryScaleName, secondaryRoman)
-    console.log("unromanizeSecondaryChord", {
-        secondaryChord,
-        secondaryScaleTonic,
-        secondaryScaleName,
-        secondaryRoman,
-        dominantChord,
-        dominantRoman,
-        slashRoman
-    })
-    return `${dominantChord}/${secondaryChord}`
+    const secondaryRoman = slashed[0]
+    const domData = Chord.get(dominantChord)
+    const secondaryTonic = domData.tonic
+    const secondaryScale = domData.quality === "Diminished" ? "minor" : domData.quality.toLocaleLowerCase()
+
+    const secondaryChord = unromanizeSecondaryChord(secondaryTonic, secondaryScale, secondaryRoman)
+    return [secondaryChord, dominantChord]
 
 }
 
-const isFnName = (arg: string): arg is keyof typeof fns => {
-    return Object.keys(fns).includes(arg)
-}
 
 export const optionalRomans = ["IImdim"]
 export function makeProgNodeTranslator(
@@ -330,8 +301,7 @@ export function makeProgNodeTranslator(
     return (progNodeIn) => {
         let translatedSource: ChordNameWithNotes | undefined
 
-        if (fns[progNodeIn.name as keyof typeof fns]) {
-
+        if (isChordFn(progNodeIn.name)) {
             translatedSource = {
                 name: progNodeIn.name,
                 notes: []
@@ -348,7 +318,7 @@ export function makeProgNodeTranslator(
         }
 
         const next = progNodeIn.next.reduce((accum, romanName) => {
-            if (isFnName(romanName)) {
+            if (isChordFn(romanName)) {
                 const fnRes = fns[romanName](userLetter, userScale)
                 return [...accum, ...fnRes]
             }
@@ -400,6 +370,8 @@ export type ProgressionOptions = {
     dotted: EnabledChordNameWithNotes[]
 }
 
+export const randomElement = <Elem = any>(array: Array<Elem>): Elem => array[Math.floor(Math.random() * array.length)];
+
 export const combineEntriesByName = (progOptions: ProgressionOptions[]): ProgressionOptions | null => {
 
     if (progOptions.length === 0) return null
@@ -414,7 +386,16 @@ export const combineEntriesByName = (progOptions: ProgressionOptions[]): Progres
     }, progOptions[0] as ProgressionOptions)
 }
 
+export const graphChordNotes = () => {
+
+}
+
 export const minor: { [name: string]: ProgressionGraphNode[] } = {
+    'Im': [{
+        name: 'Im',
+        next: ['Im', 'IVm', 'VII', 'III', 'VI', 'IIdim', 'V64', 'VIIdim', 'V']
+    }],
+
     'IVm': [{
         name: 'IVm',
         next: ["VII"],
@@ -436,7 +417,7 @@ export const minor: { [name: string]: ProgressionGraphNode[] } = {
     }],
     'III': [{
         name: "III",
-        next: ["VIIdim/VI", "V7/VI", "VI",],
+        next: ["VIIdim/VIm", "V7/VIm", "VI",],
     }],
     'VI': [{
         name: "VI",
@@ -454,7 +435,7 @@ export const minor: { [name: string]: ProgressionGraphNode[] } = {
     'V64': [{
         name: "V64",
         dotted: ["I"],
-        next: ["N6", "Aug6", "I"],
+        next: ["N6", "Aug6", "I", "Im"],
     }],
     // big confusing box viio (must play V before leaving ???)                                     
     'VIIdim': [{
@@ -465,7 +446,7 @@ export const minor: { [name: string]: ProgressionGraphNode[] } = {
     // big confusing box V                                     
     'V': [{
         name: "V",
-        next: ["V64", "Aug6"],
+        next: ["V64", "Aug6", "Im"],
         dotted: ["I"],
     }],
     // non-box with sixes N6   
@@ -523,8 +504,7 @@ export const minor: { [name: string]: ProgressionGraphNode[] } = {
     'V/V': [{
         name: "V/V",
         next: ["V64", "VIIdim"],
-    }],
-    'Im': [{ name: "Im", next: ["Any"] }],
+    }]
 }
 
 const oneIndexedArr = (len: number) => {
@@ -607,48 +587,12 @@ export const detectScales = (notes: string[], userLetter?: string, userScale?: s
     return scales
 }
 
-export const fnChordNameWithNotes = (fnName: keyof typeof fns, tonic: string, scaleName: string) => {
-    return {
-        name: fnName,
-        notes: fns[fnName](tonic, scaleName)
-    }
+export const fnChordNameWithNotes = (fnName: ChordFunction, tonic: string, scaleName: string) => {
+    return fns[fnName](tonic, scaleName)[0]
+
 }
 
 export const chordNameWithNotes = (chordName: string, oct: number = 3): ChordNameWithNotes | null => {
-
-
-
-
-    if (chordName.includes('/')) {
-
-        const [main, bass] = chordName.split('/')
-        if (!main || !bass) return null
-        const mainInversions = noteInversions(main, oct)
-        const bassInversions = nakedNoteInversions(bass, oct)
-
-        // dont stop trying at the first available bass note.
-        // search through more possibilities
-        const permutedNotes = bassInversions.reduce((nullOrAnswer, [currBassNote]: string[]) => {
-            if (nullOrAnswer) return nullOrAnswer
-            return mainInversions.find(
-                ([firstNote]) => {
-
-                    return firstNote.startsWith(currBassNote) || firstNote.startsWith(Note.enharmonic(currBassNote))
-
-                }) ?? null
-
-        }, null as null | string[])
-
-
-        if (!permutedNotes) {
-            console.error(`Could not ad - hoc provide the slash chord ${chordName}; main chord notes were ${mainInversions[0]} ; bass chord notes were ${bassInversions[0]}`)
-            return null
-        }
-        return {
-            name: chordName,
-            notes: permutedNotes
-        }
-    }
 
     const simpleChord = Chord.get(chordName)
     const tonicParsed = Note.get(simpleChord.notes[0])

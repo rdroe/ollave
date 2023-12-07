@@ -1,5 +1,5 @@
 The following can be entered all at once into the textarea.
 phase aphrodite 10
-bars aphrodite fill Em,3 Am,3
+bars aphrodite fill Em,3 Am,3 [] C3,E3,G#3
 phase aphrodite 20
 song start
