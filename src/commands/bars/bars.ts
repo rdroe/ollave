@@ -98,62 +98,69 @@ const subcommands: SubcommandPatterns = {
         },
         do: async ({ positionalNonCommands }) => {
             const [phaseName, _, ...rawObjects] = positionalNonCommands
-            if (isString(phaseName)) {
+            if (typeof phaseName !== 'string') return 'PHASE NAME IS REQUIRED'
+            const phase = mem().phases[phaseName]
+            const { scaleTonic, scaleName } = phase
+            const bars = getAllPhaseBars(phaseName)
+            if (bars.length === 0) throw new Error(`Phase ${phaseName} has no bars`)
 
-                const bars = getAllPhaseBars(phaseName)
+            const newGroupName = randId("", 3)
+            const phaseTags: string[] = []
 
-                if (bars.length === 0) throw new Error(`Phase ${phaseName} has no bars`)
+            if (scaleTonic) {
+                phaseTags.push(`scaleTonic=${scaleTonic}`)
+            }
 
-                let noteGroups: (ReturnType<typeof Note['get']>)[][] = []
-                if (isChordArray(rawObjects)) {
-                    rawObjects.forEach((chordCsvArg) => {
-                        if (isRestArg(chordCsvArg)) {
-                            noteGroups.push([])
-                            return
-                        }
-                        const notes = parseChordCsvArg(chordCsvArg)
-                        noteGroups.push(notes.map((note) => Note.get(note)))
-                    })
-                } else if (isNoteNameArray(rawObjects)) {
+            if (scaleName) {
+                phaseTags.push(`scaleName=${scaleName}`)
+            }
+            const layerTag = `layer=${newGroupName}`
+            rawObjects.forEach((str: string, objIdx: number) => {
+                const barTag = bars[objIdx % bars.length]
+                const receptacle = notesByBar[barTag]
 
-                    rawObjects.forEach((noteName) => {
-                        if (isRestArg(noteName)) {
-                            noteGroups.push([])
-                            return
-                        }
-                        if (isRestArg(noteName)) return
-                        const noteData = Note.get(noteName)
+                if (isChordCsvArg(str)) {
 
-                        noteGroups.push([noteData])
-                    })
-                } else if (isNoteArray(rawObjects)) {
-                    rawObjects.forEach((noteCsvArg) => {
-                        if (isRestArg(noteCsvArg)) {
-                            noteGroups.push([])
-                            return
-                        }
-                        const noteData = parseNoteCsvArg(noteCsvArg)
-                        noteGroups.push(noteData)
-                    })
-                }
-
-                let noteGroupToUse = 0
-                const newGroupName = randId("", 3)
-
-                bars.forEach((barTag) => {
-                    const barNotes = noteGroups[noteGroupToUse]
-                    noteGroupToUse = (noteGroupToUse + 1) % noteGroups.length
-                    notesByBar[barTag].push(
-                        ...barNotes.map((noteProperties) => {
-                            const { name, oct, letter, acc } = noteProperties
+                    const parsed = parseChordCsvArg(str)
+                    const chord = str.split(',')[0]
+                    receptacle.push(
+                        ...parsed.map((noteName) => {
+                            const noteProperties = Note.get(noteName)
+                            const { oct, letter, acc } = noteProperties
                             return {
                                 barTag,
                                 note: `${letter}${acc}${oct}`,
-                                tags: [`layer:${newGroupName}`]
+                                tags: [layerTag, ...phaseTags, `chord:${chord}`]
                             }
                         }))
-                })
-            }
+                } else if (isRestArg(str)) {
+
+                } else if (isNoteCsvArg(str)) {
+                    console.log('is note csv arg', str)
+                    const parsed = parseNoteCsvArg(str)
+                    receptacle.push(
+                        ...parsed.map((noteName) => {
+                            const noteProperties = Note.get(noteName)
+                            const { oct, letter, acc } = noteProperties
+                            return {
+                                barTag,
+                                note: `${letter}${acc}${oct}`,
+                                tags: [layerTag, ...phaseTags]
+                            }
+                        }))
+                } else if (isNoteName(str)) {
+                    receptacle.push(
+                        ...[str].map((noteName) => {
+                            const noteProperties = Note.get(noteName)
+                            const { oct, letter, acc } = noteProperties
+                            return {
+                                barTag,
+                                note: `${letter}${acc}${oct}`,
+                                tags: [layerTag, ...phaseTags]
+                            }
+                        }))
+                }
+            })
         }
     },
 }

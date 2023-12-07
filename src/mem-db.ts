@@ -25,7 +25,10 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
             "temp-id": null,
             "follows-ids": objects.map((obj) => phases[obj].id),
             barSizeMultiplier: null,
-            speed: null
+            speed: null,
+
+            scaleName: null,
+            scaleTonic: null
         }
     }
     mem().latestMap = mapSongToMidiTicks()
@@ -85,7 +88,9 @@ export async function phaseCount(phase: string, size: number) {
             "temp-id": randomInt(),
             "follows-ids": [],
             barSizeMultiplier: null,
-            speed: null
+            speed: null,
+            scaleTonic: null,
+            scaleName: null
         }
     }
     // get all the phase bars.

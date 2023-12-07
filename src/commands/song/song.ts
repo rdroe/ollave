@@ -28,7 +28,9 @@ export type PhaseRecord = {
     id?: number,
     "follows-ids": number[],
     speed: number,
-    barSizeMultiplier: number
+    barSizeMultiplier: number,
+    scaleName: string | null,
+    scaleTonic: string | null
 }
 
 
