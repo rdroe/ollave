@@ -2,11 +2,12 @@ import { Module, awaitAll } from 'peprn/util'
 import { isString, peprnIsNum, randId } from 'src/lib/helpers'
 import { SubcommandPatterns, runSubcommandsOrNull } from 'src/lib/subcommands'
 import { getAllPhaseBars, lookUpGraph } from 'src/mem-db'
-import { mem } from '../../mem'
+import { NoteByBar, mem } from '../../mem'
 import { Chord, Note } from 'tonal'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
-import { z } from 'zod'
+
 import { chordNameWithNotes } from 'src/lib/graphh'
+
 const { notesByBar } = mem()
 const isRestArg = (arg: any): arg is string => {
     return isString(arg)
@@ -62,14 +63,14 @@ const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [notes: stri
     const cnwn = chordNameWithNotes(csv[0], parseInt(csv[1]))
     let notes: string[] | undefined
     const tags: string[] = []
-    console.log('chord and graph', csv[0], graph)
+
     if (graph) {
         if (graph[csv[0]]) {
             if (graph[csv[0]].translatedSource.notes) {
                 const graphChordData = graph[csv[0]]
                 notes = graphChordData.translatedSource.notes
                 tags.push(`roman=${graphChordData.roman}`)
-                console.log('graph chord data etc', graphChordData, notes, hasOctaveFilter(notes))
+
                 if (graphChordData.translatedSource.octMap && hasOctaveFilter(notes).length === 0) {
                     return [graphChordData.translatedSource.octMap(notes, parseInt(csv[1])), tags]
                 }
@@ -118,18 +119,18 @@ const parseNoteCsvArg = (str: string): ReturnType<typeof Note["get"]>[] => {
 }
 
 const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
-    console.log('isChordName; nm', nm)
+
     const initial = isString(nm) && !isNoteName(nm) && !!Chord.get(nm)?.name
     if (initial) return initial
     if (!scaleTonic || !scaleName) {
-        console.log('isChordName 2')
+
         return initial
     }
-    console.log('isChordName 3')
+
     const graph = lookUpGraph(scaleTonic, scaleName)
 
     if (!graph) return initial
-    console.log('isChordName 4; nm and graph', { nm, graph })
+
     return graph[nm] || initial
 
 }
@@ -162,10 +163,10 @@ const subcommands: SubcommandPatterns = {
             const layerTag = `layer=${newGroupName}`
 
             rawObjects.forEach((str: string, objIdx: number) => {
-                console.log('isChordCsv???', str, scaleTonic, scaleName, isChordCsvArg(str, scaleTonic, scaleName))
+
                 const round = Math.trunc(objIdx / bars.length)
                 const barTag = bars[objIdx % bars.length]
-                const receptacle = notesByBar[barTag]
+                const receptacle: NoteByBar[] = notesByBar[barTag]
                 const timingTags: string[] = []
                 if (round > 0) {
                     timingTags.push(`8ths=${round}`)
@@ -175,44 +176,54 @@ const subcommands: SubcommandPatterns = {
 
                     const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
                     const chord = str.split(',')[0]
-
+                    if (notes.length === 0) {
+                        throw new Error(`Error; ${str} could not be parsed to anything with notes`)
+                    }
                     receptacle.push(
                         ...notes.map((noteName) => {
                             const noteProperties = Note.get(noteName)
                             const { oct, letter, acc } = noteProperties
-
-                            return {
+                            const note1: NoteByBar =
+                            {
                                 barTag,
                                 note: `${letter}${acc}${oct}`,
                                 tags: [...timingTags, layerTag, ...phaseTags, `chord=${chord}`, ...tags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `bar=${barTag}`]
                             }
+                            return note1
                         }))
                 } else if (isRestArg(str)) {
                     // doing nothing will leave an empty space.
                     // todo: it's here without any tags or timing.
                 } else if (isNoteCsvArg(str)) {
-                    console.log('is note csv arg', str)
                     const parsed = parseNoteCsvArg(str)
+                    if (parsed.length === 0) {
+                        throw new Error(`Error; ${str} could not be parsed to anything with notes`)
+                    }
                     receptacle.push(
                         ...parsed.map((noteName) => {
                             const noteProperties = Note.get(noteName)
                             const { oct, letter, acc } = noteProperties
-                            return {
+                            const note1: NoteByBar =
+                            {
                                 barTag,
                                 note: `${letter}${acc}${oct}`,
                                 tags: [...timingTags, layerTag, ...phaseTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `bar=${barTag}`]
                             }
+                            return note1
                         }))
                 } else if (isNoteName(str)) {
                     receptacle.push(
                         ...[str].map((noteName) => {
                             const noteProperties = Note.get(noteName)
                             const { oct, letter, acc } = noteProperties
-                            return {
+
+                            const note1: NoteByBar =
+                            {
                                 barTag,
                                 note: `${letter}${acc}${oct}`,
                                 tags: [...timingTags, layerTag, ...phaseTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`]
                             }
+                            return note1
                         }))
                 }
             })
@@ -230,7 +241,6 @@ export default {
             sc
         }).then(() => {
             mem().latestMap = mapSongToMidiTicks()
-            console.log('latestMap', mem().latestMap)
 
         })
 

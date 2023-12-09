@@ -234,16 +234,24 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
         const thisBarLen = barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
 
         barEndTick += thisBarLen
-
         if (!phaseData[thisBarOffset]) {
             phaseData[thisBarOffset] = []
         }
 
-        phaseData[thisBarOffset].push({
-            occassion: "BAR_START",
-            data1: [barNotes[0].barTag],
-            data2: [barEndTick]
-        })
+        if (barNotes.length === 0) {
+            phaseData[thisBarOffset].push({
+                occassion: "BAR_START",
+                data1: [`${phaseName}:${barIndex}`, "emptyBar"],
+                data2: [barEndTick]
+            })
+
+        } else {
+            phaseData[thisBarOffset].push({
+                occassion: "BAR_START",
+                data1: [barNotes[0].barTag],
+                data2: [barEndTick]
+            })
+        }
         barNotes.forEach((note, idx) => {
             if (DEFAULT_STRUM_MODE) {
                 const thisNoteOffset = idx * sixtyFourthNoteTickFactor
@@ -262,15 +270,23 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
             }
 
         })
+
         if (!phaseData[barEndTick]) {
             phaseData[barEndTick] = []
         }
-
-        phaseData[barEndTick].push({
-            occassion: "BAR_END",
-            data1: [barNotes[0].barTag],
-            data2: [thisBarOffset]
-        })
+        if (barNotes.length === 0) {
+            phaseData[thisBarOffset].push({
+                occassion: "BAR_END",
+                data1: [`${phaseName}:${barIndex}`, "emptyBar"],
+                data2: [thisBarOffset]
+            })
+        } else {
+            phaseData[barEndTick].push({
+                occassion: "BAR_END",
+                data1: [barNotes[0].barTag],
+                data2: [thisBarOffset]
+            })
+        }
     })
 
     collector.push(phaseData)

@@ -58,10 +58,11 @@ const currSpeed = (tickCnt: number) => {
 
 // should be changeable in the future.
 // right now speed can only be altered via the "plannedSpeedChanges" array, which does not change trackTempo.
-const trackTempo = 120
+export const trackTempo = 120
 const plannedSpeedChanges: TempoChange[] = [
     [0, 1],
 ]
+
 export const updateCurr = (timeMarker: TimeMarker) => {
     curr = [timeMarker[0] - fileStart, timeMarker[1]]
 }

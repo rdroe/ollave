@@ -36,9 +36,12 @@ export const playNotes = async (notes: Triad[]) => {
     return { played: notes }
 }
 
-export const downloadNotes = async (notes: Triad[]) => {
+export const downloadNotes = async (notes: Triad[], tempo?: number) => {
     var file = new Midi.File();
     var track = new Midi.Track();
+    if (tempo) {
+        track.setTempo(tempo)
+    }
     file.addTrack(track);
     addTriads(track, notes);
     const midi = file.toBytes()

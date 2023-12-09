@@ -4,9 +4,12 @@ import Midi from 'jsmidgen'
 import { MidiMap, mapSongToMidiTicks } from './mapSongToTicks';
 import { curr, msPerTick } from './commands/phase/observables/masterTicksObservable';
 
-const downloadNotes = async (notes: Triad[]) => {
+const downloadNotes = async (notes: Triad[], tempo?: number) => {
     var file = new Midi.File();
     var track = new Midi.Track();
+    if (tempo) {
+        track.setTempo(tempo)
+    }
     file.addTrack(track);
     addTriads(track, notes);
     const midi = file.toBytes()
@@ -33,8 +36,8 @@ const songToTriads = async (mappedTicks: MidiMap) => {
     return triads
 }
 
-export const downloadSong = async () => {
+export const downloadSong = async (tempo?: number) => {
     const mappedTicks = mapSongToMidiTicks()
     const triads = await songToTriads(mappedTicks)
-    return downloadNotes(triads)
+    return downloadNotes(triads, tempo)
 }

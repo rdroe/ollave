@@ -376,7 +376,6 @@ export function makeProgNodeTranslator(
         return {
             roman: progNodeIn.name,
             scaleName: userScale,
-
             scaleTonic: userLetter,
             translatedSource,
             next,

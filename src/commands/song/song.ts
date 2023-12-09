@@ -8,6 +8,7 @@ import { startCueObservable } from './observables'
 import { downloadSong } from 'src/download'
 
 import { barsAtMidi, midiAtBar } from 'src/mapSongToTicks'
+import { trackTempo } from '../phase/observables/masterTicksObservable'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props
 export type SongRecord = {
@@ -154,7 +155,7 @@ song start
         },
         dl: {
             fn: async () => {
-                downloadSong()
+                downloadSong(trackTempo)
             }
         }
 
