@@ -57,6 +57,14 @@ export function preprocessInput(snt: string): string | null {
 }
 
 
+const lookUpGraph = (userTonic: string, userScale: string) => {
+    const place = mem().graphs[`${userTonic} ${userScale}`]
+    if (place) {
+        if (place[0]) return place[0]
+    }
+    return null
+}
+
 document.body.onload = () => {
     document.body.onclick = () => {
         playTriads([['c3', .05, 0]])
@@ -89,6 +97,7 @@ document.body.onload = () => {
         preprocessInput,
         dataHandler: async (parsedCli, data, id) => {
             const dataContainer = apps[id].dataEl
+
             if (dataContainer) {
                 if (parsedCli['peprn:childmost'] === true && !parsedCli['peprn:automated']) {
 
@@ -97,14 +106,24 @@ document.body.onload = () => {
 ${dataContainer.innerHTML}
 `
 
-                    if (data?.formatted?.aaProgram) {
+                    if (data?.formatted?.aaChordProgram) {
                         const program = document.querySelector('.program')
                         if (program) {
-                            (program as HTMLTextAreaElement).value = data.formatted.aaProgram
+                            return (program as HTMLTextAreaElement).value = data.formatted.aaChordProgram
                         }
                     }
+                }
+            }
+            const nowNum = Date.now().toString()
 
+            if (typeof parsedCli.rawIn === "string" && parsedCli.rawIn.startsWith('chord graph test')) {
 
+                if (data && data.formatted) {
+                    const [userLetter, userScale] = parsedCli.positionalNonCommands
+
+                    const idx = userLetter && userScale ? `${userLetter} ${userScale}` : nowNum
+                    mem().graphs[idx] = mem().graphs[idx] || [] as any[]
+                    mem().graphs[idx].push(data.formatted)
                 }
             }
         },

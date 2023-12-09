@@ -1,15 +1,20 @@
+
 import { tickCounts } from './commands/phase/observables/masterTicksObservable'
+import { peprnIsNum } from './lib/helpers'
 import { Mem, mem } from './mem'
 import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
 
+// Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {
     [tick: number]: {
         note: string,
         velocity?: number,
         duration?: number,
+        compositionTags: string[]
     }[]
 }
 
+// High-level structure of a phase
 export type PhaseMap = {
     [tick: number]: {
         occassion: "BAR_START" | "BAR_END" | "NOTE_START",
@@ -115,7 +120,6 @@ export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
             const tick = parseInt(tickRaw)
             dat.forEach((phaseMapSubelement) => {
                 const { occassion, data1, data2 } = phaseMapSubelement
-
                 if (occassion === "BAR_START") {
                     const barStart = tick
                     const [barEnd] = data2
@@ -141,7 +145,7 @@ export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
 
 
 const DEFAULT_STRUM_MODE = true
-
+type TagData = (number | string | boolean | null)[]
 function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: MidiMap[] = []) {
 
     const barTickFactor = tickCounts.bar
@@ -155,15 +159,45 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
     phaseBars.forEach((barNotes, barIndex) => {
         // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
         const thisBarOffset = barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
+        // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
         barNotes.forEach((note, idx) => {
+            const parsedTags = note.tags.reduce((accum, tag) => {
+                if (!tag.includes('=')) {
+                    return [tag, []]
+                }
+                const split = tag.split('=')
+                console.log('split', split)
+                const right = peprnIsNum(split[1]) ? parseFloat(split[1]) : split[1]
+                return [...accum, [
+                    split[0], [right]
+                ]]
+            }, [] as [name: string, data: TagData][])
+
             if (DEFAULT_STRUM_MODE) {
-                const thisNoteOffset = idx * sixtyFourthNoteTickFactor
+                let thisNoteOffset = idx * sixtyFourthNoteTickFactor
+
+                const eightNoteDelay = parsedTags.find(([name, data]: [nm: string, data: TagData]) => {
+                    return name == '8ths'
+
+                })
+                if (eightNoteDelay) {
+                    const [noteCnt] = eightNoteDelay[1]
+                    if (typeof noteCnt === 'number') {
+                        thisNoteOffset += (tickCounts.eighth * noteCnt)
+                    } else {
+                        throw new Error(`Non-numeric eigth note ${JSON.stringify(
+                            eightNoteDelay
+                        )}`)
+                    }
+                }
+
                 const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
                 if (!phaseMidi[thisNoteTick]) {
                     phaseMidi[thisNoteTick] = []
                 }
                 phaseMidi[thisNoteTick].push({
-                    note: note.note
+                    note: note.note,
+                    compositionTags: note.tags
                 })
             } else {
                 console.error("TODO: implement non-default-strum mode")

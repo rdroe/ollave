@@ -138,10 +138,16 @@ export const chord: Module = {
 
                             formatted: {
                                 notes: noteStr,
-                                chords: chordsWithNotes.map(({ name }) => name).join(' '),
-                                aaProgram: `
+                                chords: chordsWithNotes.map(({ name }) => `${name},3`).join(' '),
+                                aaNoteProgram: `
 phase aphrodite 100
 bars aphrodite fill ${noteStr}
+song start
+`,
+                                aaChordProgram: `
+phase aphrodite 100
+phase aphrodite scale ${userLetter} ${userScale}
+bars aphrodite fill ${chordsWithNotes.map(({ name }) => name + ',3').join(' ')}
 song start
 `
                                 , pruned

@@ -7,7 +7,6 @@ import { startCueObservable } from './observables'
 
 import { downloadSong } from 'src/download'
 
-import { curr, } from '../phase/observables/masterTicksObservable'
 import { barsAtMidi, midiAtBar } from 'src/mapSongToTicks'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props

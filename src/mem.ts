@@ -29,6 +29,8 @@ export type Mem = {
         }[]
     },
     latestMap: MidiMap
+    graphs: { [userScaleWithTonic: string]: any[] }
+
 }
 
 const mem_: Mem = {
@@ -41,7 +43,8 @@ const mem_: Mem = {
     phases: {},
     notesByBar: {},
     songNames: [],
-    latestMap: {}
+    latestMap: {},
+    graphs: {}
 };
 
 (window as any).mem = mem_

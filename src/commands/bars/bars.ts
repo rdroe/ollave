@@ -5,7 +5,8 @@ import { getAllPhaseBars } from 'src/mem-db'
 import { mem } from '../../mem'
 import { Chord, Note } from 'tonal'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
-
+import { z } from 'zod'
+import { chordNameWithNotes } from 'src/lib/graphh'
 const { notesByBar } = mem()
 const isRestArg = (arg: any): arg is string => {
     return isString(arg)
@@ -41,18 +42,36 @@ const parseCsvArg = (str: string): string[] => {
     return str.split(',')
 }
 
-const parseChordCsvArg = (str: string): string[] => {
+const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [notes: string[], tags: string[]] => {
     if (!isCsvArg(str)) throw new Error(`${str} is not a chord csv arg`)
     const csv = parseCsvArg(str)
-    if (!isChordName(csv[0])) throw new Error(`${str} is not a chord csv arg`)
+    if (!csv[0] || csv[0].length < 1) throw new Error(`${csv} is not a non-empty string`)
     if (!peprnIsNum(csv[1])) throw new Error(`${str} is not a chord csv arg; second part is not an octave (number)`)
-    const notes = Chord.get(csv[0])?.notes
-    if (!notes) throw new Error(`${str} is not a chord csv arg; could not get notes`)
+    // const 
+    //   if (!notes) throw new Error(`${str} is not a chord csv arg; could not get notes`)
 
-    // this is wrong. will give the correct root, but not necessarily correct other notes.
-    return notes.map((note) => {
-        return `${note}${csv[1]}`
-    })
+    const graph = mem().graphs[userScaleAndTonic] && mem().graphs[userScaleAndTonic][0] || null
+    const cnwn = chordNameWithNotes(csv[0], parseInt(csv[1]))
+    let notes: string[] | undefined
+    const tags: string[] = []
+    console.log('chord and graph', csv[0], graph)
+    if (graph) {
+        if (graph[csv[0]]) {
+            if (graph[csv[0]].translatedSource.notes) {
+                const graphChordData = graph[csv[0]]
+                notes = graphChordData.translatedSource.notes
+                tags.push(`roman=${graphChordData.roman}`)
+                return [notes, tags]
+            }
+        }
+    }
+
+    if (!notes) {
+        notes = cnwn.notes
+        return [notes, tags]
+    }
+    return [[], []]
+
 }
 
 const isChordCsvArg = (str: string): str is string => {
@@ -101,6 +120,7 @@ const subcommands: SubcommandPatterns = {
             if (typeof phaseName !== 'string') return 'PHASE NAME IS REQUIRED'
             const phase = mem().phases[phaseName]
             const { scaleTonic, scaleName } = phase
+            console.log('scale name and tnoic', scaleTonic, scaleName)
             const bars = getAllPhaseBars(phaseName)
             if (bars.length === 0) throw new Error(`Phase ${phaseName} has no bars`)
 
@@ -116,25 +136,32 @@ const subcommands: SubcommandPatterns = {
             }
             const layerTag = `layer=${newGroupName}`
             rawObjects.forEach((str: string, objIdx: number) => {
+                const round = Math.trunc(objIdx / bars.length)
                 const barTag = bars[objIdx % bars.length]
                 const receptacle = notesByBar[barTag]
-
+                const timingTags: string[] = []
+                if (round > 0) {
+                    timingTags.push(`8ths=${round}`)
+                }
                 if (isChordCsvArg(str)) {
 
-                    const parsed = parseChordCsvArg(str)
+                    const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
                     const chord = str.split(',')[0]
+
                     receptacle.push(
-                        ...parsed.map((noteName) => {
+                        ...notes.map((noteName) => {
                             const noteProperties = Note.get(noteName)
                             const { oct, letter, acc } = noteProperties
+
                             return {
                                 barTag,
                                 note: `${letter}${acc}${oct}`,
-                                tags: [layerTag, ...phaseTags, `chord:${chord}`]
+                                tags: [...timingTags, layerTag, ...phaseTags, `chord=${chord}`, ...tags]
                             }
                         }))
                 } else if (isRestArg(str)) {
-
+                    // doing nothing will leave an empty space.
+                    // todo: it's here without any tags or timing.
                 } else if (isNoteCsvArg(str)) {
                     console.log('is note csv arg', str)
                     const parsed = parseNoteCsvArg(str)
@@ -145,7 +172,7 @@ const subcommands: SubcommandPatterns = {
                             return {
                                 barTag,
                                 note: `${letter}${acc}${oct}`,
-                                tags: [layerTag, ...phaseTags]
+                                tags: [...timingTags, layerTag, ...phaseTags]
                             }
                         }))
                 } else if (isNoteName(str)) {
@@ -156,7 +183,7 @@ const subcommands: SubcommandPatterns = {
                             return {
                                 barTag,
                                 note: `${letter}${acc}${oct}`,
-                                tags: [layerTag, ...phaseTags]
+                                tags: [...timingTags, layerTag, ...phaseTags]
                             }
                         }))
                 }
@@ -175,6 +202,8 @@ export default {
             sc
         }).then(() => {
             mem().latestMap = mapSongToMidiTicks()
+            console.log('latestMap', mem().latestMap)
+
         })
 
     },
