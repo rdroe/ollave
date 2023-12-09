@@ -166,7 +166,7 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
                     return [tag, []]
                 }
                 const split = tag.split('=')
-                console.log('split', split)
+
                 const right = peprnIsNum(split[1]) ? parseFloat(split[1]) : split[1]
                 return [...accum, [
                     split[0], [right]

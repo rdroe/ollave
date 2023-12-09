@@ -3,12 +3,16 @@ import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import song from './commands/song/song'
 import bars from './commands/bars/bars'
-
+import debug from './commands/debug/debug'
 import { chord } from './commands/chord/chord'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
 import { mem } from './mem'
 import fakeCli from 'peprn/fakeCli'
+import { lastTick } from './mem-db'
+import { tickCounts } from './commands/phase/observables/masterTicksObservable'
+
+
 const { songNames } = mem()
 
 let namesResolver: Function | null = null
@@ -55,15 +59,14 @@ export function preprocessInput(snt: string): string | null {
         return snt;
     }
 }
+function createElementFromHTML(htmlString: string) {
+    var div = document.createElement('div');
+    div.innerHTML = htmlString.trim();
 
-
-const lookUpGraph = (userTonic: string, userScale: string) => {
-    const place = mem().graphs[`${userTonic} ${userScale}`]
-    if (place) {
-        if (place[0]) return place[0]
-    }
-    return null
+    // Change this to div.childNodes to support multiple top-level nodes.
+    return div.firstChild;
 }
+
 
 document.body.onload = () => {
     document.body.onclick = () => {
@@ -80,12 +83,100 @@ document.body.onload = () => {
                     "darkblue"
 
             }
-            fakeCli('song init', 'cli').then(() => {
+
+            await fakeCli('song init', 'cli').then(() => {
 
             })
+
+            const tagsRoot = document.querySelector('.tags-app-root')
+            if (tagsRoot) {
+
+
+
+                let logItr = 0
+                const log = (...args: any[]) => {
+                    if (mem().doLog && logItr % 100 === 0) {
+                        console.log(...args)
+                    }
+                }
+                setInterval(() => {
+                    const adjustedCursor = mem().adjustedCursor
+                    // on each tick of this interval fn, get the time ranges of what to show.
+                    const end1 = adjustedCursor
+                    let start1 = end1 - tickCounts.bar * 4
+                    let start2: number | undefined
+                    if (start1 < 0) {
+                        // lastTick() gets end-of-song tick
+                        start2 = lastTick() + start1
+                        start1 = 0
+                    }
+
+                    const ranges = [[start1, end1]] as [start: number, end: number][]
+                    if (start2 !== undefined) {
+                        ranges.push([start2, lastTick()])
+                    }
+
+                    // analyze the ticks already showing
+                    const showing = new Set<number>; // for comparison to those we're about to add (skip if they're already added)
+                    const toRemoveNumbers = new Set<number>;
+
+                    (tagsRoot.querySelectorAll('.note-tags') as NodeListOf<HTMLDivElement>).forEach((elem: HTMLDivElement) => {
+                        const dataset = elem.dataset
+                        const tick = dataset.tick
+
+                        if (tick) {
+                            const tickNum = parseInt(tick)
+                            showing.add(tickNum)
+                            if (!ranges.find(([start, end]) => {
+                                return tickNum > start && tickNum < end
+                            })) {
+
+                                toRemoveNumbers.add(tickNum)
+                            }
+                        }
+                    });
+
+
+                    toRemoveNumbers.forEach((num) => {
+                        const str = num.toString()
+
+                        document.querySelectorAll(`[data-tick="${num}"]`).forEach((elem) => {
+
+                            elem.remove()
+                        })
+                    })
+
+                    mem().played = mem().played.filter(({ songTick }) => {
+                        return !toRemoveNumbers.has(songTick)
+                    })
+
+
+
+
+                    // use them to filter the tags.
+                    const toAdd = mem().played.filter(({ songTick }) => {
+                        const matchedRange = ranges.find(([rangeStart, rangeEnd]) => {
+                            return songTick >= rangeStart && songTick < rangeEnd
+                        })
+
+                        if (!matchedRange) return false
+                        if (showing.has(songTick)) return false
+                        return true
+                    })
+
+                    toAdd.reverse()
+                    toAdd.forEach(({ tags, songTick, oneTwentyEigth }) => {
+                        const newHtml = `<div class="note-tags" data-tick="${songTick}">${oneTwentyEigth} => ${JSON.stringify(tags)}</div>`;
+                        const newElem = createElementFromHTML(newHtml);
+                        tagsRoot.prepend(newElem);
+                    })
+                    logItr += 1
+
+                }, 20)
+            }
         },
         modules: {
-            chord, play, phase, song, match, bars, test: {
+            chord, play, phase, song, match, bars, debug, test: {
                 fn: async () => {
                     playTriads([['cb4', 2, 0]])
                 }
@@ -137,4 +228,3 @@ ${dataContainer.innerHTML}
         ]
     })
 }
-

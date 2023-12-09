@@ -52,13 +52,14 @@ export const detectAllScales = (notes: string[]) => {
 export type ChordNameWithNotes = {
     name: string
     notes: string[]
+    octMap?: (notes: string[], oct: number) => string[]
 }
 
 export type EnabledChordNameWithNotes = ChordNameWithNotes & {
     enabler: string[] | null
 }
 
-export const N6 = function N6(tonic: string, scaleName: string): EnabledChordNameWithNotes[] {
+export const N6 = function N6(tonic: string, scaleName: string): ChordNameWithNotes[] {
     const secondDegree = Scale.degrees(`${tonic} ${scaleName}`)(2)
     const neoRoot = Note.simplify(`${secondDegree}b`.replace('#b', ''))
     const notes = ['1P', '3M', '5P'].map(Note.transposeFrom(neoRoot))
@@ -68,11 +69,11 @@ export const N6 = function N6(tonic: string, scaleName: string): EnabledChordNam
     return [{
         name: "N6",
         notes: Collection.rotate(1, notes),
-        enabler: null
+        octMap: (notes, oct) => notes.map(nt => `${nt}${oct}`)
     }]
 }
 
-export const V64 = function V64(tonic: string): EnabledChordNameWithNotes[] {
+export const V64 = function V64(tonic: string): ChordNameWithNotes[] {
     const [chordName] = Progression.fromRomanNumerals(tonic, ["V"])
     const V = Chord.get(chordName)?.notes
     if (Note.octave(V[0]) !== undefined) {
@@ -81,11 +82,11 @@ export const V64 = function V64(tonic: string): EnabledChordNameWithNotes[] {
     return [{
         name: "V64",
         notes: Collection.rotate(1, V),
-        enabler: null
+        octMap: (notes, oct) => notes.map(nt => `${nt}${oct}`)
     }]
 }
 
-export const Aug6 = function Aug6(tonic: string, scaleName: string): EnabledChordNameWithNotes[] {
+export const Aug6 = function Aug6(tonic: string, scaleName: string): ChordNameWithNotes[] {
     /*
 Think of your key as C. The formula for the chord is (using scale degrees) b6, 1, #4, or in C, this would be Ab, C, F#. https://www.reddit.com/r/musictheory/comments/2vhagj/eli5_augmented_sixth_chords/
 */
@@ -101,7 +102,7 @@ Think of your key as C. The formula for the chord is (using scale degrees) b6, 1
     return [{
         name: "Aug6",
         notes: [flatSix, one, sharpFour],
-        enabler: null
+        octMap: (notes, oct) => notes.map(nt => `${nt}${oct}`)
     }]
 }
 
@@ -302,9 +303,22 @@ export function makeProgNodeTranslator(
         let translatedSource: ChordNameWithNotes | undefined
 
         if (isChordFn(progNodeIn.name)) {
-            translatedSource = {
-                name: progNodeIn.name,
-                notes: []
+            const fnRes = fns[progNodeIn.name](userLetter, userScale)
+            const asEnabledArr = fnRes.map((cnwnFn) => {
+                return {
+                    name: cnwnFn.name,
+                    notes: cnwnFn.notes,
+                    octMap: cnwnFn.octMap
+                }
+            })
+            if (asEnabledArr.length) {
+                translatedSource = asEnabledArr[0]
+            } else {
+                translatedSource = {
+                    name: progNodeIn.name,
+                    notes: [],
+
+                }
             }
         } else {
             const newName = romanChordNameToReal(userLetter, userScale, progNodeIn.name)
@@ -319,8 +333,18 @@ export function makeProgNodeTranslator(
 
         const next = progNodeIn.next.reduce((accum, romanName) => {
             if (isChordFn(romanName)) {
+
                 const fnRes = fns[romanName](userLetter, userScale)
-                return [...accum, ...fnRes]
+                const asEnabledArr = fnRes.map((cnwnFn) => {
+                    return {
+                        ...cnwnFn,
+                        enabler: [progNodeIn.name],
+                        octMap: cnwnFn.octMap
+                    }
+                })
+                // todo: error here; enabler is always roman.
+                // when we start enforcing, we will need to enable roman lookup at runtime when we hit these on 'next' usage
+                return [...accum, ...asEnabledArr]
             }
             const realizedName = romanChordNameToReal(userLetter, userScale, romanName)
             const cnwn = chordNameWithNotes(realizedName)
@@ -368,6 +392,7 @@ export type ProgressionOptions = {
     translatedSource: ChordNameWithNotes
     next: EnabledChordNameWithNotes[]
     dotted: EnabledChordNameWithNotes[]
+    octMap?: (notes: string[], rootOct: number) => string[]
 }
 
 export const randomElement = <Elem = any>(array: Array<Elem>): Elem => array[Math.floor(Math.random() * array.length)];

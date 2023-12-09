@@ -2,6 +2,7 @@ import { Observable, Subscription } from "rxjs"
 import { PhaseRecord, SongRecord, TrackRecord } from "./commands/song/song"
 import { BarTagPercent, MidiMap } from "./mapSongToTicks"
 type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
+
 export type Mem = {
     subscriptions: {
         [key: string]: Subscription
@@ -30,7 +31,14 @@ export type Mem = {
     },
     latestMap: MidiMap
     graphs: { [userScaleWithTonic: string]: any[] }
-
+    played: {
+        songTick: number
+        oneTwentyEigth: number
+        tags: string[]
+        time: number
+    }[],
+    adjustedCursor: number,
+    doLog: boolean
 }
 
 const mem_: Mem = {
@@ -44,7 +52,10 @@ const mem_: Mem = {
     notesByBar: {},
     songNames: [],
     latestMap: {},
-    graphs: {}
+    graphs: {},
+    played: [],
+    adjustedCursor: 0,
+    doLog: true
 };
 
 (window as any).mem = mem_

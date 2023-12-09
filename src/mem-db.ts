@@ -1,5 +1,6 @@
 // using the currently loaded song, do any of the following.
 // updated both mem.ts and the database.
+import { ProgressionOptions, minor } from "./lib/graphh"
 import { randId, randomInt } from "./lib/helpers"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { mem } from "./mem"
@@ -50,7 +51,15 @@ export const startEndData = (phaseName: string): StartEndTuple[] => {
     const startEndData = phaseBeginningsAndEnds()
     return startEndData[phaseName] || []
 }
-
+export const lookUpGraph = (userTonic: string, userScale: string): {
+    [chordName: string]: ProgressionOptions
+} => {
+    const place = mem().graphs[`${userTonic} ${userScale}`]
+    if (place) {
+        if (place[0]) return place[0]
+    }
+    return null
+}
 export const lastTick = () => {
     const songStartEndData = phaseBeginningsAndEnds()
     const lastTick = Object.values(songStartEndData).reduce((acc, curr) => {

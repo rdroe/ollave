@@ -1,11 +1,9 @@
-
 import { mem } from '../../mem'
-
 import { Observable } from 'rxjs'
 import { makeTickSubscribe } from '../phase/subjects/masterTicksSubject'
 import { playTriads } from 'src/lib/music'
 import { lastTick } from 'src/mem-db'
-
+import { tickCounts } from 'src/commands/phase/observables/masterTicksObservable'
 
 export const startCueObservable = (startAt?: number) => {
 
@@ -27,13 +25,22 @@ export const startCueObservable = (startAt?: number) => {
         next: ({ tick }) => {
             // get the midi tick relative to the start of the song
             const adjustedCursor = tick % startOver
+            mem().adjustedCursor = tick % startOver
             mem().publishedCursor = adjustedCursor
 
             mem().latestMap[adjustedCursor]?.forEach((note) => {
-                playTriads([[note.note, 0.25, 1]])
+                playTriads([[note.note, 0.25, 0.1]])
+                mem().played.unshift({
+                    time: Date.now(),
+                    songTick: adjustedCursor,
+                    oneTwentyEigth: adjustedCursor * tickCounts.oneTwentyEigth,
+                    tags: note.compositionTags
+                })
             })
         }
     })
 
 
 }
+
+

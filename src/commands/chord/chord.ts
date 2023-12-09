@@ -200,13 +200,12 @@ song start
                                 pOpts)
 
                             ]
-                        })
+                        }) as [name: string, pOpt: ProgressionOptions][]
 
-
-
+                        const realizedGraph = Object.fromEntries(combinedScaleGraphEntries)
                         return {
-                            formatted: Object.fromEntries(combinedScaleGraphEntries
-                            )
+                            formatted: realizedGraph
+
                         }
                     }
                 },

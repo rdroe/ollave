@@ -21,6 +21,8 @@ export const phaseBeginningsAndEnds = (): StartEndData => {
     return collector
 }
 
+
+
 function relativeStartEnd(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: StartEndData) {
     if (!collector[phaseName]) {
         collector[phaseName] = []
