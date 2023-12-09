@@ -135,115 +135,114 @@ const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
 
 }
 
-const subcommands: SubcommandPatterns = {
-    fill: {
-        match: (args) => {
-            if (args.positionalNonCommands.length < 2) return false
-            if (typeof args.positionalNonCommands[1] === "string" && ['fill', 'f'].includes(args.positionalNonCommands[1])) return true
-        },
-        do: async ({ positionalNonCommands }) => {
-            const [phaseName, _, ...rawObjects] = positionalNonCommands
-            if (typeof phaseName !== 'string') return 'PHASE NAME IS REQUIRED'
-            const phase = mem().phases[phaseName]
-            const { scaleTonic, scaleName } = phase
 
-            const bars = getAllPhaseBars(phaseName)
-            if (bars.length === 0) throw new Error(`Phase ${phaseName} has no bars`)
-
-            const newGroupName = randId("", 3)
-            const phaseTags: string[] = []
-
-            if (scaleTonic) {
-                phaseTags.push(`scaleTonic=${scaleTonic}`)
-            }
-
-            if (scaleName) {
-                phaseTags.push(`scaleName=${scaleName}`)
-            }
-            const layerTag = `layer=${newGroupName}`
-
-            rawObjects.forEach((str: string, objIdx: number) => {
-
-                const round = Math.trunc(objIdx / bars.length)
-                const barTag = bars[objIdx % bars.length]
-                const receptacle: NoteByBar[] = notesByBar[barTag]
-                const timingTags: string[] = []
-                if (round > 0) {
-                    timingTags.push(`8ths=${round}`)
-                }
-
-                if (isChordCsvArg(str, scaleTonic, scaleName)) {
-
-                    const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
-                    const chord = str.split(',')[0]
-                    if (notes.length === 0) {
-                        throw new Error(`Error; ${str} could not be parsed to anything with notes`)
-                    }
-                    receptacle.push(
-                        ...notes.map((noteName) => {
-                            const noteProperties = Note.get(noteName)
-                            const { oct, letter, acc } = noteProperties
-                            const note1: NoteByBar =
-                            {
-                                barTag,
-                                note: `${letter}${acc}${oct}`,
-                                tags: [...timingTags, layerTag, ...phaseTags, `chord=${chord}`, ...tags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `bar=${barTag}`]
-                            }
-                            return note1
-                        }))
-                } else if (isRestArg(str)) {
-                    // doing nothing will leave an empty space.
-                    // todo: it's here without any tags or timing.
-                } else if (isNoteCsvArg(str)) {
-                    const parsed = parseNoteCsvArg(str)
-                    if (parsed.length === 0) {
-                        throw new Error(`Error; ${str} could not be parsed to anything with notes`)
-                    }
-                    receptacle.push(
-                        ...parsed.map((noteName) => {
-                            const noteProperties = Note.get(noteName)
-                            const { oct, letter, acc } = noteProperties
-                            const note1: NoteByBar =
-                            {
-                                barTag,
-                                note: `${letter}${acc}${oct}`,
-                                tags: [...timingTags, layerTag, ...phaseTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `bar=${barTag}`]
-                            }
-                            return note1
-                        }))
-                } else if (isNoteName(str)) {
-                    receptacle.push(
-                        ...[str].map((noteName) => {
-                            const noteProperties = Note.get(noteName)
-                            const { oct, letter, acc } = noteProperties
-
-                            const note1: NoteByBar =
-                            {
-                                barTag,
-                                note: `${letter}${acc}${oct}`,
-                                tags: [...timingTags, layerTag, ...phaseTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`]
-                            }
-                            return note1
-                        }))
-                }
-            })
-        }
-    },
-}
 
 export default {
     fn: async (args, subCalls) => {
-
-        const sc = await runSubcommandsOrNull(subcommands, args)
-
         awaitAll({
             ...subCalls,
-            sc
         }).then(() => {
             mem().latestMap = mapSongToMidiTicks()
-
         })
-
     },
+    submodules: {
+
+        '$': {
+            fn: async () => undefined,
+            submodules: {
+                fill: {
+                    fn: async ({ $: dollar, positionalNonCommands }) => {
+                        const [phaseName] = dollar
+                        const rawObjects = positionalNonCommands
+                        if (typeof phaseName !== 'string') return 'PHASE NAME IS REQUIRED'
+                        const phase = mem().phases[phaseName]
+                        const { scaleTonic, scaleName } = phase
+
+                        const bars = getAllPhaseBars(phaseName)
+
+                        if (bars.length === 0) throw new Error(`Phase ${phaseName} has no bars`)
+
+                        const newGroupName = randId("", 3)
+                        const phaseTags: string[] = []
+
+                        if (scaleTonic) {
+                            phaseTags.push(`scaleTonic=${scaleTonic}`)
+                        }
+
+                        if (scaleName) {
+                            phaseTags.push(`scaleName=${scaleName}`)
+                        }
+                        const layerTag = `layer=${newGroupName}`
+
+                        rawObjects.forEach((str: string, objIdx: number) => {
+
+                            const round = Math.trunc(objIdx / bars.length)
+                            const barTag = bars[objIdx % bars.length]
+                            const receptacle: NoteByBar[] = notesByBar[barTag]
+                            const timingTags: string[] = []
+                            if (round > 0) {
+                                timingTags.push(`8ths=${round}`)
+                            }
+
+                            if (isChordCsvArg(str, scaleTonic, scaleName)) {
+
+                                const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
+                                const chord = str.split(',')[0]
+                                if (notes.length === 0) {
+                                    throw new Error(`Error; ${str} could not be parsed to anything with notes`)
+                                }
+                                receptacle.push(
+                                    ...notes.map((noteName) => {
+                                        const noteProperties = Note.get(noteName)
+                                        const { oct, letter, acc } = noteProperties
+                                        const note1: NoteByBar =
+                                        {
+                                            barTag,
+                                            note: `${letter}${acc}${oct}`,
+                                            tags: [...timingTags, layerTag, ...phaseTags, `chord=${chord}`, ...tags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `bar=${barTag}`]
+                                        }
+                                        return note1
+                                    }))
+                            } else if (isRestArg(str)) {
+                                // doing nothing will leave an empty space.
+                                // todo: it's here without any tags or timing.
+                            } else if (isNoteCsvArg(str)) {
+                                const parsed = parseNoteCsvArg(str)
+                                if (parsed.length === 0) {
+                                    throw new Error(`Error; ${str} could not be parsed to anything with notes`)
+                                }
+                                receptacle.push(
+                                    ...parsed.map((noteName) => {
+                                        const noteProperties = Note.get(noteName)
+                                        const { oct, letter, acc } = noteProperties
+                                        const note1: NoteByBar =
+                                        {
+                                            barTag,
+                                            note: `${letter}${acc}${oct}`,
+                                            tags: [...timingTags, layerTag, ...phaseTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `bar=${barTag}`]
+                                        }
+                                        return note1
+                                    }))
+                            } else if (isNoteName(str)) {
+                                receptacle.push(
+                                    ...[str].map((noteName) => {
+                                        const noteProperties = Note.get(noteName)
+                                        const { oct, letter, acc } = noteProperties
+
+                                        const note1: NoteByBar =
+                                        {
+                                            barTag,
+                                            note: `${letter}${acc}${oct}`,
+                                            tags: [...timingTags, layerTag, ...phaseTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`]
+                                        }
+                                        return note1
+                                    }))
+                            }
+                        })
+                    }
+                }
+            }
+        }
+    }
 
 } as Module
