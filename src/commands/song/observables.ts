@@ -33,7 +33,6 @@ export const startCueObservable = (startAt?: number) => {
                 mem().played.unshift({
                     time: Date.now(),
                     songTick: adjustedCursor,
-                    oneTwentyEigth: adjustedCursor * tickCounts[ONE_TWENTY_EIGHTH],
                     tags: note.compositionTags
                 })
             })

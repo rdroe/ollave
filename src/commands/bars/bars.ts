@@ -17,7 +17,6 @@ export default {
         })
     },
     submodules: {
-
         '$': {
             fn: async () => undefined,
             submodules: {

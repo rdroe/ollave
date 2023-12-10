@@ -84,6 +84,7 @@ export const tickCounts = {
     [SIXTY_FOURTH]: ppq * 4 / 64, // 8 
     [ONE_TWENTY_EIGHTH]: ppq * 4 / 128, // 4 
 };
+
 console.log({ tickCounts })
 // 4 4ths in a bar
 // 8 8ths in a bar
@@ -116,6 +117,10 @@ export const abbrev = {
 
 export const isAbbreviation = (unk: unknown): unk is Abbreviation => {
     return (Object.keys(abbrev) as string[]).includes(unk as string)
+}
+
+export const isFraction = (unk: unknown): unk is keyof typeof tickCounts => {
+    return !!tickCounts[unk as keyof typeof tickCounts]
 }
 
 export const timings = {

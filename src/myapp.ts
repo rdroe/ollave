@@ -12,6 +12,7 @@ import { mem } from './mem'
 import fakeCli from 'peprn/fakeCli'
 import { lastTick } from './mem-db'
 import { tickCounts } from './commands/phase/observables/masterTicksObservable'
+import { strjson } from './lib/helpers'
 
 
 const { songNames } = mem()
@@ -68,6 +69,18 @@ function createElementFromHTML(htmlString: string) {
     return div.firstChild;
 }
 
+const getNoteIdFromTags = (tags: string[]) => {
+    const noteIdTag = tags.find((tag => tag.startsWith('noteId=')))
+    let noteId: undefined | string
+    if (noteIdTag) {
+        noteId = noteIdTag.replace('noteId=', '')
+    }
+
+    if (!noteId) {
+        throw new Error(`could not get note id from ${strjson(tags)}`)
+    }
+    return noteId
+}
 
 document.body.onload = () => {
     document.body.onclick = () => {
@@ -100,11 +113,12 @@ document.body.onload = () => {
                         console.log(...args)
                     }
                 }
+                const showingIds = new Set<string>;
                 setInterval(() => {
                     const adjustedCursor = mem().adjustedCursor
                     // on each tick of this interval fn, get the time ranges of what to show.
                     const end1 = adjustedCursor
-                    let start1 = end1 - tickCounts.bar * 4
+                    let start1 = end1 - tickCounts.bar * 2
                     let start2: number | undefined
                     if (start1 < 0) {
                         // lastTick() gets end-of-song tick
@@ -116,22 +130,21 @@ document.body.onload = () => {
                     if (start2 !== undefined) {
                         ranges.push([start2, lastTick()])
                     }
-
                     // analyze the ticks already showing
-                    const showing = new Set<number>; // for comparison to those we're about to add (skip if they're already added)
+                    const showingTicks = new Set<number>; // for comparison to those we're about to add (skip if they're already added)
+
                     const toRemoveNumbers = new Set<number>;
 
                     (tagsRoot.querySelectorAll('.note-tags') as NodeListOf<HTMLDivElement>).forEach((elem: HTMLDivElement) => {
                         const dataset = elem.dataset
                         const tick = dataset.tick
 
-                        if (tick) {
+                        if (tick !== undefined) {
                             const tickNum = parseInt(tick)
-                            showing.add(tickNum)
+                            showingTicks.add(tickNum)
                             if (!ranges.find(([start, end]) => {
                                 return tickNum > start && tickNum < end
                             })) {
-
                                 toRemoveNumbers.add(tickNum)
                             }
                         }
@@ -142,8 +155,11 @@ document.body.onload = () => {
                         const str = num.toString()
 
                         document.querySelectorAll(`[data-tick="${num}"]`).forEach((elem) => {
-
+                            const dataset = (elem as HTMLDialogElement).dataset
+                            const id = dataset.noteid
                             elem.remove()
+                            showingIds.delete(id)
+
                         })
                     })
 
@@ -151,25 +167,27 @@ document.body.onload = () => {
                         return !toRemoveNumbers.has(songTick)
                     })
 
-
-
-
                     // use them to filter the tags.
-                    const toAdd = mem().played.filter(({ songTick }) => {
+                    const toAdd = mem().played.filter(({ songTick, tags }) => {
                         const matchedRange = ranges.find(([rangeStart, rangeEnd]) => {
                             return songTick >= rangeStart && songTick < rangeEnd
                         })
 
                         if (!matchedRange) return false
-                        if (showing.has(songTick)) return false
+                        const noteid = getNoteIdFromTags(tags)
+
+                        if (showingIds.has(noteid)) return false
                         return true
                     })
 
                     toAdd.reverse()
-                    toAdd.forEach(({ tags, songTick, oneTwentyEigth }) => {
-                        const newHtml = `<div class="note-tags" data-tick="${songTick}">${oneTwentyEigth} => ${JSON.stringify(tags)}</div>`;
+                    toAdd.forEach(({ tags, songTick, }) => {
+                        const noteId = getNoteIdFromTags(tags)
+                        const newHtml = `<div class="note-tags" data-noteid="${noteId}" data-tick="${songTick}">${songTick} => ${JSON.stringify(tags)}</div>`;
                         const newElem = createElementFromHTML(newHtml);
                         tagsRoot.prepend(newElem);
+                        showingIds.add(noteId)
+
                     })
                     logItr += 1
 

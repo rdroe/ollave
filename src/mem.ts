@@ -33,7 +33,6 @@ export type Mem = {
     graphs: { [userScaleWithTonic: string]: any[] }
     played: {
         songTick: number
-        oneTwentyEigth: number
         tags: string[]
         time: number
     }[],

@@ -1,4 +1,4 @@
-import { isString, peprnIsNum } from 'src/lib/helpers'
+import { isString, peprnIsNum, randId } from 'src/lib/helpers'
 import { lookUpGraph } from 'src/mem-db'
 import { Chord, Note } from 'tonal'
 import { chordNameWithNotes } from 'src/lib/graphh'
@@ -123,11 +123,12 @@ export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
     return (noteName: string): NoteByBar => {
         const noteProperties = Note.get(noteName)
         const { oct, letter, acc } = noteProperties
+
         const note1: NoteByBar =
         {
             barTag,
             note: `${letter}${acc}${oct}`,
-            tags: [...extraTags, `barTag=${barTag}`, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`]
+            tags: [...extraTags, `barTag=${barTag}`, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `noteId=${randId('', 3)}`]
         }
         return note1
     }

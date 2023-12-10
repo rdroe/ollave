@@ -1,5 +1,5 @@
 import { isNumber } from "peprn/util"
-
+export const strjson = (arg: any) => JSON.stringify(arg, null, 2)
 export const isString = (arg: any): arg is string => {
     return typeof arg === 'string'
 }
