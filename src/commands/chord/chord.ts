@@ -145,7 +145,7 @@ bars aphrodite fill ${noteStr}
 song start
 `,
                                 aaChordProgram: `
-phase aphrodite 100
+phase aphrodite ${chordsWithNotes.length}
 phase aphrodite scale ${userLetter} ${userScale}
 bars aphrodite fill ${chordsWithNotes.map(({ name }) => name + ',3').join(' ')}
 song start
@@ -207,12 +207,6 @@ song start
                             formatted: realizedGraph
 
                         }
-                    }
-                },
-                starters: {
-                    fn: async ({ positionalNonCommands }) => {
-                        const manyChordNames = new Set<string>()
-                        const [userLetter = "", userScale = ""] = positionalNonCommands
                     }
                 },
             }
