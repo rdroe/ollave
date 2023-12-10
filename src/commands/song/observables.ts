@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import { makeTickSubscribe } from '../phase/subjects/masterTicksSubject'
 import { playTriads } from 'src/lib/music'
 import { lastTick } from 'src/mem-db'
-import { tickCounts } from 'src/commands/phase/observables/masterTicksObservable'
+import { ONE_TWENTY_EIGHTH, tickCounts } from 'src/commands/phase/observables/masterTicksObservable'
 
 export const startCueObservable = (startAt?: number) => {
 
@@ -33,7 +33,7 @@ export const startCueObservable = (startAt?: number) => {
                 mem().played.unshift({
                     time: Date.now(),
                     songTick: adjustedCursor,
-                    oneTwentyEigth: adjustedCursor * tickCounts.oneTwentyEigth,
+                    oneTwentyEigth: adjustedCursor * tickCounts[ONE_TWENTY_EIGHTH],
                     tags: note.compositionTags
                 })
             })

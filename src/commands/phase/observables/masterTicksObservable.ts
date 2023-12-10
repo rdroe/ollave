@@ -66,14 +66,21 @@ const plannedSpeedChanges: TempoChange[] = [
 export const updateCurr = (timeMarker: TimeMarker) => {
     curr = [timeMarker[0] - fileStart, timeMarker[1]]
 }
+export const BAR = 'bar' as const
+export const QUARTER = 'quarter' as const
+export const EIGHTH = 'eighth' as const
+export const SIXTEENTH = 'sixteenth' as const
+export const THIRTY_SECOND = 'thirtySecond' as const
+export const SIXTY_FOURTH = 'sixtyFourth'
+export const ONE_TWENTY_EIGHTH = 'oneTwentyEighth'
 export const tickCounts = {
-    bar: ppq * 4,
-    quarter: ppq,
-    eighth: ppq / 2,
-    sixteenth: ppq / 4,
-    thirtysecond: ppq / 8,
-    sixtyfourth: ppq / 16,
-    oneTwentyEigth: ppq / 32,
+    [BAR]: ppq * 4,
+    [QUARTER]: ppq,
+    [EIGHTH]: ppq / 2,
+    [SIXTEENTH]: ppq / 4,
+    [THIRTY_SECOND]: ppq / 8,
+    [SIXTY_FOURTH]: ppq / 16,
+    [ONE_TWENTY_EIGHTH]: ppq / 32,
 };
 
 export const timings = {

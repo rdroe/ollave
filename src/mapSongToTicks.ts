@@ -1,5 +1,5 @@
 
-import { tickCounts } from './commands/phase/observables/masterTicksObservable'
+import { SIXTY_FOURTH, BAR, tickCounts } from './commands/phase/observables/masterTicksObservable'
 import { peprnIsNum } from './lib/helpers'
 import { Mem, mem } from './mem'
 import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
@@ -149,7 +149,7 @@ type TagData = (number | string | boolean | null)[]
 function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: MidiMap[] = []) {
 
     const barTickFactor = tickCounts.bar
-    const sixtyFourthNoteTickFactor = tickCounts.sixtyfourth
+    const sixtyFourthNoteTickFactor = tickCounts[SIXTY_FOURTH]
 
     // get the bar-sorted bar notes
     const phaseBars = getAllPhaseBarNotes(phaseName)
@@ -215,9 +215,8 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
 }
 
 export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: PhaseMap[] = []) {
-
-    const barTickFactor = tickCounts.bar
-    const sixtyFourthNoteTickFactor = tickCounts.sixtyfourth
+    const barTickFactor = tickCounts[BAR]
+    const sixtyFourthNoteTickFactor = tickCounts[SIXTY_FOURTH]
 
     // get the bar-sorted bar notes
     const phaseBars = getAllPhaseBarNotes(phaseName)
