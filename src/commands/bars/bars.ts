@@ -7,9 +7,10 @@ import { Chord, Note } from 'tonal'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 
 import { chordNameWithNotes } from 'src/lib/graphh'
+import { makeFulfilledBarNote } from './utils'
 
 const { notesByBar } = mem()
-const isRestArg = (arg: any): arg is string => {
+const isRestArg = (arg: any) => {
     return isString(arg)
         && (
             arg === 'rest'
@@ -87,7 +88,7 @@ const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [notes: stri
 
 }
 
-const isChordCsvArg = (str: string, userTonic?: string, userScale?: string): str is string => {
+const isChordCsvArg = (str: string, userTonic?: string, userScale?: string) => {
 
     if (!isCsvArg(str)) return false
 
@@ -100,7 +101,7 @@ const isChordCsvArg = (str: string, userTonic?: string, userScale?: string): str
     return true
 }
 
-const isNoteCsvArg = (str: string): str is string => {
+const isNoteCsvArg = (str: string) => {
 
     if (!isCsvArg(str)) return false
 
@@ -135,7 +136,10 @@ const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
 
 }
 
-
+const noteTags = (noteStr: string) => {
+    const { oct, acc, letter } = Note.get(noteStr)
+    return [`noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`]
+}
 
 export default {
     fn: async (args, subCalls) => {
@@ -172,8 +176,10 @@ export default {
                         if (scaleName) {
                             phaseTags.push(`scaleName=${scaleName}`)
                         }
-                        const layerTag = `layer=${newGroupName}`
 
+                        // `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`,
+                        const layerTag = `layer=${newGroupName}`
+                        const commonTags = [layerTag].concat(phaseTags)
                         rawObjects.forEach((str: string, objIdx: number) => {
 
                             const round = Math.trunc(objIdx / bars.length)
@@ -187,56 +193,29 @@ export default {
                             if (isChordCsvArg(str, scaleTonic, scaleName)) {
 
                                 const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
+
                                 const chord = str.split(',')[0]
                                 if (notes.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
-                                receptacle.push(
-                                    ...notes.map((noteName) => {
-                                        const noteProperties = Note.get(noteName)
-                                        const { oct, letter, acc } = noteProperties
-                                        const note1: NoteByBar =
-                                        {
-                                            barTag,
-                                            note: `${letter}${acc}${oct}`,
-                                            tags: [...timingTags, layerTag, ...phaseTags, `chord=${chord}`, ...tags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `bar=${barTag}`]
-                                        }
-                                        return note1
-                                    }))
+                                const fn = makeFulfilledBarNote(barTag, commonTags.concat(tags))
+
+                                receptacle.push(...notes.map(fn))
                             } else if (isRestArg(str)) {
+
                                 // doing nothing will leave an empty space.
                                 // todo: it's here without any tags or timing.
                             } else if (isNoteCsvArg(str)) {
-                                const parsed = parseNoteCsvArg(str)
+                                const parsed = str.split(',')
                                 if (parsed.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
-                                receptacle.push(
-                                    ...parsed.map((noteName) => {
-                                        const noteProperties = Note.get(noteName)
-                                        const { oct, letter, acc } = noteProperties
-                                        const note1: NoteByBar =
-                                        {
-                                            barTag,
-                                            note: `${letter}${acc}${oct}`,
-                                            tags: [...timingTags, layerTag, ...phaseTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `bar=${barTag}`]
-                                        }
-                                        return note1
-                                    }))
-                            } else if (isNoteName(str)) {
-                                receptacle.push(
-                                    ...[str].map((noteName) => {
-                                        const noteProperties = Note.get(noteName)
-                                        const { oct, letter, acc } = noteProperties
+                                const fn = makeFulfilledBarNote(barTag, commonTags)
+                                receptacle.push(...parsed.map(fn))
 
-                                        const note1: NoteByBar =
-                                        {
-                                            barTag,
-                                            note: `${letter}${acc}${oct}`,
-                                            tags: [...timingTags, layerTag, ...phaseTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`]
-                                        }
-                                        return note1
-                                    }))
+                            } else if (isNoteName(str)) {
+                                const fn = makeFulfilledBarNote(barTag, commonTags)
+                                receptacle.push(fn(str))
                             }
                         })
                     }

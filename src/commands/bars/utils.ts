@@ -131,7 +131,7 @@ export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
         {
             barTag,
             note: `${letter}${acc}${oct}`,
-            tags: [...extraTags, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`]
+            tags: [...extraTags, `barTag=${barTag}`, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`]
         }
         return note1
     }
