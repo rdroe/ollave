@@ -1,4 +1,4 @@
-import { SIXTY_FOURTH, BAR, tickCounts } from './commands/phase/observables/masterTicksObservable'
+import { SIXTY_FOURTH, BAR, tickCounts, EIGHTH } from './commands/phase/observables/masterTicksObservable'
 import { peprnIsNum } from './lib/helpers'
 import { Mem, mem } from './mem'
 import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
@@ -25,7 +25,7 @@ const parseNoteTags = (tags: string[]): TagEntries => {
 const calcEighthNoteDelay = (parsedTags: TagEntries) => {
     let newNoteDelay = 0
     const eightNoteDelay = parsedTags.find(([name]: [nm: string, data: TagData]) => {
-        return name == '8ths'
+        return name == EIGHTH
     })
     if (eightNoteDelay) {
         const [noteCnt] = eightNoteDelay[1]
@@ -37,7 +37,7 @@ const calcEighthNoteDelay = (parsedTags: TagEntries) => {
             )}`)
         }
     }
-    return newNoteDelay
+    return 0
 }
 
 const calcTickDelay = (parsedTags: TagEntries) => {
@@ -203,7 +203,7 @@ type TagData = (number | string | boolean | null)[]
 function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: MidiMap[] = []) {
 
     const barTickFactor = tickCounts.bar
-    const sixtyFourthNoteTickFactor = tickCounts[SIXTY_FOURTH]
+
 
     // get the bar-sorted bar notes
     const phaseBars = getAllPhaseBarNotes(phaseName)
@@ -217,7 +217,7 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
         barNotes.forEach((note, idx) => {
             const parsedTags = parseNoteTags(note.tags)
             if (DEFAULT_STRUM_MODE) {
-                let thisNoteOffset = idx * sixtyFourthNoteTickFactor
+                let thisNoteOffset = 0
                 thisNoteOffset += calcEighthNoteDelay(parsedTags)
                 thisNoteOffset += calcTickDelay(parsedTags)
                 const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
@@ -245,7 +245,7 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
 // One use of this function is in code that gets or places the places cursor within a song, as when stopping or restarting at a certain point.
 export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: PhaseMap[] = []) {
     const barTickFactor = tickCounts[BAR]
-    const sixtyFourthNoteTickFactor = tickCounts[SIXTY_FOURTH]
+
 
     // get the bar-sorted bar notes
     const phaseBars = getAllPhaseBarNotes(phaseName)
@@ -281,7 +281,7 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
         }
         barNotes.forEach((note, idx) => {
             if (DEFAULT_STRUM_MODE) {
-                const thisNoteOffset = idx * sixtyFourthNoteTickFactor
+                const thisNoteOffset = 0
                 const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
                 if (!phaseData[thisNoteTick]) {
                     phaseData[thisNoteTick] = []

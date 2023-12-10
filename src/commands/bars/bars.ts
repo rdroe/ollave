@@ -4,6 +4,7 @@ import { getAllPhaseBars } from 'src/mem-db'
 import { NoteByBar, mem } from '../../mem'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
+import { EIGHTH } from '../phase/observables/masterTicksObservable'
 
 const { notesByBar } = mem()
 
@@ -52,7 +53,7 @@ export default {
                             const receptacle: NoteByBar[] = notesByBar[barTag]
                             const timingTags: string[] = []
                             if (round > 0) {
-                                timingTags.push(`8ths=${round}`)
+                                timingTags.push(`${EIGHTH}=${round}`)
                             }
 
                             if (isChordCsvArg(str, scaleTonic, scaleName)) {
@@ -63,7 +64,7 @@ export default {
                                 if (notes.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
-                                const fn = makeFulfilledBarNote(barTag, commonTags.concat(tags))
+                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...tags, ...timingTags])
 
                                 receptacle.push(...notes.map(fn))
                             } else if (isRestArg(str)) {
@@ -75,11 +76,11 @@ export default {
                                 if (parsed.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
-                                const fn = makeFulfilledBarNote(barTag, commonTags)
+                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags])
                                 receptacle.push(...parsed.map(fn))
 
                             } else if (isNoteName(str)) {
-                                const fn = makeFulfilledBarNote(barTag, commonTags)
+                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags])
                                 receptacle.push(fn(str))
                             }
                         })
