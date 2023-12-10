@@ -66,6 +66,7 @@ const plannedSpeedChanges: TempoChange[] = [
 export const updateCurr = (timeMarker: TimeMarker) => {
     curr = [timeMarker[0] - fileStart, timeMarker[1]]
 }
+
 export const BAR = 'bar' as const
 export const QUARTER = 'quarter' as const
 export const EIGHTH = 'eighth' as const
@@ -85,12 +86,12 @@ export const tickCounts = {
 
 export const timings = {
     msCounts: {
-        quarter: (tick: number) => msPerQuarterNote(tick),
-        eighth: (tick: number) => msPerQuarterNote(tick) / 2,
-        sixteenth: (tick: number) => msPerQuarterNote(tick) / 4,
-        thirtysecond: (tick: number) => msPerQuarterNote(tick) / 8,
-        sixtyfourth: (tick: number) => msPerQuarterNote(tick) / 16,
-        oneTwentyEigth: (tick: number) => msPerQuarterNote(tick) / 32
+        [QUARTER]: (tick: number) => msPerQuarterNote(tick),
+        [EIGHTH]: (tick: number) => msPerQuarterNote(tick) / 2,
+        [SIXTEENTH]: (tick: number) => msPerQuarterNote(tick) / 4,
+        [THIRTY_SECOND]: (tick: number) => msPerQuarterNote(tick) / 8,
+        [SIXTY_FOURTH]: (tick: number) => msPerQuarterNote(tick) / 16,
+        [ONE_TWENTY_EIGHTH]: (tick: number) => msPerQuarterNote(tick) / 32
     }
 }
 
