@@ -21,7 +21,6 @@ export const msPerTick = (tick: number) => {
 }
 
 export const msPerQuarterNote = (tick: number) => {
-
     const msPerMidiTick = msPerTick(tick)
     const msPerQuarterNote = msPerMidiTick * ppq
     return msPerQuarterNote
@@ -68,6 +67,7 @@ export const updateCurr = (timeMarker: TimeMarker) => {
 }
 
 export const BAR = 'bar' as const
+export const HALF = 'half' as const
 export const QUARTER = 'quarter' as const
 export const EIGHTH = 'eighth' as const
 export const SIXTEENTH = 'sixteenth' as const
@@ -75,14 +75,48 @@ export const THIRTY_SECOND = 'thirtySecond' as const
 export const SIXTY_FOURTH = 'sixtyFourth'
 export const ONE_TWENTY_EIGHTH = 'oneTwentyEighth'
 export const tickCounts = {
-    [BAR]: ppq * 4,
-    [QUARTER]: ppq,
-    [EIGHTH]: ppq / 2,
-    [SIXTEENTH]: ppq / 4,
-    [THIRTY_SECOND]: ppq / 8,
-    [SIXTY_FOURTH]: ppq / 16,
-    [ONE_TWENTY_EIGHTH]: ppq / 32,
+    [BAR]: ppq * 4, // 128 ppq * 4
+    [HALF]: ppq * 4 / 2, // 128 * 2
+    [QUARTER]: ppq * 4 / 4, // 128 
+    [EIGHTH]: ppq * 4 / 8, // 64
+    [SIXTEENTH]: ppq * 4 / 16, // 32  
+    [THIRTY_SECOND]: ppq * 4 / 32, // 16
+    [SIXTY_FOURTH]: ppq * 4 / 64, // 8 
+    [ONE_TWENTY_EIGHTH]: ppq * 4 / 128, // 4 
 };
+
+// 4 4ths in a bar
+// 8 8ths in a bar
+// 16
+//
+// 
+export const oneTwentyEighthCounts = {
+    [BAR]: 128,
+    [HALF]: 64,
+    [QUARTER]: 24,
+    [EIGHTH]: 16,
+    [SIXTEENTH]: 8,
+    [THIRTY_SECOND]: 4,
+    [SIXTY_FOURTH]: 2,
+    [ONE_TWENTY_EIGHTH]: 1
+}
+
+export type Abbreviation = 'bar' | 'half' | '4th' | '8th' | '16th' | '32nd' | '64th' | '128th'
+
+export const abbrev = {
+    'bar': BAR,
+    'half': HALF,
+    '4th': QUARTER,
+    '8th': EIGHTH,
+    '16th': SIXTEENTH,
+    '32nd': THIRTY_SECOND,
+    '64th': SIXTY_FOURTH,
+    '128th': ONE_TWENTY_EIGHTH,
+} as { [Property in Abbreviation]: keyof typeof tickCounts }
+
+export const isAbbreviation = (unk: unknown): unk is Abbreviation => {
+    return (Object.keys(abbrev) as string[]).includes(unk as string)
+}
 
 export const timings = {
     msCounts: {
