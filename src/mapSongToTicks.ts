@@ -198,7 +198,7 @@ export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
 }
 
 
-const DEFAULT_STRUM_MODE = true
+
 type TagData = (number | string | boolean | null)[]
 function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: MidiMap[] = []) {
 
@@ -216,21 +216,19 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
         // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
         barNotes.forEach((note, idx) => {
             const parsedTags = parseNoteTags(note.tags)
-            if (DEFAULT_STRUM_MODE) {
-                let thisNoteOffset = 0
-                thisNoteOffset += calcEighthNoteDelay(parsedTags)
-                thisNoteOffset += calcTickDelay(parsedTags)
-                const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
-                if (!phaseMidi[thisNoteTick]) {
-                    phaseMidi[thisNoteTick] = []
-                }
-                phaseMidi[thisNoteTick].push({
-                    note: note.note,
-                    compositionTags: note.tags
-                })
-            } else {
-                console.error("TODO: implement non-default-strum mode")
+
+            let thisNoteOffset = 0
+            thisNoteOffset += calcEighthNoteDelay(parsedTags)
+            thisNoteOffset += calcTickDelay(parsedTags)
+            const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
+            if (!phaseMidi[thisNoteTick]) {
+                phaseMidi[thisNoteTick] = []
             }
+            phaseMidi[thisNoteTick].push({
+                note: note.note,
+                compositionTags: note.tags
+            })
+
         })
     })
     collector.push(phaseMidi)
@@ -280,21 +278,21 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
             })
         }
         barNotes.forEach((note, idx) => {
-            if (DEFAULT_STRUM_MODE) {
-                const thisNoteOffset = 0
-                const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
-                if (!phaseData[thisNoteTick]) {
-                    phaseData[thisNoteTick] = []
-                }
 
-                phaseData[thisNoteTick].push({
-                    occassion: "NOTE_START",
-                    data1: [barNotes[0].barTag],
-                    data2: []
-                })
-            } else {
-                console.error("TODO: in mapPhaseData, implement non-default-strum mode")
+            const thisNoteOffset = 0
+            // any need for per-note delays?
+            // todo: for now, assuming not.
+            const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
+            if (!phaseData[thisNoteTick]) {
+                phaseData[thisNoteTick] = []
             }
+
+            phaseData[thisNoteTick].push({
+                occassion: "NOTE_START",
+                data1: [barNotes[0].barTag],
+                data2: []
+            })
+
 
         })
 
