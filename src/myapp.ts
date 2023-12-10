@@ -81,12 +81,13 @@ const getNoteIdFromTags = (tags: string[]) => {
     }
     return noteId
 }
-
+const DISPLAY_EXPIRE = tickCounts.bar * 2
 document.body.onload = () => {
     document.body.onclick = () => {
         playTriads([['c3', .05, 0]])
         document.body.onclick = null
     }
+
     createApp({
         id: "cli",
         init: async () => {
@@ -104,9 +105,6 @@ document.body.onload = () => {
 
             const tagsRoot = document.querySelector('.tags-app-root')
             if (tagsRoot) {
-
-
-
                 let logItr = 0
                 const log = (...args: any[]) => {
                     if (mem().doLog && logItr % 100 === 0) {
@@ -118,7 +116,8 @@ document.body.onload = () => {
                     const adjustedCursor = mem().adjustedCursor
                     // on each tick of this interval fn, get the time ranges of what to show.
                     const end1 = adjustedCursor
-                    let start1 = end1 - tickCounts.bar * 2
+
+                    let start1 = end1 - DISPLAY_EXPIRE
                     let start2: number | undefined
                     if (start1 < 0) {
                         // lastTick() gets end-of-song tick

@@ -77,8 +77,8 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
     // const 
     //   if (!notes) throw new Error(`${str} is not a chord csv arg; could not get notes`)
 
-    const [userTonic, userScale] = userScaleAndTonic.split(' ')
-    const graph = lookUpGraph(userTonic, userScale)
+    const [userTonic, userScale] = userScaleAndTonic ? userScaleAndTonic.split(' ') : []
+    const graph = (userTonic && userScale) ? lookUpGraph(userTonic, userScale) : undefined
     const cnwn = chordNameWithNotes(csv[0], parseInt(csv[1]))
     let notes: string[] | undefined
     const tags: string[] = []

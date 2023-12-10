@@ -107,7 +107,7 @@ export const mapSongToMidiTicks = () => {
         })
         return acc
     }, {} as MidiMap)
-
+    console.log('midimap', { midiMap })
     return midiMap
 }
 
@@ -212,7 +212,6 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
 
     const barTickFactor = tickCounts.bar
 
-
     // get the bar-sorted bar notes
     const phaseBars = getAllPhaseBarNotes(phaseName)
     // initialize the midi map where we will put each note on a numeric midi property
@@ -244,7 +243,7 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
     const followsPhases = getFollowingPhases(phaseName)
 
     followsPhases.forEach(([followsPhaseName, followsPhase]) => {
-        mapPhaseTicks(followsPhaseName, followsPhase, phaseBars.length * barTickFactor + barTickFactor, collector)
+        mapPhaseTicks(followsPhaseName, followsPhase, phaseBars.length * barTickFactor, collector)
     })
 
     return collector

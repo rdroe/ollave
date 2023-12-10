@@ -67,7 +67,6 @@ const module: Module = {
                 follows: {
                     fn: async (args, familialCalls) => {
                         const off = args?.off
-
                         const phaseName1 = await familialCalls['phase $']
                         const objects = args.positionalNonCommands
                         if (off) {
