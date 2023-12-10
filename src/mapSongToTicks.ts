@@ -1,8 +1,62 @@
-
 import { SIXTY_FOURTH, BAR, tickCounts } from './commands/phase/observables/masterTicksObservable'
 import { peprnIsNum } from './lib/helpers'
 import { Mem, mem } from './mem'
 import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
+
+
+type TagEntries = [name: string, data: TagData][]
+
+const parseNoteTags = (tags: string[]): TagEntries => {
+    const parsedTags = tags.reduce((accum, tag) => {
+        if (!tag.includes('=')) {
+            return [...accum, [tag, []] as [nm: string, data: TagData]]
+        }
+        const split = tag.split('=')
+
+        const right = peprnIsNum(split[1]) ? parseFloat(split[1]) : split[1]
+        return [...accum, [
+            split[0], [right]
+        ]] as TagEntries
+    }, [] as TagEntries)
+
+    return parsedTags
+}
+
+const calcEighthNoteDelay = (parsedTags: TagEntries) => {
+    let newNoteDelay = 0
+    const eightNoteDelay = parsedTags.find(([name]: [nm: string, data: TagData]) => {
+        return name == '8ths'
+    })
+    if (eightNoteDelay) {
+        const [noteCnt] = eightNoteDelay[1]
+        if (typeof noteCnt === 'number') {
+            newNoteDelay += (tickCounts.eighth * noteCnt)
+        } else {
+            throw new Error(`Non-numeric eigth note ${JSON.stringify(
+                eightNoteDelay
+            )}`)
+        }
+    }
+    return newNoteDelay
+}
+
+const calcTickDelay = (parsedTags: TagEntries) => {
+    let newNoteDelay = 0
+    const eightNoteDelay = parsedTags.find(([name]: [nm: string, data: TagData]) => {
+        return name == 'barDelay'
+    })
+    if (eightNoteDelay) {
+        const [noteCnt] = eightNoteDelay[1]
+        if (typeof noteCnt === 'number') {
+            newNoteDelay += noteCnt
+        } else {
+            throw new Error(`Non-numeric eigth note ${JSON.stringify(
+                eightNoteDelay
+            )}`)
+        }
+    }
+    return newNoteDelay
+}
 
 // Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {
@@ -161,36 +215,11 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
         const thisBarOffset = barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
         // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
         barNotes.forEach((note, idx) => {
-            const parsedTags = note.tags.reduce((accum, tag) => {
-                if (!tag.includes('=')) {
-                    return [tag, []]
-                }
-                const split = tag.split('=')
-
-                const right = peprnIsNum(split[1]) ? parseFloat(split[1]) : split[1]
-                return [...accum, [
-                    split[0], [right]
-                ]]
-            }, [] as [name: string, data: TagData][])
-
+            const parsedTags = parseNoteTags(note.tags)
             if (DEFAULT_STRUM_MODE) {
                 let thisNoteOffset = idx * sixtyFourthNoteTickFactor
-
-                const eightNoteDelay = parsedTags.find(([name, data]: [nm: string, data: TagData]) => {
-                    return name == '8ths'
-
-                })
-                if (eightNoteDelay) {
-                    const [noteCnt] = eightNoteDelay[1]
-                    if (typeof noteCnt === 'number') {
-                        thisNoteOffset += (tickCounts.eighth * noteCnt)
-                    } else {
-                        throw new Error(`Non-numeric eigth note ${JSON.stringify(
-                            eightNoteDelay
-                        )}`)
-                    }
-                }
-
+                thisNoteOffset += calcEighthNoteDelay(parsedTags)
+                thisNoteOffset += calcTickDelay(parsedTags)
                 const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
                 if (!phaseMidi[thisNoteTick]) {
                     phaseMidi[thisNoteTick] = []
@@ -213,7 +242,7 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
 
     return collector
 }
-
+// One use of this function is in code that gets or places the places cursor within a song, as when stopping or restarting at a certain point.
 export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: PhaseMap[] = []) {
     const barTickFactor = tickCounts[BAR]
     const sixtyFourthNoteTickFactor = tickCounts[SIXTY_FOURTH]
@@ -224,7 +253,6 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
 
     const phaseData: PhaseMap = {}
     let barEndTick = startTick
-
 
     // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick. 
     phaseBars.forEach((barNotes, barIndex) => {

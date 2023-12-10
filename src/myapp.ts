@@ -3,6 +3,7 @@ import play from './commands/play/play'
 import phase from './commands/phase/phase'
 import song from './commands/song/song'
 import bars from './commands/bars/bars'
+import bar from './commands/bar/bar'
 import debug from './commands/debug/debug'
 import { chord } from './commands/chord/chord'
 import { match } from 'peprn'
@@ -176,7 +177,7 @@ document.body.onload = () => {
             }
         },
         modules: {
-            chord, play, phase, song, match, bars, debug, test: {
+            chord, play, phase, song, match, bars, bar, debug, test: {
                 fn: async () => {
                     playTriads([['cb4', 2, 0]])
                 }

@@ -84,7 +84,7 @@ export const tickCounts = {
     [SIXTY_FOURTH]: ppq * 4 / 64, // 8 
     [ONE_TWENTY_EIGHTH]: ppq * 4 / 128, // 4 
 };
-
+console.log({ tickCounts })
 // 4 4ths in a bar
 // 8 8ths in a bar
 // 16
