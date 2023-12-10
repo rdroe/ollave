@@ -1,12 +1,8 @@
 import { Module, awaitAll } from 'peprn/util'
-import { isString, peprnIsNum, randId } from 'src/lib/helpers'
-import { SubcommandPatterns, runSubcommandsOrNull } from 'src/lib/subcommands'
-import { getAllPhaseBars, lookUpGraph } from 'src/mem-db'
+import { randId } from 'src/lib/helpers'
+import { getAllPhaseBars } from 'src/mem-db'
 import { NoteByBar, mem } from '../../mem'
-import { Chord, Note } from 'tonal'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
-
-import { chordNameWithNotes } from 'src/lib/graphh'
 import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
 
 const { notesByBar } = mem()
