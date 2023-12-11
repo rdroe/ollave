@@ -27,18 +27,43 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
             "follows-ids": objects.map((obj) => phases[obj].id),
             barSizeMultiplier: null,
             speed: null,
-
             scaleName: null,
             scaleTonic: null
         }
     }
     mem().latestMap = mapSongToMidiTicks()
 }
+const getPhaseId = (phaseName: string) => {
+    const phase = mem().phases[phaseName]
+    return phase.id || phase['temp-id']
+}
 
-export async function phaseUnfollows(subject: string, objects: string[]) {
-    // where this subject is followed, remove this subject from the follows-ids
+export async function phaseUnfollows(subject: string, objects?: string[]) {
     // remove all follows-ids from subject
+
+    const phase = mem().phases[subject]
+    if (objects) {
+        if (objects.length) {
+            const objectsById = objects.map(getPhaseId)
+            mem().phases[subject] = {
+                ...phase,
+                'follows-ids': phase['follows-ids'].filter((phaseId) => {
+                    return !objectsById.includes(phaseId)
+                })
+            }
+        } else {
+            // noop, noitice
+        }
+    }
+
+    mem().phases[subject] = {
+        ...phase,
+        'follows-ids': []
+    }
+
     mem().latestMap = mapSongToMidiTicks()
+    console.log('unfollowed', mem())
+
 }
 
 const sortByNumberAfterColon = (a: string, b: string) => {
@@ -60,6 +85,7 @@ export const lookUpGraph = (userTonic: string, userScale: string): {
     }
     return null
 }
+
 export const lastTick = () => {
     const songStartEndData = phaseBeginningsAndEnds()
     const lastTick = Object.values(songStartEndData).reduce((acc, curr) => {

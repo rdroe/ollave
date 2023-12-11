@@ -140,7 +140,7 @@ song start
             },
             fn: async () => {
                 const songName = mem().song.name
-                const publishedCursro = mem().publishedCursor
+                const publishedCursro = mem().adjustedCursor
 
                 const observable =
                     mem().observables[songName]

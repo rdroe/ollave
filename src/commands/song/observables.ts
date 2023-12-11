@@ -18,18 +18,17 @@ export const startCueObservable = (startAt?: number) => {
 
 
 
-    const startOver = lastTick()
+
     const songObservable = new Observable(makeTickSubscribe(startAt))
 
     mem().observables[song] = songObservable.subscribe({
         next: ({ tick }) => {
             // get the midi tick relative to the start of the song
-            const adjustedCursor = tick % startOver
-            mem().adjustedCursor = tick % startOver
-            mem().publishedCursor = adjustedCursor
+            const adjustedCursor = tick % lastTick()
+            mem().adjustedCursor = tick % lastTick()
 
             mem().latestMap[adjustedCursor]?.forEach((note) => {
-                playTriads([[note.note, 0.25, 0.1]])
+                playTriads([[note.note, 0.5, 0.1]])
                 mem().played.unshift({
                     time: Date.now(),
                     songTick: adjustedCursor,

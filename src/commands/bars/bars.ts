@@ -1,15 +1,16 @@
 import { Module, awaitAll } from 'peprn/util'
-import { randId } from 'src/lib/helpers'
+import { randId, strjson } from 'src/lib/helpers'
 import { getAllPhaseBars } from 'src/mem-db'
 import { NoteByBar, mem } from '../../mem'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
 import { EIGHTH } from '../phase/observables/masterTicksObservable'
+import { tagsDeleteMatching2 } from 'src/lib/tags'
 
 const { notesByBar } = mem()
 
 export default {
-    fn: async (args, subCalls) => {
+    fn: async (_, subCalls) => {
         awaitAll({
             ...subCalls,
         }).then(() => {
@@ -83,6 +84,36 @@ export default {
                                 receptacle.push(fn(str))
                             }
                         })
+                    }
+                },
+                repack: {
+                    yargs: {
+                        pack: {
+                            alias: 'k',
+                            array: true,
+                            type: 'number'
+                        }
+                    },
+                    fn: async ({ '$': dollar, pack }) => {
+                        const [phaseName] = dollar
+                        const phase = mem().phases[phaseName]
+                        const { scaleTonic, scaleName } = phase
+
+                        const bars = getAllPhaseBars(phaseName)
+                        const detachedBars: NoteByBar[][] = []
+                        const notesByBar = mem().notesByBar
+                        console.log('before stashing', strjson({ notesByBar, detachedBars }))
+
+                        // strip existing bar tag
+                        bars.forEach((barTag) => {
+                            detachedBars.push(
+                                notesByBar[barTag]
+                            )
+                            notesByBar[barTag] = []
+                        })
+
+                        console.log('after stashing', { notesByBar, detachedBars })
+                        console.log('mem()', mem())
                     }
                 }
             }

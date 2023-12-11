@@ -1,71 +1,9 @@
-import { SIXTY_FOURTH, BAR, tickCounts, EIGHTH, isFraction } from './commands/phase/observables/masterTicksObservable'
-import { peprnIsNum, strjson } from './lib/helpers'
+import { BAR, tickCounts } from './commands/phase/observables/masterTicksObservable'
+
+import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './lib/tags'
 import { Mem, mem } from './mem'
 import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
 
-
-export type TagEntries = [name: string, data: TagData][]
-
-const parseNoteTags = (tags: string[]): TagEntries => {
-    const parsedTags = tags.reduce((accum, tag) => {
-        if (!tag.includes('=')) {
-            return [...accum, [tag, []] as [nm: string, data: TagData]]
-        }
-        const split = tag.split('=')
-
-        const right = peprnIsNum(split[1]) ? parseFloat(split[1]) : split[1]
-        return [...accum, [
-            split[0], [right]
-        ]] as TagEntries
-    }, [] as TagEntries)
-
-    return parsedTags
-}
-
-const calcFractionalDelay = (parsedTags: TagEntries) => {
-    let newNoteDelay = 0
-    parsedTags.forEach(([name, data]: [nm: string, data: TagData]) => {
-
-        if (isFraction(name)) {
-            const start = newNoteDelay
-            const [num] = data
-            if (typeof num === 'number') {
-                const taggedTickFactor = tickCounts[name]
-
-                newNoteDelay += (taggedTickFactor * num)
-
-            } else {
-                const str = strjson(parsedTags)
-                throw new Error(`Non-numeric fractional delay ${JSON.stringify(
-                    num
-                )} ; all tag entries: ${str}`)
-            }
-
-            console.log('is fractional', { name, parsedTags, start, newNoteDelay })
-        }
-
-    })
-    return newNoteDelay
-}
-
-const calcTickDelay = (parsedTags: TagEntries) => {
-    let newNoteDelay = 0
-    const eightNoteDelay = parsedTags.find(([name]: [nm: string, data: TagData]) => {
-        return name == 'barDelay'
-    })
-    if (eightNoteDelay) {
-        const [noteCnt] = eightNoteDelay[1]
-        if (typeof noteCnt === 'number') {
-            newNoteDelay += noteCnt
-        } else {
-            throw new Error(`Non-numeric eigth note ${JSON.stringify(
-                eightNoteDelay
-            )}`)
-        }
-    }
-    return newNoteDelay
-}
-export type TagData = (number | string | boolean | null)[]
 // Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {
     [tick: number]: {
@@ -107,7 +45,7 @@ export const mapSongToMidiTicks = () => {
         })
         return acc
     }, {} as MidiMap)
-    console.log('midimap', { midiMap })
+
     return midiMap
 }
 
@@ -326,7 +264,7 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
     const followsPhases = getFollowingPhases(phaseName)
 
     followsPhases.forEach(([followsPhaseName, followsPhase]) => {
-        mapPhaseData(followsPhaseName, followsPhase, phaseBars.length * barTickFactor + barTickFactor, collector)
+        mapPhaseData(followsPhaseName, followsPhase, phaseBars.length * barTickFactor, collector)
     })
 
     return collector

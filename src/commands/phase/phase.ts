@@ -75,6 +75,15 @@ const module: Module = {
                         return phaseFollowsPhase(phaseName1, objects)
                     }
                 },
+                unfollows: {
+                    fn: async (args, familialCalls) => {
+
+                        const phaseName1 = await familialCalls['phase $']
+                        const objects = args.positionalNonCommands
+                        return phaseUnfollows(phaseName1, objects)
+
+                    }
+                },
                 scale: {
                     fn: async ({ '$': $, positionalNonCommands }) => {
 

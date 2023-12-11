@@ -27,7 +27,7 @@ const isMidiChannel = (arg: number): arg is MidiChannel => {
 
 export const addTriads = (track: Midi.Track, notes: Triad[]) => {
     const channeledTriads = notes.map(makeChanneledTriadFn(0))
-    console.log('channeledTriads', channeledTriads)
+    console.log({ channeledTriads })
     channeledTriads.forEach((chTr: ChanneledTriad) => track.addNote(...chTr))
 }
 
@@ -36,16 +36,3 @@ export const playNotes = async (notes: Triad[]) => {
     return { played: notes }
 }
 
-export const downloadNotes = async (notes: Triad[], tempo?: number) => {
-    var file = new Midi.File();
-    var track = new Midi.Track();
-    if (tempo) {
-        track.setTempo(tempo)
-    }
-    file.addTrack(track);
-    addTriads(track, notes);
-    const midi = file.toBytes()
-    saveRaw(midi)
-
-    return { downloaded: notes }
-}
