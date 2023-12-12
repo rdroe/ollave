@@ -7,12 +7,14 @@ import {
 import { randomInt } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Collection, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
+import { parseChordCsvArg } from '../bars/utils'
 
 export const chord: Module = {
     fn: async () => {
         return null
     },
     submodules: {
+
         triads: {
             fn: async (args) => {
                 const [userLetter = "", userScale = "", noteLetter = null] = args.positionalNonCommands
@@ -217,7 +219,20 @@ song start
                 return args['$']
             },
             submodules: {
+                arrange: {
+                    /**
+                       
+                    */
+                    fn: async ({ positionalNonCommands, scale }) => {
+                        const chordCsvArg = positionalNonCommands.shift()
+                        const plan = positionalNonCommands.shift()
+                        const [chordNotes, chordTags] = parseChordCsvArg(chordCsvArg, scale)
 
+
+
+
+                    }
+                },
                 detectScales: {
                     fn: async (args) => {
                         const [chordName] = args['$']

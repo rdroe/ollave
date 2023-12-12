@@ -4,8 +4,9 @@ import { getAllPhaseBars } from 'src/mem-db'
 import { NoteByBar, mem } from '../../mem'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
-import { EIGHTH } from '../phase/observables/masterTicksObservable'
-import { tagsDeleteMatching2 } from 'src/lib/tags'
+import { BAR, EIGHTH, isFraction, tickCounts } from '../phase/observables/masterTicksObservable'
+import { parseNoteTags, tagsDeleteMatching1, tagsDeleteMatching2, unparseTagEntries } from 'src/lib/tags'
+import { oneIndexedArr } from 'src/lib/graphh'
 
 const { notesByBar } = mem()
 
@@ -97,12 +98,12 @@ export default {
                     fn: async ({ '$': dollar, pack }) => {
                         const [phaseName] = dollar
                         const phase = mem().phases[phaseName]
+                        const barSizeMod = phase.barSizeMultiplier
                         const { scaleTonic, scaleName } = phase
 
                         const bars = getAllPhaseBars(phaseName)
                         const detachedBars: NoteByBar[][] = []
                         const notesByBar = mem().notesByBar
-                        console.log('before stashing', strjson({ notesByBar, detachedBars }))
 
                         // strip existing bar tag
                         bars.forEach((barTag) => {
@@ -112,8 +113,65 @@ export default {
                             notesByBar[barTag] = []
                         })
 
-                        console.log('after stashing', { notesByBar, detachedBars })
-                        console.log('mem()', mem())
+                        bars.forEach((barTag) => {
+                            const spl = barTag.split(':')
+                            const barIdx = parseInt(spl[1])
+                            const packPlanIdx = barIdx % pack.length
+                            const packPlan = pack[packPlanIdx]
+                            if (typeof packPlan !== 'number') {
+                                throw new Error(`pack plan was non-number`)
+                            }
+                            const nextGroup: NoteByBar[][] = []
+                            while (nextGroup.length < packPlan) {
+                                nextGroup.push(
+                                    detachedBars.shift()
+                                )
+                            }
+
+                            const interim = Math.trunc(
+                                (tickCounts[BAR] * (barSizeMod || 1))
+                                /
+                                nextGroup.length
+                            )
+
+                            console.log('repack info', {
+                                divisible: tickCounts[BAR] * (barSizeMod || 1),
+                                nextGroup,
+                                interim,
+                            })
+                            nextGroup.forEach((g, groupIdx) => {
+                                if (!g) return
+                                const retaggedGroup = g.map((note) => {
+                                    const parsedTagz = parseNoteTags(note.tags)
+                                    const cleaned = tagsDeleteMatching1(
+                                        ([k]) => {
+                                            const retVal = isFraction(k) === false && k !== 'barDelay'
+
+                                            return retVal
+                                        },
+                                        parsedTagz
+                                    )
+
+                                    const newNote = {
+                                        ...note,
+                                        tags: unparseTagEntries(
+                                            cleaned
+                                        )
+                                    }
+                                    return newNote
+                                })
+
+
+
+                                retaggedGroup.forEach((nt) => {
+                                    nt.tags.push(`barDelay=${interim * groupIdx}`)
+                                })
+                                notesByBar[barTag].push(...retaggedGroup)
+
+                            })
+
+                        })
+                        console.log('repack done', notesByBar)
                     }
                 }
             }

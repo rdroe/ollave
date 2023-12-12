@@ -531,7 +531,7 @@ export const minor: { [name: string]: ProgressionGraphNode[] } = {
     }]
 }
 
-const oneIndexedArr = (len: number) => {
+export const oneIndexedArr = (len: number) => {
     if (len <= 0) return []
     const arr: number[] = []
     let n = 1

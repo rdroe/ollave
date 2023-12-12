@@ -9,10 +9,14 @@ export default {
     },
     submodules: {
         '$': {
+
             fn: async (args) => {
                 return args['$']
             },
             submodules: {
+                shape: {
+                    fn: async () => { },
+                }
             }
         }
     }

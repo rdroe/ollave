@@ -3,7 +3,6 @@ import { PhaseRecord, SongRecord, TrackRecord } from "./commands/song/song"
 import { BarTagPercent, MidiMap } from "./mapSongToTicks"
 type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
 export type NoteByBar = {
-    barTag: string;
     note: string;
     tags: string[];
 }

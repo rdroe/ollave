@@ -22,13 +22,20 @@ const isNoteNameArray = (arr: any[]): arr is string[] => {
     return arr.every((arg) => isNoteName(arg) || isRestArg(arg))
 }
 
-const isCsvArg = (str: string): str is string => {
+export const isCsvArg = (str: string): str is string => {
     return str.includes(',')
 }
 
-const parseCsvArg = (str: string): string[] => {
+export const parseCsvArg = (str: string): (string | number | boolean | null)[] => {
     if (!isCsvArg(str)) return [str]
-    return str.split(',')
+
+    return str.split(',').map((splitOff) => {
+        if (splitOff === 'null') return null
+        if (peprnIsNum(splitOff)) return parseFloat(splitOff)
+        if (splitOff === 'true') return true
+        if (splitOff === 'false') return false
+        return splitOff
+    })
 }
 
 const hasOctaveFilter = (noteStrs: string[]) => {
@@ -38,7 +45,6 @@ const hasOctaveFilter = (noteStrs: string[]) => {
         return numOrNull !== null
     })
 }
-
 
 export const isNoteCsvArg = (str: string): str is string => {
 
@@ -51,18 +57,14 @@ export const isNoteCsvArg = (str: string): str is string => {
 }
 
 const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
-
     const initial = isString(nm) && !isNoteName(nm) && !!Chord.get(nm)?.name
     if (initial) return initial
     if (!scaleTonic || !scaleName) {
-
         return initial
     }
 
     const graph = lookUpGraph(scaleTonic, scaleName)
-
     if (!graph) return initial
-
     return graph[nm] || initial
 
 }
@@ -72,14 +74,15 @@ const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
 export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [notes: string[], tags: string[]] => {
     if (!isCsvArg(str)) throw new Error(`${str} is not a chord csv arg`)
     const csv = parseCsvArg(str)
-    if (!csv[0] || csv[0].length < 1) throw new Error(`${csv} is not a non-empty string`)
-    if (!peprnIsNum(csv[1])) throw new Error(`${str} is not a chord csv arg; second part is not an octave (number)`)
+    if (typeof csv[0] !== 'string' || csv[0] === "") throw new Error(`${csv} is not a non-empty string`)
+
+    if (typeof csv[1] !== 'number') throw new Error(`${str} is not a chord csv arg; second part is not an octave (number)`)
     // const 
     //   if (!notes) throw new Error(`${str} is not a chord csv arg; could not get notes`)
 
     const [userTonic, userScale] = userScaleAndTonic ? userScaleAndTonic.split(' ') : []
     const graph = (userTonic && userScale) ? lookUpGraph(userTonic, userScale) : undefined
-    const cnwn = chordNameWithNotes(csv[0], parseInt(csv[1]))
+    const cnwn = chordNameWithNotes(csv[0], csv[1])
     let notes: string[] | undefined
     const tags: string[] = []
 
@@ -91,7 +94,7 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
                 tags.push(`roman=${graphChordData.roman}`)
 
                 if (graphChordData.translatedSource.octMap && hasOctaveFilter(notes).length === 0) {
-                    return [graphChordData.translatedSource.octMap(notes, parseInt(csv[1])), tags]
+                    return [graphChordData.translatedSource.octMap(notes, csv[1]), tags]
                 }
                 return [notes, tags]
             }
@@ -114,7 +117,7 @@ export const isChordCsvArg = (str: string, userTonic?: string, userScale?: strin
 
     if (!isChordName(csv[0], userTonic, userScale)) return false
 
-    if (!peprnIsNum(csv[1])) return false
+    if (typeof csv[1] !== 'number') return false
 
     return true
 }
@@ -126,7 +129,6 @@ export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
 
         const note1: NoteByBar =
         {
-            barTag,
             note: `${letter}${acc}${oct}`,
             tags: [...extraTags, `lastBarTag=${barTag}`, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `noteId=${randId('', 3)}`]
         }

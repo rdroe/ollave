@@ -1,5 +1,6 @@
 import { isFraction, tickCounts } from "src/commands/phase/observables/masterTicksObservable"
 import { peprnIsNum, strjson } from "./helpers"
+import { isCsvArg, parseCsvArg } from "src/commands/bars/utils"
 
 export type TagData = (number | string | boolean | null)[]
 export type TagEntry = [name: string, data: TagData]
@@ -12,14 +13,32 @@ export const parseNoteTags = (tags: string[]): TagEntries => {
             return [...accum, [tag, []] as [nm: string, data: TagData]]
         }
         const split = tag.split('=')
+        let tagDat: TagData = []
 
-        const right = peprnIsNum(split[1]) ? parseFloat(split[1]) : split[1]
+        if (peprnIsNum(split[1])) {
+            tagDat = [parseFloat(split[1])]
+        } else if (isCsvArg(split[1])) {
+            tagDat = parseCsvArg(split[1])
+        } else {
+            tagDat = [split[1]]
+        }
+
+
+
         return [...accum, [
-            split[0], [right]
+            split[0], tagDat
         ]] as TagEntries
     }, [] as TagEntries)
 
     return parsedTags
+}
+
+export const unparseTagEntries = (tes: TagEntries) => {
+    return tes.map(
+        ([k, td]) => {
+            return `${k}=${td.toString()}`
+        }
+    )
 }
 
 export const calcFractionalDelay = (parsedTags: TagEntries) => {

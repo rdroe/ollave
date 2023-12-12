@@ -5,6 +5,7 @@ import song from './commands/song/song'
 import bars from './commands/bars/bars'
 import bar from './commands/bar/bar'
 import debug from './commands/debug/debug'
+import notes from './commands/notes/notes'
 import { chord } from './commands/chord/chord'
 import { match } from 'peprn'
 import { playTriads } from './lib/music'
@@ -183,6 +184,7 @@ document.body.onload = () => {
                     toAdd.forEach(({ tags, songTick, }) => {
                         const noteId = getNoteIdFromTags(tags)
                         const newHtml = `<div class="note-tags" data-noteid="${noteId}" data-tick="${songTick}">${songTick} => ${JSON.stringify(tags)}</div>`;
+
                         const newElem = createElementFromHTML(newHtml);
                         tagsRoot.prepend(newElem);
                         showingIds.add(noteId)
@@ -194,7 +196,7 @@ document.body.onload = () => {
             }
         },
         modules: {
-            chord, play, phase, song, match, bars, bar, debug, test: {
+            chord, play, phase, song, match, bars, bar, debug, notes, test: {
                 fn: async () => {
                     playTriads([['cb4', 2, 0]])
                 }

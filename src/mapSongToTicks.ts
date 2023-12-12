@@ -30,10 +30,12 @@ export const mapSongToMidiTicks = () => {
     const firstPhases = Object.entries(mem().phases).filter(([phaseName, phase]) => {
         return phase["follows-ids"].length === 0
     })
+
     const collector: MidiMap[] = []
     firstPhases.forEach(([phaseName, phase]) => {
         mapPhaseTicks(phaseName, phase, 0, collector)
     })
+
     // phase-level massaging here.
     const midiMap: MidiMap = collector.reduce((acc, curr) => {
         Object.entries(curr).forEach(([tickRaw, notes]) => {
@@ -144,8 +146,6 @@ export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
 }
 
 
-
-
 function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: MidiMap[] = []) {
 
     const barTickFactor = tickCounts.bar
@@ -219,7 +219,7 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
         } else {
             phaseData[thisBarOffset].push({
                 occassion: "BAR_START",
-                data1: [barNotes[0].barTag],
+                data1: [`${phaseName}:${barIndex}`],
                 data2: [barEndTick]
             })
         }
@@ -235,7 +235,7 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
 
             phaseData[thisNoteTick].push({
                 occassion: "NOTE_START",
-                data1: [barNotes[0].barTag],
+                data1: [`${phaseName}:${barIndex}`],
                 data2: []
             })
 
@@ -254,7 +254,7 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
         } else {
             phaseData[barEndTick].push({
                 occassion: "BAR_END",
-                data1: [barNotes[0].barTag],
+                data1: [`${phaseName}:${barIndex}`],
                 data2: [thisBarOffset]
             })
         }
