@@ -65,9 +65,17 @@ export default {
                                 if (notes.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
-                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...tags, ...timingTags])
+                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...tags, ...timingTags,])
 
-                                receptacle.push(...notes.map(fn))
+                                receptacle.push(...notes.map(fn).map((n, idx) => {
+                                    return {
+                                        ...n,
+                                        tags: [
+                                            ...n.tags,
+                                            `chordIndex=${idx}`
+                                        ]
+                                    }
+                                }))
                             } else if (isRestArg(str)) {
 
                                 // doing nothing will leave an empty space.

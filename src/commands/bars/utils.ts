@@ -85,7 +85,7 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
     const cnwn = chordNameWithNotes(csv[0], csv[1])
     let notes: string[] | undefined
     const tags: string[] = []
-
+    tags.push(`chord=${cnwn.name}`)
     if (graph) {
         if (graph[csv[0]]) {
             if (graph[csv[0]].translatedSource.notes) {

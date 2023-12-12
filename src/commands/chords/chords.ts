@@ -11,13 +11,13 @@ export default {
         '$': {
 
             fn: async (args) => {
-                return args['$']
+                const phaseOrBar = args['$']
             },
             submodules: {
                 shape: {
                     fn: async () => { },
                 }
             }
-        }
+        },
     }
 } as Module
