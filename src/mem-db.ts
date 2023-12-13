@@ -1,7 +1,7 @@
 // using the currently loaded song, do any of the following.
 // updated both mem.ts and the database.
 import { ProgressionOptions, minor } from "./lib/graphh"
-import { randId, randomInt } from "./lib/helpers"
+import { randId, randomInt, strjson } from "./lib/helpers"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { mem } from "./mem"
 import { StartEndTuple, phaseBeginningsAndEnds } from "./startEndData"
@@ -62,7 +62,7 @@ export async function phaseUnfollows(subject: string, objects?: string[]) {
     }
 
     mem().latestMap = mapSongToMidiTicks()
-    console.log('unfollowed', mem())
+
 
 }
 
@@ -87,6 +87,7 @@ export const lookUpGraph = (userTonic: string, userScale: string): {
 }
 
 export const lastTick = () => {
+    // this is called very frequently!
     const songStartEndData = phaseBeginningsAndEnds()
     const lastTick = Object.values(songStartEndData).reduce((acc, curr) => {
         const lastPhaseTick = curr[curr.length - 1][1]
@@ -97,14 +98,23 @@ export const lastTick = () => {
 
 
 export const getAllPhaseBars = (phase: string) => {
-    const lookedUp = Object.keys(notesByBar).filter((barTag) => barTag.startsWith(`${phase}:`)).sort(sortByNumberAfterColon)
+
+    if (typeof phase !== 'string') { throw new Error(`String arg is required in getAllPhaseBars; instead ${strjson(phase)}`) }
+    const nbb = mem().notesByBar
+    const lookedUp = Object.keys(nbb).filter((barTag) => barTag.startsWith(`${phase}:`)).sort(sortByNumberAfterColon)
+
     return lookedUp
 }
 
 export const getAllPhaseBarNotes = (phase: string) => {
     const barNames = getAllPhaseBars(phase)
-    return barNames.map((barName) => notesByBar[barName])
+    const nbb = mem().notesByBar
+
+    const myNoteGroups = barNames.map((barName) => nbb[barName])
+
+    return myNoteGroups
 }
+
 export const getFollowingPhases = (phaseName: string) => {
     const phase = mem().phases[phaseName]
     const followsPhases = Object.entries(mem().phases).filter((

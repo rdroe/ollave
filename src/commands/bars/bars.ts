@@ -5,7 +5,7 @@ import { NoteByBar, mem } from '../../mem'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
 import { BAR, EIGHTH, isFraction, tickCounts } from '../phase/observables/masterTicksObservable'
-import { parseNoteTags, tagsDeleteMatching1, tagsDeleteMatching2, unparseTagEntries } from 'src/lib/tags'
+import { filterDelayTags, parseNoteTags, tagsDeleteMatching1, tagsDeleteMatching2, unparseTagEntries } from 'src/lib/tags'
 import { oneIndexedArr } from 'src/lib/graphh'
 
 const { notesByBar } = mem()
@@ -72,7 +72,8 @@ export default {
                                         ...n,
                                         tags: [
                                             ...n.tags,
-                                            `chordIndex=${idx}`
+                                            `chordIndex=${idx}`,
+                                            `chordSize=${notes.length}`
                                         ]
                                     }
                                 }))
@@ -142,44 +143,24 @@ export default {
                                 nextGroup.length
                             )
 
-                            console.log('repack info', {
-                                divisible: tickCounts[BAR] * (barSizeMod || 1),
-                                nextGroup,
-                                interim,
-                            })
+
                             nextGroup.forEach((g, groupIdx) => {
                                 if (!g) return
-                                const retaggedGroup = g.map((note) => {
-                                    const parsedTagz = parseNoteTags(note.tags)
-                                    const cleaned = tagsDeleteMatching1(
-                                        ([k]) => {
-                                            const retVal = isFraction(k) === false && k !== 'barDelay'
+                                g.forEach((note) => {
 
-                                            return retVal
-                                        },
-                                        parsedTagz
-                                    )
-
-                                    const newNote = {
-                                        ...note,
-                                        tags: unparseTagEntries(
-                                            cleaned
-                                        )
-                                    }
-                                    return newNote
+                                    filterDelayTags(note)
                                 })
 
 
-
-                                retaggedGroup.forEach((nt) => {
+                                g.forEach((nt) => {
                                     nt.tags.push(`barDelay=${interim * groupIdx}`)
                                 })
-                                notesByBar[barTag].push(...retaggedGroup)
+                                notesByBar[barTag].push(...g)
 
                             })
 
                         })
-                        console.log('repack done', notesByBar)
+
                     }
                 }
             }

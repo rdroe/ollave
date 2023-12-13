@@ -7,7 +7,67 @@ import {
 import { randomInt } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Collection, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
-import { parseChordCsvArg } from '../bars/utils'
+import { getDollarEntity, getNotesByEntity, parseDelayMatrix } from '../notes/notes'
+import { filterDelayTags, parseNoteTags } from 'src/lib/tags'
+
+const inModule: Module = {
+    fn: async () => { },
+    submodules: {
+        '$': {
+            fn: async ({ $ }) => { },
+            submodules: {
+                '$': {
+                    fn: async () => { },
+                    submodules: {
+                        arrange: {
+                            fn: async ({ $: dollar, positionalNonCommands: patterns }, moduleCalls) => {
+                                const chordName = dollar.shift()
+                                const entity = dollar.shift()
+                                const phaseOrBarOrTag = getDollarEntity([entity])
+                                const entityName = dollar.shift()
+                                const notes1 = getNotesByEntity(phaseOrBarOrTag, [entityName])
+
+                                let maxChordSize = -1
+                                console.log('notes1', { notes1 })
+                                const notes = notes1.filter((n) => {
+                                    const parsedTags = parseNoteTags(n.tags)
+                                    const isMatch = parsedTags.find(([nm, dat]) => {
+                                        return nm === 'chord' && dat.includes(chordName)
+
+
+                                    })
+
+                                    if (isMatch) {
+                                        const chordSize = parsedTags.find(([nm, dat]) => nm === 'chordSize')
+                                        if (chordSize
+                                            && typeof chordSize[1][0] === 'number'
+                                            && chordSize[1][0] > maxChordSize
+                                        ) {
+                                            maxChordSize = chordSize[1][0]
+                                        }
+                                        return true
+                                    }
+                                    return false
+                                })
+
+
+
+                                const delayTagsPerNoteSlot = parseDelayMatrix(patterns)
+                                notes.forEach((nt) => {
+                                    filterDelayTags(nt)
+                                    nt
+                                })
+
+
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 export const chord: Module = {
     fn: async () => {
@@ -69,11 +129,6 @@ export const chord: Module = {
                 return { formatted }
             }
         },
-        progression: {
-            fn: async (a, b) => {
-
-            }
-        },
         roman: {
             fn: async (args) => {
                 const [romanName = null] = args.positionalNonCommands
@@ -105,7 +160,7 @@ export const chord: Module = {
                         while (chords.length < 100 && !error) {
                             const prev = chords[chords.length - 1]
                             if (!pruned[prev]) {
-                                console.log('error;', chords, { prev })
+
                                 error = chords.toString()
                                 break
                             }
@@ -219,20 +274,7 @@ song start
                 return args['$']
             },
             submodules: {
-                arrange: {
-                    /**
-                       
-                    */
-                    fn: async ({ positionalNonCommands, scale }) => {
-                        const chordCsvArg = positionalNonCommands.shift()
-                        const plan = positionalNonCommands.shift()
-                        const [chordNotes, chordTags] = parseChordCsvArg(chordCsvArg, scale)
-
-
-
-
-                    }
-                },
+                in: inModule,
                 detectScales: {
                     fn: async (args) => {
                         const [chordName] = args['$']

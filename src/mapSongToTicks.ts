@@ -166,7 +166,7 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
             thisNoteOffset += calcFractionalDelay(parsedTags)
             thisNoteOffset += calcTickDelay(parsedTags)
             const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
-            console.log('this note tick', { thisNoteTick, startTick, thisNoteOffset, thisBarOffset })
+
             if (!phaseMidi[thisNoteTick]) {
                 phaseMidi[thisNoteTick] = []
             }
