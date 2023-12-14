@@ -79,7 +79,7 @@ const tuplize = (array: (string | number)[]) => {
     }, []);
 
     if (allExceptPossiblyLast[allExceptPossiblyLast.length - 1].length === 1) {
-        allExceptPossiblyLast[allExceptPossiblyLast.length - 1].push('half')
+        allExceptPossiblyLast[allExceptPossiblyLast.length - 1].push(null)
     }
     return allExceptPossiblyLast
 }
@@ -93,12 +93,13 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
     if (pattern.find(elem => typeof elem === 'string' && isCsvArg(elem))) {
 
         const tuples: [x: number, str: string][] = tuplize(pattern)
-        console.log('tuples', { pattern, tuples })
-        const entries = tuples.map(([noteNth, csvOrSingleFract]: [noteNth: number, csv: string]) => {
-            console.log('entering entries', { csvOrSingleFract })
-            let parsedCsvArg: ReturnType<typeof parseCsvArg> | undefined
 
-            if (isCsvArg(csvOrSingleFract)) {
+        const entries = tuples.map(([noteNth, csvOrSingleFract]: [noteNth: number, csv: string | null]) => {
+
+            let parsedCsvArg: ReturnType<typeof parseCsvArg> | undefined
+            if (csvOrSingleFract === null) {
+                parsedCsvArg = []
+            } else if (isCsvArg(csvOrSingleFract)) {
                 parsedCsvArg = parseCsvArg(csvOrSingleFract)
             } else if (isFraction(csvOrSingleFract)) {
                 parsedCsvArg = [csvOrSingleFract]
