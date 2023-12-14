@@ -183,7 +183,7 @@ document.body.onload = () => {
                     toAdd.reverse()
                     toAdd.forEach(({ tags, songTick, }) => {
                         const noteId = getNoteIdFromTags(tags)
-                        const newHtml = `<div class="note-tags" data-noteid="${noteId}" data-tick="${songTick}">${songTick} => ${JSON.stringify(tags)}</div>`;
+                        const newHtml = `<div class="note-tags" data-noteid="${noteId}" data-tick="${songTick}">${songTick} => ${tags.join(" ")}</div>`;
 
                         const newElem = createElementFromHTML(newHtml);
                         tagsRoot.prepend(newElem);

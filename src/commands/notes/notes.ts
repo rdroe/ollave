@@ -1,5 +1,6 @@
 import { Module, ParsedCli } from 'peprn/util'
 import {
+    ONE_TWENTY_EIGHTH,
     abbrev,
     isAbbreviation,
     isFraction,
@@ -67,27 +68,36 @@ export const getNotesByEntity = (
 
 
 const tuplize = (array: (string | number)[]) => {
-    return array.reduce(function(r, a, i) {
+    const allExceptPossiblyLast = array.reduce(function(r, a, i) {
         if (i % 2) {
             r[r.length - 1].push(a);
         } else {
             r.push([a]);
         }
+
         return r;
     }, []);
+
+    if (allExceptPossiblyLast[allExceptPossiblyLast.length - 1].length === 1) {
+        allExceptPossiblyLast[allExceptPossiblyLast.length - 1].push('half')
+    }
+    return allExceptPossiblyLast
 }
 
-export const parseDelayMatrix = (pattern: (string | number)[]) => {
+export const parseDelayMatrixRow = (pattern: (string | number)[]): {
+    [idx: number]: keyof typeof tickCounts
+} => {
+
     const entries: [noteIdx: number, fractions: string[]][] = []
-    console.log('pattern', {
-        pattern
-    })
+
     if (pattern.find(elem => typeof elem === 'string' && isCsvArg(elem))) {
 
         const tuples: [x: number, str: string][] = tuplize(pattern)
+        console.log('tuples', { pattern, tuples })
         const entries = tuples.map(([noteNth, csvOrSingleFract]: [noteNth: number, csv: string]) => {
-
+            console.log('entering entries', { csvOrSingleFract })
             let parsedCsvArg: ReturnType<typeof parseCsvArg> | undefined
+
             if (isCsvArg(csvOrSingleFract)) {
                 parsedCsvArg = parseCsvArg(csvOrSingleFract)
             } else if (isFraction(csvOrSingleFract)) {
@@ -95,7 +105,7 @@ export const parseDelayMatrix = (pattern: (string | number)[]) => {
             } else {
                 throw new Error(`Should be a csv arg of fractions or single fraction: ${csvOrSingleFract}`)
             }
-            console.log('parsedCsvArg', { parsedCsvArg })
+
             const tagized = parsedCsvArg.map((elem) => {
                 if (isAbbreviation(elem)) {
                     const fullName = abbrev[elem]
@@ -103,15 +113,12 @@ export const parseDelayMatrix = (pattern: (string | number)[]) => {
                 }
                 throw new Error(`Should have been a faction abbreviation: ${elem}`)
             })
-
-            console.log('pattern return; after entries; noteNth + csvOrSingleFract', noteNth, parsedCsvArg)
-
             return [noteNth, tagized]
         })
-        console.log('completed entries early', entries)
+        console.log('returning', entries)
         return Object.fromEntries(entries)
     }
-    console.log('pattern being LATE returned', pattern)
+
     pattern.forEach((elem) => {
         if (typeof elem === 'number') {
             entries.push([elem, []])
@@ -119,7 +126,7 @@ export const parseDelayMatrix = (pattern: (string | number)[]) => {
     })
 
     pattern.forEach((noteIdxOrFraction: string | number, idx) => {
-        console.log('noteIdxOrFraction', noteIdxOrFraction)
+
         if (typeof noteIdxOrFraction === 'string') {
             if (isAbbreviation(noteIdxOrFraction)) {
                 entries.forEach(([noteNth, arr]) => {
@@ -145,11 +152,54 @@ export const parseDelayMatrix = (pattern: (string | number)[]) => {
         ) // close tuple call 
     ).parse(entries)
 
-    console.log('late return', validEntries)
 
     return Object.fromEntries(validEntries) as {
         [idx: number]: keyof typeof tickCounts
     }
+}
+
+export const prepDelayMatrix = (positionalNonCommands: ParsedCli['positionalNonCommands']): [noteIdx: string, row: (string | number)[]][] => {
+
+    const countArrs = positionalNonCommands.reduce(
+        (accum: number[], curr: string | number, idx: number) => {
+            if (typeof curr === 'string' && isNoteCnt(curr)) {
+                return [...accum, idx]
+            }
+            return accum
+        }, [] as (string | number)[])
+
+    const entries = countArrs.map((noteIdx: number, idx: number) => {
+        const next = countArrs[idx + 1]
+        if (next === undefined) {
+            const retvar = positionalNonCommands.slice(noteIdx + 1)
+            return [
+                positionalNonCommands[noteIdx],
+                retvar
+            ]
+        }
+        if (typeof next !== 'number') {
+            throw new Error(`next should be a number`)
+        }
+        const retvar = positionalNonCommands.slice(noteIdx + 1, next)
+        return [
+            positionalNonCommands[noteIdx],
+            retvar
+        ]
+    })
+
+    return entries as [noteIdx: string, data: (string | number)[]][]
+}
+
+export const parseDelayMatrix = (entries: [chordSize: string, row: (string | number)[]][]) => {
+    return Object.fromEntries(
+        entries.map(([cs, r]) => {
+            const parsedRow = parseDelayMatrixRow(r)
+            return [
+                cs,
+                parsedRow
+            ]
+        })
+    )
 }
 
 export default {
@@ -157,45 +207,9 @@ export default {
     submodules: {
         arrange: {
             fn: async ({ positionalNonCommands }) => {
-
-                const countArrs = positionalNonCommands.reduce(
-                    (accum: number[], curr: string | number, idx: number) => {
-                        if (typeof curr === 'string' && isNoteCnt(curr)) {
-                            return [...accum, idx]
-                        }
-                        return accum
-                    }, [] as (string | number)[])
-
-                const entries = countArrs.map((noteIdx: number, idx: number) => {
-                    const next = countArrs[idx + 1]
-                    if (next === undefined) {
-                        const retvar = positionalNonCommands.slice(noteIdx + 1)
-                        return [
-                            positionalNonCommands[noteIdx],
-                            retvar
-                        ]
-                    }
-
-                    const retvar = positionalNonCommands.slice(noteIdx + 1, next)
-                    return [
-                        positionalNonCommands[noteIdx],
-                        retvar
-                    ]
-                })
-
-                console.log('entries', entries)
-                return Object.fromEntries(
-                    entries.map(([cs, r]: [chordSize: string, row: (string | number)[]]) => {
-                        console.log('cs2 in', r)
-                        const parsedRow = parseDelayMatrix(r)
-                        console.log('cs2 out', parsedRow)
-                        console.log('')
-                        return [
-                            cs,
-                            parsedRow
-                        ]
-                    })
-                )
+                const entries = prepDelayMatrix(positionalNonCommands)
+                console.log('entries (working "prepped")', entries)
+                return parseDelayMatrix(entries)
 
             }
         },

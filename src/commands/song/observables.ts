@@ -23,10 +23,11 @@ export const startCueObservable = (startAt?: number) => {
 
     mem().observables[song] = songObservable.subscribe({
         next: ({ tick }) => {
+
             // get the midi tick relative to the start of the song
             const adjustedCursor = tick % lastTick()
             mem().adjustedCursor = tick % lastTick()
-
+            document.querySelector('.ollave-ticks').innerHTML = mem().adjustedCursor.toString()
             mem().latestMap[adjustedCursor]?.forEach((note) => {
                 playTriads([[note.note, 0.5, 0.1]])
                 mem().played.unshift({

@@ -1,0 +1,27 @@
+Example of arranging notes
+
+start a simple song.
+
+
+chord graph test2 A minor
+phase aphrodite 3
+phase aphrodite scale A minor
+bars aphrodite fill Am,3 Am,3 Am,3
+
+song start
+
+
+then,
+
+chord Am in phase aphrodite arrange 2x 0 half 4th 1 8th 2 16th  3 3x 0 4th 4th 1 8th 2 4x 0 half,4th 1 8th,8th 2 4th,16th,4th 5 half
+
+notice that only the '3x' row will be used in the sample song (Am, the only chord, is size 3x).
+
+to hear another change,
+
+chord Am in phase aphrodite arrange  3x 0 4th 4th 1 8th 2 16th 3
+
+
+bug: I noticed that maneuvering in 32nd notes may cause errors on every nth play; e.g.
+
+chord Am in phase aphrodite arrange 3x 0 8th 8th 8th 16th 4th 1 4th 32nd 32nd 32nd 32nd 2

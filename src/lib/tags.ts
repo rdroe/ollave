@@ -40,12 +40,17 @@ export const unparseTagEntries = (tes: TagEntries) => {
     )
 }
 
-export const filterDelayTags = (note: NoteByBar) => {
+export const filterDelayTags = (note: NoteByBar, retainBarDelay = false) => {
     const parsedTagz = parseNoteTags(note.tags)
     const cleaned = tagsDeleteMatching1(
         ([k]) => {
-            const retVal = isFraction(k) === false && k !== 'barDelay'
-            return retVal
+            if (isFraction(k)) return false
+            if (!retainBarDelay) {
+                if (k === 'barDelay') {
+                    return false
+                }
+            }
+            return true
         },
         parsedTagz
     )

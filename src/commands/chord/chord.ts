@@ -1,15 +1,18 @@
 import fakeCli from 'peprn/fakeCli'
-import { Module } from 'peprn/util'
+import { Module, ParsedCli } from 'peprn/util'
 import {
+
     fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, romanFromProgRoman, isChordFn, unromanizeSecondaryChords, randomElement, chordNameWithNotes, fnChordNameWithNotes, ChordNameWithNotes,
+
 } from '../../lib/graphh'
 
-import { randomInt } from '../../lib/helpers'
+import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Collection, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
-import { getDollarEntity, getNotesByEntity, parseDelayMatrix } from '../notes/notes'
+import { getDollarEntity, getNotesByEntity, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
 import { filterDelayTags, parseNoteTags } from 'src/lib/tags'
-
+import { mapSongToMidiTicks } from 'src/mapSongToTicks'
+import { mem } from '../../mem'
 const inModule: Module = {
     fn: async () => { },
     submodules: {
@@ -21,6 +24,7 @@ const inModule: Module = {
                     submodules: {
                         arrange: {
                             fn: async ({ $: dollar, positionalNonCommands: patterns }, moduleCalls) => {
+
                                 const chordName = dollar.shift()
                                 const entity = dollar.shift()
                                 const phaseOrBarOrTag = getDollarEntity([entity])
@@ -28,7 +32,7 @@ const inModule: Module = {
                                 const notes1 = getNotesByEntity(phaseOrBarOrTag, [entityName])
 
                                 let maxChordSize = -1
-                                console.log('notes1', { notes1 })
+
                                 const notes = notes1.filter((n) => {
                                     const parsedTags = parseNoteTags(n.tags)
                                     const isMatch = parsedTags.find(([nm, dat]) => {
@@ -50,16 +54,42 @@ const inModule: Module = {
                                     return false
                                 })
 
+                                const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
+                                const delaysPerChordSize = parseDelayMatrix(prepped)
 
+                                const subdataKey = `${maxChordSize}x`
 
-                                const delayTagsPerNoteSlot = parseDelayMatrix(patterns)
+                                const noteLookup = delaysPerChordSize[subdataKey]
+
+                                console.log('patterns', { delaysPerChordSize, prepped, subdataKey, noteLookup, patterns })
+
                                 notes.forEach((nt) => {
-                                    filterDelayTags(nt)
-                                    nt
+                                    filterDelayTags(nt, true)
+                                    const parsed = Object.fromEntries(parseNoteTags(nt.tags))
+
+                                    const [chordIdx] = parsed['chordIndex']
+
+                                    if (typeof chordIdx !== 'number') {
+                                        const msg = strjson(nt)
+                                        throw new Error(`Note lacked a chord index: ${msg}`)
+                                    }
+
+                                    console.log('noteLookup', {
+                                        noteLookup,
+                                        chordIdx,
+                                        notes
+                                    })
+                                    const newTags = noteLookup[chordIdx]
+
+                                    nt.tags.push(...newTags)
+
                                 })
 
+                                console.log({ formatted: notes })
 
+                                mem().latestMap = mapSongToMidiTicks()
 
+                                return notes
                             }
                         }
                     }
@@ -195,18 +225,18 @@ export const chord: Module = {
 
                             formatted: {
                                 notes: noteStr,
-                                chords: chordsWithNotes.map(({ name }) => `${name},3`).join(' '),
+                                chords: chordsWithNotes.map(({ name }) => `${name}, 3`).join(' '),
                                 aaNoteProgram: `
 phase aphrodite 100
 bars aphrodite fill ${noteStr}
 song start
-`,
+                                            `,
                                 aaChordProgram: `
 phase aphrodite ${chordsWithNotes.length}
 phase aphrodite scale ${userLetter} ${userScale}
 bars aphrodite fill ${chordsWithNotes.map(({ name }) => name + ',3').join(' ')}
 song start
-`
+                                            `
                                 , pruned
                             }
                         }
@@ -231,7 +261,7 @@ song start
                         }).filter((elem) => elem !== null && !optionalRomans.includes(elem))
 
                         if (untranslatable.length) {
-                            throw new Error(`Not all roman names were translatable. Make sure this is a minor key. ${JSON.stringify(untranslatable)} ; scale: ${userLetter} ${userScale}`)
+                            throw new Error(`Not all roman names were translatable.Make sure this is a minor key.${JSON.stringify(untranslatable)} ; scale: ${userLetter} ${userScale} `)
                         }
 
                         const scaledGraph =
@@ -242,7 +272,7 @@ song start
                                     : romanChordNameToReal(userLetter, userScale, romanName)
 
                                 if (accum.find(([x, _]) => x === realizedName)) {
-                                    console.error(`prog node already translated; ${romanName} in ${userLetter} ${userScale} ${JSON.stringify({ romanName, realizedName, progNodes }, null, 2)}`)
+                                    console.error(`prog node already translated; ${romanName} in ${userLetter} ${userScale} ${JSON.stringify({ romanName, realizedName, progNodes }, null, 2)} `)
                                 }
 
                                 const realizedOptions = progNodes.map(makeProgNodeTranslator(userLetter, userScale))
@@ -354,61 +384,6 @@ song start
                         //                        return unromanizeSecondaryChord(tonic, chordName)
 
                     }
-                },
-                getChord: {
-                    fn: async ({ $, positionalNonCommands }) => {
-                        const [tonic, root] = positionalNonCommands
-                        const [chordName] = $
-                        if (typeof root === "string" && typeof tonic !== "string") return "a value for tonic is required if a value for root is passed"
-
-                        if (typeof chordName !== 'string') return "a chord name is required"
-                        const gottenChord = Chord.getChord(chordName, tonic || "", root || "")
-                        return {
-                            input: [chordName, tonic || "", root || ""],
-                            getChord: gottenChord,
-                            expandedNoteData: gottenChord.notes.length ? gottenChord.notes.map((nt) => {
-                                return Note.get(nt)
-                            }) : []
-                        }
-                    },
-
-                },
-                get: {
-                    fn: async (args, moduleCalls) => {
-                        const [chordName] = await moduleCalls['chord $']
-                        if (!chordName) return null
-                        const gotten = Chord.get(chordName)
-                        if (chordName.includes('/')) {
-                            return 'SLASH_CHORD'
-                        }
-
-                        return gotten
-                    },
-                    submodules: {
-                        notes: {
-                            fn: async (args, moduleCalls) => {
-                                const [chordName] = await moduleCalls['chord $']
-                                const got = await moduleCalls['chord $ get']
-                                if (got === 'SLASH_CHORD') {
-                                    const [main, bass] = chordName.split('/')
-                                    if (!main || !bass) return null
-                                    const mainNotes = Chord.get(main)?.notes || []
-                                    const permutations = Collection.permutations(mainNotes)
-                                    const bassNames = Chord.get(bass)?.notes || []
-                                    const bassNote = bassNames[0]
-                                    const bassLetter = Note.get(bassNote).letter
-                                    const permutedNotes = permutations.find((notes) => {
-                                        return notes[0].startsWith(bassLetter)
-                                    })
-                                    if (!permutedNotes) {
-                                        throw new Error(`Could not ad-hoc provide the slash chord ${chordName}`)
-                                    }
-                                    return permutedNotes
-                                }
-                                return got?.notes || []
-                            }
-                        }
-                    },
                 }
             }
         }
