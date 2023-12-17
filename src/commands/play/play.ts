@@ -20,25 +20,6 @@ export const notesNamespace: {
     names: {}
 }
 
-const parseNoteAndName = (str: string): [note: string, names?: string] => {
-    const parsed = str.split(',')
-    const [note, ...names] = parsed
-    return names.length ? [note, names.join(',')] : [note, ','];
-}
-
-
-const initializeOrClear = (noteNameData: string) => {
-    if (notesNamespace.names[noteNameData]) {
-        console.log('unsubscribing', noteNameData, notesNamespace.names[noteNameData])
-        notesNamespace.names[noteNameData].subscription.unsubscribe()
-        notesNamespace.names[noteNameData].interval = null
-    } else {
-        console.log('initializing', noteNameData)
-        notesNamespace.names[noteNameData] = { interval: null, subscription: null }
-    }
-
-}
-
 const module: Module = {
     help: {
         description: 'Start a note playing on a stream',

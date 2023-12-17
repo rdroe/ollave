@@ -30,11 +30,10 @@ export const getSampler = async () => {
     samplerState.loaded = false
     piano.toDestination()
     await piano.load().then(() => {
-        console.log('loaded!')
-
+        console.log('loaded default voice')
     })
     await tone.start()
-    console.log('start complete')
+    console.log('started tone.js sampler')
     samplerState.loaded = true
     return Promise.resolve({})
 

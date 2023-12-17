@@ -77,7 +77,7 @@ export const calcFractionalDelay = (parsedTags: TagEntries) => {
                 )} ; all tag entries: ${str}`)
             }
 
-            console.log('is fractional', { name, parsedTags, start, newNoteDelay })
+
         }
 
     })
@@ -149,7 +149,7 @@ export const scale = function parseNoteScale(note: NoteByBar): [ltr: string, nam
     const scaleNameDat = tagDataOrNull(
         note, 'scaleName'
     )
-    console.log('input', note, 'data', tonicDat, scaleNameDat)
+
     if (!scaleNameDat || !tonicDat) return null
 
     const retVal = [

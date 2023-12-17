@@ -14,6 +14,7 @@ import fakeCli from 'peprn/fakeCli'
 import { lastTick } from './mem-db'
 import { tickCounts } from './commands/phase/observables/masterTicksObservable'
 import { strjson } from './lib/helpers'
+import { PEPRN_AUTO, PEPRN_MULTILINE, PEPRN_MULTILINE_INDEX, PEPRN_MULTILINE_TOTAL } from 'peprn/util'
 
 
 const { songNames } = mem()
@@ -36,32 +37,6 @@ const namesPromise = new Promise((res) => {
     })
 })()
 
-let queue: string[] = [];
-
-export function preprocessInput(snt: string): string | null {
-    if (snt.trim() === '') {
-        return null;
-    }
-    if (snt.includes('"')) {
-        throw new Error(`Do not include quotation marks`);
-    }
-    if (snt.includes('\n')) {
-        const sntsSplit = snt.split('\n');
-        const snts = sntsSplit.reduce((accum, curr) => {
-            const trimed = curr.trim();
-            if (!trimed) {
-                return accum;
-            }
-            return [...accum, trimed];
-        }, [] as string[]);
-        const snt1 = snts.shift();
-        queue = queue.concat(snts);
-        const call = `${snt1}`;
-        return call;
-    } else {
-        return snt;
-    }
-}
 function createElementFromHTML(htmlString: string) {
     var div = document.createElement('div');
     div.innerHTML = htmlString.trim();
@@ -101,7 +76,6 @@ document.body.onload = () => {
             }
 
             await fakeCli('song init', 'cli').then(() => {
-
             })
 
             const tagsRoot = document.querySelector('.tags-app-root')
@@ -205,29 +179,67 @@ document.body.onload = () => {
         catch: (e) => {
             console.error('error', e)
         },
-        preprocessInput,
-        dataHandler: async (parsedCli, data, id) => {
+
+        dataHandler: async (parsedCliRaw, data, id) => {
+            const parsedCli = JSON.parse(JSON.stringify(parsedCliRaw))
+            const rawIn = parsedCli.rawIn
             const dataContainer = apps[id].dataEl
             let didPrint: boolean = false
-            if (dataContainer) {
-                // this condition usually gets what the user typed as the last command 
-                if (parsedCli['peprn:childmost'] === true && !parsedCli['peprn:automated']) {
+            const isAutomated = parsedCli[PEPRN_AUTO]
+            const isChildmost = parsedCli['peprn:childmost']
+            const ancDepth = parsedCli['peprn:ancestralDepth']
+            const isMultiline = parsedCli[PEPRN_MULTILINE]
+            const multilineTot = parsedCli[PEPRN_MULTILINE_TOTAL]
+            const multilineIndex = parsedCli[PEPRN_MULTILINE_INDEX]
 
-                    const printable = data?.formatted ?? data
-                    dataContainer.innerHTML = `${parsedCli.rawIn}\n${JSON.stringify(printable, null, 2)} 
+            const isFinalLine = !isMultiline ||
+                (
+                    typeof multilineTot === 'number' && typeof multilineIndex === 'number'
+                    && multilineTot === multilineIndex + 1
+                )
+
+            if (isFinalLine && isMultiline) {
+                console.log('multiline data', { ancDepth: parsedCli['peprn:ancestralDepth'] })
+
+                //                console.log('multiline data', { isFinalLine, isMultiline, multilineIndex, input: parsedCli.rawIn })
+            }
+
+
+            if (!dataContainer) {
+                console.error('could not find output region for peprn commands')
+            }
+
+            let doPrint = false
+
+            if (isMultiline) {
+                doPrint = isFinalLine && ancDepth === 0
+            } else {
+                doPrint = parsedCli['peprn:childmost'] === true && !parsedCli['peprn:automated']
+            }
+
+            // this condition usually gets what the user typed as the last command 
+            if (
+                doPrint
+            ) {
+                console.log('printing for ',
+                    rawIn,
+                    data
+                )
+                const printable = data?.formatted ?? data
+                dataContainer.innerHTML = `${rawIn}\n${JSON.stringify(printable, null, 2)} 
 ${dataContainer.innerHTML}
 `
-                    didPrint = true
-                    // if they created a program
-                    if (data?.formatted?.aaChordProgram) {
-                        const program = document.querySelector('.program')
-                        if (program) {
+                didPrint = true
+                // if they created a program
+                if (data?.formatted?.aaChordProgram) {
+                    const program = document.querySelector('.program')
+                    if (program) {
 
-                            (program as HTMLTextAreaElement).value = data.formatted.aaChordProgram
-                        }
+                        (program as HTMLTextAreaElement).value = data.formatted.aaChordProgram
                     }
                 }
             }
+
             if (!didPrint) {
                 console.warn('unprinted:', { parsedCli, data })
             }
@@ -242,14 +254,6 @@ ${dataContainer.innerHTML}
                     mem().graphs[idx].push(data.formatted)
                 }
             }
-        },
-        userEffects: [
-            async () => {
-                const shifted = queue.shift()
-                if (shifted) {
-                    fakeCli(shifted, "cli")
-                }
-            }
-        ]
+        }
     })
 }

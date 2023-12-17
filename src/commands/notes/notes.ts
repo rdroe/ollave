@@ -118,7 +118,7 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
             })
             return [noteNth, tagized]
         })
-        console.log('returning', entries)
+
         return Object.fromEntries(entries)
     }
 
@@ -211,7 +211,7 @@ export default {
         arrange: {
             fn: async ({ positionalNonCommands }) => {
                 const entries = prepDelayMatrix(positionalNonCommands)
-                console.log('entries (working "prepped")', entries)
+
                 return parseDelayMatrix(entries)
 
             }

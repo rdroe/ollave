@@ -20,7 +20,7 @@ const nextModule: Module = {
     submodules: {
         '$': {
             fn: async ({ $ }) => {
-                console.log('hello')
+
             },
             submodules: {
                 '$': {
@@ -64,7 +64,7 @@ const nextModule: Module = {
                         }
                         const next = graph[chordName]?.next
                         const roman = graph[chordName].roman
-                        console.log('graph', { chordName, graph, next })
+
                         if (!next) {
                             throw new Error(`Got graph and chord; no next for ${chordName}; roman ${roman}`)
                         }
@@ -123,7 +123,6 @@ const inModule: Module = {
 
                                 const noteLookup = delaysPerChordSize[subdataKey]
 
-                                console.log('patterns', { delaysPerChordSize, prepped, subdataKey, noteLookup, patterns })
 
                                 notes.forEach((nt) => {
                                     filterDelayTags(nt, true)
@@ -136,18 +135,13 @@ const inModule: Module = {
                                         throw new Error(`Note lacked a chord index: ${msg}`)
                                     }
 
-                                    console.log('noteLookup', {
-                                        noteLookup,
-                                        chordIdx,
-                                        notes
-                                    })
+
                                     const newTags = noteLookup[chordIdx]
 
                                     nt.tags.push(...newTags)
 
                                 })
 
-                                console.log({ formatted: notes })
 
                                 mem().latestMap = mapSongToMidiTicks()
 

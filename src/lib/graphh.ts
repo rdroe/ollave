@@ -195,27 +195,18 @@ export const getTriadByRomanNumeral = async (scaleTonic: string, scaleName: stri
         VII: 6,
     })
 
-    const matchableFlats = indicesStartsFlat.sort((a, b) => {
-        return b[0].length - a[0].length
-    })
 
-    const matchableNats = indicesStarts.sort((a, b) => {
-        return b[0].length - a[0].length
-    })
-    console.log('fawef', {
-        romanNum, scaleTonic, scaleName
-    })
     const prog = (await fakeCli(`chord progressions ${scaleTonic} ${scaleName.toLocaleLowerCase()}`)).formatted[0]
 
-    console.log('in getTriad', prog)
+
     const progEntries = Object.entries(prog as { [idx: string]: { roman: string, chordName: string } })
 
-    console.log('progEntries', { progEntries: Object.fromEntries(progEntries), romanNum, scaleTonic, scaleName })
+
     const found = progEntries.find(([, progElem]) => {
-        console.log('comparing', { left: progElem.roman, romanNum, progElem })
+
         return progElem.roman === romanNum
     })
-    console.log('comparing; found', { found })
+
     return found[1].chordName
 
 
