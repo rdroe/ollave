@@ -7,12 +7,76 @@ import {
 } from '../../lib/graphh'
 
 import { randomInt, strjson } from '../../lib/helpers'
-import { Chord, Note, Scale, Mode, Collection, Progression, RomanNumeral } from 'tonal'
+import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
 import { getDollarEntity, getNotesByEntity, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
-import { filterDelayTags, parseNoteTags } from 'src/lib/tags'
+import { calcFractionalDelay, filterDelayTags, latestNote, parseNoteTags, scale } from 'src/lib/tags'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { mem } from '../../mem'
+import { lookUpGraph } from 'src/mem-db'
+
+const nextModule: Module = {
+    fn: async () => { },
+    submodules: {
+        '$': {
+            fn: async ({ $ }) => {
+                console.log('hello')
+            },
+            submodules: {
+                '$': {
+
+                    fn: async ({ $: dollar, positionalNonCommands }) => {
+
+                        const entity = dollar.shift()
+                        const phaseOrBarOrTag = getDollarEntity([entity])
+                        const entityName = dollar.shift()
+                        const notes1 = getNotesByEntity(phaseOrBarOrTag, [entityName])
+                        const latestChordNote = latestNote(notes1)
+                        if (!latestChordNote) return null
+                        const [chordName] = parseNoteTags(latestChordNote.tags).find(([nm]) => nm === 'chord')[1]
+                        const [userLetter = "", userScale = "", noteLetter = null] = positionalNonCommands
+                        if (typeof chordName !== 'string') {
+                            throw new Error(`could not get chord name; instead ${chordName}`)
+                        }
+
+                        let scaleName: [tonic: string, name: string] | undefined
+                        if (userLetter && userScale) {
+                            scaleName = [userLetter, userScale]
+                        }
+                        if (!scaleName) {
+                            scaleName = scale(latestChordNote)
+                        }
+                        if (!scale) {
+                            throw new Error(`could not obtain scale`)
+                        }
+
+                        let graph = lookUpGraph(...scaleName)
+
+                        if (!graph) {
+                            await fakeCli(`chord graph test ${scaleName[0]} ${scaleName[1]}`)
+                            graph = lookUpGraph(...scaleName)
+                        }
+                        if (!graph) {
+                            throw new Error(`could not obtain graph for ${scale}`)
+                        }
+                        if (!graph[chordName]) {
+                            throw new Error(`could not obtain ${chordName} in graph for ${scale}`)
+                        }
+                        const next = graph[chordName]?.next
+                        const roman = graph[chordName].roman
+                        console.log('graph', { chordName, graph, next })
+                        if (!next) {
+                            throw new Error(`Got graph and chord; no next for ${chordName}; roman ${roman}`)
+                        }
+
+                        return next.map(({ name }) => name)
+                    }
+                }
+            }
+
+        }
+    }
+}
 const inModule: Module = {
     fn: async () => { },
     submodules: {
@@ -37,8 +101,6 @@ const inModule: Module = {
                                     const parsedTags = parseNoteTags(n.tags)
                                     const isMatch = parsedTags.find(([nm, dat]) => {
                                         return nm === 'chord' && dat.includes(chordName)
-
-
                                     })
 
                                     if (isMatch) {
@@ -178,7 +240,9 @@ export const chord: Module = {
 
                 test2: {
                     fn: async ({ positionalNonCommands }) => {
+
                         const [userLetter = "", userScale = ""] = positionalNonCommands
+
                         const graph: {
                             [chordName: string]: ProgressionOptions
                         } = (await fakeCli(`chord graph test ${userLetter} ${userScale}`)).formatted
@@ -243,6 +307,61 @@ song start
 
                     }
                 },
+                'make': {
+                    fn: async ({ positionalNonCommands }) => {
+
+                        const [userLetter = "", userScale = ""] = positionalNonCommands
+
+                        const names = Object.keys(minor)
+                        const untranslatable = names.map((romanName) => {
+
+                            if (isChordFn(romanName)) { return null }
+                            const translated = romanChordNameToReal(userLetter, userScale, romanName)
+                            if (!translated) {
+                                return romanName
+                            }
+
+                            return null
+                        }).filter((elem) => elem !== null && !optionalRomans.includes(elem))
+
+                        if (untranslatable.length) {
+                            throw new Error(`Not all roman names were translatable.Make sure this is a minor key.${JSON.stringify(untranslatable)} ; scale: ${userLetter} ${userScale} `)
+                        }
+
+                        const scaledGraph =
+                            Object.entries(minor).reduce((accum, [romanName, progNodes]) => {
+
+                                const realizedName = fns[romanName as keyof typeof fns]
+                                    ? romanName
+                                    : romanChordNameToReal(userLetter, userScale, romanName)
+
+                                if (accum.find(([x, _]) => x === realizedName)) {
+                                    console.error(`prog node already translated; ${romanName} in ${userLetter} ${userScale} ${JSON.stringify({ romanName, realizedName, progNodes }, null, 2)} `)
+                                }
+
+                                const realizedOptions = progNodes.map(makeProgNodeTranslator(userLetter, userScale))
+
+
+                                return [...accum, [realizedName, realizedOptions]]
+
+                            }, [] as [romanName: string, progNodes: ProgressionGraphNode][])
+
+                        const combinedScaleGraphEntries = scaledGraph.map(([name, pOpts]: [nm: string, pOpts: ProgressionOptions[]]) => {
+                            return [name, combineEntriesByName(
+                                pOpts)
+
+                            ]
+                        }) as [name: string, pOpt: ProgressionOptions][]
+
+                        const realizedGraph = Object.fromEntries(combinedScaleGraphEntries)
+                        return {
+                            formatted: realizedGraph
+
+                        }
+                    }
+                },
+
+                next: nextModule,
                 test: {
                     fn: async ({ positionalNonCommands }) => {
 
@@ -314,6 +433,8 @@ song start
                 },
                 next: {
                     fn: async (args, moduleCalls) => {
+
+
                     },
                     submodules: {
                         '$': {
@@ -322,6 +443,7 @@ song start
                                 '$': {
                                     // e.g. chord C next G major
                                     fn: async ({ "$": dollar, positionalNonCommands, ...rest }, moduleCalls) => {
+
 
                                     }
                                 }
@@ -339,6 +461,7 @@ song start
                     },
 
                 },
+
                 where: {
                     fn: async (args, moduleCalls) => { },
                     submodules: {

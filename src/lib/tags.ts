@@ -2,7 +2,7 @@ import { isFraction, tickCounts } from "src/commands/phase/observables/masterTic
 import { peprnIsNum, strjson } from "./helpers"
 import { isCsvArg, parseCsvArg } from "src/commands/bars/utils"
 import { NoteByBar } from "src/mem"
-
+import { z } from 'zod'
 export type TagData = (number | string | boolean | null)[]
 export type TagEntry = [name: string, data: TagData]
 export type TagEntries = [name: string, data: TagData][]
@@ -111,6 +111,58 @@ export const tagsDeleteMatching2 = (fn: (te: string) => boolean, tagEntries: str
     return tagEntries.filter(fn)
 }
 
+export const tagDataOrNull = (note: NoteByBar, tag: string): null | TagEntry[1] => {
+    const parsed = parseNoteTags(note.tags)
+    const found = parsed.find(([tag1]) => tag1 === tag)
+    if (!found) return null
+    return found[1]
+
+}
 export const deleteTagByName = (tagsReference: string[]) => {
+
+}
+export const latestNote = (notes1: NoteByBar[]): NoteByBar | null => {
+    const sortedNotes1 = notes1.slice().sort(({ tags: aTags }, { tags: bTags }) => {
+        const timeA = calcFractionalDelay(
+            parseNoteTags(aTags),
+        )
+        const timeB = calcFractionalDelay(
+            parseNoteTags(bTags),
+        )
+        const ret1 = timeB - timeA
+
+
+        return ret1
+
+    }).reverse()
+    const latestChordNote = sortedNotes1.find(({ tags }) => {
+        return !!tags.find((tag) => tag.startsWith('chord'))
+    })
+    return latestChordNote ?? null
+}
+
+export const scale = function parseNoteScale(note: NoteByBar): [ltr: string, name: string] | null {
+
+    const tonicDat = tagDataOrNull(
+        note, 'scaleTonic'
+    )
+    const scaleNameDat = tagDataOrNull(
+        note, 'scaleName'
+    )
+    console.log('input', note, 'data', tonicDat, scaleNameDat)
+    if (!scaleNameDat || !tonicDat) return null
+
+    const retVal = [
+        tonicDat[0],
+        scaleNameDat[0],
+
+    ]
+
+    return z.tuple([
+        z.string(),
+        z.string()
+    ]).parse(
+        retVal
+    ) as [ltr: string, nm: string]
 
 }

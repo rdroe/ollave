@@ -143,7 +143,7 @@ document.body.onload = () => {
                             const tickNum = parseInt(tick)
                             showingTicks.add(tickNum)
                             if (!ranges.find(([start, end]) => {
-                                return tickNum > start && tickNum < end
+                                return tickNum >= start && tickNum < end
                             })) {
                                 toRemoveNumbers.add(tickNum)
                             }
@@ -208,27 +208,32 @@ document.body.onload = () => {
         preprocessInput,
         dataHandler: async (parsedCli, data, id) => {
             const dataContainer = apps[id].dataEl
-
+            let didPrint: boolean = false
             if (dataContainer) {
+                // this condition usually gets what the user typed as the last command 
                 if (parsedCli['peprn:childmost'] === true && !parsedCli['peprn:automated']) {
 
                     const printable = data?.formatted ?? data
                     dataContainer.innerHTML = `${parsedCli.rawIn}\n${JSON.stringify(printable, null, 2)} 
 ${dataContainer.innerHTML}
 `
-
+                    didPrint = true
+                    // if they created a program
                     if (data?.formatted?.aaChordProgram) {
                         const program = document.querySelector('.program')
                         if (program) {
-                            return (program as HTMLTextAreaElement).value = data.formatted.aaChordProgram
+
+                            (program as HTMLTextAreaElement).value = data.formatted.aaChordProgram
                         }
                     }
                 }
             }
+            if (!didPrint) {
+                console.warn('unprinted:', { parsedCli, data })
+            }
+            // caching behavior for the graph itself
             const nowNum = Date.now().toString()
-
             if (typeof parsedCli.rawIn === "string" && parsedCli.rawIn.startsWith('chord graph test')) {
-
                 if (data && data.formatted) {
                     const [userLetter, userScale] = parsedCli.positionalNonCommands
 

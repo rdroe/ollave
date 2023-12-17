@@ -79,8 +79,10 @@ const tuplize = (array: (string | number)[]) => {
     }, []);
 
     if (allExceptPossiblyLast[allExceptPossiblyLast.length - 1].length === 1) {
+        // when it ends in a number
         allExceptPossiblyLast[allExceptPossiblyLast.length - 1].push(null)
     }
+
     return allExceptPossiblyLast
 }
 
@@ -101,7 +103,7 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
                 parsedCsvArg = []
             } else if (isCsvArg(csvOrSingleFract)) {
                 parsedCsvArg = parseCsvArg(csvOrSingleFract)
-            } else if (isFraction(csvOrSingleFract)) {
+            } else if (isAbbreviation(csvOrSingleFract)) {
                 parsedCsvArg = [csvOrSingleFract]
             } else {
                 throw new Error(`Should be a csv arg of fractions or single fraction: ${csvOrSingleFract}`)
