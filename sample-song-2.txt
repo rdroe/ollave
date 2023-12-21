@@ -6,10 +6,8 @@ phase aphrodite scale A minor
 bars aphrodite fill Am,3 Am,3 Gdim,3 E,3 Am,3 Bdim,3 C,3 Ebdim,3 F,3 Dm,3 D#dim,3 Gdim,3 E,3 Am,3 Bdim,3 C7,3 F,3 Bdim,3 Ebdim,3 Bdim,3 C,3 Ebdim,3 Dm,3 B,3 Gdim,3 E,3 V64,3 N6,3 E,3 Am,3 V64,3 Am,3 Bdim,3 C,3 C7,3 Dm,3 Gdim,3 E,3 V64,3 N6,3 E,3 Am,3 Am,3 Am,3 Am,3 E,3 Aug6,3 E,3 V64,3 Am,3 E,3 V64,3 N6,3 E,3 V64,3 Am,3 Dm,3 B,3 Gdim,3 E,3 Am,3 Bdim,3 Ebdim,3 Bdim,3 C7,3 F,3 Dm,3 V64,3 A,3
 song start
 
-
-
 another note is that you can "repack" a phase's bars.
 
 bars aphrodite repack --pack 2 4 6 2
 
-the above line stuffs the existing bars' notes more tightly into  aphrodite's bars. for example, it may take evenly-spaced bars and put 2 to bar 0, then 4 to bar 1, then 6 to bar 2, then 2 to bar 3, then 2 to bar 4, and so on.
+the above line stuffs the existing bars' timing more tightly into  aphrodite's bars. in this example,the  evenly-spaced original bars will be resituatied with  2 to bar 0, 4 to bar 1, 6 to bar 2, 2 to bar 3, then 2 to bar 4, and so on.

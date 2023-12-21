@@ -1,5 +1,5 @@
 import fakeCli from 'peprn/fakeCli'
-import { Module, ParsedCli } from 'peprn/util'
+import { Module, ParsedCli, awaitAll } from 'peprn/util'
 import {
 
     fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, romanFromProgRoman, isChordFn, unromanizeSecondaryChords, randomElement, chordNameWithNotes, fnChordNameWithNotes, ChordNameWithNotes,
@@ -9,7 +9,7 @@ import {
 import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
-import { getDollarEntity, getNotesByEntity, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
+import { getNotesByEntity, isNotesByBar, parseDelayMatrix, prepDelayMatrix, shiftDollarEntity } from '../notes/notes'
 import { calcFractionalDelay, filterDelayTags, latestNote, parseNoteTags, scale } from 'src/lib/tags'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { mem } from '../../mem'
@@ -18,6 +18,7 @@ import { lookUpGraph } from 'src/mem-db'
 const nextModule: Module = {
     fn: async () => { },
     submodules: {
+
         '$': {
             fn: async ({ $ }) => {
 
@@ -27,10 +28,7 @@ const nextModule: Module = {
 
                     fn: async ({ $: dollar, positionalNonCommands }) => {
 
-                        const entity = dollar.shift()
-                        const phaseOrBarOrTag = getDollarEntity([entity])
-                        const entityName = dollar.shift()
-                        const notes1 = getNotesByEntity(phaseOrBarOrTag, [entityName])
+                        const notes1 = getNotesByEntity(dollar, positionalNonCommands)
                         const latestChordNote = latestNote(notes1)
                         if (!latestChordNote) return null
                         const [chordName] = parseNoteTags(latestChordNote.tags).find(([nm]) => nm === 'chord')[1]
@@ -77,6 +75,8 @@ const nextModule: Module = {
         }
     }
 }
+
+
 const inModule: Module = {
     fn: async () => { },
     submodules: {
@@ -89,15 +89,26 @@ const inModule: Module = {
                         arrange: {
                             fn: async ({ $: dollar, positionalNonCommands: patterns }, moduleCalls) => {
 
+                                const sorted = Object.entries(moduleCalls).sort(([kA], [kB]) => {
+                                    return kB.length - kA.length
+
+                                })
+
                                 const chordName = dollar.shift()
                                 const entity = dollar.shift()
-                                const phaseOrBarOrTag = getDollarEntity([entity])
                                 const entityName = dollar.shift()
-                                const notes1 = getNotesByEntity(phaseOrBarOrTag, [entityName])
 
+                                console.log('entity data', { entity, entityName })
+
+                                const notes1 = await fakeCli(`notes in ${entity} ${entityName}`)
                                 let maxChordSize = -1
 
+                                if (!isNotesByBar(notes1)) {
+                                    throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)
+                                        }`)
+                                }
                                 const notes = notes1.filter((n) => {
+
                                     const parsedTags = parseNoteTags(n.tags)
                                     const isMatch = parsedTags.find(([nm, dat]) => {
                                         return nm === 'chord' && dat.includes(chordName)
@@ -123,25 +134,18 @@ const inModule: Module = {
 
                                 const noteLookup = delaysPerChordSize[subdataKey]
 
-
                                 notes.forEach((nt) => {
                                     filterDelayTags(nt, true)
+
                                     const parsed = Object.fromEntries(parseNoteTags(nt.tags))
-
-                                    const [chordIdx] = parsed['chordIndex']
-
+                                    const [chordIdx] = parsed['groupIndex']
                                     if (typeof chordIdx !== 'number') {
                                         const msg = strjson(nt)
                                         throw new Error(`Note lacked a chord index: ${msg}`)
                                     }
-
-
                                     const newTags = noteLookup[chordIdx]
-
                                     nt.tags.push(...newTags)
-
                                 })
-
 
                                 mem().latestMap = mapSongToMidiTicks()
 
@@ -156,12 +160,19 @@ const inModule: Module = {
 }
 
 export const chord: Module = {
+    help: {
+        description: "THis is the chord module! Utilities and arrangement attentive to chords."
+    },
     fn: async () => {
         return null
     },
     submodules: {
 
         triads: {
+            help: {
+                description: "Dev facilities for playing with triads",
+            },
+
             fn: async (args) => {
                 const [userLetter = "", userScale = "", noteLetter = null] = args.positionalNonCommands
 
@@ -424,26 +435,6 @@ song start
                         const notes = Chord.get(chordName).notes ?? []
                         return detectScales(notes)
                     }
-                },
-                next: {
-                    fn: async (args, moduleCalls) => {
-
-
-                    },
-                    submodules: {
-                        '$': {
-                            fn: async () => { },
-                            submodules: {
-                                '$': {
-                                    // e.g. chord C next G major
-                                    fn: async ({ "$": dollar, positionalNonCommands, ...rest }, moduleCalls) => {
-
-
-                                    }
-                                }
-                            }
-                        },
-                    },
                 },
                 aliases: {
                     fn: async (args, moduleCalls) => {

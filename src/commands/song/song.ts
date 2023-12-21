@@ -7,7 +7,7 @@ import { startCueObservable } from './observables'
 
 import { downloadSong } from 'src/download'
 
-import { barsAtMidi, midiAtBar } from 'src/mapSongToTicks'
+import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from 'src/mapSongToTicks'
 import { trackTempo } from '../phase/observables/masterTicksObservable'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props
@@ -155,6 +155,7 @@ song start
         },
         dl: {
             fn: async () => {
+                mem().latestMap = mapSongToMidiTicks()
                 downloadSong(trackTempo)
             }
         }

@@ -1,13 +1,13 @@
 import { Module, ParsedCli } from 'peprn/util'
 import {
-    ONE_TWENTY_EIGHTH,
+    Abbreviation,
     abbrev,
     isAbbreviation,
     isFraction,
     tickCounts
 } from '../phase/observables/masterTicksObservable'
 import { isCsvArg, parseCsvArg } from '../bars/utils'
-import { mem } from '../../mem'
+import { NoteByBar, mem } from '../../mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from 'src/mem-db'
 import { parseNoteTags } from 'src/lib/tags'
@@ -16,8 +16,20 @@ const isNoteCnt = (str: string | number) => {
     if (typeof str === 'number') return false
     return !!str.match(/[0-9]+x/)
 }
+const noteByBarSchema = z.object({
+    note: z.string(),
+    tags: z.array(z.string())
+})
 
-export const getDollarEntity = (dollar: ParsedCli["positionalNonCommands"]) => {
+const notesByBarSchema = z.array(noteByBarSchema
+)
+export const isNotesByBar = (obj: unknown): obj is NoteByBar[] => {
+
+    return notesByBarSchema.safeParse(obj).success
+}
+
+export const shiftDollarEntity = (dollar: ParsedCli["positionalNonCommands"]) => {
+
     const err = '"bar" or "phase" or "tag" is required'
     const phaseOrBarOrTag = z.union(
         [
@@ -29,37 +41,43 @@ export const getDollarEntity = (dollar: ParsedCli["positionalNonCommands"]) => {
         required_error: err,
         invalid_type_error: err
 
-    }).parse(dollar[0])
+    }).parse(dollar.shift())
+
     return phaseOrBarOrTag
 }
 
 export const getNotesByEntity = (
-    entityType: ReturnType<typeof getDollarEntity>,
+    dollar: ParsedCli["positionalNonCommands"],
     positionalNonCommands: ParsedCli["positionalNonCommands"]
 ) => {
 
-    const phaseOrBar = entityType
+    const phaseOrBar = shiftDollarEntity(dollar)
+    const entityName = z.string().parse(
+        dollar.shift()
+    )
 
     if (phaseOrBar === 'bar') {
-        const [barName] = positionalNonCommands
-        return mem().notesByBar[barName]
+        return mem().notesByBar[entityName]
     } else if (phaseOrBar === 'phase') {
-        const [phaseName] = positionalNonCommands
-        if (typeof phaseName === 'number') {
-            throw new Error(`Found numeric phase argument ${phaseName}`)
+        if (typeof entityName === 'number') {
+            throw new Error(`Found numeric phase argument ${entityName}`)
         }
-        const notes = getAllPhaseBarNotes(phaseName).flat()
+        const notes = getAllPhaseBarNotes(entityName).flat()
 
         return notes
-    } else {
-        const [tag, matchable] = positionalNonCommands
+    } else if (phaseOrBar === 'tag') {
         const all = Object.values(mem().notesByBar).flat().filter((n) => {
             const parsed = parseNoteTags(n.tags)
             return parsed.find(([tagName, data]) => {
-                return tagName === tag && (
-                    matchable === undefined
-                    || data.includes(matchable)
-                )
+                console.log('matchy', { tagName, data, positionalNonCommands })
+                const tagNameMatch = tagName === entityName
+                if (!tagNameMatch) return false
+                if (positionalNonCommands === undefined || positionalNonCommands.length === 0) return true
+
+                const missingData = positionalNonCommands.find((m) => !data.includes(m))
+
+                return missingData == undefined
+
             })
         })
         return all
@@ -85,6 +103,49 @@ const tuplize = (array: (string | number)[]) => {
 
     return allExceptPossiblyLast
 }
+export const isAbbreviationCsv = (csvOrSingleFract: any) => {
+    if (typeof csvOrSingleFract !== 'string') {
+        return false
+    }
+    if (isCsvArg(csvOrSingleFract)) {
+        return parseCsvArg(csvOrSingleFract).find((x) => !isAbbreviation(x)) === undefined
+    } else if (isAbbreviation(csvOrSingleFract)) {
+        return true
+    }
+    return false
+}
+export const parseAbbreviationCsv = (csvOrSingleFract: string) => {
+    console.log('csvOrSingle', csvOrSingleFract)
+    let parsedCsvArg: Abbreviation[] | undefined
+    if (csvOrSingleFract === null) {
+        parsedCsvArg = []
+    } else if (isCsvArg(csvOrSingleFract)) {
+        const parsed = parseCsvArg(csvOrSingleFract)
+        const filtered: Abbreviation[] = parsed.filter((elem) => isAbbreviation(elem)) as Abbreviation[]
+
+        if (parsed.length !== filtered.length) {
+            throw new Error(`Found a non-abbreviation where all elements should have `)
+        }
+        parsedCsvArg = filtered
+    } else if (isAbbreviation(csvOrSingleFract)) {
+        parsedCsvArg = [csvOrSingleFract]
+    } else {
+        throw new Error(`Should be a csv arg of fractions or single fraction: ${csvOrSingleFract}`)
+    }
+    console.log('returning', parsedCsvArg)
+    return parsedCsvArg
+}
+
+export const sumAbbreviationCsv = (csv: string) => {
+    const arr = parseAbbreviationCsv(csv)
+    return arr.reduce((accum: number, elem: (typeof arr)[number]) => {
+        if (!isAbbreviation(elem)) {
+            throw new Error(`Non-abbreviation found error`)
+        }
+        const fract = abbrev[elem]
+        return accum + tickCounts[fract]
+    }, 0)
+}
 
 export const parseDelayMatrixRow = (pattern: (string | number)[]): {
     [idx: number]: keyof typeof tickCounts
@@ -97,18 +158,7 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
         const tuples: [x: number, str: string][] = tuplize(pattern)
 
         const entries = tuples.map(([noteNth, csvOrSingleFract]: [noteNth: number, csv: string | null]) => {
-
-            let parsedCsvArg: ReturnType<typeof parseCsvArg> | undefined
-            if (csvOrSingleFract === null) {
-                parsedCsvArg = []
-            } else if (isCsvArg(csvOrSingleFract)) {
-                parsedCsvArg = parseCsvArg(csvOrSingleFract)
-            } else if (isAbbreviation(csvOrSingleFract)) {
-                parsedCsvArg = [csvOrSingleFract]
-            } else {
-                throw new Error(`Should be a csv arg of fractions or single fraction: ${csvOrSingleFract}`)
-            }
-
+            const parsedCsvArg = parseAbbreviationCsv(csvOrSingleFract)
             const tagized = parsedCsvArg.map((elem) => {
                 if (isAbbreviation(elem)) {
                     const fullName = abbrev[elem]
@@ -116,6 +166,7 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
                 }
                 throw new Error(`Should have been a faction abbreviation: ${elem}`)
             })
+
             return [noteNth, tagized]
         })
 
@@ -209,30 +260,51 @@ export default {
     fn: async () => { },
     submodules: {
         arrange: {
-            fn: async ({ positionalNonCommands }) => {
-                const entries = prepDelayMatrix(positionalNonCommands)
+            fn: async ({ positionalNonCommands: patterns, noteCount }) => {
+                /*
+                if (!isNoteCnt(noteCount)) {
+                    throw new Error(`
+Could not get a note count
+`)
+                }
+                const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
+                const delaysPerChordSize = parseDelayMatrix(prepped)
+                const noteLookup = delaysPerChordSize[noteCount]
 
-                return parseDelayMatrix(entries)
+                notes.forEach((nt) => {
+                    filterDelayTags(nt, true)
+                    const parsed = Object.fromEntries(parseNoteTags(nt.tags))
+                    const [chordIdx] = parsed['chordIndex']
+                    if (typeof chordIdx !== 'number') {
+                        const msg = strjson(nt)
+                        throw new Error(`Note lacked a chord index: ${msg}`)
+                    }
+                    const newTags = noteLookup[chordIdx]
+                    nt.tags.push(...newTags)
+                })
 
+                mem().latestMap = mapSongToMidiTicks()
+
+                return notes
+                */
             }
+
         },
         'in': {
             fn: async () => { },
             submodules: {
                 // bar or phase 
                 '$': {
-                    fn: async ({ $: dollar, positionalNonCommands }) => {
-
-
-                        const phaseOrBar = getDollarEntity(dollar)
-
-
-
-                        return getNotesByEntity(
-                            phaseOrBar,
-                            positionalNonCommands
-                        )
-
+                    fn: async () => { },
+                    submodules: {
+                        '$': {
+                            fn: async ({ $: dollar, positionalNonCommands }) => {
+                                return getNotesByEntity(
+                                    dollar,
+                                    positionalNonCommands
+                                )
+                            }
+                        }
                     }
                 }
             }

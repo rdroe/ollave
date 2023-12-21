@@ -185,8 +185,6 @@ document.body.onload = () => {
             const rawIn = parsedCli.rawIn
             const dataContainer = apps[id].dataEl
             let didPrint: boolean = false
-            const isAutomated = parsedCli[PEPRN_AUTO]
-            const isChildmost = parsedCli['peprn:childmost']
             const ancDepth = parsedCli['peprn:ancestralDepth']
             const isMultiline = parsedCli[PEPRN_MULTILINE]
             const multilineTot = parsedCli[PEPRN_MULTILINE_TOTAL]
@@ -197,12 +195,6 @@ document.body.onload = () => {
                     typeof multilineTot === 'number' && typeof multilineIndex === 'number'
                     && multilineTot === multilineIndex + 1
                 )
-
-            if (isFinalLine && isMultiline) {
-                console.log('multiline data', { ancDepth: parsedCli['peprn:ancestralDepth'] })
-
-                //                console.log('multiline data', { isFinalLine, isMultiline, multilineIndex, input: parsedCli.rawIn })
-            }
 
 
             if (!dataContainer) {
@@ -221,10 +213,7 @@ document.body.onload = () => {
             if (
                 doPrint
             ) {
-                console.log('printing for ',
-                    rawIn,
-                    data
-                )
+
                 const printable = data?.formatted ?? data
                 dataContainer.innerHTML = `${rawIn}\n${JSON.stringify(printable, null, 2)} 
 ${dataContainer.innerHTML}
@@ -242,6 +231,11 @@ ${dataContainer.innerHTML}
 
             if (!didPrint) {
                 console.warn('unprinted:', { parsedCli, data })
+                if (parsedCli?.help === true) {
+                    dataContainer.innerHTML = `---help output----\n ${rawIn}\n${JSON.stringify(data, null, 2)} 
+${dataContainer.innerHTML}
+`
+                }
             }
             // caching behavior for the graph itself
             const nowNum = Date.now().toString()

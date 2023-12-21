@@ -27,7 +27,13 @@ const isMidiChannel = (arg: number): arg is MidiChannel => {
 
 export const addTriads = (track: Midi.Track, notes: Triad[]) => {
     const channeledTriads = notes.map(makeChanneledTriadFn(0))
-    channeledTriads.forEach((chTr: ChanneledTriad) => track.addNote(...chTr))
+    const noteEvents = channeledTriads.map(() => {
+
+    })
+
+    channeledTriads.forEach((chTr: ChanneledTriad) => {
+        track.addNote(...chTr)
+    })
 }
 
 export const playNotes = async (notes: Triad[]) => {

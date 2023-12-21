@@ -3,6 +3,7 @@ import { peprnIsNum, strjson } from "./helpers"
 import { isCsvArg, parseCsvArg } from "src/commands/bars/utils"
 import { NoteByBar } from "src/mem"
 import { z } from 'zod'
+
 export type TagData = (number | string | boolean | null)[]
 export type TagEntry = [name: string, data: TagData]
 export type TagEntries = [name: string, data: TagData][]
@@ -54,32 +55,42 @@ export const filterDelayTags = (note: NoteByBar, retainBarDelay = false) => {
         },
         parsedTagz
     )
-    note.tags = unparseTagEntries(cleaned)
 
+    note.tags = unparseTagEntries(cleaned)
+    return note
+}
+
+export const filterBarDelayTag = (note: NoteByBar,) => {
+    const parsedTagz = parseNoteTags(note.tags)
+    const cleaned = tagsDeleteMatching1(
+        ([k]) => {
+
+            if (k === 'barDelay') {
+                return false
+            }
+            return true
+        },
+        parsedTagz
+    )
+    note.tags = unparseTagEntries(cleaned)
+    return note
 }
 
 export const calcFractionalDelay = (parsedTags: TagEntries) => {
     let newNoteDelay = 0
     parsedTags.forEach(([name, data]: [nm: string, data: TagData]) => {
-
         if (isFraction(name)) {
-            const start = newNoteDelay
             const [num] = data
             if (typeof num === 'number') {
                 const taggedTickFactor = tickCounts[name]
-
                 newNoteDelay += (taggedTickFactor * num)
-
             } else {
                 const str = strjson(parsedTags)
                 throw new Error(`Non-numeric fractional delay ${JSON.stringify(
                     num
                 )} ; all tag entries: ${str}`)
             }
-
-
         }
-
     })
     return newNoteDelay
 }
@@ -103,6 +114,25 @@ export const calcTickDelay = (parsedTags: TagEntries) => {
     return newNoteDelay
 }
 
+export const groupNotesByFirstTagDatum = (notes: NoteByBar[], tag: TagEntry[0]): NoteByBar[][] => {
+
+    const hash: { [groupId: string | number]: NoteByBar[] } = {}
+
+    notes.forEach((note) => {
+        const tagData = noteTagDatum(note, tag)
+        if (!tagData) throw new Error(`At least one of the notes had no data for tag ${tag}`)
+        const [firstElem] = tagData
+        if (typeof firstElem === 'number' || typeof firstElem === 'string') {
+            const ownGroup = hash[firstElem] ?? [] as NoteByBar[]
+            ownGroup.push(note)
+            hash[firstElem] = ownGroup
+        } else throw new Error(`While grouping notes, the group identifier datum was non-number and non-string`)
+
+    })
+
+    return Object.values(hash)
+}
+
 export const tagsDeleteMatching1 = (fn: (te: TagEntry) => boolean, tagEntries: TagEntries): TagEntries => {
     return tagEntries.filter(fn)
 }
@@ -118,9 +148,11 @@ export const tagDataOrNull = (note: NoteByBar, tag: string): null | TagEntry[1] 
     return found[1]
 
 }
+
 export const deleteTagByName = (tagsReference: string[]) => {
 
 }
+
 export const latestNote = (notes1: NoteByBar[]): NoteByBar | null => {
     const sortedNotes1 = notes1.slice().sort(({ tags: aTags }, { tags: bTags }) => {
         const timeA = calcFractionalDelay(
@@ -139,6 +171,28 @@ export const latestNote = (notes1: NoteByBar[]): NoteByBar | null => {
         return !!tags.find((tag) => tag.startsWith('chord'))
     })
     return latestChordNote ?? null
+}
+
+export const earliestNote = (notes1: NoteByBar[]): NoteByBar | null => {
+    const sortedNotes1 = notes1.slice().sort(({ tags: aTags }, { tags: bTags }) => {
+        const timeA = calcFractionalDelay(
+            parseNoteTags(aTags),
+        )
+        const timeB = calcFractionalDelay(
+            parseNoteTags(bTags),
+        )
+        const ret1 = timeB - timeA
+
+
+        return ret1
+
+    })
+
+    return sortedNotes1[0] ?? null
+}
+
+const noteTagDatum = (note: NoteByBar, tagName: string): null | TagEntry[1] => {
+    return parseNoteTags(note.tags).find(([k]) => k === tagName)[1] ?? null
 }
 
 export const scale = function parseNoteScale(note: NoteByBar): [ltr: string, name: string] | null {
