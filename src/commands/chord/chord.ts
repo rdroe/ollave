@@ -1,16 +1,14 @@
 import fakeCli from 'peprn/fakeCli'
 import { Module, ParsedCli, awaitAll } from 'peprn/util'
 import {
-
     fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, romanFromProgRoman, isChordFn, unromanizeSecondaryChords, randomElement, chordNameWithNotes, fnChordNameWithNotes, ChordNameWithNotes,
-
 } from '../../lib/graphh'
 
 import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
-import { getNotesByEntity, isNotesByBar, parseDelayMatrix, prepDelayMatrix, shiftDollarEntity } from '../notes/notes'
-import { calcFractionalDelay, filterDelayTags, latestNote, parseNoteTags, scale } from 'src/lib/tags'
+import { getNotesByEntity, isNotesByBar, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
+import { filterDelayTags, latestNote, parseNoteTags, scale } from 'src/lib/tags'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { mem } from '../../mem'
 import { lookUpGraph } from 'src/mem-db'
@@ -20,8 +18,12 @@ const nextModule: Module = {
     submodules: {
 
         '$': {
-            fn: async ({ $ }) => {
-
+            fn: async (_, subCalls) => {
+                awaitAll({
+                    ...subCalls,
+                }).then(() => {
+                    mem().latestMap = mapSongToMidiTicks()
+                })
             },
             submodules: {
                 '$': {

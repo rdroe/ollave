@@ -55,7 +55,6 @@ export const filterDelayTags = (note: NoteByBar, retainBarDelay = false) => {
         },
         parsedTagz
     )
-
     note.tags = unparseTagEntries(cleaned)
     return note
 }

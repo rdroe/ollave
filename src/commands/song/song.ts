@@ -155,7 +155,7 @@ song start
         },
         dl: {
             fn: async () => {
-                mem().latestMap = mapSongToMidiTicks()
+
                 downloadSong(trackTempo)
             }
         }

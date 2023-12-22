@@ -33,6 +33,8 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
     }
     mem().latestMap = mapSongToMidiTicks()
 }
+
+
 const getPhaseId = (phaseName: string) => {
     const phase = mem().phases[phaseName]
     return phase.id || phase['temp-id']

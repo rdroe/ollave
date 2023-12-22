@@ -235,6 +235,11 @@ song start
 
                                     const notes = detachedGroups[groupIdx]
 
+                                    const consolidateDelays = (nt: NoteByBar) => {
+                                        const consolidated = calcFractionalDelay(parseNoteTags(nt.tags))
+
+
+                                    }
 
                                     newNotesByBar[bars[foundIdx]].push(...notes.map(
                                         n => ({

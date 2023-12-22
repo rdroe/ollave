@@ -440,11 +440,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 20.10.4
-  resolution: "@types/node@npm:20.10.4"
+  version: 20.10.5
+  resolution: "@types/node@npm:20.10.5"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: c10c1dd13f5c2341ad866777dc32946538a99e1ebd203ae127730814b8e5fa4aedfbcb01cb3e24a5466f1af64bcdfa16e7de6e745ff098fff0942aa779b7fe03
+  checksum: 4a378428d2c9f692b19801a5a3d20dc4c0ad5d4a3d103350f8b401af439941a9aa5efeadc8eb9db13c66c620318bc7f336abfc8934f82fd32c4a689d85068c6f
   languageName: node
   linkType: hard
 
@@ -2367,7 +2367,7 @@ __metadata:
     http-server: "npm:^14.1.0"
     jsmidgen: "npm:^0.1.5"
     nodemon: "npm:^2.0.16"
-    peprn: "npm:^0.4.10"
+    peprn: "npm:^0.4.11"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     rxjs: "npm:^7.5.7"
@@ -2420,9 +2420,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"peprn@npm:^0.4.10":
-  version: 0.4.10
-  resolution: "peprn@npm:0.4.10"
+"peprn@npm:^0.4.11":
+  version: 0.4.11
+  resolution: "peprn@npm:0.4.11"
   dependencies:
     "@testing-library/react": "npm:^14.0.0"
     "@types/node": "npm:^18.16.17"
@@ -2436,7 +2436,7 @@ __metadata:
     zod: "npm:3.21.4"
   peerDependencies:
     react: "*"
-  checksum: cda619f1b32b308d401f8529ee13cd7e0e9705eff434e2f6088d9b392f6ef2cbc052257a869b4ba00911ac58c49aca84cf322cbaa077592c1865e472ea10b83d
+  checksum: 95a06414f9d48d4a5ce1dcdeb38cb8efcf0c5088645900b9ecb7a3404159de4512c2e15b0d006abe5dbd58958a2f1aab4fff03d0b530d75904c32d9b3a2655db
   languageName: node
   linkType: hard
 
