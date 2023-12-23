@@ -260,33 +260,8 @@ export default {
     fn: async () => { },
     submodules: {
         arrange: {
-            fn: async ({ positionalNonCommands: patterns, noteCount }) => {
-                /*
-                if (!isNoteCnt(noteCount)) {
-                    throw new Error(`
-Could not get a note count
-`)
-                }
-                const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
-                const delaysPerChordSize = parseDelayMatrix(prepped)
-                const noteLookup = delaysPerChordSize[noteCount]
+            fn: async () => {
 
-                notes.forEach((nt) => {
-                    filterDelayTags(nt, true)
-                    const parsed = Object.fromEntries(parseNoteTags(nt.tags))
-                    const [chordIdx] = parsed['chordIndex']
-                    if (typeof chordIdx !== 'number') {
-                        const msg = strjson(nt)
-                        throw new Error(`Note lacked a chord index: ${msg}`)
-                    }
-                    const newTags = noteLookup[chordIdx]
-                    nt.tags.push(...newTags)
-                })
-
-                mem().latestMap = mapSongToMidiTicks()
-
-                return notes
-                */
             }
 
         },

@@ -13,154 +13,6 @@ import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { mem } from '../../mem'
 import { lookUpGraph } from 'src/mem-db'
 
-const nextModule: Module = {
-    fn: async () => { },
-    submodules: {
-
-        '$': {
-            fn: async (_, subCalls) => {
-                awaitAll({
-                    ...subCalls,
-                }).then(() => {
-                    mem().latestMap = mapSongToMidiTicks()
-                })
-            },
-            submodules: {
-                '$': {
-
-                    fn: async ({ $: dollar, positionalNonCommands }) => {
-
-                        const notes1 = getNotesByEntity(dollar, positionalNonCommands)
-                        const latestChordNote = latestNote(notes1)
-                        if (!latestChordNote) return null
-                        const [chordName] = parseNoteTags(latestChordNote.tags).find(([nm]) => nm === 'chord')[1]
-                        const [userLetter = "", userScale = "", noteLetter = null] = positionalNonCommands
-                        if (typeof chordName !== 'string') {
-                            throw new Error(`could not get chord name; instead ${chordName}`)
-                        }
-
-                        let scaleName: [tonic: string, name: string] | undefined
-                        if (userLetter && userScale) {
-                            scaleName = [userLetter, userScale]
-                        }
-                        if (!scaleName) {
-                            scaleName = scale(latestChordNote)
-                        }
-                        if (!scale) {
-                            throw new Error(`could not obtain scale`)
-                        }
-
-                        let graph = lookUpGraph(...scaleName)
-
-                        if (!graph) {
-                            await fakeCli(`chord graph test ${scaleName[0]} ${scaleName[1]}`)
-                            graph = lookUpGraph(...scaleName)
-                        }
-                        if (!graph) {
-                            throw new Error(`could not obtain graph for ${scale}`)
-                        }
-                        if (!graph[chordName]) {
-                            throw new Error(`could not obtain ${chordName} in graph for ${scale}`)
-                        }
-                        const next = graph[chordName]?.next
-                        const roman = graph[chordName].roman
-
-                        if (!next) {
-                            throw new Error(`Got graph and chord; no next for ${chordName}; roman ${roman}`)
-                        }
-
-                        return next.map(({ name }) => name)
-                    }
-                }
-            }
-
-        }
-    }
-}
-
-
-const inModule: Module = {
-    fn: async () => { },
-    submodules: {
-        '$': {
-            fn: async ({ $ }) => { },
-            submodules: {
-                '$': {
-                    fn: async () => { },
-                    submodules: {
-                        arrange: {
-                            fn: async ({ $: dollar, positionalNonCommands: patterns }, moduleCalls) => {
-
-                                const sorted = Object.entries(moduleCalls).sort(([kA], [kB]) => {
-                                    return kB.length - kA.length
-
-                                })
-
-                                const chordName = dollar.shift()
-                                const entity = dollar.shift()
-                                const entityName = dollar.shift()
-
-                                console.log('entity data', { entity, entityName })
-
-                                const notes1 = await fakeCli(`notes in ${entity} ${entityName}`)
-                                let maxChordSize = -1
-
-                                if (!isNotesByBar(notes1)) {
-                                    throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)
-                                        }`)
-                                }
-                                const notes = notes1.filter((n) => {
-
-                                    const parsedTags = parseNoteTags(n.tags)
-                                    const isMatch = parsedTags.find(([nm, dat]) => {
-                                        return nm === 'chord' && dat.includes(chordName)
-                                    })
-
-                                    if (isMatch) {
-                                        const chordSize = parsedTags.find(([nm, dat]) => nm === 'chordSize')
-                                        if (chordSize
-                                            && typeof chordSize[1][0] === 'number'
-                                            && chordSize[1][0] > maxChordSize
-                                        ) {
-                                            maxChordSize = chordSize[1][0]
-                                        }
-                                        return true
-                                    }
-                                    return false
-                                })
-
-                                const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
-                                const delaysPerChordSize = parseDelayMatrix(prepped)
-
-                                const subdataKey = `${maxChordSize}x`
-
-                                const noteLookup = delaysPerChordSize[subdataKey]
-
-                                notes.forEach((nt) => {
-                                    filterDelayTags(nt, true)
-
-                                    const parsed = Object.fromEntries(parseNoteTags(nt.tags))
-                                    const [chordIdx] = parsed['groupIndex']
-                                    if (typeof chordIdx !== 'number') {
-                                        const msg = strjson(nt)
-                                        throw new Error(`Note lacked a chord index: ${msg}`)
-                                    }
-                                    const newTags = noteLookup[chordIdx]
-                                    nt.tags.push(...newTags)
-                                })
-
-                                mem().latestMap = mapSongToMidiTicks()
-
-                                return notes
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 export const chord: Module = {
     help: {
         description: "THis is the chord module! Utilities and arrangement attentive to chords."
@@ -245,14 +97,14 @@ export const chord: Module = {
                     }
                 },
 
-                test2: {
+                song: {
                     fn: async ({ positionalNonCommands }) => {
 
                         const [userLetter = "", userScale = ""] = positionalNonCommands
 
                         const graph: {
                             [chordName: string]: ProgressionOptions
-                        } = (await fakeCli(`chord graph test ${userLetter} ${userScale}`)).formatted
+                        } = (await fakeCli(`chord graph create ${userLetter} ${userScale}`)).formatted
 
                         const pruned = graph
                         const chords: string[] = [Object.keys(pruned)[0]]
@@ -308,68 +160,85 @@ phase aphrodite scale ${userLetter} ${userScale}
 bars aphrodite fill ${chordsWithNotes.map(({ name }) => name + ',3').join(' ')}
 song start
                                             `
-                                , pruned
+                                ,
+                                pruned
                             }
                         }
-
                     }
                 },
-                'make': {
-                    fn: async ({ positionalNonCommands }) => {
+                next: {
+                    fn: async () => { },
+                    submodules: {
+                        '$': {
+                            fn: async (_, subCalls) => {
+                                awaitAll({
+                                    ...subCalls,
+                                }).then(() => {
+                                    mem().latestMap = mapSongToMidiTicks()
+                                })
+                            },
+                            submodules: {
+                                '$': {
+                                    fn: async ({ $: dollar, positionalNonCommands }) => {
 
-                        const [userLetter = "", userScale = ""] = positionalNonCommands
+                                        const notes1 = getNotesByEntity(dollar, positionalNonCommands)
 
-                        const names = Object.keys(minor)
-                        const untranslatable = names.map((romanName) => {
+                                        const latestChordNote = latestNote(notes1)
 
-                            if (isChordFn(romanName)) { return null }
-                            const translated = romanChordNameToReal(userLetter, userScale, romanName)
-                            if (!translated) {
-                                return romanName
-                            }
+                                        if (!latestChordNote) return null
 
-                            return null
-                        }).filter((elem) => elem !== null && !optionalRomans.includes(elem))
+                                        const [chordName] = parseNoteTags(latestChordNote.tags).find(([nm]) => nm === 'chord')[1]
+                                        const [userLetter = "", userScale = "", noteLetter = null] = positionalNonCommands
+                                        if (typeof chordName !== 'string') {
+                                            throw new Error(`could not get chord name; instead ${chordName}`)
+                                        }
 
-                        if (untranslatable.length) {
-                            throw new Error(`Not all roman names were translatable.Make sure this is a minor key.${JSON.stringify(untranslatable)} ; scale: ${userLetter} ${userScale} `)
-                        }
+                                        let scaleName: [tonic: string, name: string] | undefined
 
-                        const scaledGraph =
-                            Object.entries(minor).reduce((accum, [romanName, progNodes]) => {
+                                        if (userLetter && userScale) {
+                                            scaleName = [userLetter, userScale]
+                                        }
 
-                                const realizedName = fns[romanName as keyof typeof fns]
-                                    ? romanName
-                                    : romanChordNameToReal(userLetter, userScale, romanName)
+                                        if (!scaleName) {
+                                            scaleName = scale(latestChordNote)
+                                        }
 
-                                if (accum.find(([x, _]) => x === realizedName)) {
-                                    console.error(`prog node already translated; ${romanName} in ${userLetter} ${userScale} ${JSON.stringify({ romanName, realizedName, progNodes }, null, 2)} `)
+                                        if (!scale) {
+                                            throw new Error(`could not obtain scale`)
+                                        }
+
+                                        let graph = lookUpGraph(...scaleName)
+
+                                        if (!graph) {
+                                            await fakeCli(`chord graph test ${scaleName[0]} ${scaleName[1]}`)
+                                            graph = lookUpGraph(...scaleName)
+                                        }
+
+                                        if (!graph) {
+                                            throw new Error(`could not obtain graph for ${scale}`)
+                                        }
+
+                                        if (!graph[chordName]) {
+                                            throw new Error(`could not obtain ${chordName} in graph for ${scale}`)
+                                        }
+
+                                        const next = graph[chordName]?.next
+
+                                        const roman = graph[chordName].roman
+
+                                        if (!next) {
+                                            throw new Error(`Got graph and chord; no next for ${chordName}; roman ${roman}`)
+                                        }
+
+                                        return next.map(({ name }) => name)
+                                    }
                                 }
-
-                                const realizedOptions = progNodes.map(makeProgNodeTranslator(userLetter, userScale))
-
-
-                                return [...accum, [realizedName, realizedOptions]]
-
-                            }, [] as [romanName: string, progNodes: ProgressionGraphNode][])
-
-                        const combinedScaleGraphEntries = scaledGraph.map(([name, pOpts]: [nm: string, pOpts: ProgressionOptions[]]) => {
-                            return [name, combineEntriesByName(
-                                pOpts)
-
-                            ]
-                        }) as [name: string, pOpt: ProgressionOptions][]
-
-                        const realizedGraph = Object.fromEntries(combinedScaleGraphEntries)
-                        return {
-                            formatted: realizedGraph
+                            }
 
                         }
                     }
                 },
-
-                next: nextModule,
-                test: {
+                create: {
                     fn: async ({ positionalNonCommands }) => {
 
                         const [userLetter = "", userScale = ""] = positionalNonCommands
@@ -424,13 +293,82 @@ song start
                 },
             }
         },
-
         '$': {
             fn: async (args) => {
                 return args['$']
             },
             submodules: {
-                in: inModule,
+                in: {
+                    fn: async () => { },
+                    submodules: {
+                        '$': {
+                            fn: async ({ $ }) => { },
+                            submodules: {
+                                '$': {
+                                    fn: async () => { },
+                                    submodules: {
+                                        arrange: {
+                                            fn: async ({ $: dollar, positionalNonCommands: patterns }) => {
+                                                const chordName = dollar.shift()
+                                                const entity = dollar.shift()
+                                                const entityName = dollar.shift()
+
+                                                const notes1 = await fakeCli(`notes in ${entity} ${entityName}`)
+                                                let maxChordSize = -1
+
+                                                if (!isNotesByBar(notes1)) {
+                                                    throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
+                                                }
+
+                                                const notes = notes1.filter((n) => {
+
+                                                    const parsedTags = parseNoteTags(n.tags)
+                                                    const isMatch = parsedTags.find(([nm, dat]) => {
+                                                        return nm === 'chord' && dat.includes(chordName)
+                                                    })
+
+                                                    if (isMatch) {
+                                                        const chordSize = parsedTags.find(([nm, dat]) => nm === 'chordSize')
+                                                        if (chordSize
+                                                            && typeof chordSize[1][0] === 'number'
+                                                            && chordSize[1][0] > maxChordSize
+                                                        ) {
+                                                            maxChordSize = chordSize[1][0]
+                                                        }
+                                                        return true
+                                                    }
+                                                    return false
+                                                })
+
+                                                const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
+                                                const delaysPerChordSize = parseDelayMatrix(prepped)
+
+                                                const subdataKey = `${maxChordSize}x`
+
+                                                const noteLookup = delaysPerChordSize[subdataKey]
+
+                                                notes.forEach((nt) => {
+                                                    filterDelayTags(nt, true)
+
+                                                    const parsed = Object.fromEntries(parseNoteTags(nt.tags))
+                                                    const [chordIdx] = parsed['groupIndex']
+                                                    if (typeof chordIdx !== 'number') {
+                                                        const msg = strjson(nt)
+                                                        throw new Error(`Note lacked a chord index: ${msg}`)
+                                                    }
+                                                    const newTags = noteLookup[chordIdx]
+                                                    nt.tags.push(...newTags)
+                                                })
+                                                mem().latestMap = mapSongToMidiTicks()
+                                                return notes
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 detectScales: {
                     fn: async (args) => {
                         const [chordName] = args['$']
@@ -449,26 +387,6 @@ song start
 
                 },
 
-                where: {
-                    fn: async (args, moduleCalls) => { },
-                    submodules: {
-                        triad: {
-                            fn: async (args, moduleCalls) => {
-                            }
-                        },
-                        in: {
-                            fn: async (args, moduleCalls) => { },
-                            submodules: {
-                                scale: {
-                                    fn: async (args, moduleCalls) => {
-                                    },
-                                }
-                            }
-                        },
-                        // often, returns slash chords
-
-                    },
-                },
                 scale: {
                     fn: async () => null,
                     submodules: {
@@ -489,10 +407,6 @@ song start
                         const [chordName] = $
                         const [tonic, scale] = positionalNonCommands
                         return romanChordNameToReal(tonic, scale, chordName)
-                        //                      if (typeof root === "string" && typeof tonic !== "string") return "a value for tonic is required if a value for root is passed"
-
-                        //                        return unromanizeSecondaryChord(tonic, chordName)
-
                     }
                 }
             }
