@@ -2367,7 +2367,7 @@ __metadata:
     http-server: "npm:^14.1.0"
     jsmidgen: "npm:^0.1.5"
     nodemon: "npm:^2.0.16"
-    peprn: "npm:^0.4.11"
+    peprn: "npm:^0.4.12"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     rxjs: "npm:^7.5.7"
@@ -2420,9 +2420,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"peprn@npm:^0.4.11":
-  version: 0.4.11
-  resolution: "peprn@npm:0.4.11"
+"peprn@npm:^0.4.12":
+  version: 0.4.12
+  resolution: "peprn@npm:0.4.12"
   dependencies:
     "@testing-library/react": "npm:^14.0.0"
     "@types/node": "npm:^18.16.17"
@@ -2436,7 +2436,7 @@ __metadata:
     zod: "npm:3.21.4"
   peerDependencies:
     react: "*"
-  checksum: 95a06414f9d48d4a5ce1dcdeb38cb8efcf0c5088645900b9ecb7a3404159de4512c2e15b0d006abe5dbd58958a2f1aab4fff03d0b530d75904c32d9b3a2655db
+  checksum: 4ca38a7205f746421e41a7e249d066dc58ec0ed834fabe833a900c6f3db5bee711b4ac681f4c1ee3b3692167dcd8155854eb91cd9f3fc4957d3eaa3d8d95fda8
   languageName: node
   linkType: hard
 

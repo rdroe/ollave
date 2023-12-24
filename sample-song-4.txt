@@ -13,13 +13,13 @@ song start
 
 then,
 
-chord Am in phase aphrodite arrange 2x 0 half 4th 1 8th 2 16th  3 3x 0 4th 4th 1 8th 2 4x 0 half 4th 1 8th 8th 2 4th 16th 4th 5 half
-
-(Note that using comma groupings in an arrange argument causes arpeggiation. That is, the fractions are counted as note-by-note delays.
-
 chord Am in phase aphrodite arrange 2x 0 half,4th 1 8th 2 16th  3 3x 0 4th,4th 1 8th 2 4x 0 half,4th 1 8th,8th 2 4th,16th,4th 5 half
 
-causes a different pattern than the comma-free version. It is true that commas = arpeggiation does not make any sense.)
+(Note that NOT using comma groupings in an arrange call  causes arpeggiation. That is, the fractions are counted as delays since the last note.
+
+chord Am in phase aphrodite arrange 2x 0 half 4th 1 8th 2 16th  3 3x 0 4th 4th 1 8th 2 4x 0 half 4th 1 8th 8th 2 4th 16th 4th 5 half
+
+causes a different pattern than the comma-free version. It is true that non-comma-input = arpeggiation does not make any sense.)
 
 notice that only the '3x' row will be used in the sample song (Am, the only chord, is size 3x).
 

@@ -279,6 +279,7 @@ export const unromanizeSecondaryChords = (tonic: string, scale: string, slashRom
     const secondaryScale = domData.quality === "Diminished" ? "minor" : domData.quality.toLocaleLowerCase()
 
     const secondaryChord = unromanizeSecondaryChord(secondaryTonic, secondaryScale, secondaryRoman)
+
     return [secondaryChord, dominantChord]
 
 }
@@ -531,6 +532,12 @@ export const oneIndexedArr = (len: number) => {
         n += 1
     }
     return arr
+}
+
+export const zeroIndexedArr = (len: number) => {
+    if (len <= 0) return []
+    const oneIndexed = oneIndexedArr(len)
+    return oneIndexed.map(elem => elem - 1)
 }
 
 export const rotations = <T>(arr: Array<T>): T[][] => {

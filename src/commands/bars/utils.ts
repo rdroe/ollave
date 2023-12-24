@@ -64,6 +64,7 @@ const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
     }
 
     const graph = lookUpGraph(scaleTonic, scaleName)
+    console.log('graph in chord name fn', graph)
     if (!graph) return initial
     return graph[nm] || initial
 
@@ -124,6 +125,8 @@ export const isChordCsvArg = (str: string, userTonic?: string, userScale?: strin
 
 export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
     return (noteName: string): NoteByBar => {
+
+        console.log('makeFulfilled...', { barTag, extraTags, noteName })
         const noteProperties = Note.get(noteName)
         const { oct, letter, acc } = noteProperties
 

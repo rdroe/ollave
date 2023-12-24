@@ -1,8 +1,8 @@
 import { Module, } from 'peprn/util';
-import { isNum, isString } from '../../lib/helpers'
+import { isNum, isString, randId } from '../../lib/helpers'
 import { mem } from '../../mem';
 import { z } from 'zod'
-import { getAllPhaseBarNotes, phaseCount, phaseFollowsPhase, phaseUnfollows } from 'src/mem-db';
+import { getAllPhaseBarNotes, getAllPhaseBars, phaseCount, phaseFollowsPhase, phaseUnfollows } from 'src/mem-db';
 const { observables } = mem()
 export const findPhase = (name: string) => {
     return observables[name] || null
@@ -96,7 +96,11 @@ const module: Module = {
                         notes(phaseName1).tag(`scaleName=${userScale}`)
 
                     }
+                },
+                push: {
+
                 }
+
             }
         }
     }

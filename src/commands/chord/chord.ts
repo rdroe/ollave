@@ -3,7 +3,6 @@ import { Module, ParsedCli, awaitAll } from 'peprn/util'
 import {
     fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, romanFromProgRoman, isChordFn, unromanizeSecondaryChords, randomElement, chordNameWithNotes, fnChordNameWithNotes, ChordNameWithNotes,
 } from '../../lib/graphh'
-
 import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
@@ -15,31 +14,26 @@ import { lookUpGraph } from 'src/mem-db'
 
 export const chord: Module = {
     help: {
-        description: "THis is the chord module! Utilities and arrangement attentive to chords."
+        description: "This is the chord module! Utilities and arrangement attentive to chords."
     },
     fn: async () => {
         return null
     },
     submodules: {
-
         triads: {
             help: {
                 description: "Dev facilities for playing with triads",
             },
-
             fn: async (args) => {
                 const [userLetter = "", userScale = "", noteLetter = null] = args.positionalNonCommands
-
                 const formatted = allScales.map((sc) => ({
                     scaleTonic: sc.tonic,
                     scaleType: sc.type,
                     triads: Mode.triads(sc.type, sc.tonic)
                 }))
-
                 if (!userLetter && !userScale) {
                     return { formatted }
                 }
-
                 return {
                     formatted: formatted.filter(
                         ({ scaleTonic, scaleType }) => scaleTonic === userLetter && scaleType === userScale)
@@ -56,7 +50,6 @@ export const chord: Module = {
             fn: async (args) => {
                 const [userLetter = "", userScale = ""] = args.positionalNonCommands
                 const allTriadsRaw = await fakeCli(`chord triads ${userLetter} ${userScale}`, 'cli')
-
                 const allTriads = z.array(z.object({
                     scaleTonic: z.string(),
                     triads: z.array(z.string()),
@@ -87,8 +80,6 @@ export const chord: Module = {
             }
         },
         graph: {
-            fn: async () => {
-            },
             submodules: {
                 ltrs: {
                     fn: async ({ positionalNonCommands }) => {
@@ -96,7 +87,6 @@ export const chord: Module = {
                         return scaleLetters(userLetter, userScale)
                     }
                 },
-
                 song: {
                     fn: async ({ positionalNonCommands }) => {
 
@@ -144,30 +134,31 @@ export const chord: Module = {
                                 ({ notes }) => notes.map(Note.simplify).join(',').toLowerCase()
                             )
                         ).join(' ')
-                        return {
 
-                            formatted: {
-                                notes: noteStr,
-                                chords: chordsWithNotes.map(({ name }) => `${name}, 3`).join(' '),
-                                aaNoteProgram: `
+                        const formatted = {
+                            notes: noteStr,
+                            chords: chordsWithNotes.map(({ name }) => `${name}, 3`).join(' '),
+                            aaNoteProgram: `
 phase aphrodite 100
 bars aphrodite fill ${noteStr}
 song start
                                             `,
-                                aaChordProgram: `
+                            aaChordProgram: `
 phase aphrodite ${chordsWithNotes.length}
 phase aphrodite scale ${userLetter} ${userScale}
 bars aphrodite fill ${chordsWithNotes.map(({ name }) => name + ',3').join(' ')}
 song start
                                             `
-                                ,
-                                pruned
-                            }
+                            ,
+                            pruned
+                        }
+
+                        return {
+                            formatted
                         }
                     }
                 },
                 next: {
-                    fn: async () => { },
                     submodules: {
                         '$': {
                             fn: async (_, subCalls) => {
@@ -180,21 +171,19 @@ song start
                             submodules: {
                                 '$': {
                                     fn: async ({ $: dollar, positionalNonCommands }) => {
-
                                         const notes1 = getNotesByEntity(dollar, positionalNonCommands)
-
                                         const latestChordNote = latestNote(notes1)
-
                                         if (!latestChordNote) return null
 
                                         const [chordName] = parseNoteTags(latestChordNote.tags).find(([nm]) => nm === 'chord')[1]
+
                                         const [userLetter = "", userScale = "", noteLetter = null] = positionalNonCommands
+
                                         if (typeof chordName !== 'string') {
                                             throw new Error(`could not get chord name; instead ${chordName}`)
                                         }
 
                                         let scaleName: [tonic: string, name: string] | undefined
-
                                         if (userLetter && userScale) {
                                             scaleName = [userLetter, userScale]
                                         }
@@ -242,7 +231,8 @@ song start
                     fn: async ({ positionalNonCommands }) => {
 
                         const [userLetter = "", userScale = ""] = positionalNonCommands
-
+                        const lookedUp = lookUpGraph(userLetter, userScale)
+                        if (lookedUp) return lookedUp
                         const names = Object.keys(minor)
                         const untranslatable = names.map((romanName) => {
 
@@ -284,9 +274,13 @@ song start
                             ]
                         }) as [name: string, pOpt: ProgressionOptions][]
 
-                        const realizedGraph = Object.fromEntries(combinedScaleGraphEntries)
+                        const formatted = Object.fromEntries(combinedScaleGraphEntries)
+
+                        const idx = userLetter && userScale ? `${userLetter} ${userScale}` : Date.now()
+                        mem().graphs[idx] = mem().graphs[idx] || [] as any[]
+                        mem().graphs[idx].push(formatted)
                         return {
-                            formatted: realizedGraph
+                            formatted
 
                         }
                     }
@@ -408,6 +402,7 @@ song start
                         const [tonic, scale] = positionalNonCommands
                         return romanChordNameToReal(tonic, scale, chordName)
                     }
+
                 }
             }
         }

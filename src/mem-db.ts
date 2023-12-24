@@ -81,6 +81,7 @@ export const startEndData = (phaseName: string): StartEndTuple[] => {
 export const lookUpGraph = (userTonic: string, userScale: string): {
     [chordName: string]: ProgressionOptions
 } => {
+    console.log('all graphs', mem().graphs)
     const place = mem().graphs[`${userTonic} ${userScale}`]
     if (place) {
         if (place[0]) return place[0]

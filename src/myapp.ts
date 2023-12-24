@@ -242,21 +242,15 @@ ${dataContainer.innerHTML}
                     }
                 }
             }
-
+            if (!didPrint && parsedCli.rawIn.split(' ').includes('--man')) {
+                dataContainer.innerHTML = `${rawIn}\n${strjson(data)} 
+${dataContainer.innerHTML}                `
+            }
             if (!didPrint) {
                 console.warn('unprinted:', { parsedCli, data })
             }
             // caching behavior for the graph itself
-            const nowNum = Date.now().toString()
-            if (typeof parsedCli.rawIn === "string" && parsedCli.rawIn.startsWith('chord graph test')) {
-                if (data && data.formatted) {
-                    const [userLetter, userScale] = parsedCli.positionalNonCommands
 
-                    const idx = userLetter && userScale ? `${userLetter} ${userScale}` : nowNum
-                    mem().graphs[idx] = mem().graphs[idx] || [] as any[]
-                    mem().graphs[idx].push(data.formatted)
-                }
-            }
         }
     })
 }

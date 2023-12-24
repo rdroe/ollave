@@ -10,26 +10,28 @@ import { isCsvArg, parseCsvArg } from '../bars/utils'
 import { NoteByBar, mem } from '../../mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from 'src/mem-db'
-import { parseNoteTags } from 'src/lib/tags'
+import { filterDelayTags, parseNoteTags } from 'src/lib/tags'
+import { strjson } from 'src/lib/helpers'
+import { mapSongToMidiTicks } from 'src/mapSongToTicks'
+import { oneIndexedArr, zeroIndexedArr } from 'src/lib/graphh'
 
 const isNoteCnt = (str: string | number) => {
     if (typeof str === 'number') return false
     return !!str.match(/[0-9]+x/)
 }
+
 const noteByBarSchema = z.object({
     note: z.string(),
     tags: z.array(z.string())
 })
 
-const notesByBarSchema = z.array(noteByBarSchema
-)
-export const isNotesByBar = (obj: unknown): obj is NoteByBar[] => {
+const notesByBarSchema = z.array(noteByBarSchema)
 
+export const isNotesByBar = (obj: unknown): obj is NoteByBar[] => {
     return notesByBarSchema.safeParse(obj).success
 }
 
 export const shiftDollarEntity = (dollar: ParsedCli["positionalNonCommands"]) => {
-
     const err = '"bar" or "phase" or "tag" is required'
     const phaseOrBarOrTag = z.union(
         [
@@ -50,11 +52,12 @@ export const getNotesByEntity = (
     dollar: ParsedCli["positionalNonCommands"],
     positionalNonCommands: ParsedCli["positionalNonCommands"]
 ) => {
-
+    console.log('input to gnbe', dollar, positionalNonCommands)
     const phaseOrBar = shiftDollarEntity(dollar)
     const entityName = z.string().parse(
         dollar.shift()
     )
+
 
     if (phaseOrBar === 'bar') {
         return mem().notesByBar[entityName]
@@ -75,9 +78,7 @@ export const getNotesByEntity = (
                 if (positionalNonCommands === undefined || positionalNonCommands.length === 0) return true
 
                 const missingData = positionalNonCommands.find((m) => !data.includes(m))
-
                 return missingData == undefined
-
             })
         })
         return all
@@ -100,9 +101,9 @@ const tuplize = (array: (string | number)[]) => {
         // when it ends in a number
         allExceptPossiblyLast[allExceptPossiblyLast.length - 1].push(null)
     }
-
     return allExceptPossiblyLast
 }
+
 export const isAbbreviationCsv = (csvOrSingleFract: any) => {
     if (typeof csvOrSingleFract !== 'string') {
         return false
@@ -120,11 +121,15 @@ export const parseAbbreviationCsv = (csvOrSingleFract: string) => {
     if (csvOrSingleFract === null) {
         parsedCsvArg = []
     } else if (isCsvArg(csvOrSingleFract)) {
-        const parsed = parseCsvArg(csvOrSingleFract)
+        const parsed = parseCsvArg(csvOrSingleFract).filter((elem) => {
+            // clean up for empty caused by e.g, "16th," (trailing comma)
+            if (typeof elem === 'string') return elem.length > 0
+            return true
+        })
         const filtered: Abbreviation[] = parsed.filter((elem) => isAbbreviation(elem)) as Abbreviation[]
 
         if (parsed.length !== filtered.length) {
-            throw new Error(`Found a non-abbreviation where all elements should have `)
+            throw new Error(`Found a non-abbreviation where all elements should have ${strjson({ parsed, filtered })}`)
         }
         parsedCsvArg = filtered
     } else if (isAbbreviation(csvOrSingleFract)) {
@@ -148,15 +153,14 @@ export const sumAbbreviationCsv = (csv: string) => {
 }
 
 export const parseDelayMatrixRow = (pattern: (string | number)[]): {
-    [idx: number]: keyof typeof tickCounts
+    [idx: number]: (keyof typeof tickCounts)[]
 } => {
 
     const entries: [noteIdx: number, fractions: string[]][] = []
-
+    // non-arp
+    // A row like '8th,4th half 4th,16th'
     if (pattern.find(elem => typeof elem === 'string' && isCsvArg(elem))) {
-
         const tuples: [x: number, str: string][] = tuplize(pattern)
-
         const entries = tuples.map(([noteNth, csvOrSingleFract]: [noteNth: number, csv: string | null]) => {
             const parsedCsvArg = parseAbbreviationCsv(csvOrSingleFract)
             const tagized = parsedCsvArg.map((elem) => {
@@ -173,18 +177,26 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
         return Object.fromEntries(entries)
     }
 
+    // arp
     pattern.forEach((elem) => {
         if (typeof elem === 'number') {
             entries.push([elem, []])
         }
     })
 
+    let currNum = 0
     pattern.forEach((noteIdxOrFraction: string | number, idx) => {
+        if (typeof noteIdxOrFraction === 'number') {
+            currNum = noteIdxOrFraction
+        }
 
         if (typeof noteIdxOrFraction === 'string') {
             if (isAbbreviation(noteIdxOrFraction)) {
+
                 entries.forEach(([noteNth, arr]) => {
-                    if (pattern.indexOf(noteNth) > idx) {
+
+
+                    if (currNum <= noteNth) {
                         arr.push(`${abbrev[noteIdxOrFraction]}=1`)
                     }
                 })
@@ -193,7 +205,6 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
             throw new Error(`${noteIdxOrFraction} could not be parsed as a fraction`)
         }
     })
-
 
     const validEntries = z.array(
         z.tuple([
@@ -207,9 +218,7 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
     ).parse(entries)
 
 
-    return Object.fromEntries(validEntries) as {
-        [idx: number]: keyof typeof tickCounts
-    }
+    return Object.fromEntries(validEntries)
 }
 
 export const prepDelayMatrix = (positionalNonCommands: ParsedCli['positionalNonCommands']): [noteIdx: string, row: (string | number)[]][] => {
@@ -243,14 +252,26 @@ export const prepDelayMatrix = (positionalNonCommands: ParsedCli['positionalNonC
 
     return entries as [noteIdx: string, data: (string | number)[]][]
 }
-
+const deleteSupernumeraries = (dmRow: ReturnType<typeof parseDelayMatrixRow>, cs: number) => {
+    return Object.fromEntries(
+        Object.entries(dmRow).filter(([key]) => {
+            return parseInt(key) <= cs
+        })
+    )
+}
 export const parseDelayMatrix = (entries: [chordSize: string, row: (string | number)[]][]) => {
     return Object.fromEntries(
         entries.map(([cs, r]) => {
             const parsedRow = parseDelayMatrixRow(r)
+            const chordSize = parseInt(cs)
+            const idxs = zeroIndexedArr(chordSize)
+            idxs.forEach((idx) => {
+                parsedRow[idx] = parsedRow[idx] ?? []
+            })
+
             return [
                 cs,
-                parsedRow
+                deleteSupernumeraries(parsedRow, chordSize)
             ]
         })
     )
@@ -273,11 +294,87 @@ export default {
                     fn: async () => { },
                     submodules: {
                         '$': {
-                            fn: async ({ $: dollar, positionalNonCommands }) => {
-                                return getNotesByEntity(
+                            fn: async (args, calls) => {
+                                const { $: dollar, positionalNonCommands } = args
+                                const isGcCall = !!calls['notes in $ $ arrange']
+                                if (isGcCall) {
+
+                                    return getNotesByEntity(
+                                        args.commands.slice(2),
+                                        [...positionalNonCommands]
+                                    )
+                                }
+                                const notes = getNotesByEntity(
                                     dollar,
                                     positionalNonCommands
                                 )
+
+                                return notes;
+                            },
+                            submodules: {
+                                arrange: {
+                                    fn: async ({ positionalNonCommands: patterns }, calls) => {
+
+                                        const notes1 = await calls['notes in $ $']
+
+                                        if (!isNotesByBar(notes1)) {
+                                            throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
+                                        }
+
+
+
+                                        const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
+                                        const delaysPerChordSize = parseDelayMatrix(prepped)
+
+
+
+                                        notes1.forEach((nt) => {
+
+                                            const parsed = Object.fromEntries(parseNoteTags(nt.tags))
+                                            const [subdataKey] = parsed.chordSize
+
+                                            if (
+                                                typeof subdataKey !== 'number'
+                                                && typeof subdataKey !== 'string'
+
+                                            ) throw new Error(`note has no chord size`)
+
+                                            const noteLookup = delaysPerChordSize[`${subdataKey}x`]
+                                            if (!noteLookup) {
+                                                return
+                                            }
+
+
+                                            const [chordIdx] = parsed.groupIndex
+
+                                            if (typeof chordIdx !== 'number') {
+                                                const msg = strjson(nt)
+                                                throw new Error(`Note lacked a chord index: ${msg}`)
+                                            }
+
+                                            const newTags = noteLookup[chordIdx]
+
+                                            if (!newTags) {
+                                                console.error('no tags created for note', {
+                                                    'note index in chord': chordIdx,
+                                                    'chord size': `${subdataKey}x`,
+                                                    'note sizing lookup (derived from cli)': delaysPerChordSize
+                                                })
+                                            }
+
+                                            // only wipte the old tags if the new ones are created
+
+                                            // this is a weird behavior for re-processing or trying multiple combos in a session
+                                            if (newTags.length) {
+                                                filterDelayTags(nt, true)
+                                                nt.tags.push(...newTags)
+                                            }
+                                        })
+                                        mem().latestMap = mapSongToMidiTicks()
+                                        return notes1
+
+                                    }
+                                }
                             }
                         }
                     }
