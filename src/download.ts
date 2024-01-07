@@ -1,16 +1,18 @@
-import { addTriads, saveRaw } from './lib/midi';
-import { Triad } from './lib/music'
+import { addEvents, saveRaw } from './lib/midi';
+import { RelativeNote } from './lib/music'
 import Midi from 'jsmidgen'
-import { MidiMap, mapSongToMidiTicks } from './mapSongToTicks';
+import { MidiMap } from './mapSongToTicks';
 import { mem } from './mem'
-const downloadNotes = async (notes: Triad[], tempo?: number) => {
+
+
+const downloadEvents = async (notes: RelativeNote[], tempo?: number) => {
     var file = new Midi.File();
     var track = new Midi.Track();
     if (tempo) {
         track.setTempo(tempo)
     }
     file.addTrack(track);
-    addTriads(track, notes);
+    addEvents(track, notes);
     const midi = file.toBytes()
     saveRaw(midi)
     return { downloaded: notes }
@@ -29,9 +31,7 @@ const addNoteEvent = (obj: {
     })
 }
 
-const songToTriads = async (mappedTicks: MidiMap) => {
-    const triads: Triad[] = []
-    let lastTick = 0
+const songToEvents = async (mappedTicks: MidiMap) => {
     const noteEvents: {
         [tick: number]: {
             note: string;
@@ -40,26 +40,39 @@ const songToTriads = async (mappedTicks: MidiMap) => {
         }[]
     } = {}
 
-    Object.entries(mappedTicks).forEach(([tickRaw, notes]) => {
+    const relativized: RelativeNote[] = []
 
+    Object.entries(mappedTicks).forEach(([tickRaw, notes]) => {
         notes.forEach((n) => {
+
             addNoteEvent(noteEvents, parseInt(tickRaw), 'on', n.note)
             addNoteEvent(noteEvents, parseInt(tickRaw) + (n.duration ?? 128), 'off', n.note)
         })
-
-
-        const tick = parseInt(tickRaw)
-        notes.forEach((note) => {
-            triads.push([note.note, 128, tick - lastTick])
-            lastTick = tick
-        })
     })
-    console.log('noteEvents', { noteEvents, mappedTicks })
-    return triads
+
+    let max = 0
+    Object.entries(noteEvents).forEach(([tickRaw, initNotes]) => {
+        const notes = [...initNotes]
+        const first = notes.shift()
+
+        if (first) {
+            relativized.push([first.note, first.abso - max, first.onOrOff])
+            max = first.abso
+
+            if (notes.length) {
+
+                relativized.push(...notes.map(({ note, onOrOff }) => {
+                    return [note, 0, onOrOff] as typeof relativized[number]
+                }))
+            }
+        }
+    })
+
+    return relativized
 }
 
 export const downloadSong = async (tempo?: number) => {
     const mappedTicks = mem().latestMap
-    const triads = await songToTriads(mappedTicks)
-    return downloadNotes(triads, tempo)
+    const events = await songToEvents(mappedTicks)
+    return downloadEvents(events, tempo)
 }

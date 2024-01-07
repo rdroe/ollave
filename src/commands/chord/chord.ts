@@ -170,9 +170,12 @@ song start
                             },
                             submodules: {
                                 '$': {
+
                                     fn: async ({ $: dollar, positionalNonCommands }) => {
+                                        console.log('next123', positionalNonCommands)
                                         const notes1 = getNotesByEntity(dollar, positionalNonCommands)
                                         const latestChordNote = latestNote(notes1)
+
                                         if (!latestChordNote) return null
 
                                         const [chordName] = parseNoteTags(latestChordNote.tags).find(([nm]) => nm === 'chord')[1]
@@ -182,6 +185,7 @@ song start
                                         if (typeof chordName !== 'string') {
                                             throw new Error(`could not get chord name; instead ${chordName}`)
                                         }
+                                        console.log('next123', chordName)
 
                                         let scaleName: [tonic: string, name: string] | undefined
                                         if (userLetter && userScale) {
@@ -192,11 +196,13 @@ song start
                                             scaleName = scale(latestChordNote)
                                         }
 
+
                                         if (!scale) {
                                             throw new Error(`could not obtain scale`)
                                         }
 
                                         let graph = lookUpGraph(...scaleName)
+
 
                                         if (!graph) {
                                             await fakeCli(`chord graph test ${scaleName[0]} ${scaleName[1]}`)

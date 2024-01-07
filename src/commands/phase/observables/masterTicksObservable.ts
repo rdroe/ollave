@@ -10,7 +10,7 @@ Where BPM is the tempo of the track (Beats Per Minute).
 
 // at the moment, PPQ stays constant.
 // although user can already change speed to increase playback speed, this PPQ var may be variable based on tempo in the future. this would alter the number of ticks laid down per musical entity. (e.g. a 64th note would end up on a different tick). at the time of writing this note, a 64th note is always going to fall on the same number of tick (but a different ms when the speed is tweaked).
-const ppq = 32 // 128 matches GarageBand's default
+const ppq = 128 // 128 matches GarageBand's default
 
 // The number of ticks per musical entity dos not change. if the user wants to speed up the pace of the music, increase the "speed" variable.
 // This function calculated how many ms each tick should last. notice it accesess the capable-of-changing-in-real-time "speed" variable.x

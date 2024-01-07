@@ -3,6 +3,11 @@ import * as tone from 'tone'
 const port = window?.location?.port ?? '8080'
 const host = window?.location?.hostname ?? 'localhost'
 export type Triad = [note: string, dur: number, timing?: number] // e.g. C5, 0.125 , 29.0078125
+export type RelativeNote = [
+    note: string,
+    rel: number,
+    onOrOff: 'on' | 'off'
+]
 // import { Piano } from '@tonejs/piano'
 
 // see both https://github.com/tambien/Piano/issues/48#issuecomment-1214324134

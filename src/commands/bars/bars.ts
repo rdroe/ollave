@@ -5,7 +5,7 @@ import { NoteByBar, mem } from '../../mem'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
 import { BAR, EIGHTH, tickCounts } from '../phase/observables/masterTicksObservable'
-import { calcFractionalDelay, filterDelayTags, groupNotesByFirstTagDatum, parseNoteTags, filterBarDelayTag } from 'src/lib/tags'
+import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag } from 'src/lib/tags'
 import { isAbbreviationCsv, sumAbbreviationCsv } from '../notes/notes'
 
 const { notesByBar } = mem()
@@ -110,15 +110,31 @@ song start
                         })
                     }
                 },
-                push: {
-                    fn: async ({ $: dollar, positionalNonCommand, csvAbbrevsOrNums }) => {
+                add: {
+                    help: {
+                        description: "Add chord bars ore note-group bars to a phrase; like `fill`; but it creates a new phase and tacks it onto the end of the named one",
+                        examples: {
+                            'Em,3 Am,3 [] C3,E3,G#3': `
+Create a new nameless bar; put the chord Em in the first bar (octave three), Am in the second, rest in the third bar, and place 3 notes in the fourth bar. Then tack that onto the titular bar
+
+bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
+`
+                        }
+                    },
+                    fn: async ({ $: dollar, positionalNonCommands }) => {
+
                         const [phaseName] = dollar
-                        const rawObjects = positionalNonCommand
+                        const rawObjects = positionalNonCommands
                         if (typeof phaseName !== 'string') return 'PHASE NAME IS REQUIRED'
                         const phase = mem().phases[phaseName]
                         const { scaleTonic, scaleName } = phase
+
                         const bars = getAllPhaseBars(phaseName)
-                        if (bars.length === 0) throw new Error(`Phase ${phaseName} has no bars`)
+                        const barIdxs = bars.map((barName) => parseInt(barName.split(':')[1]))
+
+                        const maxBarRaw = Math.max(...barIdxs)
+                        const maxBar = isNaN(maxBarRaw ? 0 : maxBarRaw)
+
                         const newGroupName = randId("", 3)
                         const phaseTags: string[] = []
 
@@ -134,7 +150,6 @@ song start
 
                         const commonTags = [layerTag].concat(phaseTags)
 
-
                         rawObjects.forEach((str: string, objIdx: number) => {
                             const groupId = randId('', 3)
                             const groupIdTag = `groupId=${groupId}`
@@ -148,12 +163,10 @@ song start
                             }
 
                             if (isChordCsvArg(str, scaleTonic, scaleName)) {
-
                                 const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
                                 if (notes.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
-
 
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...tags, ...timingTags, groupIdTag])
                                 receptacle.push(...notes.map(fn).map((n, idx) => {
@@ -186,6 +199,7 @@ song start
                         })
                     }
                 },
+
                 repack: {
                     help: {
                         description: `

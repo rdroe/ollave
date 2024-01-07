@@ -33,7 +33,6 @@ export type PhaseRecord = {
     scaleTonic: string | null
 }
 
-
 export default {
     fn: async () => {
         return null

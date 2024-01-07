@@ -153,6 +153,7 @@ export const deleteTagByName = (tagsReference: string[]) => {
 }
 
 export const latestNote = (notes1: NoteByBar[]): NoteByBar | null => {
+
     const sortedNotes1 = notes1.slice().sort(({ tags: aTags }, { tags: bTags }) => {
         const timeA = calcFractionalDelay(
             parseNoteTags(aTags),
@@ -166,9 +167,17 @@ export const latestNote = (notes1: NoteByBar[]): NoteByBar | null => {
         return ret1
 
     }).reverse()
+    console.log('next123 notes', sortedNotes1)
     const latestChordNote = sortedNotes1.find(({ tags }) => {
+        console.log('next123 chord', tags)
         return !!tags.find((tag) => tag.startsWith('chord'))
     })
+
+    if (latestChordNote === undefined && sortedNotes1 && sortedNotes1.length > 0) {
+        console.error('Could not find any notes with a `chord*` tag')
+    }
+
+    console.log('next123 notes2', latestChordNote)
     return latestChordNote ?? null
 }
 

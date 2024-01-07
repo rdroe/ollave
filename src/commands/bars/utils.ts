@@ -86,14 +86,15 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
     const cnwn = chordNameWithNotes(csv[0], csv[1])
     let notes: string[] | undefined
     const tags: string[] = []
-    tags.push(`chord=${cnwn.name}`)
+    console.log('cnwn notes123', csv)
+
     if (graph) {
         if (graph[csv[0]]) {
             if (graph[csv[0]].translatedSource.notes) {
                 const graphChordData = graph[csv[0]]
                 notes = graphChordData.translatedSource.notes
                 tags.push(`roman=${graphChordData.roman}`)
-
+                tags.push(`chord=${graphChordData.translatedSource.name}`)
                 if (graphChordData.translatedSource.octMap && hasOctaveFilter(notes).length === 0) {
                     return [graphChordData.translatedSource.octMap(notes, csv[1]), tags]
                 }
@@ -101,12 +102,11 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
             }
         }
     }
-
+    tags.push(`chord=${cnwn.name}`)
     if (!notes) {
         notes = cnwn.notes
-        return [notes, tags]
     }
-    return [[], []]
+    return [notes, tags]
 
 }
 
@@ -127,6 +127,7 @@ export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
     return (noteName: string): NoteByBar => {
 
         console.log('makeFulfilled...', { barTag, extraTags, noteName })
+
         const noteProperties = Note.get(noteName)
         const { oct, letter, acc } = noteProperties
 
