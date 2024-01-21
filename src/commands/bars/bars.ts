@@ -1,17 +1,18 @@
 import { Module, awaitAll } from 'peprn/util'
 import { randId } from 'src/lib/helpers'
-import { getAllPhaseBars } from 'src/mem-db'
+import { getAllPhaseBars, sortByNumberAfterColon } from 'src/mem-db'
 import { NoteByBar, mem } from '../../mem'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
 import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
 import { BAR, EIGHTH, tickCounts } from '../phase/observables/masterTicksObservable'
-import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag } from 'src/lib/tags'
+import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag, parseNoteTags } from 'src/lib/tags'
 import { isAbbreviationCsv, sumAbbreviationCsv } from '../notes/notes'
 
 const { notesByBar } = mem()
 
 export default {
     fn: async (_, subCalls) => {
+
         awaitAll({
             ...subCalls,
         }).then(() => {
@@ -20,6 +21,28 @@ export default {
     },
     submodules: {
         '$': {
+            fn: async ({ $, positionalNonCommands }, subCalls) => {
+                const longestCall = Math.max(...Object.keys(subCalls).map(sc => sc.length))
+                const ownLength = `bars $`.length
+                if (ownLength === longestCall) {
+                    const [phaseName] = $
+                    return Object.fromEntries(Object.entries(mem().notesByBar).filter(([k]) => k.startsWith(`${phaseName}:`)).map(([k, v]: [k: string, v: NoteByBar[]]) => {
+
+                        const allChords = v.reduce((accum: string[], curr: NoteByBar) => {
+                            const parsed = Object.fromEntries(parseNoteTags(curr.tags))
+                            console.log('tags obj', { parsed })
+                            const [chordName] = parsed.chord
+                            if (typeof chordName !== 'string') throw new Error(`Invalid chord identifier ${chordName}`)
+                            if (chordName === '') return accum
+                            if (accum.includes(chordName)) return accum
+                            return [...accum, chordName]
+                        }, [] as string[])
+
+                        return [k, allChords]
+                    }))
+                }
+
+            },
             submodules: {
                 fill: {
                     help: {
@@ -61,6 +84,7 @@ song start
 
                         const commonTags = [layerTag].concat(phaseTags)
 
+
                         rawObjects.forEach((str: string, objIdx: number) => {
                             const groupId = randId('', 3)
                             const groupIdTag = `groupId=${groupId}`
@@ -73,7 +97,11 @@ song start
                                 timingTags.push(`${EIGHTH}=${round}`)
                             }
 
+
                             if (isChordCsvArg(str, scaleTonic, scaleName)) {
+
+
+
                                 const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
                                 if (notes.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
@@ -91,6 +119,7 @@ song start
                                         ]
                                     }
                                 }))
+                                console.log('receptacle', receptacle)
                             } else if (isRestArg(str)) {
 
                                 // doing nothing will leave an empty space.
@@ -102,6 +131,7 @@ song start
                                 }
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(...parsed.map(fn))
+
 
                             } else if (isNoteName(str)) {
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
@@ -123,17 +153,21 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
                     },
                     fn: async ({ $: dollar, positionalNonCommands }) => {
 
+
                         const [phaseName] = dollar
                         const rawObjects = positionalNonCommands
                         if (typeof phaseName !== 'string') return 'PHASE NAME IS REQUIRED'
+
                         const phase = mem().phases[phaseName]
                         const { scaleTonic, scaleName } = phase
+
+
 
                         const bars = getAllPhaseBars(phaseName)
                         const barIdxs = bars.map((barName) => parseInt(barName.split(':')[1]))
 
                         const maxBarRaw = Math.max(...barIdxs)
-                        const maxBar = isNaN(maxBarRaw ? 0 : maxBarRaw)
+                        const maxBar = isNaN(maxBarRaw) ? 0 : maxBarRaw
 
                         const newGroupName = randId("", 3)
                         const phaseTags: string[] = []
@@ -151,18 +185,21 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
                         const commonTags = [layerTag].concat(phaseTags)
 
                         rawObjects.forEach((str: string, objIdx: number) => {
+
                             const groupId = randId('', 3)
                             const groupIdTag = `groupId=${groupId}`
-                            const round = Math.trunc(objIdx / bars.length)
-                            const barTag = bars[objIdx % bars.length]
-                            const receptacle: NoteByBar[] = notesByBar[barTag]
+
+                            const barTag = `${phaseName}:${objIdx + 1 + maxBar}`
+
+                            console.log('bar tag', barTag)
+                            const receptacle: NoteByBar[] = []
+                            mem().notesByBar[barTag] = receptacle
+
                             const timingTags: string[] = []
 
-                            if (round > 0) {
-                                timingTags.push(`${EIGHTH}=${round}`)
-                            }
 
                             if (isChordCsvArg(str, scaleTonic, scaleName)) {
+
                                 const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
                                 if (notes.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
@@ -170,6 +207,8 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
 
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...tags, ...timingTags, groupIdTag])
                                 receptacle.push(...notes.map(fn).map((n, idx) => {
+
+
                                     return {
                                         ...n,
                                         tags: [
@@ -196,8 +235,42 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(fn(str))
                             }
+                            console.log('awf', mem().notesByBar)
                         })
                     }
+
+                },
+                remove: {
+                    help: {
+                        description: "Remove the last bar from the specified phase",
+                        examples: {
+                            'remove': `Remove the last bar from the dollar-specified phase`
+                        }
+                    },
+                    fn: async ({ $: dollar }) => {
+
+
+                        const [phaseName] = dollar
+                        if (typeof phaseName !== 'string') return 'PHASE NAME IS REQUIRED'
+
+
+                        const bars = getAllPhaseBars(phaseName)
+                        bars.sort(sortByNumberAfterColon)
+                        const deleteable = bars[bars.length - 1]
+
+                        mem().notesByBar = {
+                            ...Object.fromEntries(Object.entries(mem().notesByBar).filter(([k, v]: [k: string, v: NoteByBar[]]) => {
+                                return k !== deleteable
+                            }))
+                        }
+                        if (mem().notesByBar[deleteable]) {
+                            throw new Error(`Did not remove ${deleteable} for some reason`)
+                        }
+
+                        return { formatted: 'verified removal of ${deleteable}' }
+
+                    }
+
                 },
 
                 repack: {
@@ -287,7 +360,7 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
                                 detachedBars.flat(),
                                 'groupId'
                             )
-
+                            console.log('got detached groups 1', detachedGroups)
                             const absolutizedPackTranslation = pack.reduce((accum: number[], currCsv: string) => {
                                 const priorRaw = accum.length === 0 ? 0 : accum[accum.length - 1]
                                 const prior: number = typeof priorRaw === 'number' ? priorRaw : 0
@@ -298,32 +371,39 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
 
                             let prior = 0
 
+                            // build a list of the tick times that pertain to each bar.
+                            // in this FRACTIONAL plan, the absolutized fractions each must find its bar
+                            // note that we are using let, as this will be consumed as we fill each bar
                             let barRanges = bars.map((barName, idx) => {
+
                                 const nxt = [prior, prior + tickCounts[BAR]
 
                                 ]
                                 prior += tickCounts[BAR]
                                 return nxt
                             })
-
+                            // receptacle for the re-packed bars 
                             const newNotesByBar =
                                 Object.fromEntries(
-
                                     bars.map((bar) => [bar, []] as [bar: string, notes: NoteByBar[]])
                                 )
 
-                            let reps = -1
+
                             let packOffset = 0
+                            // count the number of times we have iterated the --pack argument.
                             let packIterations = 0
 
-                            while (barRanges.length && reps < 10) {
+                            while (barRanges.length) {
                                 let lastFilled = -1
 
-                                reps += 1
                                 // pack converted to numbers.
                                 // now the phase-absolute numbers need to be distributed to the corresponding bars. 
                                 absolutizedPackTranslation.forEach((numRaw: number, groupIdx: number) => {
-                                    const num = numRaw + packOffset
+
+                                    // the packOffset is the first star time in the available barRanges
+                                    // (the barRanges array is sliced and  maintaned ongoingly, but we need the first-available number)
+                                    if (!barRanges.length) return
+                                    const num = numRaw + barRanges[0][0]
 
                                     // found a bar in which to insert it
                                     const found = barRanges.find(
@@ -340,12 +420,13 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
 
                                         const offset = bars.length - barRanges.length
                                         const adjustedGroupIdx = (packIterations * absolutizedPackTranslation.length) + groupIdx
-                                        const notes = detachedGroups[adjustedGroupIdx]
+                                        const notes = detachedGroups[adjustedGroupIdx % detachedGroups.length]
                                         if (!notes) {
                                             console.error('Could not get detached notes targeted for repack', {
-                                                detachedGroups, groupIdx
+                                                detachedBars, detachedGroups, offset, adjustedGroupIdx, packIterations, absolutizedPackTranslation, groupIdx,
                                             })
                                         }
+                                        console.log('pushing in notes')
                                         newNotesByBar[bars[foundIdx + offset]].push(...notes.map(
                                             n => ({
                                                 ...filterBarDelayTag(n),
@@ -360,7 +441,6 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
 
                                 barRanges = barRanges.slice(lastFilled + 1)
                                 if (barRanges.length) {
-                                    packOffset = barRanges[0][0]
                                 }
                                 packIterations += 1
 

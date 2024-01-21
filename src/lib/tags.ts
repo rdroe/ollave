@@ -128,7 +128,7 @@ export const groupNotesByFirstTagDatum = (notes: NoteByBar[], tag: TagEntry[0]):
         } else throw new Error(`While grouping notes, the group identifier datum was non-number and non-string`)
 
     })
-
+    console.log('group result', hash)
     return Object.values(hash)
 }
 

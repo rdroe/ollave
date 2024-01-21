@@ -75,7 +75,9 @@ export const SIXTEENTH = 'sixteenth' as const
 export const THIRTY_SECOND = 'thirtySecond' as const
 export const SIXTY_FOURTH = 'sixtyFourth'
 export const ONE_TWENTY_EIGHTH = 'oneTwentyEighth'
+export const ZERO = 'zero' as const
 export const tickCounts = {
+    [ZERO]: 0,
     [BAR]: ppq * 4, // 128 ppq * 4
     [HALF]: ppq * 4 / 2, // 128 * 2
     [QUARTER]: ppq * 4 / 4, // 128 
@@ -100,10 +102,11 @@ export const oneTwentyEighthCounts = {
     [SIXTEENTH]: 8,
     [THIRTY_SECOND]: 4,
     [SIXTY_FOURTH]: 2,
-    [ONE_TWENTY_EIGHTH]: 1
+    [ONE_TWENTY_EIGHTH]: 1,
+    [ZERO]: 0
 }
 
-export type Abbreviation = 'bar' | 'half' | '4th' | '8th' | '16th' | '32nd' | '64th' | '128th'
+export type Abbreviation = 'bar' | 'half' | '4th' | '8th' | '16th' | '32nd' | '64th' | '128th' | '0th'
 
 export const abbrev = {
     'bar': BAR,
@@ -114,6 +117,7 @@ export const abbrev = {
     '32nd': THIRTY_SECOND,
     '64th': SIXTY_FOURTH,
     '128th': ONE_TWENTY_EIGHTH,
+    '0th': ZERO
 } as { [Property in Abbreviation]: keyof typeof tickCounts }
 
 export const isAbbreviation = (unk: unknown): unk is Abbreviation => {

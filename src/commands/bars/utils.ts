@@ -70,7 +70,18 @@ const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
 
 }
 
+const raiseOctaveOfChordNotes = (notes: string[], rootOctave: number, chordLetter?: string) => {
+    const root = chordLetter ? notes.find((n) => n.toUpperCase().startsWith(chordLetter)) : notes[0]
+    const currOctave = Note.get(root).oct
 
+    const diff = currOctave - rootOctave
+    if (diff === 0) return notes
+    return notes.map((noteName: string) => {
+        const [name, oct] = [Note.get(noteName).pc, Note.get(noteName).oct]
+
+        return `${name}${oct - diff}`
+    })
+}
 
 export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [notes: string[], tags: string[]] => {
     if (!isCsvArg(str)) throw new Error(`${str} is not a chord csv arg`)
@@ -86,7 +97,7 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
     const cnwn = chordNameWithNotes(csv[0], csv[1])
     let notes: string[] | undefined
     const tags: string[] = []
-    console.log('cnwn notes123', csv)
+
 
     if (graph) {
         if (graph[csv[0]]) {
@@ -96,17 +107,25 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
                 tags.push(`roman=${graphChordData.roman}`)
                 tags.push(`chord=${graphChordData.translatedSource.name}`)
                 if (graphChordData.translatedSource.octMap && hasOctaveFilter(notes).length === 0) {
+
                     return [graphChordData.translatedSource.octMap(notes, csv[1]), tags]
                 }
-                return [notes, tags]
+                const raised = raiseOctaveOfChordNotes(notes, csv[1], Chord.get(graphChordData.translatedSource.name).tonic)
+
+                return [raised, tags]
             }
         }
     }
+
+
     tags.push(`chord=${cnwn.name}`)
     if (!notes) {
         notes = cnwn.notes
     }
-    return [notes, tags]
+
+    const raised = raiseOctaveOfChordNotes(notes, csv[1], Chord.get(cnwn.name).tonic)
+
+    return [raised, tags]
 
 }
 
@@ -125,8 +144,6 @@ export const isChordCsvArg = (str: string, userTonic?: string, userScale?: strin
 
 export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
     return (noteName: string): NoteByBar => {
-
-        console.log('makeFulfilled...', { barTag, extraTags, noteName })
 
         const noteProperties = Note.get(noteName)
         const { oct, letter, acc } = noteProperties

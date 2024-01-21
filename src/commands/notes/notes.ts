@@ -52,7 +52,7 @@ export const getNotesByEntity = (
     dollar: ParsedCli["positionalNonCommands"],
     positionalNonCommands: ParsedCli["positionalNonCommands"]
 ) => {
-    console.log('input to gnbe', dollar, positionalNonCommands)
+
     const phaseOrBar = shiftDollarEntity(dollar)
     const entityName = z.string().parse(
         dollar.shift()
@@ -72,7 +72,7 @@ export const getNotesByEntity = (
         const all = Object.values(mem().notesByBar).flat().filter((n) => {
             const parsed = parseNoteTags(n.tags)
             return parsed.find(([tagName, data]) => {
-                console.log('matchy', { tagName, data, positionalNonCommands })
+
                 const tagNameMatch = tagName === entityName
                 if (!tagNameMatch) return false
                 if (positionalNonCommands === undefined || positionalNonCommands.length === 0) return true
@@ -284,7 +284,6 @@ export default {
             fn: async () => {
 
             }
-
         },
         'in': {
             fn: async () => { },
@@ -321,12 +320,8 @@ export default {
                                             throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
                                         }
 
-
-
                                         const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
                                         const delaysPerChordSize = parseDelayMatrix(prepped)
-
-
 
                                         notes1.forEach((nt) => {
 
@@ -343,7 +338,6 @@ export default {
                                             if (!noteLookup) {
                                                 return
                                             }
-
 
                                             const [chordIdx] = parsed.groupIndex
 
@@ -370,6 +364,7 @@ export default {
                                                 nt.tags.push(...newTags)
                                             }
                                         })
+
                                         mem().latestMap = mapSongToMidiTicks()
                                         return notes1
 

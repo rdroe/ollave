@@ -68,7 +68,7 @@ export async function phaseUnfollows(subject: string, objects?: string[]) {
 
 }
 
-const sortByNumberAfterColon = (a: string, b: string) => {
+export const sortByNumberAfterColon = (a: string, b: string) => {
     const aNumber = parseInt(a.split(':')[1])
     const bNumber = parseInt(b.split(':')[1])
     return aNumber - bNumber
