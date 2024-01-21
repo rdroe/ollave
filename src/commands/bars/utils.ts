@@ -71,14 +71,33 @@ const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
 }
 
 const raiseOctaveOfChordNotes = (notes: string[], rootOctave: number, chordLetter?: string) => {
-    const root = chordLetter ? notes.find((n) => n.toUpperCase().startsWith(chordLetter)) : notes[0]
+    const root = chordLetter ? notes.find((n) => {
+        let casedNote = n
+        if (n[0].toLowerCase() == n[0]) {
+
+            casedNote = `${n[0].toUpperCase()}${n.slice(1)}`
+
+        }
+        console.log('cased note')
+        return casedNote.startsWith(chordLetter)
+    }) : notes[0]
     const currOctave = Note.get(root).oct
 
     const diff = currOctave - rootOctave
     if (diff === 0) return notes
     return notes.map((noteName: string) => {
         const [name, oct] = [Note.get(noteName).pc, Note.get(noteName).oct]
-
+        console.log('original and result', {
+            chordLetter,
+            notes,
+            root,
+            currOctave,
+            rootOctave,
+            noteName,
+            diff,
+            name,
+            oct
+        })
         return `${name}${oct - diff}`
     })
 }
@@ -107,11 +126,11 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
                 tags.push(`roman=${graphChordData.roman}`)
                 tags.push(`chord=${graphChordData.translatedSource.name}`)
                 if (graphChordData.translatedSource.octMap && hasOctaveFilter(notes).length === 0) {
-
+                    console.log('chord data returning', graphChordData.translatedSource.octMap(notes, csv[1]), tags)
                     return [graphChordData.translatedSource.octMap(notes, csv[1]), tags]
                 }
                 const raised = raiseOctaveOfChordNotes(notes, csv[1], Chord.get(graphChordData.translatedSource.name).tonic)
-
+                console.log('raised notes returning', raised)
                 return [raised, tags]
             }
         }

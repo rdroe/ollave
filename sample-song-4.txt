@@ -14,7 +14,7 @@ song start
 then,
 
 chord Am in phase aphrodite arrange 2x 0 half,4th 1 8th 2 16th  3 3x 0 4th,4th 1 8th 2 4x 0 half,4th 1 8th,8th 2 4th,16th,4th 5 half
-
+NOTE: it is a known problem that listing 2 note indexes (e.g 0 1) without measurements causes an error. 
 (Note that NOT using comma groupings in an arrange call  causes arpeggiation. That is, the fractions are counted as delays since the last note.
 
 chord Am in phase aphrodite arrange 2x 0 half 4th 1 8th 2 16th  3 3x 0 4th 4th 1 8th 2 4x 0 half 4th 1 8th 8th 2 4th 16th 4th 5 half

@@ -138,6 +138,7 @@ song start
                 }
             },
             fn: async () => {
+
                 const songName = mem().song.name
                 const publishedCursro = mem().adjustedCursor
 
@@ -146,7 +147,6 @@ song start
 
                 if (observable) {
                     mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
-
                     observable.unsubscribe()
                 }
 
