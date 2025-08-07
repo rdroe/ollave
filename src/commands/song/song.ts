@@ -120,12 +120,10 @@ song start
                 }
             },
             fn: async ({ all = false }) => {
-                console.log('all', all)
                 if (all) {
-
                     return mem()
                 }
-                return mem().notesByBar[mem().song.name]
+                return mem().notesByBar
             }
         },
         start: {

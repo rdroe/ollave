@@ -364,17 +364,17 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
                                 return [...accum, newTick]
                             }, [] as number[])
 
+                            console.log('absolutized pack translation', absolutizedPackTranslation)
+
 
                             let prior = 0
 
                             // build a list of the tick times that pertain to each bar.
                             // in this FRACTIONAL plan, the absolutized fractions each must find its bar
-                            // note that we are using let, as this will be consumed as we fill each bar
+                            // note that we are using, as this will be consumed as we fill each bar
                             let barRanges = bars.map((barName, idx) => {
 
-                                const nxt = [prior, prior + tickCounts[BAR]
-
-                                ]
+                                const nxt = [prior, prior + tickCounts[BAR]]
                                 prior += tickCounts[BAR]
                                 return nxt
                             })
