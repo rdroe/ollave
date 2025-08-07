@@ -116,7 +116,6 @@ export const isAbbreviationCsv = (csvOrSingleFract: any) => {
     return false
 }
 export const parseAbbreviationCsv = (csvOrSingleFract: string) => {
-    console.log('csvOrSingle', csvOrSingleFract)
     let parsedCsvArg: Abbreviation[] | undefined
     if (csvOrSingleFract === null) {
         parsedCsvArg = []
@@ -137,7 +136,6 @@ export const parseAbbreviationCsv = (csvOrSingleFract: string) => {
     } else {
         throw new Error(`Should be a csv arg of fractions or single fraction: ${csvOrSingleFract}`)
     }
-    console.log('returning', parsedCsvArg)
     return parsedCsvArg
 }
 
@@ -327,7 +325,6 @@ export default {
 
                                             const parsed = Object.fromEntries(parseNoteTags(nt.tags))
                                             const [subdataKey] = parsed.chordSize
-
                                             if (
                                                 typeof subdataKey !== 'number'
                                                 && typeof subdataKey !== 'string'

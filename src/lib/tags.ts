@@ -128,7 +128,6 @@ export const groupNotesByFirstTagDatum = (notes: NoteByBar[], tag: TagEntry[0]):
         } else throw new Error(`While grouping notes, the group identifier datum was non-number and non-string`)
 
     })
-    console.log('group result', hash)
     return Object.values(hash)
 }
 
@@ -148,12 +147,7 @@ export const tagDataOrNull = (note: NoteByBar, tag: string): null | TagEntry[1] 
 
 }
 
-export const deleteTagByName = (tagsReference: string[]) => {
-
-}
-
 export const latestNote = (notes1: NoteByBar[]): NoteByBar | null => {
-
     const sortedNotes1 = notes1.slice().sort(({ tags: aTags }, { tags: bTags }) => {
         const timeA = calcFractionalDelay(
             parseNoteTags(aTags),
@@ -162,22 +156,15 @@ export const latestNote = (notes1: NoteByBar[]): NoteByBar | null => {
             parseNoteTags(bTags),
         )
         const ret1 = timeB - timeA
-
-
         return ret1
-
     }).reverse()
-    console.log('next123 notes', sortedNotes1)
     const latestChordNote = sortedNotes1.find(({ tags }) => {
-        console.log('next123 chord', tags)
         return !!tags.find((tag) => tag.startsWith('chord'))
     })
 
     if (latestChordNote === undefined && sortedNotes1 && sortedNotes1.length > 0) {
         console.error('Could not find any notes with a `chord*` tag')
     }
-
-    console.log('next123 notes2', latestChordNote)
     return latestChordNote ?? null
 }
 

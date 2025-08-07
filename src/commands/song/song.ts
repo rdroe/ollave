@@ -111,6 +111,23 @@ song start
                 },
             }
         },
+        out: {
+            yargs: {
+                all: {
+                    alias: 'a',
+                    type: 'boolean',
+                    default: false
+                }
+            },
+            fn: async ({ all = false }) => {
+                console.log('all', all)
+                if (all) {
+
+                    return mem()
+                }
+                return mem().notesByBar[mem().song.name]
+            }
+        },
         start: {
             help: {
                 description: 'Start playing the song',

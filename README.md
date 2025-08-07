@@ -91,6 +91,22 @@ bars aphrodite add F,4 G,4
 bars aphrodite repack --pack 2 4 6 2
 ```
 
+### Note Timing and Delays
+
+```bash
+# Add chord to specific bar with tick delay
+bar aphrodite:0 chord C,3 add 120
+
+# Add chord with fractional delay
+bar aphrodite:0 chord F,3 add 60 --delay 8th 16th
+
+# Arrange notes with timing patterns
+notes in phase aphrodite arrange 2 8th,4th half 4th,16th 4 16th,32nd
+
+# Apply delay matrix to existing notes
+notes in phase aphrodite arrange 3 8th,4th 2 16th,32nd
+```
+
 ### Chord Utilities
 
 ```bash
@@ -156,6 +172,20 @@ song start
 phase intro 8
 bars intro repack --pack 4th,8th half 4th,16th
 song start
+```
+
+### Advanced Note Timing
+
+```bash
+# Create phase with precise note timing
+phase melody 4
+bars melody fill C,3 D,3 E,3 F,3
+
+# Add timing variations to existing notes
+notes in phase melody arrange 2 8th,4th 2 16th,32nd
+
+# Create arpeggiated patterns
+notes in phase melody arrange 3 8th,4th 2 16th,32nd 1 32nd,64th
 ```
 
 ## 🎛️ Data Model
@@ -261,16 +291,25 @@ Bars contain the actual musical content:
 ### Ticks
 The application uses MIDI ticks for precise timing:
 - Default tempo: 120 BPM
-- Tick resolution: 480 ticks per quarter note
+- Tick resolution: 128 ticks per quarter note (PPQ)
 - Supports fractional timing and delays
 - Real-time tick emission for live playback
+
+### Timing System
+The timing system supports multiple levels of precision:
+- **Bar-level timing**: `barDelay=120` (tick offset within bar)
+- **Fractional timing**: `8th=1`, `16th=2` (musical note divisions)
+- **Delay patterns**: `8th,4th half 4th,16th` (complex timing matrices)
+- **Arpeggiation**: Automatic note spacing for chord voicings
 
 ### Tags
 Notes use a rich tagging system:
 - `chord=Cmaj` - Chord identification
 - `scaleTonic=C` - Scale root note
 - `scaleName=major` - Scale type
-- `delay=0.5` - Timing offset
+- `barDelay=120` - Tick-based timing offset
+- `8th=1` - Fractional note timing (8th note delay)
+- `16th=2` - Multiple fractional delays
 - `layer=abc123` - Grouping identifier
 
 ## 🚀 Advanced Features
@@ -293,6 +332,14 @@ Automatic scale-aware composition:
 - Chord progressions respect assigned scales
 - Note selection follows scale patterns
 - Roman numeral analysis support
+
+### Timing and Arpeggiation
+Advanced timing features for musical expression:
+- **Fractional delays**: Use musical note values (8th, 16th, 32nd, etc.)
+- **Delay matrices**: Apply complex timing patterns to note groups
+- **Arpeggiation**: Automatic chord note spacing with `notes arrange`
+- **Bar-level timing**: Precise tick-based positioning within bars
+- **Pattern repetition**: Apply timing patterns across multiple notes
 
 ## 🤝 Contributing
 

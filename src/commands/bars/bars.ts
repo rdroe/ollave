@@ -30,7 +30,6 @@ export default {
 
                         const allChords = v.reduce((accum: string[], curr: NoteByBar) => {
                             const parsed = Object.fromEntries(parseNoteTags(curr.tags))
-                            console.log('tags obj', { parsed })
                             const [chordName] = parsed.chord
                             if (typeof chordName !== 'string') throw new Error(`Invalid chord identifier ${chordName}`)
                             if (chordName === '') return accum
@@ -119,7 +118,6 @@ song start
                                         ]
                                     }
                                 }))
-                                console.log('receptacle', receptacle)
                             } else if (isRestArg(str)) {
 
                                 // doing nothing will leave an empty space.
@@ -191,7 +189,6 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
 
                             const barTag = `${phaseName}:${objIdx + 1 + maxBar}`
 
-                            console.log('bar tag', barTag)
                             const receptacle: NoteByBar[] = []
                             mem().notesByBar[barTag] = receptacle
 
@@ -235,7 +232,6 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(fn(str))
                             }
-                            console.log('awf', mem().notesByBar)
                         })
                     }
 
@@ -290,7 +286,7 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
                         }
                     },
                     fn: async ({ '$': dollar, pack }) => {
-                        console.log('tick counts', tickCounts)
+
                         const [phaseName] = dollar
                         const phase = mem().phases[phaseName]
                         const barSizeMod = phase.barSizeMultiplier
@@ -360,7 +356,7 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
                                 detachedBars.flat(),
                                 'groupId'
                             )
-                            console.log('got detached groups 1', detachedGroups)
+
                             const absolutizedPackTranslation = pack.reduce((accum: number[], currCsv: string) => {
                                 const priorRaw = accum.length === 0 ? 0 : accum[accum.length - 1]
                                 const prior: number = typeof priorRaw === 'number' ? priorRaw : 0
@@ -426,7 +422,7 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
                                                 detachedBars, detachedGroups, offset, adjustedGroupIdx, packIterations, absolutizedPackTranslation, groupIdx,
                                             })
                                         }
-                                        console.log('pushing in notes')
+
                                         newNotesByBar[bars[foundIdx + offset]].push(...notes.map(
                                             n => ({
                                                 ...filterBarDelayTag(n),

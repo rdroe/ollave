@@ -12,7 +12,6 @@ export default {
                 } else {
                     mem().doLog = true
                 }
-                console.log('logging var', mem().doLog)
                 return Promise.resolve()
             }
 

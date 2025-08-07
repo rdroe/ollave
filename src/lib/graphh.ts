@@ -208,10 +208,6 @@ export const getTriadByRomanNumeral = async (scaleTonic: string, scaleName: stri
     })
 
     return found[1].chordName
-
-
-    //    return newName
-
 }
 
 function romanEntry(progRoman: string) {
@@ -400,10 +396,6 @@ export const combineEntriesByName = (progOptions: ProgressionOptions[]): Progres
             dotted: [...accum.dotted, ...curr.dotted]
         }
     }, progOptions[0] as ProgressionOptions)
-}
-
-export const graphChordNotes = () => {
-
 }
 
 export const minor: { [name: string]: ProgressionGraphNode[] } = {

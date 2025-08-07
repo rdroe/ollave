@@ -194,10 +194,6 @@ document.body.onload = () => {
                     && multilineTot === multilineIndex + 1
                 )
 
-            if (isFinalLine && isMultiline) {
-                console.log('multiline data', { ancDepth: parsedCli['peprn:ancestralDepth'] })
-            }
-
             if (!dataContainer) {
                 console.error('could not find output region for peprn commands')
             }

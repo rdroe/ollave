@@ -172,7 +172,6 @@ song start
                                 '$': {
 
                                     fn: async ({ $: dollar, positionalNonCommands }) => {
-                                        console.log('next123', positionalNonCommands)
                                         const notes1 = getNotesByEntity(dollar, positionalNonCommands)
                                         const latestChordNote = latestNote(notes1)
 
@@ -185,7 +184,6 @@ song start
                                         if (typeof chordName !== 'string') {
                                             throw new Error(`could not get chord name; instead ${chordName}`)
                                         }
-                                        console.log('next123', chordName)
 
                                         let scaleName: [tonic: string, name: string] | undefined
                                         if (userLetter && userScale) {
@@ -210,11 +208,11 @@ song start
                                         }
 
                                         if (!graph) {
-                                            throw new Error(`could not obtain graph for ${scale}`)
+                                            throw new Error(`could not obtain graph for ${scaleName}`)
                                         }
 
                                         if (!graph[chordName]) {
-                                            throw new Error(`could not obtain ${chordName} in graph for ${scale}`)
+                                            throw new Error(`could not obtain ${chordName} in graph for ${scaleName}`)
                                         }
 
                                         const next = graph[chordName]?.next
