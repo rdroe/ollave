@@ -179,19 +179,15 @@ document.body.onload = () => {
         catch: (e) => {
             console.error('error', e)
         },
-
         dataHandler: async (parsedCliRaw, data, id) => {
             const parsedCli = JSON.parse(JSON.stringify(parsedCliRaw))
             const rawIn = parsedCli.rawIn
             const dataContainer = apps[id].dataEl
             let didPrint: boolean = false
-            const isAutomated = parsedCli[PEPRN_AUTO]
-            const isChildmost = parsedCli['peprn:childmost']
             const ancDepth = parsedCli['peprn:ancestralDepth']
             const isMultiline = parsedCli[PEPRN_MULTILINE]
             const multilineTot = parsedCli[PEPRN_MULTILINE_TOTAL]
             const multilineIndex = parsedCli[PEPRN_MULTILINE_INDEX]
-
             const isFinalLine = !isMultiline ||
                 (
                     typeof multilineTot === 'number' && typeof multilineIndex === 'number'
@@ -200,10 +196,7 @@ document.body.onload = () => {
 
             if (isFinalLine && isMultiline) {
                 console.log('multiline data', { ancDepth: parsedCli['peprn:ancestralDepth'] })
-
-                //                console.log('multiline data', { isFinalLine, isMultiline, multilineIndex, input: parsedCli.rawIn })
             }
-
 
             if (!dataContainer) {
                 console.error('could not find output region for peprn commands')
