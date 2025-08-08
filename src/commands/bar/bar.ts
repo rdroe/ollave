@@ -53,6 +53,7 @@ export default {
                                     },
                                     // e.g. bar [barTag] chord [chordName] add [tickCnt]
                                     fn: async ({ $: dollar, positionalNonCommands, delay }) => {
+                                        console.log('dollar in bar chord add', dollar)
                                         const [barTag, chordName] = dollar
                                         if (!isChordCsvArg(chordName)) {
                                             throw new Error(`Chord and octave csv required; instead  "${chordName}"`)
@@ -62,13 +63,24 @@ export default {
                                         const [ticks] = positionalNonCommands
                                         const barNotes = mem().notesByBar[barTag]
                                         const layerTag = `layer=${randId('', 3)}`
+                                        const chordSizeTag = `chordSize=${notes.length}`
                                         const placementTag = `barDelay=${ticks}`
                                         const delayTags = cliDelaysToTags(delay)
 
                                         const addNote = makeFulfilledBarNote(barTag, [layerTag, placementTag, ...chordTags, ...delayTags])
-
-
-                                        barNotes.push(...notes.map(addNote))
+                                        barNotes.push(...notes.map((n, idx) => {
+                                            const initNote = addNote(n)
+                                            
+                                            return {
+                                                ...initNote,
+                                                tags: [
+                                                    ...initNote.tags,
+                                                    `groupIndex=${idx}`,
+                                                    `chordSize=${notes.length}`,
+        
+                                                ]
+                                            }
+                                        }))
 
                                     }
                                 }

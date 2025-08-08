@@ -48,7 +48,21 @@ const module: Module = {
     help: {
         description: 'Create a subscribable time interval',
     },
-    fn: async (args) => {
+
+    fn: async ({
+        $: dollar,
+        positionalNonCommands: [phaseName, ...rest]
+    }) => {
+
+        if (!isString(phaseName)) {
+            throw new Error('Phase name is required')
+        }
+
+        if (rest.length === 0) {
+            throw new Error('Further arguments are required')
+        }
+
+
         return null
     },
     submodules: {
@@ -99,7 +113,7 @@ const module: Module = {
                 },
                 push: {
 
-                }
+                },
 
             }
         }

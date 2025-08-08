@@ -52,7 +52,6 @@ Put the chord Em in the first bar (octave three), Am in the second, rest in the 
 
 phase aphrodite 10
 bars aphrodite fill Em,3 Am,3 [] C3,E3,G#3
-phase aphrodite 20
 song start
 `
                         }
@@ -98,9 +97,6 @@ song start
 
 
                             if (isChordCsvArg(str, scaleTonic, scaleName)) {
-
-
-
                                 const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
                                 if (notes.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
@@ -129,11 +125,11 @@ song start
                                 }
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(...parsed.map(fn))
-
-
                             } else if (isNoteName(str)) {
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(fn(str))
+                            } else {
+                                throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                             }
                         })
                     }
@@ -272,20 +268,31 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
                 repack: {
                     help: {
                         description: `
+a pakk pattern works across the entire phase.
+a stuff pattern tries to make each bar a microcosm of the phase.
+
+whole number example:
 bars aphrodite repack --pack 2 4 6 2
 
 the above line stuffs the existing bars' timing more tightly into  aphrodite's bars. in this example,the  evenly-spaced original bars will be resituatied with  2 to bar 0, 4 to bar 1, 6 to bar 2, 2 to bar 3, then 2 to bar 4, and so on.
 
-bars aphrodite repack --pack 4th,8th half 4th,16th
+fractional example:
+bars aphrodite repack --stuff 4th,8th half 4th,16th
+
+this example stuffs the existing bars' timing more tightly into  aphrodite's bars. in this example,the  evenly-spaced original bars will be resituatied with  4th to bar 0, 8th to bar 1, half to bar 2, 4th to bar 3, 16th to bar 4, and so on. 
 `
                     },
                     yargs: {
                         pack: {
                             alias: 'k',
                             array: true,
-                        }
+                        },
+                        stuff: {
+                            alias: 'f',
+                            array: true,
+                        },
                     },
-                    fn: async ({ '$': dollar, pack }) => {
+                    fn: async ({ '$': dollar, pack = [], stuff = [] }) => {
 
                         const [phaseName] = dollar
                         const phase = mem().phases[phaseName]
@@ -295,6 +302,16 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
                         const detachedBars: NoteByBar[][] = []
                         const notesByBar = mem().notesByBar
 
+                        if (pack.length > 0 && stuff.length > 0) {
+                            throw new Error('Either --pack or --stuff is required, but not both')
+                        }
+                        if (pack.length === 0 && stuff.length === 0) {
+                            throw new Error('Either --pack or --stuff is required')
+                        }
+                        const packOrStuff: 'pack' | 'stuff' = pack.length > 0 ? 'pack' : 'stuff' 
+                        const packk = pack.length > 0 ? pack : stuff
+
+
                         // strip existing bar tag
                         bars.forEach((barTag) => {
                             detachedBars.push(
@@ -303,154 +320,173 @@ bars aphrodite repack --pack 4th,8th half 4th,16th
                             notesByBar[barTag] = []
                         })
 
-                        const abbreviations = pack.filter((elem: number | string) => {
+                        const abbreviations = packk.filter((elem: number | string) => {
                             return isAbbreviationCsv(elem)
                         })
 
-                        if (abbreviations.length !== 0 && abbreviations.length !== pack.length) {
-
-                            throw new Error(`Plan for packing must be all fractions or all numeric`)
+                        if (abbreviations.length !== 0 && abbreviations.length !== packk.length) {
+                            throw new Error(`Plan for packing or stuffing must be all fractions or all numeric`)
                         }
 
-                        const packPlanType = abbreviations.length === 0 ? "NUMERIC" : "FRACTIONAL"
+                        const packPlanType: 'NUMERIC' | 'FRACTIONAL' = abbreviations.length === 0 ? "NUMERIC" : "FRACTIONAL"
 
+                        const caseName: "numeric-pack" | "numeric-stuff" | "fractional-pack" | "fractional-stuff" = packOrStuff === 'pack' ? packPlanType === "NUMERIC" ? "numeric-pack" : "fractional-pack" : packPlanType === "NUMERIC" ? "numeric-stuff" : "fractional-stuff"
 
-                        if (packPlanType === "NUMERIC") {
-
-                            bars.forEach((barTag) => {
-                                const spl = barTag.split(':')
-                                const barIdx = parseInt(spl[1])
-                                const packPlanIdx = barIdx % pack.length
-                                const packPlan = pack[packPlanIdx]
-                                if (typeof packPlan !== 'number') {
-                                    throw new Error(`pack plan was non-number`)
-                                }
-                                const nextGroup: NoteByBar[][] = []
-                                while (nextGroup.length < packPlan) {
-                                    nextGroup.push(
-                                        detachedBars.shift()
-                                    )
-                                }
-                                const interim = Math.trunc(
-                                    (tickCounts[BAR] * (barSizeMod || 1))
-                                    /
-                                    nextGroup.length
-                                )
-
-                                nextGroup.forEach((g, groupIdx) => {
-                                    if (!g) return
-                                    g.forEach((note) => {
-
-                                        filterDelayTags(note)
-                                    })
-                                    g.forEach((nt) => {
-                                        nt.tags.push(`barDelay=${interim * groupIdx}`)
-                                    })
-                                    notesByBar[barTag].push(...g)
-                                })
-                            })
-
-                        } else if (packPlanType === "FRACTIONAL") {
-
-                            const detachedGroups = groupNotesByFirstTagDatum(
-                                detachedBars.flat(),
-                                'groupId'
-                            )
-
-                            const absolutizedPackTranslation = pack.reduce((accum: number[], currCsv: string) => {
-                                const priorRaw = accum.length === 0 ? 0 : accum[accum.length - 1]
-                                const prior: number = typeof priorRaw === 'number' ? priorRaw : 0
-                                const newTick = sumAbbreviationCsv(currCsv) + prior
-                                return [...accum, newTick]
-                            }, [] as number[])
-
-                            console.log('absolutized pack translation', absolutizedPackTranslation)
-
-
-                            let prior = 0
-
-                            // build a list of the tick times that pertain to each bar.
-                            // in this FRACTIONAL plan, the absolutized fractions each must find its bar
-                            // note that we are using, as this will be consumed as we fill each bar
-                            let barRanges = bars.map((barName, idx) => {
-
-                                const nxt = [prior, prior + tickCounts[BAR]]
-                                prior += tickCounts[BAR]
-                                return nxt
-                            })
-                            // receptacle for the re-packed bars 
-                            const newNotesByBar =
-                                Object.fromEntries(
-                                    bars.map((bar) => [bar, []] as [bar: string, notes: NoteByBar[]])
-                                )
-
-
-                            let packOffset = 0
-                            // count the number of times we have iterated the --pack argument.
-                            let packIterations = 0
-
-                            while (barRanges.length) {
-                                let lastFilled = -1
-
-                                // pack converted to numbers.
-                                // now the phase-absolute numbers need to be distributed to the corresponding bars. 
-                                absolutizedPackTranslation.forEach((numRaw: number, groupIdx: number) => {
-
-                                    // the packOffset is the first star time in the available barRanges
-                                    // (the barRanges array is sliced and  maintaned ongoingly, but we need the first-available number)
-                                    if (!barRanges.length) return
-                                    const num = numRaw + barRanges[0][0]
-
-                                    // found a bar in which to insert it
-                                    const found = barRanges.find(
-                                        ([start, end]) => {
-                                            return start <= num && end > num
-                                        })
-                                    if (found === undefined) {
-                                        barRanges = []
-                                        return
-                                    }
-                                    const foundIdx = barRanges.indexOf(found)
-                                    lastFilled = foundIdx
-                                    if (found) {
-
-                                        const offset = bars.length - barRanges.length
-                                        const adjustedGroupIdx = (packIterations * absolutizedPackTranslation.length) + groupIdx
-                                        const notes = detachedGroups[adjustedGroupIdx % detachedGroups.length]
-                                        if (!notes) {
-                                            console.error('Could not get detached notes targeted for repack', {
-                                                detachedBars, detachedGroups, offset, adjustedGroupIdx, packIterations, absolutizedPackTranslation, groupIdx,
-                                            })
-                                        }
-
-                                        newNotesByBar[bars[foundIdx + offset]].push(...notes.map(
-                                            n => ({
-                                                ...filterBarDelayTag(n),
-                                                tags: [
-                                                    ...n.tags,
-                                                    `barDelay=${num - found[0]}`
-                                                ]
-                                            })
-                                        ))
-                                    }
-                                })
-
-                                barRanges = barRanges.slice(lastFilled + 1)
-                                if (barRanges.length) {
-                                }
-                                packIterations += 1
-
-                            }
-
-
-                            Object.entries(newNotesByBar).forEach(([key, val]) => {
-                                notesByBar[key].push(...val)
-                            })
+                        switch (caseName) {
+                            case 'numeric-pack':
+                                numericPack(bars, packk, detachedBars, barSizeMod)
+                                break 
+                            case 'numeric-stuff':
+                                numericStuff(bars, packk, detachedBars, barSizeMod)
+                                break 
+                            case 'fractional-pack':
+                                throw new Error('--pack cannot be used with a fractional plan; instead whole-number eg "--pack 0 2 4 1" to resequence chords into the whole song')
+                            case 'fractional-stuff':
+                                fractionalStuff(bars, packk, detachedBars)
+                                break 
+                            default:
                         }
-
                     }
                 }
             }
         }
     }
 } as Module
+
+function numericPack(bars: string[], packk: string[], detachedBars: NoteByBar[][], barSizeMod: number) {
+    bars.forEach((barTag) => {
+        const spl = barTag.split(':')
+        const barIdx = parseInt(spl[1])
+        const packPlanIdx = barIdx % packk.length
+        const packPlan = packk[packPlanIdx]
+        if (typeof packPlan !== 'number') {
+            throw new Error(`pack plan was non-number`)
+        }
+        const nextGroup: NoteByBar[][] = []
+        while (nextGroup.length < packPlan) {
+            nextGroup.push(
+                detachedBars.shift()
+            )
+        }
+        const interim = Math.trunc(
+            (tickCounts[BAR] * (barSizeMod || 1))
+            /
+            nextGroup.length
+        )
+
+        nextGroup.forEach((g, groupIdx) => {
+            if (!g) return
+            g.forEach((note) => {
+
+                filterDelayTags(note)
+            })
+            g.forEach((nt) => {
+                nt.tags.push(`barDelay=${interim * groupIdx}`)
+            })
+            notesByBar[barTag].push(...g)
+        })
+    })
+}
+
+function numericStuff(bars: string[], packk: string[], detachedBars: NoteByBar[][], barSizeMod: number) {
+    throw new Error('--stuff cannot be used with a numeric plan; (what would that even look like?) instead use fractional eg "--stuff 4th,8th half 4th,16th"')
+}
+
+function fractionalStuff(bars: string[], packk: string[], detachedBars: NoteByBar[][]) {
+    const detachedGroups = groupNotesByFirstTagDatum(
+        detachedBars.flat(),
+        'groupId'
+    )
+
+    const absolutizedPackTranslation = packk.reduce((accum: number[], currCsv: string) => {
+        const priorRaw = accum.length === 0 ? 0 : accum[accum.length - 1]
+        const prior: number = typeof priorRaw === 'number' ? priorRaw : 0
+        const newTick = sumAbbreviationCsv(currCsv) + prior
+        return [...accum, newTick]
+    }, [] as number[])
+
+    let prior = 0
+
+    // build a list of the tick times that pertain to each bar.
+    // in this FRACTIONAL plan, the absolutized fractions each must find its bar
+    // note that we are using, as this will be consumed as we fill each bar
+    let barRanges = bars.map((barName, idx) => {
+        const nxt = [prior, prior + tickCounts[BAR]]
+        prior += tickCounts[BAR]
+        return nxt
+    })
+    // receptacle for the re-packed bars 
+    const newNotesByBar =
+        Object.fromEntries(
+            bars.map((bar) => [bar, []] as [bar: string, notes: NoteByBar[]])
+        )
+
+    // count the number of times we have iterated the --pack / --stuff argument.
+    let packIterations = 0
+    console.log('spacing', {
+        barRanges,
+        absolutizedPackTranslation,
+        bars,
+        detachedGroups,
+        packk,
+        packIterations,
+        
+    })
+    // exhausting the list of bars' absolute tick ranges (e.g. [0, 128])....
+    while (barRanges.length) {
+        let lastFilled = -1
+
+        // for each and every --pack argument ... although --pack is treated relatively in its own plan...
+        absolutizedPackTranslation.forEach((numRaw: number, groupIdx: number) => {
+
+            // the packOffset is the first start time in the available barRanges
+            // (the barRanges array is sliced and  maintaned ongoingly, but we need the first-available number)
+            if (!barRanges.length) return
+            const num = numRaw + barRanges[0][0]
+
+            // found a bar in which to insert it
+            const found = barRanges.find(
+                ([start, end]) => {
+                    return start <= num && end > num
+                })
+            if (found === undefined) {
+                barRanges = []
+                return
+            }
+            const foundIdx = barRanges.indexOf(found)
+            lastFilled = foundIdx
+            if (found) {
+
+                const offset = bars.length - barRanges.length
+                const adjustedGroupIdx = (packIterations * absolutizedPackTranslation.length) + groupIdx
+                const notes = detachedGroups[adjustedGroupIdx % detachedGroups.length]
+                if (!notes) {
+                    console.error('Could not get detached notes targeted for repack', {
+                        detachedBars, detachedGroups, offset, adjustedGroupIdx, packIterations, absolutizedPackTranslation, groupIdx,
+                    })
+                }
+
+                newNotesByBar[bars[foundIdx + offset]].push(...notes.map(
+                    n => ({
+                        ...filterBarDelayTag(n),
+                        tags: [
+                            ...n.tags,
+                            `barDelay=${num - found[0]}`
+                        ]
+                    })
+                ))
+            }
+        })
+
+        barRanges = barRanges.slice(lastFilled + 1)
+        if (barRanges.length) {
+        }
+        packIterations += 1
+
+    }
+
+
+    Object.entries(newNotesByBar).forEach(([key, val]) => {
+        notesByBar[key].push(...val)
+    })
+}

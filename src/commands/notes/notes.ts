@@ -257,6 +257,7 @@ const deleteSupernumeraries = (dmRow: ReturnType<typeof parseDelayMatrixRow>, cs
         })
     )
 }
+
 export const parseDelayMatrix = (entries: [chordSize: string, row: (string | number)[]][]) => {
     return Object.fromEntries(
         entries.map(([cs, r]) => {
@@ -313,14 +314,16 @@ export default {
                                     fn: async ({ positionalNonCommands: patterns }, calls) => {
 
                                         const notes1 = await calls['notes in $ $']
+                                        console.log('notes1', notes1)
 
                                         if (!isNotesByBar(notes1)) {
                                             throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
                                         }
 
+                                        console.log('patterns', patterns)
                                         const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
                                         const delaysPerChordSize = parseDelayMatrix(prepped)
-
+                                        console.log('delaysPerChordSize', {prepped, delaysPerChordSize})
                                         notes1.forEach((nt) => {
 
                                             const parsed = Object.fromEntries(parseNoteTags(nt.tags))

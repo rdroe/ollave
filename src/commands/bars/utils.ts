@@ -1,7 +1,7 @@
 import { isString, peprnIsNum, randId } from 'src/lib/helpers'
 import { lookUpGraph } from 'src/mem-db'
 import { Chord, Note } from 'tonal'
-import { chordNameWithNotes } from 'src/lib/graphh'
+import { chordNameWithNotes, noteNames } from 'src/lib/graphh'
 import { NoteByBar } from 'src/mem'
 
 export const isRestArg = (arg: any) => {
@@ -15,7 +15,17 @@ export const isRestArg = (arg: any) => {
 }
 
 export const isNoteName = (nm: any) => {
-    return isString(nm) && nm.toLocaleLowerCase() === nm && peprnIsNum(nm[nm.length - 1]) && !!Note.get(nm)?.pc
+    if (!isString(nm)) return false 
+
+    const allButLastChar = nm.slice(0, -1) 
+    const allButLastWithUpperFirst = allButLastChar.charAt(0).toUpperCase() + allButLastChar.slice(1)
+    if (!noteNames.includes(allButLastWithUpperFirst)) return false 
+    const lastChar = nm[nm.length - 1]
+    if (!peprnIsNum(lastChar)) return false 
+
+    return !!Note.get(nm)?.pc 
+
+
 }
 
 const isNoteNameArray = (arr: any[]): arr is string[] => {
