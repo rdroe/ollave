@@ -65,7 +65,7 @@ export const barsAtMidi = (songTick: number): BarTagPercent[] => {
 
     const ret: BarTagPercent[] = []
 
-    const phaseMap: PhaseMap = collector.reduce((acc, curr) => {
+    const _: PhaseMap = collector.reduce((acc, curr) => {
         Object.entries(curr).forEach(([tickRaw, dat]) => {
             const tick = parseInt(tickRaw)
             if (!acc[tick]) {
@@ -73,7 +73,11 @@ export const barsAtMidi = (songTick: number): BarTagPercent[] => {
             }
             acc[tick].push(...dat)
 
-            dat.forEach((phaseMapSubelement) => {
+            dat.forEach((phaseMapSubelement: {
+                occassion: "BAR_START" | "BAR_END" | "NOTE_START";
+                data1: string[];
+                data2: number[];
+            }) => {
                 const { occassion, data1, data2 } = phaseMapSubelement
 
                 if (occassion === "BAR_START") {

@@ -359,3 +359,212 @@ MIT License - see LICENSE file for details
 - Uses [@tonejs/piano](https://github.com/tambien/Piano) for realistic piano sounds
 - Powered by [RxJS](https://rxjs.dev/) for reactive programming
 - CLI framework built on [peprn](https://github.com/rdroe/peprn) 
+
+
+## Expansion on notes and the memory model
+Here is an example of notesByBar in the `mem()` memory model of a song playing or being composed:
+```json 
+...
+"notesByBar": {
+    "aphrodite:0": [
+      {
+        "note": "C3",
+        "tags": [
+          "layer=B9S",
+          "barDelay=0",
+          "chord=C",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=C",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=NYn",
+          "groupIndex=0",
+          "chordSize=3",
+          "half=1",
+          "quarter=1"
+        ]
+      },
+      {
+        "note": "E3",
+        "tags": [
+          "layer=B9S",
+          "barDelay=0",
+          "chord=C",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=E",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=ryO",
+          "groupIndex=1",
+          "chordSize=3"
+        ]
+      },
+      {
+        "note": "G3",
+        "tags": [
+          "layer=B9S",
+          "barDelay=0",
+          "chord=C",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=G",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=66K",
+          "groupIndex=2",
+          "chordSize=3"
+        ]
+      },
+      {
+        "note": "G3",
+        "tags": [
+          "layer=BTZ",
+          "barDelay=0",
+          "chord=G",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=G",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=EWY",
+          "groupIndex=0",
+          "chordSize=3"
+        ]
+      },
+      {
+        "note": "B3",
+        "tags": [
+          "layer=BTZ",
+          "barDelay=0",
+          "chord=G",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=B",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=wBg",
+          "groupIndex=1",
+          "chordSize=3"
+        ]
+      },
+      {
+        "note": "D4",
+        "tags": [
+          "layer=BTZ",
+          "barDelay=0",
+          "chord=G",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=D",
+          "noteAcc=",
+          "noteOct=4",
+          "noteId=Jnt",
+          "groupIndex=2",
+          "chordSize=3"
+        ]
+      }
+    ]
+  },
+...
+```
+To be played in real time, those are compiled into a time-based format, `latestMap`:
+```json
+
+  "latestMap": {
+    "0": [
+      {
+        "note": "E3",
+        "compositionTags": [
+          "layer=B9S",
+          "barDelay=0",
+          "chord=C",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=E",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=ryO",
+          "groupIndex=1",
+          "chordSize=3"
+        ]
+      },
+      {
+        "note": "G3",
+        "compositionTags": [
+          "layer=B9S",
+          "barDelay=0",
+          "chord=C",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=G",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=66K",
+          "groupIndex=2",
+          "chordSize=3"
+        ]
+      },
+      {
+        "note": "G3",
+        "compositionTags": [
+          "layer=BTZ",
+          "barDelay=0",
+          "chord=G",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=G",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=EWY",
+          "groupIndex=0",
+          "chordSize=3"
+        ]
+      },
+      {
+        "note": "B3",
+        "compositionTags": [
+          "layer=BTZ",
+          "barDelay=0",
+          "chord=G",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=B",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=wBg",
+          "groupIndex=1",
+          "chordSize=3"
+        ]
+      },
+      {
+        "note": "D4",
+        "compositionTags": [
+          "layer=BTZ",
+          "barDelay=0",
+          "chord=G",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=D",
+          "noteAcc=",
+          "noteOct=4",
+          "noteId=Jnt",
+          "groupIndex=2",
+          "chordSize=3"
+        ]
+      }
+    ],
+    "384": [
+      {
+        "note": "C3",
+        "compositionTags": [
+          "layer=B9S",
+          "barDelay=0",
+          "chord=C",
+          "lastBarTag=aphrodite:0",
+          "noteLetter=C",
+          "noteAcc=",
+          "noteOct=3",
+          "noteId=NYn",
+          "groupIndex=0",
+          "chordSize=3",
+          "half=1",
+          "quarter=1"
+        ]
+      }
+    ]
+  },
+  ....
+```
+
+In latestMap, the property name is a tick containing all the notes to be played on that song tick. This is the closest to real-time representation that gets stored. As the cursor moves from the beginning to the end it reads off the notes to play and plays them. 

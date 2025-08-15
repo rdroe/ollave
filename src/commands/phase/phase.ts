@@ -62,7 +62,6 @@ const module: Module = {
             throw new Error('Further arguments are required')
         }
 
-
         return null
     },
     submodules: {

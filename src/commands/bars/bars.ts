@@ -123,10 +123,10 @@ song start
                                 if (parsed.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
-                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
+                                const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(...parsed.map(fn))
                             } else if (isNoteName(str)) {
-                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
+                                const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(fn(str))
                             } else {
                                 throw new Error(`Error; ${str} could not be parsed to anything with notes`)
@@ -198,7 +198,7 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
 
-                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...tags, ...timingTags, groupIdTag])
+                                const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...tags, ...timingTags, groupIdTag])
                                 receptacle.push(...notes.map(fn).map((n, idx) => {
 
 
@@ -221,11 +221,11 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
                                 if (parsed.length === 0) {
                                     throw new Error(`Error; ${str} could not be parsed to anything with notes`)
                                 }
-                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
+                                const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(...parsed.map(fn))
 
                             } else if (isNoteName(str)) {
-                                const fn = makeFulfilledBarNote(barTag, [...commonTags, ...timingTags, groupIdTag])
+                                const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(fn(str))
                             }
                         })

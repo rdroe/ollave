@@ -3,8 +3,9 @@ import { randId } from 'src/lib/helpers'
 
 import { mem } from '../../mem'
 import { mapSongToMidiTicks } from 'src/mapSongToTicks'
-import { isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../bars/utils'
+import { getLastChordLayerName, isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../bars/utils'
 import { abbrev, isAbbreviation, tickCounts } from '../phase/observables/masterTicksObservable'
+import { calcFractionalDelay, groupNotesByFirstTagDatum } from 'src/lib/tags'
 
 
 const cliDelaysToTags = (delay?: string[]): string[] => {
@@ -61,13 +62,25 @@ export default {
 
                                         const [notes, chordTags] = parseChordCsvArg(chordName)
                                         const [ticks] = positionalNonCommands
+                                        let finalTicks: null | number = null  
+                                        if (typeof ticks === 'number') {
+                                            finalTicks = ticks 
+                                        } else {
+                                            if (typeof ticks !== 'string') {
+                                                throw new Error(`Ticks must be a number or a string`)
+                                            }
+                                            if (!isAbbreviation(ticks)) { 
+                                                throw new Error(`Ticks must be a number or a string`) 
+                                            }
+                                            finalTicks = tickCounts[abbrev[ticks]]
+                                        }
                                         const barNotes = mem().notesByBar[barTag]
                                         const layerTag = `layer=${randId('', 3)}`
-                                        const chordSizeTag = `chordSize=${notes.length}`
-                                        const placementTag = `barDelay=${ticks}`
+                                        const placementTag = `barDelay=${finalTicks}`
+                                        const groupIdTag = `groupId=${randId('', 3)}`
                                         const delayTags = cliDelaysToTags(delay)
 
-                                        const addNote = makeFulfilledBarNote(barTag, [layerTag, placementTag, ...chordTags, ...delayTags])
+                                        const addNote = makeFulfilledBarNote(barTag, [groupIdTag, layerTag, placementTag, ...chordTags, ...delayTags])
                                         barNotes.push(...notes.map((n, idx) => {
                                             const initNote = addNote(n)
                                             
@@ -85,7 +98,7 @@ export default {
                                     }
                                 }
                             }
-                        }
+                        },
                     }
                 }
             }

@@ -73,8 +73,8 @@ export const QUARTER = 'quarter' as const
 export const EIGHTH = 'eighth' as const
 export const SIXTEENTH = 'sixteenth' as const
 export const THIRTY_SECOND = 'thirtySecond' as const
-export const SIXTY_FOURTH = 'sixtyFourth'
-export const ONE_TWENTY_EIGHTH = 'oneTwentyEighth'
+export const SIXTY_FOURTH = 'sixtyFourth' as const
+export const ONE_TWENTY_EIGHTH = 'oneTwentyEighth' as const
 export const ZERO = 'zero' as const
 export const tickCounts = {
     [ZERO]: 0,
@@ -89,11 +89,6 @@ export const tickCounts = {
 };
 
 
-// 4 4ths in a bar
-// 8 8ths in a bar
-// 16
-//
-// 
 export const oneTwentyEighthCounts = {
     [BAR]: 128,
     [HALF]: 64,
@@ -155,7 +150,7 @@ export let curr: TimeMarker = [0,
 
 
 // To a clock, push midi ticks to be ticked into a queue.
-const masterTicks = setInterval(() => {
+setInterval(() => {
     const [lastTime, tick] = curr
     // This first bit of arithmetic is to determine how many ticks have passed since the last time this interval was fired.
     // (even though this interval is fired every millisecond, the number of ticks that have passed since the last time this interval was fired is not stable. setInterval is not a real-time clock.)

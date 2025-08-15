@@ -3,6 +3,7 @@ import { lookUpGraph } from 'src/mem-db'
 import { Chord, Note } from 'tonal'
 import { chordNameWithNotes, noteNames } from 'src/lib/graphh'
 import { NoteByBar } from 'src/mem'
+import { parseNoteTags } from 'src/lib/tags'
 
 export const isRestArg = (arg: any) => {
     return isString(arg)
@@ -156,12 +157,24 @@ export const isChordCsvArg = (str: string, userTonic?: string, userScale?: strin
 
     return true
 }
-
+const lastLayerAdded: string[] = []
 export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
     return (noteName: string): NoteByBar => {
 
         const noteProperties = Note.get(noteName)
-        const { oct, letter, acc } = noteProperties
+        const { oct, letter, acc } = noteProperties 
+        const lastLayerAddedTag = lastLayerAdded.length > 0 ? `lastLayerAdded=${lastLayerAdded[lastLayerAdded.length - 1]}` : null
+        const parsed = parseNoteTags(extraTags)
+        const layer  = parsed.find(([tag, val]) => {
+            return tag === 'layer'
+        })?.[1]
+        
+        console.log('extraTags', {extraTags, layer, lastLayerAddedTag, parsed}) 
+        const layerId = layer ? layer[0] : null
+        
+        if (typeof layerId === 'string' && layerId !== lastLayerAdded[0]) {
+            lastLayerAdded.unshift(layerId)
+        }
 
         const note1: NoteByBar =
         {
@@ -170,4 +183,8 @@ export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
         }
         return note1
     }
+}
+
+export const getLastChordLayerName = () => {
+    return lastLayerAdded[0]
 }
