@@ -8,9 +8,9 @@ import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
 import { getNotesByEntity, isNotesByBar, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
 import { filterDelayTags, latestNote, parseNoteTags, scale } from 'src/lib/tags'
-import { mapSongToMidiTicks } from 'src/mapSongToTicks'
-import { mem } from '../../mem'
-import { lookUpGraph } from 'src/mem-db'
+import { mapSongToMidiTicks } from 'src/lib/mapSongToTicks'
+import { mem } from '../../lib/mem'
+import { lookUpGraph } from 'src/lib/mem-db'
 
 export const chord: Module = {
     help: {

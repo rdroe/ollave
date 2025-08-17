@@ -7,12 +7,12 @@ import {
     tickCounts
 } from '../phase/observables/masterTicksObservable'
 import { isCsvArg, parseCsvArg } from '../bars/utils'
-import { NoteByBar, mem } from '../../mem'
+import { NoteByBar, mem } from '../../lib/mem'
 import { z } from 'zod'
-import { getAllPhaseBarNotes } from 'src/mem-db'
+import { getAllPhaseBarNotes } from 'src/lib/mem-db'
 import { filterDelayTags, parseNoteTags } from 'src/lib/tags'
 import { strjson } from 'src/lib/helpers'
-import { mapSongToMidiTicks } from 'src/mapSongToTicks'
+import { mapSongToMidiTicks } from 'src/lib/mapSongToTicks'
 import { oneIndexedArr, zeroIndexedArr } from 'src/lib/graphh'
 
 const isNoteCnt = (str: string | number) => {

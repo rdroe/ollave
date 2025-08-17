@@ -1,7 +1,7 @@
 import { isFraction, tickCounts } from "src/commands/phase/observables/masterTicksObservable"
 import { peprnIsNum, strjson } from "./helpers"
 import { isCsvArg, parseCsvArg } from "src/commands/bars/utils"
-import { NoteByBar } from "src/mem"
+import { NoteByBar } from "src/lib/mem"
 import { z } from 'zod'
 
 export type TagData = (number | string | boolean | null)[]

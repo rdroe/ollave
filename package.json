@@ -1,7 +1,6 @@
 {
     "name": "ollave",
-    "version": "0.0.2",
-    "main": "index.js",
+    "version": "0.1.1",
     "repository": "git@github.com:rdroe/ollave.git",
     "license": "MIT",
     "description": "framework for developing musical streams",
@@ -22,7 +21,7 @@
         "rxjs": "^7.5.7",
         "tonal": "^5.0.0",
         "tone": "14.6.1",
-        "user-tables": "^0.0.9",
+        "user-tables": "^0.0.19",
         "webmidi": "2.*"
     },
     "devDependencies": {
@@ -33,6 +32,28 @@
         "esbuild": "^0.14.38",
         "nodemon": "^2.0.16",
         "typescript": "^5.0.0"
+    },
+    "main": "ollave",
+    "exports": {
+        "./commands": "./public/js/commands/index.js",
+        "./lib": "./public/js/lib/index.js",
+        "./cli": "./public/js/cli.js"
+    },
+    "typesVersions": {
+        "*": {
+            "*": [
+                "public/js"
+            ],
+            "lib": [
+                "public/js/lib/index.d.ts"
+            ],
+            "commands": [
+                "public/js/commands/index.d.ts"
+            ],
+            "cli": [
+                "public/js/cli.d.ts"
+            ]
+        }
     },
     "scripts": {
         "note": "echo \"first build typescript; then build javascript, which will work off of typescript output; at any time, build css. to understand the goal of the build, see main.js. main.js imports the results of the build.",

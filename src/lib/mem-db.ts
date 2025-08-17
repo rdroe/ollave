@@ -1,10 +1,10 @@
 // using the currently loaded song, do any of the following.
 // updated both mem.ts and the database.
-import { ProgressionOptions, minor } from "./lib/graphh"
-import { randId, randomInt, strjson } from "./lib/helpers"
+import { ProgressionOptions, minor } from "./graphh"
+import { randId, randomInt, strjson } from "./helpers"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { mem } from "./mem"
-import { StartEndTuple, phaseBeginningsAndEnds } from "./startEndData"
+import { StartEndTuple, phaseBeginningsAndEnds } from "../startEndData"
 const { phases, notesByBar } = mem()
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>

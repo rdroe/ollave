@@ -1,8 +1,8 @@
-import { mem } from '../../mem'
+import { mem } from '../../lib/mem'
 import { Observable } from 'rxjs'
 import { makeTickSubscribe } from '../phase/subjects/masterTicksSubject'
 import { playTriads } from 'src/lib/music'
-import { lastTick } from 'src/mem-db'
+import { lastTick } from 'src/lib/mem-db'
 import { ONE_TWENTY_EIGHTH, tickCounts } from 'src/commands/phase/observables/masterTicksObservable'
 
 export const startCueObservable = (startAt?: number) => {

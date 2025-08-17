@@ -1,13 +1,13 @@
 import { Module } from 'peprn/util'
-import { mem } from '../../mem'
+import { mem } from '../../lib/mem'
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
 import { userTables } from 'user-tables/browser'
 import { startCueObservable } from './observables'
 
-import { downloadSong } from 'src/download'
+import { downloadSong } from 'src/lib/download'
 
-import { barsAtMidi, mapSongToMidiTicks, midiAtBar, MidiMap } from 'src/mapSongToTicks'
+import { barsAtMidi, mapSongToMidiTicks, midiAtBar, MidiMap } from 'src/lib/mapSongToTicks'
 import { trackTempo } from '../phase/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../bars/utils'
 import { groupNotesByFirstTagDatum, parseNoteTags } from 'src/lib/tags'

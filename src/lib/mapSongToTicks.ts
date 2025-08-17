@@ -1,8 +1,9 @@
-import { BAR, tickCounts } from './commands/phase/observables/masterTicksObservable'
+import { BAR, tickCounts } from '../commands/phase/observables/masterTicksObservable'
 
-import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './lib/tags'
-import { Mem, mem } from './mem'
+import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './tags'
+
 import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
+import { mem, Mem } from './mem'
 
 // Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {

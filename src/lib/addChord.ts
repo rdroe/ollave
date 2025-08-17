@@ -1,6 +1,6 @@
 import { isChordCsvArg, parseChordCsvArg } from "src/commands/bars/utils"
-import { mem, NoteByBar } from "src/mem"
-import { phaseCount } from "src/mem-db"
+import { mem, NoteByBar } from "src/lib/mem"
+import { phaseCount } from "src/lib/mem-db"
 import { randId } from "./helpers"
 import { abbrev, isAbbreviation, tickCounts } from "src/commands/phase/observables/masterTicksObservable"
 import { calcFractionalDelay, parseNoteTags } from "./tags"
@@ -24,9 +24,7 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
         const groupId = randId('', 3)
         const groupIdTag = `groupId=${groupId}`
 
-        const receptacle: NoteByBar[] = []
-        mem().notesByBar[barTag] = receptacle
-
+        mem().notesByBar[barTag] = mem().notesByBar[barTag] || []
 
         const newGroupName = randId("", 3)
         const layerTag = `layer=${newGroupName}`

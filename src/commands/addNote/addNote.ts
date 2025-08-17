@@ -1,7 +1,7 @@
 import { Module } from "peprn/util"
 import { isNoteName, isStringArray } from "../bars/utils"
 import { peprnIsNum } from "src/lib/helpers"
-import { phaseCount, phaseExists } from "src/mem-db"
+import { phaseCount, phaseExists } from "src/lib/mem-db"
 import { parseNoteTags } from "src/lib/tags"
 import { addNoteToBar } from "src/lib/addNote"
 

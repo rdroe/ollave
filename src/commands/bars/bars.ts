@@ -1,12 +1,12 @@
 import { Module, awaitAll } from 'peprn/util'
 import { randId } from 'src/lib/helpers'
-import { getAllPhaseBars, sortByNumberAfterColon } from 'src/mem-db'
-import { NoteByBar, mem } from '../../mem'
-import { mapSongToMidiTicks } from 'src/mapSongToTicks'
+import { getAllPhaseBars, sortByNumberAfterColon } from 'src/lib/mem-db'
+import { NoteByBar, mem } from '../../lib/mem'
 import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
 import { BAR, EIGHTH, tickCounts } from '../phase/observables/masterTicksObservable'
 import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag, parseNoteTags } from 'src/lib/tags'
 import { isAbbreviationCsv, sumAbbreviationCsv } from '../notes/notes'
+import { mapSongToMidiTicks } from 'src/lib/mapSongToTicks'
 
 const { notesByBar } = mem()
 

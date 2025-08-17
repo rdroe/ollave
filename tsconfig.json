@@ -8,7 +8,7 @@
 	"removeComments": false,
 	"preserveConstEnums": true,
 	"sourceMap": true,
-        "outDir": "./public/js/",
+	"outDir": "./public/js/",
 	"declaration": true,
 	"allowJs": true,
 	"lib": ["dom", "es2019", "ES2015"],

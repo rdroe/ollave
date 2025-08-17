@@ -1,5 +1,5 @@
-import { addEvents, saveRaw } from './lib/midi';
-import { RelativeNote } from './lib/music'
+import { addEvents, saveRaw } from './midi';
+import { RelativeNote } from './music'
 import Midi from 'jsmidgen'
 import { MidiMap } from './mapSongToTicks';
 import { mem } from './mem'
