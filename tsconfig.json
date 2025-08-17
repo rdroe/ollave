@@ -11,12 +11,12 @@
 	"outDir": "./public/js/",
 	"declaration": true,
 	"allowJs": true,
-	"lib": ["dom", "es2019", "ES2015"],
+	"lib": ["dom", "ES2022", "ES2015"],
 	"noEmit": false,
-        "target": "es2019",
+        "target": "ES2022",
         "skipLibCheck": true,
         "allowSyntheticDefaultImports": true,
-	"module": "commonjs"
+		"module": "ESNext"
     },
     "include": ["./src/**/*.ts"],
     "watchOptions": {
