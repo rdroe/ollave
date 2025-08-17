@@ -337,10 +337,17 @@ song start
                                                     }
                                                     return false
                                                 })
-
+                                                console.log('notes', notes)
+                                                console.log('patterns', patterns)
+                                                console.log('chordName', chordName)
+                                                console.log('entity', entity)
+                                                console.log('entityName', entityName)
                                                 const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
                                                 const delaysPerChordSize = parseDelayMatrix(prepped)
-
+                                                console.log('prepped', prepped)
+                                                console.log('delaysPerChordSize', delaysPerChordSize)
+                                                console.log('maxChordSize', maxChordSize)
+                                                
                                                 const subdataKey = `${maxChordSize}x`
 
                                                 const noteLookup = delaysPerChordSize[subdataKey]

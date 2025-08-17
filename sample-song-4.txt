@@ -3,7 +3,6 @@ Example of arranging notes
 start a simple song.
 
 
-chord graph test2 A minor
 phase aphrodite 3
 phase aphrodite scale A minor
 bars aphrodite fill Am,3 Am,3 Am,3

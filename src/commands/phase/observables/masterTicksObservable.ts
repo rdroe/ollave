@@ -112,7 +112,15 @@ export const abbrev = {
     '32nd': THIRTY_SECOND,
     '64th': SIXTY_FOURTH,
     '128th': ONE_TWENTY_EIGHTH,
-    '0th': ZERO
+    '0th': ZERO,
+    '2nd': HALF,
+    'quarter': QUARTER,
+    'eighth': EIGHTH,
+    'sixteenth': SIXTEENTH,
+    'thirtySecond': THIRTY_SECOND,
+    'sixtyFourth': SIXTY_FOURTH,
+    'oneTwentyEighth': ONE_TWENTY_EIGHTH,
+    'zero': ZERO,
 } as { [Property in Abbreviation]: keyof typeof tickCounts }
 
 export const isAbbreviation = (unk: unknown): unk is Abbreviation => {

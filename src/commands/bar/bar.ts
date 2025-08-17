@@ -78,8 +78,11 @@ export default {
                                         const layerTag = `layer=${randId('', 3)}`
                                         const placementTag = `barDelay=${finalTicks}`
                                         const groupIdTag = `groupId=${randId('', 3)}`
-                                        const delayTags = cliDelaysToTags(delay)
 
+                                        const delayTags = cliDelaysToTags(delay)
+                                        console.log('delay tags', {
+                                            delay, delayTags,
+                                        })
                                         const addNote = makeFulfilledBarNote(barTag, [groupIdTag, layerTag, placementTag, ...chordTags, ...delayTags])
                                         barNotes.push(...notes.map((n, idx) => {
                                             const initNote = addNote(n)

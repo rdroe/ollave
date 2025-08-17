@@ -54,14 +54,14 @@ const module: Module = {
         positionalNonCommands: [phaseName, ...rest]
     }) => {
 
-        if (!isString(phaseName)) {
-            throw new Error('Phase name is required')
-        }
+        // can't recall why this was here
+        // if (!isString(phaseName)) {
+        //     throw new Error('Phase name is required')
+        // }
 
-        if (rest.length === 0) {
-            throw new Error('Further arguments are required')
-        }
-
+        // if (rest.length === 0) {
+        //     throw new Error('Further arguments are required')
+        // }
         return null
     },
     submodules: {

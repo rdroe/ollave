@@ -26,8 +26,7 @@ export type PhaseMap = {
 export type BarTagPercent = [tagName: string, percent: number]
 
 export const mapSongToMidiTicks = () => {
-    const { song, track } = mem()
-    const firstPhases = Object.entries(mem().phases).filter(([phaseName, phase]) => {
+    const firstPhases = Object.entries(mem().phases).filter(([_, phase]) => {
         return phase["follows-ids"].length === 0
     })
 
@@ -163,12 +162,13 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
         // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
         const thisBarOffset = barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
         // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
-        barNotes.forEach((note, idx) => {
+        barNotes.forEach((note) => {
             const parsedTags = parseNoteTags(note.tags)
-
+            console.log('parsedTags in mapSongToTicks', parsedTags)
             let thisNoteOffset = 0
-            thisNoteOffset += calcFractionalDelay(parsedTags)
-            thisNoteOffset += calcTickDelay(parsedTags)
+            // look at this notes tags to determine how much to delay this note
+            thisNoteOffset += calcFractionalDelay(parsedTags) // e.g half, 4th etc
+            thisNoteOffset += calcTickDelay(parsedTags) // e.g barDelay=1
             const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
 
             if (!phaseMidi[thisNoteTick]) {

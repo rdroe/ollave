@@ -29,9 +29,11 @@ export type Mem = {
         [barTag: string]: NoteByBar[]
     },
     latestMap: MidiMap
+    playedMap: MidiMap
     graphs: { [userScaleWithTonic: string]: any[] }
     played: {
         songTick: number
+        note: string
         tags: string[]
         time: number
     }[],
@@ -50,6 +52,7 @@ const mem_: Mem = {
     notesByBar: {},
     songNames: [],
     latestMap: {},
+    playedMap: {},
     graphs: {},
     played: [],
     adjustedCursor: 0,

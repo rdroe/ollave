@@ -15,7 +15,7 @@ export const isRestArg = (arg: any) => {
         )
 }
 
-export const isNoteName = (nm: any) => {
+export const isNoteName = (nm: any): nm is string => {
     if (!isString(nm)) return false 
 
     const allButLastChar = nm.slice(0, -1) 
@@ -28,7 +28,9 @@ export const isNoteName = (nm: any) => {
 
 
 }
-
+export const isStringArray = (arr: any[]): arr is string[] => {
+    return arr.every((arg) => isString(arg))
+}
 const isNoteNameArray = (arr: any[]): arr is string[] => {
     return arr.every((arg) => isNoteName(arg) || isRestArg(arg))
 }
@@ -163,13 +165,11 @@ export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
 
         const noteProperties = Note.get(noteName)
         const { oct, letter, acc } = noteProperties 
-        const lastLayerAddedTag = lastLayerAdded.length > 0 ? `lastLayerAdded=${lastLayerAdded[lastLayerAdded.length - 1]}` : null
         const parsed = parseNoteTags(extraTags)
-        const layer  = parsed.find(([tag, val]) => {
+        const layer  = parsed.find(([tag]) => {
             return tag === 'layer'
         })?.[1]
         
-        console.log('extraTags', {extraTags, layer, lastLayerAddedTag, parsed}) 
         const layerId = layer ? layer[0] : null
         
         if (typeof layerId === 'string' && layerId !== lastLayerAdded[0]) {

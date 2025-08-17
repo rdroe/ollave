@@ -568,3 +568,14 @@ To be played in real time, those are compiled into a time-based format, `latestM
 ```
 
 In latestMap, the property name is a tick containing all the notes to be played on that song tick. This is the closest to real-time representation that gets stored. As the cursor moves from the beginning to the end it reads off the notes to play and plays them. 
+
+
+### Planned: Graphic DSL
+As a DSL for graphical interface, a DSL is planned.
+
+phase:aphrodite
+    bar(chord:C3() chord(0 4th 1 4th 2)):barname chord:G3(0 4th 1 4th 2) 
+    repeat barname repeat barname repeat barname
+phase:xanthippe follows aphrodite
+    bar(chord:D3() chord(0 4th 1 4th 2)):barname2 chord:Em3(0 4th 1 4th 2) 
+    repeat barname repeat barname2 repeat barname

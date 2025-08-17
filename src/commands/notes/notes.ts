@@ -320,7 +320,7 @@ export default {
                                             throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
                                         }
 
-                                        console.log('patterns', patterns)
+                                        console.log('patterns', patterns) // e.g. [ 2, "8th,4th", 2, "16th,32nd" ]
                                         const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
                                         const delaysPerChordSize = parseDelayMatrix(prepped)
                                         console.log('delaysPerChordSize', {prepped, delaysPerChordSize})

@@ -7,7 +7,11 @@ import { z } from 'zod'
 export type TagData = (number | string | boolean | null)[]
 export type TagEntry = [name: string, data: TagData]
 export type TagEntries = [name: string, data: TagData][]
-
+/**
+ * Input is eg ['x=1', 'y=2', 'z=3,4']
+ * @param tags 
+ * @returns 
+ */
 export const parseNoteTags = (tags: string[]): TagEntries => {
 
     const parsedTags = tags.reduce((accum, tag) => {
@@ -40,7 +44,11 @@ export const unparseTagEntries = (tes: TagEntries) => {
         }
     )
 }
-
+export const getTagData = (tags: TagEntries, tagName: string) => {
+    const found = tags.find(([k]) => k === tagName)
+    if (!found) return null
+    return found[1]
+}
 export const filterDelayTags = (note: NoteByBar, retainBarDelay = false) => {
     const parsedTagz = parseNoteTags(note.tags)
     const cleaned = tagsDeleteMatching1(

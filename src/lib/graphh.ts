@@ -127,6 +127,7 @@ export type ProgressionGraphNode = {
 }
 
 export const scaleLetters = (scaleTonic: string, scaleName: string) => {
+    console.log('scaleLetters', scaleTonic, scaleName)
     const ten = oneIndexedArr(10).map(Scale.degrees(`${scaleTonic} ${scaleName}`))
     const len = Scale.get(`${scaleTonic} ${scaleName}`).notes.length
     if (len !== 7) throw new Error(`Cannot get progressions for ${len} sized scale`)

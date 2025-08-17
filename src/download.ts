@@ -71,8 +71,8 @@ const songToEvents = async (mappedTicks: MidiMap) => {
     return relativized
 }
 
-export const downloadSong = async (tempo?: number) => {
-    const mappedTicks = mem().latestMap
+export const downloadSong = async (tempo?: number, midiMap?: MidiMap) => {
+    const mappedTicks = midiMap || mem().latestMap
     const events = await songToEvents(mappedTicks)
     return downloadEvents(events, tempo)
 }

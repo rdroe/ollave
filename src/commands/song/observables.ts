@@ -34,13 +34,15 @@ export const startCueObservable = (startAt?: number) => {
                 mem().played.unshift({
                     time: Date.now(),
                     songTick: adjustedCursor,
+                    note: note.note,
                     tags: note.compositionTags
+                })
+                mem().playedMap[tick] = mem().playedMap[tick] || []
+                mem().playedMap[tick].push({
+                    note: note.note,
+                    compositionTags: note.compositionTags
                 })
             })
         }
     })
-
-
 }
-
-

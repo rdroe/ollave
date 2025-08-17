@@ -7,7 +7,7 @@ import { startCueObservable } from './observables'
 
 import { downloadSong } from 'src/download'
 
-import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from 'src/mapSongToTicks'
+import { barsAtMidi, mapSongToMidiTicks, midiAtBar, MidiMap } from 'src/mapSongToTicks'
 import { trackTempo } from '../phase/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../bars/utils'
 import { groupNotesByFirstTagDatum, parseNoteTags } from 'src/lib/tags'
@@ -136,7 +136,7 @@ song start
                 }
             },
             fn: async () => {
-
+                mem().latestMap = mapSongToMidiTicks()
                 const songPause = mem().songPauses[mem().song.name]
                 if (!songPause) {
                     return startCueObservable()
@@ -170,9 +170,19 @@ song start
             }
         },
         dl: {
-            fn: async () => {
-
-                downloadSong(trackTempo)
+            yargs: {
+                played: {
+                    alias: 'p',
+                    type: 'boolean',
+                    default: false
+                }
+            },
+            fn: async ({ played = false }) => {
+                if (!played) {
+                    downloadSong(trackTempo)
+                } else {
+                    downloadSong(trackTempo, mem().playedMap)
+                }
             }
         },
         chord: {

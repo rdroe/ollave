@@ -126,7 +126,9 @@ export const getFollowingPhases = (phaseName: string) => {
 
     return followsPhases
 }
-
+export const phaseExists = (phase: string) => {
+    return phases[phase] !== undefined
+}
 // update phase to have n bars.
 export async function phaseCount(phase: string, size: number) {
     if (!phases[phase]) {
