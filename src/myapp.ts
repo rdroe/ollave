@@ -23,6 +23,8 @@ import { romanChordNameToReal } from './lib/graphh'
 import { z } from 'zod'
 import { mapSongToMidiTicks } from './mapSongToTicks'
 import { debounce } from 'rxjs'
+import { addChord } from './lib/addChord'
+import addNote from './commands/addNote/addNote'
 
 const { songNames } = mem()
 
@@ -183,44 +185,7 @@ document.body.onload = () => {
                     playTriads([['cb4', 2, 0]])
                 }
             },
-            addNote: {
-                help: {
-                    description: "",
-                    examples: {
-                        "c3 --barName aphrodite:0 --tags x=1 y=2 z=3,4": `Add a c3 note at 0 with these tags`
-                    },
-                },
-
-                fn: async ({ positionalNonCommands, barName = 'default:1', updatePhaseScale, tags }) => { 
-                    const [note] = positionalNonCommands
-                    if (!isNoteName(note)) {
-                        throw new Error('Note must be a valid note name')
-                    }
-                    if (typeof barName !== 'string') {
-                        throw new Error('Bar name must be a string')
-                    }
-                    const [phaseName, barIndex] = barName.split(':')
-                    if (!phaseName || !barIndex || !peprnIsNum(barIndex)) {
-                        throw new Error('Phase should match phaseName:barIndex; instead got ' + barName)
-                    }
-                    if (!phaseExists(phaseName)) {
-                        phaseCount(phaseName, parseInt(barIndex) + 1)
-                    }
-                    if (!Array.isArray(tags) || !isStringArray(tags)) {
-                        throw new Error('Tags must be a string array')
-                    }
-                    const parsedNoteTags = parseNoteTags(tags)
-                    addNoteToBar(note, barName, parsedNoteTags)
-
-                    return {
-                        positionalNonCommands,
-                        barIndex,
-                        barName,
-                        parsedNoteTags,
-                    }
-                },
-
-            },
+            addNote,
             addChord: {
                 help: {
                     description: "",
@@ -340,133 +305,8 @@ ${dataContainer.innerHTML}                `
             if (!didPrint) {
                 console.warn('unprinted:', { parsedCli, data })
             }
-            // caching behavior for the graph itself
-
         }
     })
-}
-//
-function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], scaleTonic?: string, scaleName?: string)  {
-    if (!isChordCsvArg(chordCsvArg)) {
-        throw new Error('Chord must be a valid chord name with comma-separated octave')
-    }
-    const barTag = `${phaseName}:${barIndex}`
-    const [chordName, octave] = chordCsvArg.split(',')
-    if (!chordName || !octave) {
-        throw new Error('Chord must be a valid chord name with comma-separated octave')
-    }
-    if (!mem().notesByBar[barTag]) {
-        phaseCount(phaseName, barIndex + 1)
-    }
-    [chordCsvArg].forEach((str: string, objIdx: number) => {
-
-        const groupId = randId('', 3)
-        const groupIdTag = `groupId=${groupId}`
-
-        const receptacle: NoteByBar[] = []
-        mem().notesByBar[barTag] = receptacle
-
-
-        const newGroupName = randId("", 3)
-        const layerTag = `layer=${newGroupName}`
-        const phaseTags: string[] = []
-
-        if (scaleTonic) {
-            phaseTags.push(`scaleTonic=${scaleTonic}`)
-        }
-
-        if (scaleName) {
-            phaseTags.push(`scaleName=${scaleName}`)
-        }
-
-        const commonTags = [layerTag].concat(phaseTags)
-
-        if (isChordCsvArg(str)) {
-
-            const [notes, chordTags] = parseChordCsvArg(str, scaleTonic && scaleName ? `${scaleTonic} ${scaleName}` : undefined)
-            if (notes.length === 0) {
-                throw new Error(`Error; ${str} could not be parsed to anything with notes`)
-            }
-            notes.forEach(async(note, idx) => {
-                console.log('note', {
-                    note,
-                    arpData: arp[idx], 
-
-                })
-                const delayTagsObj = arp[idx].split(',').reduce((acc, delay) => {
-                    if (isAbbreviation(delay)) {
-                        const x = delay
-                        acc[abbrev[delay]] = acc[abbrev[delay]] ? acc[abbrev[delay]] + 1 : 1
-                        return acc
-                    } 
-                    console.warn(`Error; ${delay} is not a valid fraction`)
-                    return acc
-                }, {} as {
-                    [key in keyof typeof tickCounts]: number
-                }) 
-                // convert to e.g. quarter=1, half=2, etc
-                const delayTagStrings: string[] = Object.entries(delayTagsObj).map(([key, value]) => {
-                    return `${key}=${value}`
-                })
-                
-                const totalDelay = calcFractionalDelay(parseNoteTags(delayTagStrings))
-
-                const delayTags = Object.entries(delayTagsObj).map(([key, value]) => `${key}=${value}`)
-                const noteId = randId('', 3)
-                const noteIdTag = `noteId=${noteId}`
-                console.log("tags", [...commonTags, ...delayTags, ...chordTags, noteIdTag , groupIdTag, `barDelay=${totalDelay}`])
-                await addNoteToBar(note, barTag, parseNoteTags([...commonTags /*, ...delayTags */, ...chordTags, noteIdTag , groupIdTag, `barDelay=${totalDelay}`])) 
-                addSlider(barTag, noteId)
-            })
-
-        } else throw new Error('Chord must be a valid chord name with comma-separated octave')
-    })
-}
-
-
-/**
- * Given a note id, add a slider to move the note to a new time within the bar
- * controls-1 is the div that will contain the slider
- */
-function addSlider (barName: string, noteId: string) {
-    const controls1 = document.getElementById('controls-1')
-    if (!controls1) {
-        throw new Error('controls-1 not found')
-    }
-    const slider = document.createElement('input')
-    slider.type = 'range'
-    slider.min = '0'
-    slider.max = `${tickCounts.bar}`
-    const noteData = mem().notesByBar[barName].find((note) => note.tags.includes(`noteId=${noteId}`))
-    const noteDelay = noteData?.tags.find((tag) => tag.startsWith('barDelay='))?.split('=')[1]
-    if (typeof noteDelay !== 'string' || !peprnIsNum(noteDelay)) {
-        console.error('barDelay datum should be a number; insteaed got ' + noteDelay)
-        console.error('noteData', noteData) 
-        console.error('barName', barName)
-        console.error('noteId', noteId)
-        console.error('bar data', mem().notesByBar[barName])
-        return
-    }
-    slider.value = noteDelay.toString()
-    slider.oninput = () => {
-        updateBarDelay(noteData, parseInt(slider.value))
-    }
-    controls1.appendChild(slider)
-}
-
-// on the data object, replace the barDelay index by array index value
-// also call the mapSongToMidiTicks function to update the midi map, but 
-// use native JS setTimeout to debounce to 100ms
-function updateBarDelay (noteData: NoteByBar, newBarDelay: number) {
-    const index = noteData.tags.findIndex((tag) => tag.startsWith('barDelay='))
-    if (index === -1) {
-        throw new Error('barDelay tag not found')
-    }
-    noteData.tags[index] = `barDelay=${newBarDelay}`
-    setTimeout(() => {
-        mem().latestMap = mapSongToMidiTicks()
-    }, 100)
-    return noteData
 }
 
 
