@@ -55,7 +55,6 @@ export default {
                                     },
                                     // e.g. bar [barTag] chord [chordName] add [tickCnt]
                                     fn: async ({ $: dollar, positionalNonCommands, delay }) => {
-                                        console.log('dollar in bar chord add', dollar)
                                         const [barTag, chordName] = dollar
                                         if (!isChordCsvArg(chordName)) {
                                             throw new Error(`Chord and octave csv required; instead  "${chordName}"`)
@@ -81,9 +80,7 @@ export default {
                                         const groupIdTag = `groupId=${randId('', 3)}`
 
                                         const delayTags = cliDelaysToTags(delay)
-                                        console.log('delay tags', {
-                                            delay, delayTags,
-                                        })
+
                                         const addNote = makeFulfilledBarNote(barTag, [groupIdTag, layerTag, placementTag, ...chordTags, ...delayTags])
                                         barNotes.push(...notes.map((n, idx) => {
                                             const initNote = addNote(n)

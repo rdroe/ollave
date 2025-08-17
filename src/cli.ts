@@ -43,7 +43,6 @@ function createElementFromHTML(htmlString: string) {
     var div = document.createElement('div');
     div.innerHTML = htmlString.trim();
 
-    // Change this to div.childNodes to support multiple top-level nodes.
     return div.firstChild;
 }
 
@@ -59,7 +58,9 @@ const getNoteIdFromTags = (tags: string[]) => {
     }
     return noteId
 }
+
 const DISPLAY_EXPIRE = tickCounts.bar * 2
+
 export const app: Parameters<typeof createApp>[0] = {
     id: "cli",
     init,
@@ -103,13 +104,13 @@ export const app: Parameters<typeof createApp>[0] = {
         if (
             doPrint
         ) {
-            console.log('printing for ', {
-                rawIn,
-                parsed: JSON.parse(strjson(
-                    parsedCli
-                )),
-                data
-            })
+            // console.log('printing for ', {
+            //     rawIn,
+            //     parsed: JSON.parse(strjson(
+            //         parsedCli
+            //     )),
+            //     data
+            // })
             const printable = data?.formatted ?? data
             dataContainer.innerHTML = `${rawIn}\n${JSON.stringify(printable, null, 2)} 
 ${dataContainer.innerHTML}
@@ -126,7 +127,7 @@ ${dataContainer.innerHTML}
         }
         if (!didPrint && parsedCli.rawIn.split(' ').includes('--man')) {
             dataContainer.innerHTML = `${rawIn}\n${strjson(data)} 
-${dataContainer.innerHTML}                `
+${dataContainer.innerHTML}`
         }
         if (!didPrint) {
             console.warn('unprinted:', { parsedCli, data })

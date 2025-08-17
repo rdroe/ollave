@@ -13,8 +13,7 @@ export default {
             "Cm,3 --arp 0th half,eigth half,quarter --barName aphrodite:0 --tags x=1 y=2 z=3,4": `Add a Cm chord at 0 arpeggiated so that the first note is played at 0, the second at 1/2, the third at a halfplus an eigth, and with the added tags`
         },
     },
-
-    fn: async ({positionalNonCommands, arp = ['0th','0th','0th','0th','0th'],barName = 'default:1', tags, scaleTonic, scaleName }) => { 
+    fn: async ({positionalNonCommands, arp = ['0th','0th','0th','0th','0th'], barName = 'default:1', tags, scaleTonic, scaleName }) => { 
         const [chordName] = positionalNonCommands
         if (typeof chordName !== 'string' || !isChordCsvArg(chordName)) {
             throw new Error('Chord must be a valid chord name with comma-separated octave')
@@ -39,17 +38,8 @@ export default {
             throw new Error('Scale tonic and scale name must be strings')
         }
 
-        addChord(chordName, phaseName, parseInt(barIndex), arp, tags, z.string().or(z.undefined()).parse(scaleTonic), z.string().or(z.undefined()).parse(scaleName))
-        return {
-            positionalNonCommands,
-            barIndex,
-            phaseName,
-            tags,
-            scaleTonic,
-            scaleName,  
-            barName,
-            arp,
-        }
+        return addChord(chordName, phaseName, parseInt(barIndex), arp, tags, z.string().or(z.undefined()).parse(scaleTonic), z.string().or(z.undefined()).parse(scaleName), true)
+
     },
 
 } as Module

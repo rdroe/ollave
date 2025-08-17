@@ -165,7 +165,6 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
         // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
         barNotes.forEach((note) => {
             const parsedTags = parseNoteTags(note.tags)
-            console.log('parsedTags in mapSongToTicks', parsedTags)
             let thisNoteOffset = 0
             // look at this notes tags to determine how much to delay this note
             thisNoteOffset += calcFractionalDelay(parsedTags) // e.g half, 4th etc

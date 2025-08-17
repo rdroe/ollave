@@ -10,5 +10,3 @@ document.body.onload = () => {
     }
     createApp(app)
 }
-
-

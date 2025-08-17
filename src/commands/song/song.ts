@@ -191,10 +191,8 @@ song start
                     fn: async ({ $: dollar, positionalNonCommands, delay }) => {
                         const allNotes = Object.values(mem().notesByBar).flat() 
                         const lastChordLayerName = getLastChordLayerName() 
-                        console.log('lastChordLayerName', lastChordLayerName)
                         const grouped = groupNotesByFirstTagDatum(allNotes, 'layer').flat().filter((note) => {
                             const tagData = parseNoteTags(note.tags).find(([tagName]) => tagName === "layer")
-                            console.log("tag data", tagData)
                             return tagData?.[1][0] === lastChordLayerName
                         })
                         return grouped 

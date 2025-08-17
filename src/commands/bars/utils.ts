@@ -15,24 +15,27 @@ export const isRestArg = (arg: any) => {
         )
 }
 
-export const isNoteName = (nm: any): nm is string => {
+export const isNoteNameWithoutOctave = (nm: any): nm is string => {
     if (!isString(nm)) return false 
+    if (peprnIsNum(nm[nm.length - 1])) return false
+    const allButLastWithUpperFirst = nm.charAt(0).toUpperCase() + nm.slice(1)
+    if (!noteNames.includes(allButLastWithUpperFirst)) return false
+    return true
+}
 
-    const allButLastChar = nm.slice(0, -1) 
-    const allButLastWithUpperFirst = allButLastChar.charAt(0).toUpperCase() + allButLastChar.slice(1)
-    if (!noteNames.includes(allButLastWithUpperFirst)) return false 
+export const isNoteNameWithOctave = (nm: any): nm is string => {
+    if (!isString(nm)) return false 
+    const allButLastChar = nm.slice(0, -1)
+    if (!isNoteNameWithoutOctave(allButLastChar)) return false
     const lastChar = nm[nm.length - 1]
-    if (!peprnIsNum(lastChar)) return false 
-
-    return !!Note.get(nm)?.pc 
-
-
+    if (!peprnIsNum(lastChar)) return false
+    return !!Note.get(nm)?.pc
 }
 export const isStringArray = (arr: any[]): arr is string[] => {
     return arr.every((arg) => isString(arg))
 }
 const isNoteNameArray = (arr: any[]): arr is string[] => {
-    return arr.every((arg) => isNoteName(arg) || isRestArg(arg))
+    return arr.every((arg) => isNoteNameWithOctave(arg) || isRestArg(arg))
 }
 
 export const isCsvArg = (str: string): str is string => {
@@ -70,7 +73,7 @@ export const isNoteCsvArg = (str: string): str is string => {
 }
 
 const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
-    const initial = isString(nm) && !isNoteName(nm) && !!Chord.get(nm)?.name
+    const initial = isString(nm) && !isNoteNameWithOctave(nm) && !!Chord.get(nm)?.name
     if (initial) return initial
     if (!scaleTonic || !scaleName) {
         return initial

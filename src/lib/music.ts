@@ -70,8 +70,6 @@ const playMusic = async (json: Triad[]) => {
     return json
 }
 
-
-
 ////////////// api for outside world
 const initAndPlay = async (json: Triad[] /*, setLink*/) => {
     samplerState.sampler = await getSampler()

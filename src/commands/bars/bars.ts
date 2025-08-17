@@ -2,7 +2,7 @@ import { Module, awaitAll } from 'peprn/util'
 import { randId } from '../../lib/helpers'
 import { getAllPhaseBars, sortByNumberAfterColon } from '../../lib/mem-db'
 import { NoteByBar, mem } from '../../lib/mem'
-import { isChordCsvArg, isNoteCsvArg, isNoteName, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
+import { isChordCsvArg, isNoteCsvArg, isNoteNameWithOctave, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
 import { BAR, EIGHTH, tickCounts } from '../phase/observables/masterTicksObservable'
 import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag, parseNoteTags } from '../../lib/tags'
 import { isAbbreviationCsv, sumAbbreviationCsv } from '../notes/notes'
@@ -125,7 +125,7 @@ song start
                                 }
                                 const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(...parsed.map(fn))
-                            } else if (isNoteName(str)) {
+                            } else if (isNoteNameWithOctave(str)) {
                                 const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(fn(str))
                             } else {
@@ -224,7 +224,7 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
                                 const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(...parsed.map(fn))
 
-                            } else if (isNoteName(str)) {
+                            } else if (isNoteNameWithOctave(str)) {
                                 const fn = makeFulfilledBarNote(barTag, [`groupIndex=0`, `chordSize=1`, ...commonTags, ...timingTags, groupIdTag])
                                 receptacle.push(fn(str))
                             }
@@ -423,15 +423,7 @@ function fractionalStuff(bars: string[], packk: string[], detachedBars: NoteByBa
 
     // count the number of times we have iterated the --pack / --stuff argument.
     let packIterations = 0
-    console.log('spacing', {
-        barRanges,
-        absolutizedPackTranslation,
-        bars,
-        detachedGroups,
-        packk,
-        packIterations,
-        
-    })
+
     // exhausting the list of bars' absolute tick ranges (e.g. [0, 128])....
     while (barRanges.length) {
         let lastFilled = -1

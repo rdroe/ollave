@@ -1,9 +1,10 @@
 import { Module } from "peprn/util"
-import { isNoteName, isStringArray } from "../bars/utils"
-import { peprnIsNum } from "../../lib/helpers"
+import { isNoteNameWithOctave, isStringArray } from "../bars/utils"
+import { isScaleNameWithTonic, peprnIsNum, phaseScale } from "../../lib/helpers"
 import { phaseCount, phaseExists } from "../../lib/mem-db"
 import { parseNoteTags } from "../../lib/tags"
 import { addNoteToBar } from "../../lib/addNote"
+import { z } from "zod"
 
 export default {
     help: {
@@ -15,7 +16,7 @@ export default {
 
     fn: async ({ positionalNonCommands, barName = 'default:1', updatePhaseScale, tags }) => { 
         const [note] = positionalNonCommands
-        if (!isNoteName(note)) {
+        if (!isNoteNameWithOctave(note)) {
             throw new Error('Note must be a valid note name')
         }
         if (typeof barName !== 'string') {
@@ -31,6 +32,23 @@ export default {
         if (!Array.isArray(tags) || !isStringArray(tags)) {
             throw new Error('Tags must be a string array')
         }
+        const phaseScaleArrOrUndefined = z.string().or(z.undefined()).transform((str) => {
+            if (!str) {
+                return undefined
+            }
+            const [scaleTonic, scaleName] = str.split(' ')
+            if (!isScaleNameWithTonic(str)) {
+
+                throw new Error(`Scale ${str} not found`)
+            }
+            return [scaleTonic, scaleName]
+        }).parse(updatePhaseScale)
+
+        if (phaseScaleArrOrUndefined) {
+            const [scaleTonic, scaleName] = phaseScaleArrOrUndefined
+            phaseScale(phaseName, scaleName, scaleTonic)
+        }
+        
         const parsedNoteTags = parseNoteTags(tags)
         addNoteToBar(note, barName, parsedNoteTags)
 

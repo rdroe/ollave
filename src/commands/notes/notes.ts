@@ -314,16 +314,13 @@ export default {
                                     fn: async ({ positionalNonCommands: patterns }, calls) => {
 
                                         const notes1 = await calls['notes in $ $']
-                                        console.log('notes1', notes1)
 
                                         if (!isNotesByBar(notes1)) {
                                             throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
                                         }
 
-                                        console.log('patterns', patterns) // e.g. [ 2, "8th,4th", 2, "16th,32nd" ]
                                         const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
                                         const delaysPerChordSize = parseDelayMatrix(prepped)
-                                        console.log('delaysPerChordSize', {prepped, delaysPerChordSize})
                                         notes1.forEach((nt) => {
 
                                             const parsed = Object.fromEntries(parseNoteTags(nt.tags))
