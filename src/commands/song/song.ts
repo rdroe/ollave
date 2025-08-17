@@ -5,12 +5,12 @@ import fakeCli from 'peprn/fakeCli'
 const { userTables } = browser
 import { startCueObservable } from './observables'
 
-import { downloadSong } from 'src/lib/download'
+import { downloadSong } from '../../lib/download'
 
-import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from 'src/lib/mapSongToTicks'
+import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTicks'
 import { trackTempo } from '../phase/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../bars/utils'
-import { groupNotesByFirstTagDatum, parseNoteTags } from 'src/lib/tags'
+import { groupNotesByFirstTagDatum, parseNoteTags } from '../../lib/tags'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props
 export type SongRecord = {

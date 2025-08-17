@@ -1,12 +1,12 @@
 import { Module, awaitAll } from 'peprn/util'
-import { randId } from 'src/lib/helpers'
+import { randId } from '../../lib/helpers'
 
 import { mem } from '../../lib/mem'
 
 import { isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../bars/utils'
 import { abbrev, isAbbreviation, tickCounts } from '../phase/observables/masterTicksObservable'
 
-import { mapSongToMidiTicks } from 'src/lib/mapSongToTicks'
+import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 
 
 const cliDelaysToTags = (delay?: string[]): string[] => {

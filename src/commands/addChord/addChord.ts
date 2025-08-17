@@ -1,9 +1,9 @@
 import { isStringArray } from "../bars/utils"
 import { Module } from "peprn/util"
 import { isChordCsvArg } from "../bars/utils"
-import { peprnIsNum } from "src/lib/helpers"
-import { phaseCount, phaseExists } from "src/lib/mem-db"
-import { addChord } from "src/lib/addChord"
+import { peprnIsNum } from "../../lib/helpers"
+import { phaseCount, phaseExists } from "../../lib/mem-db"
+import { addChord } from "../../lib/addChord"
 import { z } from "zod"
 
 export default {

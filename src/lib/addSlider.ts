@@ -1,7 +1,7 @@
-import { tickCounts } from "src/commands/phase/observables/masterTicksObservable"
-import { mem, NoteByBar } from "src/lib/mem"
+import { tickCounts } from "../commands/phase/observables/masterTicksObservable"
+import { mem, NoteByBar } from "../lib/mem"
 import { peprnIsNum } from "./helpers"
-import { mapSongToMidiTicks } from "src/lib/mapSongToTicks"
+import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
 
 
 /**

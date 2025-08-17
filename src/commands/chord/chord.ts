@@ -7,10 +7,10 @@ import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
 import { getNotesByEntity, isNotesByBar, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
-import { filterDelayTags, latestNote, parseNoteTags, scale } from 'src/lib/tags'
-import { mapSongToMidiTicks } from 'src/lib/mapSongToTicks'
+import { filterDelayTags, latestNote, parseNoteTags, scale } from '../../lib/tags'
+import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { mem } from '../../lib/mem'
-import { lookUpGraph } from 'src/lib/mem-db'
+import { lookUpGraph } from '../../lib/mem-db'
 
 export const chord: Module = {
     help: {

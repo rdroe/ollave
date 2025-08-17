@@ -1,9 +1,9 @@
-import { isString, peprnIsNum, randId } from 'src/lib/helpers'
-import { lookUpGraph } from 'src/lib/mem-db'
+import { isString, peprnIsNum, randId } from '../../lib/helpers'
+import { lookUpGraph } from '../../lib/mem-db'
 import { Chord, Note } from 'tonal'
-import { chordNameWithNotes, noteNames } from 'src/lib/graphh'
-import { NoteByBar } from 'src/lib/mem'
-import { parseNoteTags } from 'src/lib/tags'
+import { chordNameWithNotes, noteNames } from '../../lib/graphh'
+import { NoteByBar } from '../../lib/mem'
+import { parseNoteTags } from '../../lib/tags'
 
 export const isRestArg = (arg: any) => {
     return isString(arg)

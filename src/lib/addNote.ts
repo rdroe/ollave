@@ -1,6 +1,6 @@
-import { mem } from "src/lib/mem"
-import { getTagData, TagData, TagEntries, unparseTagEntries } from "./tags"
-import { mapSongToMidiTicks } from "src/lib/mapSongToTicks"
+import { mem } from "../lib/mem"
+import { getTagData, TagEntries, unparseTagEntries } from "./tags"
+import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
 
 export const addNoteToBar = async (note: string, bar: string, tags: TagEntries) => {
     const barObj = mem().notesByBar[bar]
