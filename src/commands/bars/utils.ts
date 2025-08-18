@@ -16,6 +16,7 @@ export const isRestArg = (arg: any) => {
 }
 
 export const isNoteNameWithoutOctave = (nm: any): nm is string => {
+    if (typeof nm !== 'string' || nm.length === 0) return false
     if (!isString(nm)) return false 
     if (peprnIsNum(nm[nm.length - 1])) return false
     const allButLastWithUpperFirst = nm.charAt(0).toUpperCase() + nm.slice(1)

@@ -1,9 +1,8 @@
 import { isNumber } from "peprn/util"
 import { mem } from "./mem"
-import { notes } from "src/commands"
-import { Scale } from "tonal"
+
 import { allScales } from "./graphh"
-import { isNoteNameWithOctave, isNoteNameWithoutOctave } from "src/commands/bars/utils"
+import { isNoteNameWithoutOctave } from "../commands/bars/utils"
 import { getAllPhaseBarNotes } from "./mem-db"
 import { updateNoteTag } from "./tags"
 export const strjson = (arg: any) => JSON.stringify(arg, null, 2)
@@ -17,7 +16,9 @@ export const isStringNumNum = (arr: any[]): arr is [string, number, number] => {
     return isString(a) && isNum(b) && isNum(c)
 }
 
-export const peprnIsNum = isNumber
+export const peprnIsNum = (arg: string | number) => {
+    return typeof arg === 'number' || isNumber(arg)
+}
 
 export const passivelyNumberize = (arg: string | number): number | string => {
     if (typeof arg === 'number') return arg

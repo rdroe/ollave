@@ -7,7 +7,6 @@ import bar from './commands/bar/bar'
 import debug from './commands/debug/debug'
 import notes from './commands/notes/notes'
 import { chord } from './commands/chord/chord'
-import { match } from 'peprn'
 
 import { mem } from './lib/mem'
 import fakeCli from 'peprn/fakeCli'
@@ -65,7 +64,7 @@ export const app: Parameters<typeof createApp>[0] = {
     id: "cli",
     init,
     modules: {
-        chord, play, phase, song, match, bars, bar, debug, notes,
+        chord, play, phase, song, bars, bar, debug, notes,
         addNote,
         addChord,
         romanChordNameToReal: romanChordNameToRealModule,
