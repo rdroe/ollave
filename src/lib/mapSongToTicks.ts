@@ -24,7 +24,7 @@ export type PhaseMap = {
     }[]
 }
 
-export type BarTagPercent = [tagName: string, percent: number]
+export type BarTagPercent = [tagName: string | null, percent: number]
 
 export const mapSongToMidiTicks = () => {
     const firstPhases = Object.entries(mem().phases).filter(([_, phase]) => {
@@ -103,6 +103,9 @@ export const barsAtMidi = (songTick: number): BarTagPercent[] => {
         })
         return acc
     }, {} as PhaseMap)
+    if (ret.length === 0) {
+        ret.push([null, 0])
+    }
 
     return ret as BarTagPercent[]
 }
@@ -133,7 +136,7 @@ export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
                     if (typeof barEnd !== "number") throw new Error("We should have numeric data for the end of the bar")
 
 
-                    if (barTag === soughtTagName) {
+                    if (barTag === soughtTagName || soughtTagName === null) {
 
                         const len = barEnd - barStart
                         const tick = percent * len / 100

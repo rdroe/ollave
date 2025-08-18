@@ -5,6 +5,8 @@ import { lastTick } from 'src/lib/mem-db';
 
 import { SongRecord, TrackRecord } from './song';
 import { browser } from 'user-tables';
+import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from 'src/lib/mapSongToTicks';
+import { startCueObservable } from './observables';
 
 
 const { songNames } = mem()
@@ -47,13 +49,24 @@ const getNoteIdFromTags = (tags: string[]) => {
 }
 
 const DISPLAY_EXPIRE = tickCounts.bar * 2
+let trackReceptacleSelector: string | null = null
+let doPrintNotes = false
+export function setTrackReceptacleSelector(selector: string) {
+    trackReceptacleSelector = selector
+}
+export function startPrintingNotes() {
+    doPrintNotes = true
+}
+export function stopPrintingNotes() {
+    doPrintNotes = false
+}
 async function trackInit() {
     const trackRecord: TrackRecord = {
         "start": 0,
         "phase-ids": []
     }
     const trackId = await browser.userTables.add('track', { data: trackRecord })
-    const songId = await browser.userTables.update('song', {
+    await browser.userTables.update('song', {
         id: mem().song.id,
         data: {
             "song-tracks": [[
@@ -108,70 +121,79 @@ export async function init() {
     }
 
     await songInit()
-
-    const tagsRoot = document.querySelector('.tags-app-root')
-    if (tagsRoot) {
-        let logItr = 0
-        const log = (...args: any[]) => {
-            if (mem().doLog && logItr % 100 === 0) {
-                console.log(...args)
-            }
+    let tagsRoot: HTMLDivElement | null = null
+    let logItr = 0
+    const log = (...args: any[]) => {
+        if (mem().doLog && logItr % 100 === 0) {
+            console.log(...args)
         }
-        const showingIds = new Set<string>;
-        setInterval(() => {
-            const adjustedCursor = mem().adjustedCursor
-            // on each tick of this interval fn, get the time ranges of what to show.
-            const end1 = adjustedCursor
+    }
+    const showingIds = new Set<string>;
+    setInterval(() => {
+        const adjustedCursor = mem().adjustedCursor
+        // on each tick of this interval fn, get the time ranges of what to show.
+        const end1 = adjustedCursor
 
-            let start1 = end1 - DISPLAY_EXPIRE
-            let start2: number | undefined
-            if (start1 < 0) {
-                // lastTick() gets end-of-song tick
-                start2 = lastTick() + start1
-                start1 = 0
-            }
+        let start1 = end1 - DISPLAY_EXPIRE
+        let start2: number | undefined
+        if (start1 < 0) {
+            // lastTick() gets end-of-song tick
+            start2 = lastTick() + start1
+            start1 = 0
+        }
 
-            const ranges = [[start1, end1]] as [start: number, end: number][]
-            if (start2 !== undefined) {
-                ranges.push([start2, lastTick()])
-            }
-            // analyze the ticks already showing
-            const showingTicks = new Set<number>; // for comparison to those we're about to add (skip if they're already added)
+        const ranges = [[start1, end1]] as [start: number, end: number][]
+        if (start2 !== undefined) {
+            ranges.push([start2, lastTick()])
+        }
+        // analyze the ticks already showing
+        const showingTicks = new Set<number>; // for comparison to those we're about to add (skip if they're already added)
 
-            const toRemoveNumbers = new Set<number>;
+        const toRemoveNumbers = new Set<number>;
 
-            (tagsRoot.querySelectorAll('.note-tags') as NodeListOf<HTMLDivElement>).forEach((elem: HTMLDivElement) => {
-                const dataset = elem.dataset
-                const tick = dataset.tick
+        // for existing tags, gather those that are no longer in the range.
+        (tagsRoot?.querySelectorAll('.note-tags') as NodeListOf<HTMLDivElement>)?.forEach((elem: HTMLDivElement) => {
+            const dataset = elem.dataset
+            const tick = dataset.tick
 
-                if (tick !== undefined) {
-                    const tickNum = parseInt(tick)
-                    showingTicks.add(tickNum)
-                    if (!ranges.find(([start, end]) => {
-                        return tickNum >= start && tickNum < end
-                    })) {
-                        toRemoveNumbers.add(tickNum)
-                    }
+            if (tick !== undefined) {
+                const tickNum = parseInt(tick)
+                showingTicks.add(tickNum)
+                if (!ranges.find(([start, end]) => {
+                    return tickNum >= start && tickNum < end
+                })) {
+                    toRemoveNumbers.add(tickNum)
                 }
-            });
+            }
+        });
 
+        toRemoveNumbers.forEach((num) => {
+            document.querySelectorAll(`[data-tick="${num}"]`).forEach((elem) => {
+                const dataset = (elem as HTMLDialogElement).dataset
+                const id = dataset.noteid
+                elem.remove()
+                showingIds.delete(id)
 
-            toRemoveNumbers.forEach((num) => {
-                const str = num.toString()
-
-                document.querySelectorAll(`[data-tick="${num}"]`).forEach((elem) => {
-                    const dataset = (elem as HTMLDialogElement).dataset
-                    const id = dataset.noteid
-                    elem.remove()
-                    showingIds.delete(id)
-
-                })
             })
+        })
 
-            mem().played = mem().played.filter(({ songTick }) => {
-                return !toRemoveNumbers.has(songTick)
-            })
+        mem().played = mem().played.filter(({ songTick }) => {
+            return !toRemoveNumbers.has(songTick)
+        })
 
+        if (doPrintNotes) {
+            if (!tagsRoot) {
+                if (!trackReceptacleSelector) {
+                    return
+                }
+                tagsRoot = document.querySelector(
+                    trackReceptacleSelector
+                ) as HTMLDivElement
+                return
+            }
+            if (!tagsRoot) {
+                return
+            }
             // use them to filter the tags.
             const toAdd = mem().played.filter(({ songTick, tags }) => {
                 const matchedRange = ranges.find(([rangeStart, rangeEnd]) => {
@@ -189,14 +211,29 @@ export async function init() {
             toAdd.forEach(({ tags, songTick, }) => {
                 const noteId = getNoteIdFromTags(tags)
                 const newHtml = `<div class="note-tags" data-noteid="${noteId}" data-tick="${songTick}">${songTick} => ${tags.join(" ")}</div>`;
-
                 const newElem = createElementFromHTML(newHtml);
                 tagsRoot.prepend(newElem);
                 showingIds.add(noteId)
 
             })
-            logItr += 1
+        }
+        logItr += 1
+        
 
-        }, 20)
-    }
+    }, 10)
+
+    // start and pause the song to get observable set up
+    mem().latestMap = mapSongToMidiTicks()
+    startCueObservable()
+    const songName = mem().song.name
+    mem().songPauses[songName] = [
+        null,
+        0
+    ]
+
+    Object.values(mem().observables[songName] || {}).forEach((observable) => {
+        observable.unsubscribe()
+    })
 }
+    
+

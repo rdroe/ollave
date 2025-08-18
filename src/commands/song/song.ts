@@ -11,7 +11,8 @@ import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTi
 import { trackTempo } from '../phase/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../bars/utils'
 import { groupNotesByFirstTagDatum, parseNoteTags } from '../../lib/tags'
-export { init } from './init'
+import { setTrackReceptacleSelector, startPrintingNotes, stopPrintingNotes } from './init'
+export { init, setTrackReceptacleSelector } from './init'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props
 export type SongRecord = {
@@ -78,6 +79,21 @@ song start
                 return null
             },
             submodules: {
+                printNotes: {
+                    fn: async ({ stop = false, selector = '.tags-app-root' }) => {
+                        if (stop) {
+                            stopPrintingNotes()
+                            return
+                        }
+                            startPrintingNotes()
+                            if (selector) {
+                                setTrackReceptacleSelector(selector)
+                            } else {
+                                console.warn('no selector provided for printing notes')
+                            }
+                        
+                    }
+                },
                 init: {
                     fn: async () => {
                         const trackRecord: TrackRecord = {
@@ -162,7 +178,9 @@ song start
 
                 if (observable) {
                     mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
-                    observable.unsubscribe()
+                    Object.values(mem().observables[songName] || {}).forEach((observable) => {
+                        observable.unsubscribe()
+                    })
                 }
 
             }

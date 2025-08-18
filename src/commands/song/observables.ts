@@ -1,9 +1,17 @@
-import { mem } from '../../lib/mem'
+import { Mem, mem } from '../../lib/mem'
 import { Observable } from 'rxjs'
 import { makeTickSubscribe } from '../phase/subjects/masterTicksSubject'
 import { playTriads } from '../../lib/music'
 import { lastTick } from '../../lib/mem-db'
 
+export const subscribeToSong = (song: string, name: string, fn: (tick: number, rawTick: number, snapShot: Mem, songName: string) => void) => {
+    mem().functions[song] = mem().functions[song] || {}
+    mem().functions[song][name] = fn
+}
+
+export const getSongCursor = (tick: number) => {
+    return tick % lastTick()
+}
 export const startCueObservable = (startAt?: number) => {
 
     // make a new observable that subscribes to master ticks
@@ -15,17 +23,14 @@ export const startCueObservable = (startAt?: number) => {
         throw new Error(`Song not initialized`)
     }
 
-
-
-
     const songObservable = new Observable(makeTickSubscribe(startAt))
-
-    mem().observables[song] = songObservable.subscribe({
+    const observables = mem().observables[song] || {}
+    observables['tick'] = songObservable.subscribe({
         next: ({ tick }) => {
 
             // get the midi tick relative to the start of the song
-            const adjustedCursor = tick % lastTick()
-            mem().adjustedCursor = tick % lastTick()
+            const adjustedCursor = getSongCursor(tick)
+            mem().adjustedCursor = adjustedCursor
             document.querySelector('.ollave-ticks').innerHTML = mem().adjustedCursor.toString()
 
             mem().latestMap[adjustedCursor]?.forEach((note) => {
@@ -44,4 +49,17 @@ export const startCueObservable = (startAt?: number) => {
             })
         }
     })
+
+    Object.entries(mem().functions[song] || {}).forEach(([fnName, fn]) => {
+        mem().observables[song][fnName] = songObservable.subscribe({
+            next: ({ tick }) => {
+                const adjustedCursor = getSongCursor(tick)
+                fn(adjustedCursor, tick, mem(), song)
+            }
+        })
+    })
+
+    mem().observables[song] = observables
+
+
 }

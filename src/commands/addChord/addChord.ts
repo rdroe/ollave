@@ -5,6 +5,9 @@ import { peprnIsNum } from "../../lib/helpers"
 import { phaseCount, phaseExists } from "../../lib/mem-db"
 import { addChord } from "../../lib/addChord"
 import { z } from "zod"
+import { subscribeToSong } from "../song/observables"
+import { mem } from "src/lib/mem"
+import { ONE_TWENTY_EIGHTH, tickCounts } from "../phase/observables/masterTicksObservable"
 
 export default {
     help: {
@@ -38,8 +41,9 @@ export default {
             throw new Error('Scale tonic and scale name must be strings')
         }
 
-        return addChord(chordName, phaseName, parseInt(barIndex), arp, tags, z.string().or(z.undefined()).parse(scaleTonic), z.string().or(z.undefined()).parse(scaleName), true)
+        const retVar = addChord(chordName, phaseName, parseInt(barIndex), arp, tags, z.string().or(z.undefined()).parse(scaleTonic), z.string().or(z.undefined()).parse(scaleName), true)
 
+        return retVar
     },
 
 } as Module

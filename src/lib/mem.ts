@@ -10,13 +10,17 @@ export type Mem = {
     subscriptions: {
         [key: string]: Subscription
     }
+    functions: {
+        [songName: string]:{ [fnName: string]: (tick: number, rawTick: number, snapShot: Mem, songName: string) => void}
+    },  
     observables: {
-        [key: string]: Unsubscribe
+        [songName: string]: {
+            [fnName: string]: Unsubscribe
+        }
     }
     songPauses: {
         [key: string]: BarTagPercent
     }
-
     songNames: string[]
     song: Exclude<SongRecord, "id"> & { id: number } | null,
     track: Exclude<TrackRecord, "id"> & { id: number } | null,
@@ -44,7 +48,7 @@ export type Mem = {
 const mem_: Mem = {
     subscriptions: {},
     songPauses: {},
-
+    functions: {},
     observables: {},
     song: null,
     track: null,

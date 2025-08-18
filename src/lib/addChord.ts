@@ -2,10 +2,11 @@ import { isChordCsvArg, parseChordCsvArg } from "../commands/bars/utils"
 import { mem, NoteByBar } from "../lib/mem"
 import { phaseCount } from "../lib/mem-db"
 import { isScaleNameWithTonic, phaseScale, randId } from "./helpers"
-import { abbrev, isAbbreviation, tickCounts } from "../commands/phase/observables/masterTicksObservable"
+import { abbrev, BAR, isAbbreviation, tickCounts } from "../commands/phase/observables/masterTicksObservable"
 import { calcFractionalDelay, parseNoteTags } from "./tags"
 import { addNoteToBar } from "./addNote"
 import { addSlider } from "./addSlider"
+import { subscribeToSong } from "src/commands/song/observables"
 
 export function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], userScaleTonic?: string, userScaleName?: string, doAddSlider: boolean = false): {
     noteIds: string[],
@@ -95,7 +96,6 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
             addSlider(barTag, noteId)
         }
     })
-    
     return {
         noteIds,
         barName: barTag,
