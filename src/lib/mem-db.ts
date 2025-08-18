@@ -5,10 +5,11 @@ import { randId, randomInt, strjson } from "./helpers"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { mem } from "./mem"
 import { StartEndTuple, phaseBeginningsAndEnds } from "../startEndData"
-const { phases, notesByBar } = mem()
+
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>
 export async function phaseFollowsPhase(subject: string, objects: string[]) {
+    const { phases } = mem()
     objects.forEach((obj) => {
         if (!phases[obj]) {
             throw new Error(`phase ${obj} does not exist`)
@@ -126,11 +127,15 @@ export const getFollowingPhases = (phaseName: string) => {
 
     return followsPhases
 }
+
 export const phaseExists = (phase: string) => {
+    const { phases } = mem()
     return phases[phase] !== undefined
 }
+
 // update phase to have n bars.
 export async function phaseCount(phase: string, size: number) {
+    const { phases, notesByBar } = mem()
     if (!phases[phase]) {
         phases[phase] = {
             id: null,
@@ -144,6 +149,7 @@ export async function phaseCount(phase: string, size: number) {
     }
     // get all the phase bars.
     let allBars = getAllPhaseBars(phase)
+
     if (allBars.length === 0) {
         const newBarTag = `${phase}:0`
         notesByBar[newBarTag] = []

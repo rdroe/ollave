@@ -1,17 +1,12 @@
 import { apps, createApp } from 'peprn/browser'
 import play from './commands/play/play'
 import phase from './commands/phase/phase'
-import song from './commands/song/song'
+import song, {init as songInit} from './commands/song/song'
 import bars from './commands/bars/bars'
 import bar from './commands/bar/bar'
 import debug from './commands/debug/debug'
 import notes from './commands/notes/notes'
 import { chord } from './commands/chord/chord'
-
-import { mem } from './lib/mem'
-import fakeCli from 'peprn/fakeCli'
-import { lastTick } from './lib/mem-db'
-import { tickCounts } from './commands/phase/observables/masterTicksObservable'
 import { strjson } from './lib/helpers'
 import { PEPRN_MULTILINE, PEPRN_MULTILINE_INDEX, PEPRN_MULTILINE_TOTAL } from 'peprn/util'
 
@@ -19,50 +14,11 @@ import { addChord } from './commands/index'
 import addNote from './commands/addNote/addNote'
 import { romanChordNameToRealModule } from './lib/subcommands'
 
-const { songNames } = mem()
-
-let namesResolver: Function | null = null
-
-const namesPromise = new Promise((res) => {
-    namesResolver = res
-});
-
-(() => {
-    import('./lib/words').then((w) => {
-        const wordList = w.words.split('\n')
-        for (let i = 0; i < 100; i++) {
-            const rand = Math.floor(Math.random() * wordList.length);
-            songNames.push(wordList[rand])
-        }
-        namesResolver()
-    })
-})()
-
-function createElementFromHTML(htmlString: string) {
-    var div = document.createElement('div');
-    div.innerHTML = htmlString.trim();
-
-    return div.firstChild;
-}
-
-const getNoteIdFromTags = (tags: string[]) => {
-    const noteIdTag = tags.find((tag => tag.startsWith('noteId=')))
-    let noteId: undefined | string
-    if (noteIdTag) {
-        noteId = noteIdTag.replace('noteId=', '')
-    }
-
-    if (!noteId) {
-        throw new Error(`could not get note id from ${strjson(tags)}`)
-    }
-    return noteId
-}
-
-const DISPLAY_EXPIRE = tickCounts.bar * 2
-
 export const app: Parameters<typeof createApp>[0] = {
     id: "cli",
-    init,
+    init: () => {
+        return songInit()
+    },
     modules: {
         chord, play, phase, song, bars, bar, debug, notes,
         addNote,
@@ -133,107 +89,3 @@ ${dataContainer.innerHTML}`
         }
     }
 } as const
-
-export async function init() {
-    await namesPromise
-    const doc = document.querySelector('body')
-    if (doc) {
-        doc.style.backgroundColor =
-            "darkblue"
-
-    }
-
-    await fakeCli('song init', 'cli').then(() => {
-    })
-
-    const tagsRoot = document.querySelector('.tags-app-root')
-    if (tagsRoot) {
-        let logItr = 0
-        const log = (...args: any[]) => {
-            if (mem().doLog && logItr % 100 === 0) {
-                console.log(...args)
-            }
-        }
-        const showingIds = new Set<string>;
-        setInterval(() => {
-            const adjustedCursor = mem().adjustedCursor
-            // on each tick of this interval fn, get the time ranges of what to show.
-            const end1 = adjustedCursor
-
-            let start1 = end1 - DISPLAY_EXPIRE
-            let start2: number | undefined
-            if (start1 < 0) {
-                // lastTick() gets end-of-song tick
-                start2 = lastTick() + start1
-                start1 = 0
-            }
-
-            const ranges = [[start1, end1]] as [start: number, end: number][]
-            if (start2 !== undefined) {
-                ranges.push([start2, lastTick()])
-            }
-            // analyze the ticks already showing
-            const showingTicks = new Set<number>; // for comparison to those we're about to add (skip if they're already added)
-
-            const toRemoveNumbers = new Set<number>;
-
-            (tagsRoot.querySelectorAll('.note-tags') as NodeListOf<HTMLDivElement>).forEach((elem: HTMLDivElement) => {
-                const dataset = elem.dataset
-                const tick = dataset.tick
-
-                if (tick !== undefined) {
-                    const tickNum = parseInt(tick)
-                    showingTicks.add(tickNum)
-                    if (!ranges.find(([start, end]) => {
-                        return tickNum >= start && tickNum < end
-                    })) {
-                        toRemoveNumbers.add(tickNum)
-                    }
-                }
-            });
-
-
-            toRemoveNumbers.forEach((num) => {
-                const str = num.toString()
-
-                document.querySelectorAll(`[data-tick="${num}"]`).forEach((elem) => {
-                    const dataset = (elem as HTMLDialogElement).dataset
-                    const id = dataset.noteid
-                    elem.remove()
-                    showingIds.delete(id)
-
-                })
-            })
-
-            mem().played = mem().played.filter(({ songTick }) => {
-                return !toRemoveNumbers.has(songTick)
-            })
-
-            // use them to filter the tags.
-            const toAdd = mem().played.filter(({ songTick, tags }) => {
-                const matchedRange = ranges.find(([rangeStart, rangeEnd]) => {
-                    return songTick >= rangeStart && songTick < rangeEnd
-                })
-
-                if (!matchedRange) return false
-                const noteid = getNoteIdFromTags(tags)
-
-                if (showingIds.has(noteid)) return false
-                return true
-            })
-
-            toAdd.reverse()
-            toAdd.forEach(({ tags, songTick, }) => {
-                const noteId = getNoteIdFromTags(tags)
-                const newHtml = `<div class="note-tags" data-noteid="${noteId}" data-tick="${songTick}">${songTick} => ${tags.join(" ")}</div>`;
-
-                const newElem = createElementFromHTML(newHtml);
-                tagsRoot.prepend(newElem);
-                showingIds.add(noteId)
-
-            })
-            logItr += 1
-
-        }, 20)
-    }
-}

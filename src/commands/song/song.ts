@@ -11,6 +11,7 @@ import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTi
 import { trackTempo } from '../phase/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../bars/utils'
 import { groupNotesByFirstTagDatum, parseNoteTags } from '../../lib/tags'
+export { init } from './init'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props
 export type SongRecord = {
@@ -34,7 +35,7 @@ export type PhaseRecord = {
     scaleName: string | null,
     scaleTonic: string | null
 }
-
+let hasInitialized = false
 export default {
     fn: async () => {
         return null
@@ -79,14 +80,12 @@ song start
             submodules: {
                 init: {
                     fn: async () => {
-
-
                         const trackRecord: TrackRecord = {
                             "start": 0,
                             "phase-ids": []
                         }
                         const trackId = await browser.userTables.add('track', { data: trackRecord })
-                        const songId = await browser.userTables.update('song', {
+                        await browser.userTables.update('song', {
                             id: mem().song.id,
                             data: {
                                 "song-tracks": [[
@@ -108,7 +107,6 @@ song start
                         } else {
                             console.error("no tracks for song", mem().song.id)
                         }
-
                     }
                 },
             }

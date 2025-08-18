@@ -1,6 +1,6 @@
 export {default as play} from './play/play'
 export {default as phase} from './phase/phase'
-export {default as song} from './song/song'
+export {default as song, init } from './song/song'
 export {default as bars} from './bars/bars'
 export {default as bar} from './bar/bar'
 export {default as debug} from './debug/debug'
