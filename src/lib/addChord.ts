@@ -6,7 +6,7 @@ import { abbrev, BAR, isAbbreviation, tickCounts } from "../commands/phase/obser
 import { calcFractionalDelay, parseNoteTags } from "./tags"
 import { addNoteToBar } from "./addNote"
 import { addSlider } from "./addSlider"
-import { subscribeToSong } from "src/commands/song/observables"
+
 
 export function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], userScaleTonic?: string, userScaleName?: string, doAddSlider: boolean = false): {
     noteIds: string[],

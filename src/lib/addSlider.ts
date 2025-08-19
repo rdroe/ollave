@@ -37,7 +37,7 @@ export function addSlider (barName: string, noteId: string) {
 // on the data object, replace the barDelay index by array index value
 // also call the mapSongToMidiTicks function to update the midi map, but 
 // use native JS setTimeout to debounce to 100ms
-function updateBarDelay (noteData: NoteByBar, newBarDelay: number) {
+export function updateBarDelay (noteData: NoteByBar, newBarDelay: number) {
     const index = noteData.tags.findIndex((tag) => tag.startsWith('barDelay='))
     if (index === -1) {
         throw new Error('barDelay tag not found')
