@@ -32,7 +32,7 @@ export const isNum = (arg: any): arg is number => {
 }
 
 function randomString(length: number) {
-    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const chars = '0123456789abcdef'
     var result = '';
     for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
     return result;

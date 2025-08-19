@@ -3,10 +3,10 @@ import { mem, NoteByBar } from "../lib/mem"
 import { peprnIsNum } from "./helpers"
 import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
 
-
 /**
  * Given a note id, add a slider to move the note to a new time within the bar
  * controls-1 is the div that will contain the slider
+ * 
  */
 export function addSlider (barName: string, noteId: string) {
     const controls1 = document.getElementById('controls-1')

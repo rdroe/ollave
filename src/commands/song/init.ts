@@ -1,11 +1,11 @@
-import { strjson } from 'src/lib/helpers';
-import { mem } from 'src/lib/mem';
+import { strjson } from '../../lib/helpers';
+import { mem } from '../../lib/mem';
 import { tickCounts } from '../phase/observables/masterTicksObservable';
-import { lastTick } from 'src/lib/mem-db';
+import { lastTick } from '../../lib/mem-db';
 
 import { SongRecord, TrackRecord } from './song';
 import { browser } from 'user-tables';
-import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from 'src/lib/mapSongToTicks';
+import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
 import { startCueObservable } from './observables';
 
 

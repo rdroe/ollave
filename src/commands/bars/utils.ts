@@ -1,10 +1,10 @@
 import { isString, peprnIsNum, randId } from '../../lib/helpers'
 import { lookUpGraph } from '../../lib/mem-db'
-import { Chord, Note } from 'tonal'
+import { Chord, ChordType, Note } from 'tonal'
 import { chordNameWithNotes, noteNames } from '../../lib/graphh'
 import { NoteByBar } from '../../lib/mem'
 import { parseNoteTags } from '../../lib/tags'
-
+const allChordTypes = ChordType.all()
 export const isRestArg = (arg: any) => {
     return isString(arg)
         && (
@@ -20,7 +20,9 @@ export const isNoteNameWithoutOctave = (nm: any): nm is string => {
     if (!isString(nm)) return false 
     if (peprnIsNum(nm[nm.length - 1])) return false
     const allButLastWithUpperFirst = nm.charAt(0).toUpperCase() + nm.slice(1)
-    if (!noteNames.includes(allButLastWithUpperFirst)) return false
+    const result = noteNames.includes(allButLastWithUpperFirst)
+    console.log('allButLastWithUpperFirst', {allButLastWithUpperFirst, noteNames, result} )
+    if (!result) return false
     return true
 }
 
@@ -74,6 +76,36 @@ export const isNoteCsvArg = (str: string): str is string => {
 }
 
 const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
+    const tokenized = Chord.tokenize(nm)
+    console.log('tokenized', tokenized)
+    if (tokenized.length === 2) {
+        if (!isNoteNameWithoutOctave(tokenized[0])) {
+            console.error('not a note name', tokenized[0])
+            return false
+        }
+        if (tokenized[1].toLowerCase() === '') {
+            return true
+        }
+        console.log('allChordTypes', {
+            'tokenized[1]': tokenized[1],
+            'allChordTypes': allChordTypes,
+            'result': allChordTypes.find((type) => {
+                return type.name.toLowerCase() === tokenized[1].toLowerCase()
+            })
+        })
+
+        return allChordTypes.find((type) => {
+
+            return type.name.toLowerCase() === tokenized[1].toLowerCase() || type.aliases.some((alias) => {
+                return alias.toLowerCase() === tokenized[1].toLowerCase()
+            })
+        })
+    }
+
+    return false
+}
+
+const isChordNameOld = (nm: any, scaleTonic?: string, scaleName?: string) => {
     const initial = isString(nm) && !isNoteNameWithOctave(nm) && !!Chord.get(nm)?.name
     if (initial) return initial
     if (!scaleTonic || !scaleName) {
@@ -152,13 +184,13 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
 }
 
 export const isChordCsvArg = (str: string, userTonic?: string, userScale?: string) => {
-
+    console.log('isChordCsvArg 0', str)
     if (!isCsvArg(str)) return false
-
+    console.log('isChordCsvArg 1', str)
     const csv = parseCsvArg(str)
-
+    console.log('isChordCsvArg 2', csv)
     if (!isChordName(csv[0], userTonic, userScale)) return false
-
+    console.log('isChordCsvArg 3', csv)
     if (typeof csv[1] !== 'number') return false
 
     return true

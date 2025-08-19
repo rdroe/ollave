@@ -190,7 +190,6 @@ bars aphrodite add Em,3 Am,3 [] C3,E3,G#3
 
                             const timingTags: string[] = []
 
-
                             if (isChordCsvArg(str, scaleTonic, scaleName)) {
 
                                 const [notes, tags] = parseChordCsvArg(str, `${scaleTonic} ${scaleName}`)
@@ -476,7 +475,6 @@ function fractionalStuff(bars: string[], packk: string[], detachedBars: NoteByBa
         packIterations += 1
 
     }
-
 
     Object.entries(newNotesByBar).forEach(([key, val]) => {
         notesByBar[key].push(...val)

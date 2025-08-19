@@ -134,7 +134,7 @@ export const phaseExists = (phase: string) => {
 }
 
 // update phase to have n bars.
-export async function phaseCount(phase: string, size: number) {
+export async function phaseCount(phase: string, size: number, skipCopy: boolean = false) {
     const { phases, notesByBar } = mem()
     if (!phases[phase]) {
         phases[phase] = {
@@ -172,11 +172,11 @@ export async function phaseCount(phase: string, size: number) {
         const lastBarNumber = parseInt(lastBar.split(':')[1])
         const lastBarNumberPlusOne = lastBarNumber + 1
 
-        const copyGroup = `copied:${randId("", 3)}}`
+        const copyGroup = `copied:${randId("", 3)}`
         for (let i = 0; i < barsToAdd; i++) {
-            const barToCopy = allBars[i % allBars.length]
+            const barToCopy =  allBars[i % allBars.length]
             const newBarTag = `${phase}:${lastBarNumberPlusOne + i}`
-            notesByBar[newBarTag] = notesByBar[barToCopy].map((note) => {
+            notesByBar[newBarTag] = skipCopy ? [] : notesByBar[barToCopy].map((note) => {
                 return {
                     ...note,
                     barTag: newBarTag,
