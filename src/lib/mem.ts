@@ -4,7 +4,7 @@ import { BarTagPercent, MidiMap } from "./mapSongToTicks"
 import { parseNoteTags, TagData, TagEntries, TagEntry } from "./tags"
 type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
 import { z } from "zod"
-import { isNoteNameWithOctave } from "src/commands/bars/utils"
+import { isNoteNameWithOctave } from "../commands/bars/utils"
 export type NoteByBar = {
     note: string;
     _tags: string[]
