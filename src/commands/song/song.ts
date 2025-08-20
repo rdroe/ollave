@@ -6,7 +6,6 @@ const { userTables } = browser
 import { startCueObservable } from './observables'
 
 import { downloadSong } from '../../lib/download'
-
 import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTicks'
 import { trackTempo } from '../phase/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../bars/utils'

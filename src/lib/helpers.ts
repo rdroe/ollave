@@ -18,12 +18,12 @@
 // - properScaleName: Format scale name properly
 
 import { isNumber } from "peprn/util"
-import { mem } from "./mem.js"
+import { mem } from "./mem"
 
-import { allScales } from "./graphh.js"
-import { isNoteNameWithoutOctave } from "../commands/bars/utils.js"
-import { getAllPhaseBarNotes } from "./mem-db.js"
-import { updateNoteTag } from "./tags.js"
+import { allScales } from "./graphh"
+import { isNoteNameWithoutOctave } from "../commands/bars/utils"
+import { getAllPhaseBarNotes } from "./mem-db"
+import { updateNoteTag } from "./tags"
 export const strjson = (arg: any) => JSON.stringify(arg, null, 2)
 export const isString = (arg: any): arg is string => {
     return typeof arg === 'string'

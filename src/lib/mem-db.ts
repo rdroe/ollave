@@ -17,11 +17,11 @@
 
 // using the currently loaded song, do any of the following.
 // updated both mem.ts and the database.
-import { ProgressionOptions, minor } from "./graphh.js"
-import { randId, randomInt, strjson } from "./helpers.js"
-import { mapSongToMidiTicks } from "./mapSongToTicks.js"
-import { mem } from "./mem.js"
-import { StartEndTuple, phaseBeginningsAndEnds } from "../startEndData.js"
+import { ProgressionOptions, minor } from "./graphh"
+import { randId, randomInt, strjson } from "./helpers"
+import { mapSongToMidiTicks } from "./mapSongToTicks"
+import { mem } from "./mem"
+import { StartEndTuple, phaseBeginningsAndEnds } from "../startEndData"
 
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>

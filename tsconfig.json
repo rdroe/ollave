@@ -16,8 +16,7 @@
         "target": "ES2022",
         "skipLibCheck": true,
         "allowSyntheticDefaultImports": true,
-		"module": "ESNext",
-		"moduleResolution": "node"
+		"module": "ESNext"
     },
     "include": ["./src/**/*.ts"],
     "watchOptions": {

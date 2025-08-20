@@ -1,11 +1,11 @@
-import { isChordCsvArg, parseChordCsvArg } from "../commands/bars/utils.js"
-import { mem, NoteByBar } from "../lib/mem.js"
-import { phaseCount } from "../lib/mem-db.js"
-import { isScaleNameWithTonic, phaseScale, randId } from "./helpers.js"
-import { abbrev, BAR, isAbbreviation, tickCounts } from "../commands/phase/observables/masterTicksObservable.js"
-import { calcFractionalDelay, parseNoteTags } from "./tags.js"
-import { addNoteToBar } from "./addNote.js"
-import { addSlider } from "./addSlider.js"
+import { isChordCsvArg, parseChordCsvArg } from "../commands/bars/utils"
+import { mem, NoteByBar } from "../lib/mem"
+import { phaseCount } from "../lib/mem-db"
+import { isScaleNameWithTonic, phaseScale, randId } from "./helpers"
+import { abbrev, BAR, isAbbreviation, tickCounts } from "../commands/phase/observables/masterTicksObservable"
+import { calcFractionalDelay, parseNoteTags } from "./tags"
+import { addNoteToBar } from "./addNote"
+import { addSlider } from "./addSlider"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
 
 export function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], userScaleTonic?: string, userScaleName?: string, doAddSlider: boolean = false): {
