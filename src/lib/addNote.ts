@@ -1,5 +1,5 @@
 import { mem, NoteByBar } from "../lib/mem"
-import { getTagData, TagEntries, unparseTagEntries } from "./tags"
+import { getTagData, TagEntries, unparseTagEntries } from "./tags.js"
 import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
 
 export const addNoteToBar = async (note: string, bar: string, tagsIn: TagEntries): Promise<NoteByBar> => {

@@ -1,6 +1,6 @@
 {
     "name": "ollave",
-    "version": "0.1.10",
+    "version": "0.2.0",
     "repository": "git@github.com:rdroe/ollave.git",
     "license": "MIT",
     "description": "framework for developing musical streams",
@@ -37,6 +37,7 @@
     "exports": {
         "./commands": "./public/js/commands/index.js",
         "./lib": "./public/js/lib/index.js",
+        "./lib/*": "./public/js/lib/*.js",
         "./cli": "./public/js/cli.js"
     },
     "typesVersions": {
@@ -46,6 +47,9 @@
             ],
             "lib": [
                 "public/js/lib/index.d.ts"
+            ],
+            "lib/*": [
+                "public/js/lib/*.d.ts"
             ],
             "commands": [
                 "public/js/commands/index.d.ts"

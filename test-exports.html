@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollave API Exports Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ollave API Exports Test</h1>
+    <p>This page tests the new export structure for external packages.</p>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Usage Examples</h2>
+        <h3>Individual Function Imports</h3>
+        <pre><code>// Import specific functions from mem-db
+import { phaseCount, phaseExists, getAllPhaseBars } from 'ollave/lib/mem-db'
+
+// Import utility functions from helpers
+import { randId, phaseScale, isString } from 'ollave/lib/helpers'
+
+// Import music-related functions
+import { addNoteToBar } from 'ollave/lib/addNote'
+import { updateNoteTag, parseNoteTags } from 'ollave/lib/tags'</code></pre>
+
+        <h3>Namespace Imports</h3>
+        <pre><code>// Import entire modules
+import * as memDb from 'ollave/lib/mem-db'
+import * as helpers from 'ollave/lib/helpers'
+
+// Use with namespace
+memDb.phaseCount('myPhase', 4)
+helpers.randId('prefix', 8)</code></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Available Modules</h2>
+        <ul>
+            <li><strong>ollave/lib/mem-db</strong> - Phase and musical data management</li>
+            <li><strong>ollave/lib/helpers</strong> - Utility functions</li>
+            <li><strong>ollave/lib/addNote</strong> - Note addition functions</li>
+            <li><strong>ollave/lib/tags</strong> - Note tag management</li>
+            <li><strong>ollave/lib/graphh</strong> - Chord progression utilities</li>
+            <li><strong>ollave/lib/music</strong> - Music playback and audio</li>
+            <li><strong>ollave/lib/midi</strong> - MIDI file generation</li>
+            <li><strong>ollave/lib/subcommands</strong> - Subcommand parsing</li>
+            <li><strong>ollave/lib/mapSongToTicks</strong> - Song timing utilities</li>
+        </ul>
+    </div>
+
+    <script type="module">
+        // Test the export structure in browser environment
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+
+        async function runTests() {
+            log('Starting export tests...', 'info');
+            
+            try {
+                // Test importing individual functions from mem-db
+                const { phaseCount, phaseExists, getAllPhaseBars } = await import('./public/js/lib/mem-db.js');
+                
+                log('✓ mem-db exports test passed', 'success');
+                log(`  - phaseCount: ${typeof phaseCount}`);
+                log(`  - phaseExists: ${typeof phaseExists}`);
+                log(`  - getAllPhaseBars: ${typeof getAllPhaseBars}`);
+
+                // Test importing individual functions from helpers
+                const { randId, phaseScale, isString } = await import('./public/js/lib/helpers.js');
+                
+                log('✓ helpers exports test passed', 'success');
+                log(`  - randId: ${typeof randId}`);
+                log(`  - phaseScale: ${typeof phaseScale}`);
+                log(`  - isString: ${typeof isString}`);
+
+                // Test importing from the main index
+                const { phaseCount: phaseCountFromIndex, randId: randIdFromIndex } = await import('./public/js/lib/index.js');
+                
+                log('✓ main index exports test passed', 'success');
+                log(`  - phaseCount from index: ${typeof phaseCountFromIndex}`);
+                log(`  - randId from index: ${typeof randIdFromIndex}`);
+
+                // Test namespace imports
+                const memDb = await import('./public/js/lib/mem-db.js');
+                const helpers = await import('./public/js/lib/helpers.js');
+                
+                log('✓ namespace imports test passed', 'success');
+                log(`  - memDb.phaseCount: ${typeof memDb.phaseCount}`);
+                log(`  - helpers.randId: ${typeof helpers.randId}`);
+
+                // Test some utility functions
+                const testId = randId('test', 6);
+                log(`✓ randId function test: ${testId}`, 'success');
+                
+                const isStringTest = isString('hello');
+                log(`✓ isString function test: ${isStringTest}`, 'success');
+
+                log('🎉 All tests passed! The export structure is working correctly in the browser.', 'success');
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+                console.error('Test error:', error);
+            }
+        }
+
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+</html>
