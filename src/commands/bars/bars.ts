@@ -27,7 +27,6 @@ export default {
                 if (ownLength === longestCall) {
                     const [phaseName] = $
                     return Object.fromEntries(Object.entries(mem().notesByBar).filter(([k]) => k.startsWith(`${phaseName}:`)).map(([k, v]: [k: string, v: NoteByBar[]]) => {
-
                         const allChords = v.reduce((accum: string[], curr: NoteByBar) => {
                             const parsed = Object.fromEntries(parseNoteTags(curr.tags))
                             const [chordName] = parsed.chord

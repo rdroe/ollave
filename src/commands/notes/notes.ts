@@ -7,7 +7,7 @@ import {
     tickCounts
 } from '../phase/observables/masterTicksObservable'
 import { isCsvArg, parseCsvArg } from '../bars/utils'
-import { NoteByBar, mem } from '../../lib/mem'
+import { NoteByBar, mem, noteByBarSchema } from '../../lib/mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from '../../lib/mem-db'
 import { filterDelayTags, parseNoteTags } from '../../lib/tags'
@@ -20,10 +20,7 @@ const isNoteCnt = (str: string | number) => {
     return !!str.match(/[0-9]+x/)
 }
 
-const noteByBarSchema = z.object({
-    note: z.string(),
-    tags: z.array(z.string())
-})
+
 
 const notesByBarSchema = z.array(noteByBarSchema)
 

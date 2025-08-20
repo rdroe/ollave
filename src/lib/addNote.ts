@@ -1,4 +1,4 @@
-import { mem, NoteByBar } from "../lib/mem"
+import { makeNoteByBar, mem, NoteByBar } from "../lib/mem"
 import { getTagData, TagEntries, unparseTagEntries } from "./tags"
 import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
 
@@ -12,17 +12,10 @@ export const addNoteToBar = async (note: string, bar: string, tagsIn: TagEntries
     }
 
     if (!['string', 'number'].includes(typeof getTagData(tagsIn, 'noteId')?.[0])) {
-        console.log('tagsIn', tagsIn)
         throw new Error('noteId tag is missing')
     }
     const tags = unparseTagEntries(tagsIn)
-    barObj.push({
-        note,
-        tags,
-    })
+    barObj.push(makeNoteByBar(note, tags))
     mem().latestMap = mapSongToMidiTicks()
-    return {
-        note,
-        tags,
-    }
+    return makeNoteByBar(note, tags)
 }

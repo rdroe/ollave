@@ -84,7 +84,7 @@ export default {
                                         const addNote = makeFulfilledBarNote(barTag, [groupIdTag, layerTag, placementTag, ...chordTags, ...delayTags])
                                         barNotes.push(...notes.map((n, idx) => {
                                             const initNote = addNote(n)
-                                            
+                                            initNote.tagsObj.groupIndex = [idx]
                                             return {
                                                 ...initNote,
                                                 tags: [

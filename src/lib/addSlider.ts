@@ -42,9 +42,9 @@ export function updateBarDelay (noteData: NoteByBar, newBarDelay: number) {
     if (index === -1) {
         throw new Error('barDelay tag not found')
     }
-    noteData.tags[index] = `barDelay=${newBarDelay}`
+    noteData.tagsObj['barDelay'] = [newBarDelay]
     setTimeout(() => {
         mem().latestMap = mapSongToMidiTicks()
-    }, 100)
+    }, 50)
     return noteData
 }
