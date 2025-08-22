@@ -9,3 +9,14 @@ export {default as chords} from './chords/chords'
 export { chord } from './chord/chord'
 export {default as addChord} from './addChord/addChord'
 export {default as addNote} from './addNote/addNote'
+export {
+    airSpeed,
+    setAirSpeed,
+    tempoFromAirSpeed,
+    parseAirSpeed,
+    msPerTick,
+    msPerQuarterNote,
+    updateExportableTick,
+    setExportableTick,
+    exportableTick,
+} from './phase/observables/masterTicksObservable'

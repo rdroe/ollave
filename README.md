@@ -8,9 +8,10 @@ Ollave is a browser-based CLI-style music production framework that enables real
 - **Real-time Audio**: Live music playback using Tone.js and piano samples
 - **Phase-based Composition**: Organize music into phases with following relationships
 - **MIDI Integration**: Full MIDI tick-based timing system
+- **Real-time Tempo Control**: Dynamic speed adjustment during playback
 - **Chord and Scale Support**: Built-in chord progression and scale functionality
-- **Export Capabilities**: Download compositions as MIDI files
-- **Visual Feedback**: Real-time display of played notes and timing
+- **Export Capabilities**: Download compositions as MIDI files with tempo changes
+- **Visual Feedback**: Real-time display of played notes, timing, and tempo changes
 
 ## 🏗️ Architecture
 
@@ -27,8 +28,10 @@ The central state management system that maintains:
 #### 2. **Tick System (`src/commands/phase/observables/masterTicksObservable.ts`)**
 The heartbeat of the application:
 - Emits MIDI ticks at song tempo (default 120 BPM)
+- Supports real-time tempo changes via "air mode"
 - Manages timing relationships between phases
 - Handles bar and beat subdivisions
+- Provides tempo slider controls for live performance
 
 #### 3. **Phase System (`src/commands/phase/phase.ts`)**
 Organizes music into temporal sections:
@@ -58,8 +61,24 @@ song start
 # Stop playing the current song
 song stop
 
-# Download the song as MIDI file
+# Download the song as MIDI file (includes tempo changes)
 song dl
+```
+
+### Tempo Control
+
+```bash
+# Change playback speed in real-time (12-400 range)
+tempo 100
+
+# Set to minimum speed (12 = 14.4 BPM)
+tempo 12
+
+# Set to maximum speed (400 = 480 BPM)
+tempo 400
+
+# Add tempo slider to interface
+tempo 150 --addSlider
 ```
 
 ### Phase Management
@@ -188,6 +207,54 @@ notes in phase melody arrange 2 8th,4th 2 16th,32nd
 notes in phase melody arrange 3 8th,4th 2 16th,32nd 1 32nd,64th
 ```
 
+### Real-time Tempo Control
+
+```bash
+# Set playback speed to 50% (60 BPM)
+tempo 50
+
+# Speed up to 200% (240 BPM)
+tempo 200
+
+# Add interactive tempo slider
+tempo 150 --addSlider
+
+# Fine-tune tempo during playback
+# Use the slider to adjust speed from 12-400 range
+# (12 = 14.4 BPM, 400 = 480 BPM)
+```
+
+## 🎛️ Timing System Architecture
+
+### Air Mode vs Paper Mode
+Ollave supports two timing modes:
+
+**Air Mode (Default)**: Real-time tempo control
+- Dynamic speed changes during playback
+- Speed range: 12-400 (0.12x to 4x base tempo)
+- Interactive tempo slider support
+- Immediate tempo changes without pre-planning
+
+**Paper Mode**: Pre-planned tempo changes
+- Tempo changes defined in advance
+- Linear interpolation between planned changes
+- Used for complex tempo maps and automation
+
+### Tempo Control Functions
+```typescript
+// Set playback speed (12-400 range)
+setAirSpeed(speed: number)
+
+// Get current speed multiplier
+airSpeed(): number
+
+// Convert speed to BPM
+tempoFromAirSpeed(speed: number): number
+
+// Parse speed from string input
+parseAirSpeed(speed: string): number
+```
+
 ## 🎛️ Data Model
 
 ### Song Structure
@@ -294,6 +361,7 @@ The application uses MIDI ticks for precise timing:
 - Tick resolution: 128 ticks per quarter note (PPQ)
 - Supports fractional timing and delays
 - Real-time tick emission for live playback
+- Dynamic tempo changes during playback (12-400 range)
 
 ### Timing System
 The timing system supports multiple levels of precision:
@@ -301,6 +369,7 @@ The timing system supports multiple levels of precision:
 - **Fractional timing**: `8th=1`, `16th=2` (musical note divisions)
 - **Delay patterns**: `8th,4th half 4th,16th` (complex timing matrices)
 - **Arpeggiation**: Automatic note spacing for chord voicings
+- **Real-time tempo control**: Dynamic speed adjustment (0.12x to 4x base tempo)
 
 ### Tags
 Notes use a rich tagging system:
@@ -326,6 +395,8 @@ The interface shows:
 - Recently played notes with tags
 - Phase and bar relationships
 - Live composition feedback
+- Tempo changes and current playback speed
+- Interactive tempo slider for live performance
 
 ### Scale Integration
 Automatic scale-aware composition:
@@ -340,6 +411,7 @@ Advanced timing features for musical expression:
 - **Arpeggiation**: Automatic chord note spacing with `notes arrange`
 - **Bar-level timing**: Precise tick-based positioning within bars
 - **Pattern repetition**: Apply timing patterns across multiple notes
+- **Real-time tempo control**: Dynamic speed adjustment during playback
 
 ## 🤝 Contributing
 
