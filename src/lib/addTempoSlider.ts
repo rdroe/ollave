@@ -18,10 +18,17 @@ export function addTempoSlider (selector: string = '.controls-1') {
     slider.max = `400`
 
     slider.value = (airSpeed() * 100).toString()
-    let setTimeoutId: NodeJS.Timeout | null = null
     
     slider.oninput = (ev) => {
-        const newAirSpeed = parseAirSpeed((ev.target as HTMLInputElement).value)
+        handleTempoChangeString()((ev.target as HTMLInputElement).value)
+    }
+    controls.appendChild(slider)
+}
+
+export function handleTempoChangeString() {
+    let setTimeoutId: NodeJS.Timeout | null = null
+    return (stringNumber: string) => {
+        const newAirSpeed = parseAirSpeed(stringNumber)
         if (setTimeoutId) {
             clearTimeout(setTimeoutId)
         }
@@ -36,5 +43,4 @@ export function addTempoSlider (selector: string = '.controls-1') {
             })
         }, 50)
     }
-    controls.appendChild(slider)
 }
