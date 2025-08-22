@@ -1,7 +1,7 @@
 import { Module } from "peprn/util";
-import { airSpeed, curr, exportableTick, setAirSpeed, trackTempo } from "../phase/observables/masterTicksObservable";
+import { airSpeed, curr, exportableTick, setAirSpeed, tempoFromAirSpeed, trackTempo } from "../phase/observables/masterTicksObservable";
 import { mem } from "src/lib";
-import { START_SPEED } from "src/lib/mapSongToTicks";
+import { addTempoSlider } from "src/lib/addTempoSlider";
 
 export const tempo = {
     help: {
@@ -11,14 +11,18 @@ export const tempo = {
             '825': 'Change the speed of the track 120 * .12 (the max)'
         }
     },
-    fn: async ({ positionalNonCommands: [speed] }) => {
+    fn: async ({ positionalNonCommands: [speed], addSlider = true}) => {
         if (typeof speed !== 'number') throw new Error('Speed must be a number')
         setAirSpeed(speed)
         const currTick = exportableTick()
         mem.mem().playedMap[currTick] = mem.mem().playedMap[currTick] || []
+        
         mem.mem().playedMap[currTick].push({
-            note: `tempo: ${Math.round(trackTempo / airSpeed() )}`,
+            note: `tempo: ${tempoFromAirSpeed(airSpeed())}`,
             compositionTags: []
         })
+        if (addSlider) {
+            addTempoSlider('#controls-1')
+        }
     }
 } as Module

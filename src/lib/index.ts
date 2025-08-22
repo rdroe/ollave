@@ -13,6 +13,8 @@ export * as mapSongToTicks from './mapSongToTicks'
 export * as mem from './mem'
 export * as memDb from './mem-db'
 export * as cli from '../cli'
+export * as addTempoSlider from './addTempoSlider'
+
 
 // Individual function exports for direct access
 // mem-db exports
@@ -27,7 +29,8 @@ export {
     getAllPhaseBarNotes,
     getFollowingPhases,
     phaseExists,
-    phaseCount
+    phaseCount,
+
 } from './mem-db'
 
 // helpers exports

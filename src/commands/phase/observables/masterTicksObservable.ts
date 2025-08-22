@@ -22,7 +22,12 @@ export const THIRTY_SECOND = 'thirtySecond' as const
 export const SIXTY_FOURTH = 'sixtyFourth' as const
 export const ONE_TWENTY_EIGHTH = 'oneTwentyEighth' as const
 export const ZERO = 'zero' as const
-
+const roundToTenths = (num: number) => {
+    return Math.round(num * 10) / 10
+}
+const round = (num: number) => {
+    return Math.round(num)
+}
 // used throughout the codebase.
 // needs to probably be functionalized for any kind of dynamicity of speed.
 export const tickCounts = {
@@ -70,14 +75,13 @@ export const abbrev = {
     'oneTwentyEighth': ONE_TWENTY_EIGHTH,
     'zero': ZERO,
 } as { [Property in Abbreviation]: keyof typeof tickCounts }
-
 // The number of ticks per musical entity dos not change. if the user wants to speed up the pace of the music, increase the "speed" variable.
 // This function calculated how many ms each tick should last. notice it accesess the capable-of-changing-in-real-time "speed" variable.x
 export const msPerTick = (/*tick: number*/) => {
-
+    const as1  = airSpeed()
     const msPer =
-        60000 / (trackTempo * ppq) * airSpeed() // fraction lowers the number
-    return msPer
+        60000 / (trackTempo * ppq) / as1 // fraction raises the number
+    return roundToTenths(msPer)
 }
 
 export const msPerQuarterNote = (/*tick: number*/) => {
@@ -86,35 +90,54 @@ export const msPerQuarterNote = (/*tick: number*/) => {
     return msPerQuarterNote
 }
 
+// takes a number between 1 and 300 and returns a number between 0.12 and 4
+export const parseAirSpeed = (speed: string) => {
+    const num = parseFloat(speed) / 100
+    if (num < 0.12) return 0.12
+    if (num > 4) return 4
+    return num
+}
+
+export const tempoFromAirSpeed = (speed: number) => {
+    return round(120 * speed)
+}
+
+export const airSpeedArgFromTempo = (tempo: number) => {
+    return tempo / 120
+}
+
 type TempoChange = [
     tickCount: number,
     tempo: number
 ]
 
-let expTick = 0
-
+let expTick_ = 0;
+(window as any).expTick = expTick_;
 export const updateExportableTick = () => {
-    expTick += 1
+    (window as any).expTick += 1
 }
-
+export const setExportableTick = (tick: number) => {
+    (window as any).expTick = tick
+}
 export const exportableTick = () => {
-    return expTick
+    return (window as any).expTick
 }
 
 
 // should be changeable in the future.
 // right now speed can only be altered via the "plannedSpeedChanges" array, which does not change trackTempo.
 export const trackTempo = 120
-let air = START_SPEED 
-export const setAirSpeed = (speedInt: number) => {
-    // .12 through 8.25
-    // integer 12 through 825 / 100
-    const fractionalSpeed = Math.max(12, Math.min(825, speedInt))  / 100
-    air = fractionalSpeed
+const airSpeedRef_ = {
+    air: START_SPEED,
+};
+(window as any).airSpeedRef = airSpeedRef_;
+
+export const setAirSpeed = (speedFloat: number) => {
+    (window as any).airSpeedRef.air = roundToTenths(speedFloat);
 }
 
 export const airSpeed = () => {
-    return air
+    return roundToTenths((window as any).airSpeedRef.air);
 }
 
 const MODE: 'air' | 'paper' = 'air'
