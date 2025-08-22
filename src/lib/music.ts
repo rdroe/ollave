@@ -3,10 +3,15 @@ import * as tone from 'tone'
 const port = window?.location?.port ?? '8080'
 const host = window?.location?.hostname ?? 'localhost'
 export type Triad = [note: string, dur: number, timing?: number] // e.g. C5, 0.125 , 29.0078125
+export type BPM =  number
 export type RelativeNote = [
     note: string,
     rel: number,
     onOrOff: 'on' | 'off'
+] | [
+    note: BPM,
+    rel: number,
+    onOrOff: 'tempo'
 ]
 // import { Piano } from '@tonejs/piano'
 
@@ -73,7 +78,6 @@ const playMusic = async (json: Triad[]) => {
 ////////////// api for outside world
 const initAndPlay = async (json: Triad[] /*, setLink*/) => {
     samplerState.sampler = await getSampler()
-
     return playMusic(json)
 }
 

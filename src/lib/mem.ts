@@ -11,7 +11,6 @@ export type NoteByBar = {
     tagsObj: {
         [key: string]: TagData
     }
-    // setTag: (tagName: string, ...values: TagEntry[1]) => void
     set tags(tags: string[])
     get tags(): string[]
 }
@@ -62,30 +61,10 @@ const wrapWithGetters = (note: z.infer<typeof noteByBarSchema>): NoteByBar => {
             this._tags = tags
             const newTagsObj = tagsObjSchema.parse(tags) 
             this.tagsObj = new Proxy(newTagsObj, handler)
-        },
-        // setTag(tagName: string, ...values: TagEntry[1]) {
-        //     const tag = `${tagName}=${values.join('=')}`
-        //     console.log('setting tag', tagName, 'in', _tags)
-        //     const existingTagsIndex = this._tags.findIndex((tag) => tag.startsWith(`${tagName}=`))
-        //     if (existingTagsIndex !== -1) {
-        //         _tags[existingTagsIndex] = tag
-        //     } else {
-        //         _tags.push(tag)
-        //     }
-        //     if (tagName === 'noteId') {
-        //         this.tagsObj.noteId = values.map((value) => {
-        //             if (typeof value === 'number') {
-        //                 return value.toString()
-        //             }
-        //             return value
-        //         })
-        //     } else {
-        //         console.log('setting tag', tagName, values)
-        //         this.tagsObj[tagName] = values
-        //     }
-        // }   
+        }
     }
 }
+
 export const makeNoteByBar = (note: string, tags: string[]): NoteByBar => {
     const tagsObj = tagsObjSchema.parse(tags)
     const noteByBarSansSetters = noteByBarSchema.parse({ note, tags, tagsObj })

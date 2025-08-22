@@ -3,6 +3,7 @@ import { Observable } from 'rxjs'
 import { makeTickSubscribe } from '../phase/subjects/masterTicksSubject'
 import { playTriads } from '../../lib/music'
 import { lastTick } from '../../lib/mem-db'
+import { exportableTick, updateExportableTick } from '../phase/observables/masterTicksObservable'
 
 export const subscribeToSong = (song: string, name: string, fn: (tick: number, rawTick: number, snapShot: Mem, songName: string) => void) => {
     mem().functions[song] = mem().functions[song] || {}
@@ -12,6 +13,7 @@ export const subscribeToSong = (song: string, name: string, fn: (tick: number, r
 export const getSongCursor = (tick: number) => {
     return tick % lastTick()
 }
+
 export const startCueObservable = (startAt?: number) => {
 
     // make a new observable that subscribes to master ticks
@@ -27,7 +29,7 @@ export const startCueObservable = (startAt?: number) => {
     const observables = mem().observables[song] || {}
     observables['tick'] = songObservable.subscribe({
         next: ({ tick }) => {
-
+            const expTick = exportableTick()
             // get the midi tick relative to the start of the song
             const adjustedCursor = getSongCursor(tick)
             mem().adjustedCursor = adjustedCursor
@@ -41,12 +43,13 @@ export const startCueObservable = (startAt?: number) => {
                     note: note.note,
                     tags: note.compositionTags
                 })
-                mem().playedMap[tick] = mem().playedMap[tick] || []
-                mem().playedMap[tick].push({
+                mem().playedMap[expTick] = mem().playedMap[expTick] || []
+                mem().playedMap[expTick].push({
                     note: note.note,
                     compositionTags: note.compositionTags
                 })
             })
+            updateExportableTick()
         }
     })
 

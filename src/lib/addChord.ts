@@ -8,7 +8,7 @@ import { addNoteToBar } from "./addNote"
 import { addSlider } from "./addSlider"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
 
-export function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], userScaleTonic?: string, userScaleName?: string, doAddSlider: boolean = false): {
+export function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], userScaleTonic: string = 'A', userScaleName: string = 'minor', doAddSlider: boolean = false): {
     noteIds: string[],
     barName: string,
     commonTags: string[],
@@ -91,7 +91,6 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
         const noteIdTag = `noteId=${noteId}`
         const allTags = [...commonTags /*, ...delayTags */, noteIdTag , `barDelay=${totalDelay}`]
         const noteObj = await addNoteToBar(note, barTag, parseNoteTags(allTags)) 
-
         allNotes.push(noteObj)
         if (doAddSlider) {
             addSlider(barTag, noteId)

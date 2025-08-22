@@ -35,7 +35,7 @@ export type PhaseRecord = {
     scaleName: string | null,
     scaleTonic: string | null
 }
-let hasInitialized = false
+
 export default {
     fn: async () => {
         return null
@@ -161,7 +161,6 @@ song start
         },
         stop: {
             help: {
-
                 description: 'Stop playing the song',
                 examples: {
                     '': 'start playing the song'
@@ -176,12 +175,12 @@ song start
                     mem().observables[songName]
 
                 if (observable) {
+
                     mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
                     Object.values(mem().observables[songName] || {}).forEach((observable) => {
                         observable.unsubscribe()
                     })
                 }
-
             }
         },
         dl: {
@@ -194,7 +193,7 @@ song start
             },
             fn: async ({ played = false }) => {
                 if (!played) {
-                    downloadSong(trackTempo)
+                    downloadSong(trackTempo, mem().latestMap)
                 } else {
                     downloadSong(trackTempo, mem().playedMap)
                 }

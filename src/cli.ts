@@ -13,6 +13,7 @@ import { PEPRN_MULTILINE, PEPRN_MULTILINE_INDEX, PEPRN_MULTILINE_TOTAL } from 'p
 import { addChord } from './commands/index'
 import addNote from './commands/addNote/addNote'
 import { romanChordNameToRealModule } from './lib/subcommands'
+import { tempo } from './commands/tempo/tempo'
 
 export const app: Parameters<typeof createApp>[0] = {
     id: "cli",
@@ -21,6 +22,7 @@ export const app: Parameters<typeof createApp>[0] = {
     },
     modules: {
         chord, play, phase, song, bars, bar, debug, notes,
+        tempo,
         addNote,
         addChord,
         romanChordNameToReal: romanChordNameToRealModule,

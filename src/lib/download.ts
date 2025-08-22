@@ -2,12 +2,23 @@ import { addEvents, saveRaw } from './midi';
 import { RelativeNote } from './music'
 import Midi from 'jsmidgen'
 import { MidiMap } from './mapSongToTicks';
-import { mem } from './mem'
 
+import { trackTempo as startTempo } from 'src/commands/phase/observables/masterTicksObservable';
 
-const downloadEvents = async (notes: RelativeNote[], tempo?: number) => {
+type IncomingEvent = {
+    note: string;
+    abso: number;
+    onOrOff: 'on' | 'off'
+} | {
+    tempo: number;
+    abso: number;
+    onOrOff: 'tempo'
+}
+
+const downloadEvents = async (notes: RelativeNote[], tempo: number = startTempo) => {
     var file = new Midi.File();
     var track = new Midi.Track();
+
     if (tempo) {
         track.setTempo(tempo)
     }
@@ -17,36 +28,49 @@ const downloadEvents = async (notes: RelativeNote[], tempo?: number) => {
     saveRaw(midi)
     return { downloaded: notes }
 }
-const addNoteEvent = (obj: {
-    [tick: number]: {
 
-        note: string;
-        abso: number;
-        onOrOff: 'on' | 'off'
-    }[]
-}, tickNum: number, onOrOff: 'on' | 'off', note: string) => {
+// todo: split this into two functions for tempo and note events
+const addNoteEvent = (obj: {
+    [tick: number]: IncomingEvent[]
+}, tickNum: number, onOrOff: 'on' | 'off' | 'tempo', noteOrBpm: string | number) => {
     obj[tickNum] = obj[tickNum] || []
-    obj[tickNum].push({
-        note, abso: tickNum, onOrOff
-    })
+    if (onOrOff === 'tempo') {
+        if (typeof noteOrBpm !== 'number') {
+            throw new Error('Tempo must be a number')
+        }
+        obj[tickNum].push({
+            tempo: noteOrBpm, abso: tickNum, onOrOff
+        })
+    } else {
+        if (typeof noteOrBpm !== 'string') {
+            throw new Error('Note must be a string')
+        }
+        obj[tickNum].push({
+            note: noteOrBpm, abso: tickNum, onOrOff
+        })
+    }
 }
 
 const songToEvents = async (mappedTicks: MidiMap) => {
     const noteEvents: {
-        [tick: number]: {
-            note: string;
-            abso: number;
-            onOrOff: 'on' | 'off'
-        }[]
+        [tick: number]: IncomingEvent[]
     } = {}
 
     const relativized: RelativeNote[] = []
 
     Object.entries(mappedTicks).forEach(([tickRaw, notes]) => {
         notes.forEach((n) => {
-
-            addNoteEvent(noteEvents, parseInt(tickRaw), 'on', n.note)
-            addNoteEvent(noteEvents, parseInt(tickRaw) + (n.duration ?? 128), 'off', n.note)
+            if (n.note.startsWith('tempo:')) { 
+                const [l , r] = n.note.split(': ') 
+                if (!l || !r) {
+                    throw new Error('Invalid tempo event')
+                }
+                const tempo = parseInt(r)
+                addNoteEvent(noteEvents, parseInt(tickRaw), 'tempo', tempo)
+            } else {
+                addNoteEvent(noteEvents, parseInt(tickRaw), 'on', n.note)
+                addNoteEvent(noteEvents, parseInt(tickRaw) + (n.duration ?? 128), 'off', n.note)
+            }
         })
     })
 
@@ -56,23 +80,42 @@ const songToEvents = async (mappedTicks: MidiMap) => {
         const first = notes.shift()
 
         if (first) {
-            relativized.push([first.note, first.abso - max, first.onOrOff])
-            max = first.abso
+            if (first.onOrOff === 'tempo') {
+                relativized.push([first.tempo, first.abso - max, first.onOrOff])
+                max = first.abso
+                console.log('adding tempo', first.tempo, first.abso, first.onOrOff)
+            } else {
+                relativized.push([first.note, first.abso - max, first.onOrOff])
+                console.log('adding note', first.note, first.abso, first.onOrOff)
+                max = first.abso
+            }
 
             if (notes.length) {
-
-                relativized.push(...notes.map(({ note, onOrOff }) => {
-                    return [note, 0, onOrOff] as typeof relativized[number]
-                }))
+                notes.forEach((aNote) => {
+                    if (aNote.onOrOff === 'tempo') {
+                        console.log('adding tempo 2', aNote.tempo, aNote.abso, aNote.onOrOff)
+                        relativized.push([aNote.tempo, aNote.abso - max, aNote.onOrOff])
+                        max = aNote.abso
+                    } else {
+                        console.log('adding note 2', aNote.note, aNote.abso, aNote.onOrOff)
+                        relativized.push([aNote.note, aNote.abso - max, aNote.onOrOff])
+                        max = aNote.abso
+                    }
+                })
             }
         }
     })
 
+    console.log('original and relativized', JSON.parse(JSON.stringify({
+        mappedTicks,
+        relativized,
+    })))
+
     return relativized
 }
 
-export const downloadSong = async (tempo?: number, midiMap?: MidiMap) => {
-    const mappedTicks = midiMap || mem().latestMap
+export const downloadSong = async (tempo: number = startTempo, midiMap: MidiMap) => {
+    const mappedTicks = midiMap
     const events = await songToEvents(mappedTicks)
     return downloadEvents(events, tempo)
 }

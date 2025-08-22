@@ -5,6 +5,7 @@ import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './tags'
 import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
 import { mem, Mem } from './mem'
 
+export const START_SPEED = 1
 // Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {
     [tick: number]: {
@@ -164,24 +165,24 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
     // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick. 
     phaseBars.forEach((barNotes, barIndex) => {
         // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
-        const thisBarOffset = barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
+        const thisBarOffset = (barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) ) 
         // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
         barNotes.forEach((note) => {
             const parsedTags = parseNoteTags(note.tags)
             let thisNoteOffset = 0
             // look at this notes tags to determine how much to delay this note
             thisNoteOffset += calcFractionalDelay(parsedTags) // e.g half, 4th etc
-            thisNoteOffset += calcTickDelay(parsedTags) // e.g barDelay=1
-            const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
+            thisNoteOffset += calcTickDelay(parsedTags)// e.g barDelay=1
+            const thisNoteTick = Math.round(startTick + thisBarOffset + thisNoteOffset)
 
             if (!phaseMidi[thisNoteTick]) {
                 phaseMidi[thisNoteTick] = []
             }
+
             phaseMidi[thisNoteTick].push({
                 note: note.note,
                 compositionTags: note.tags
             })
-
         })
     })
     collector.push(phaseMidi)
@@ -208,10 +209,11 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
     // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick. 
     phaseBars.forEach((barNotes, barIndex) => {
         // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
-        const thisBarOffset = barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
-        const thisBarLen = barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1)
+        const thisBarOffset = barIndex * (barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) )    
+        const thisBarLen = barTickFactor * ((typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) ) 
 
         barEndTick += thisBarLen
+
         if (!phaseData[thisBarOffset]) {
             phaseData[thisBarOffset] = []
         }

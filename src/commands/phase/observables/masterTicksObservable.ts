@@ -1,4 +1,5 @@
 import { Observable, Subscriber, } from 'rxjs'
+import { START_SPEED } from 'src/lib/mapSongToTicks'
 const fileStart = Date.now()
 
 /*
@@ -72,15 +73,15 @@ export const abbrev = {
 
 // The number of ticks per musical entity dos not change. if the user wants to speed up the pace of the music, increase the "speed" variable.
 // This function calculated how many ms each tick should last. notice it accesess the capable-of-changing-in-real-time "speed" variable.x
-export const msPerTick = (tick: number) => {
-    const newSpeed = currSpeed(tick)
+export const msPerTick = (/*tick: number*/) => {
+
     const msPer =
-        60000 / (trackTempo * ppq) * newSpeed
+        60000 / (trackTempo * ppq) * airSpeed() // fraction lowers the number
     return msPer
 }
 
-export const msPerQuarterNote = (tick: number) => {
-    const msPerMidiTick = msPerTick(tick)
+export const msPerQuarterNote = (/*tick: number*/) => {
+    const msPerMidiTick = msPerTick(/*tick*/)
     const msPerQuarterNote = msPerMidiTick * ppq
     return msPerQuarterNote
 }
@@ -90,12 +91,43 @@ type TempoChange = [
     tempo: number
 ]
 
-const MODE: 'air' | 'paper' = 'paper'
+let expTick = 0
+
+export const updateExportableTick = () => {
+    expTick += 1
+}
+
+export const exportableTick = () => {
+    return expTick
+}
+
+
+// should be changeable in the future.
+// right now speed can only be altered via the "plannedSpeedChanges" array, which does not change trackTempo.
+export const trackTempo = 120
+let air = START_SPEED 
+export const setAirSpeed = (speedInt: number) => {
+    // .12 through 8.25
+    // integer 12 through 825 / 100
+    const fractionalSpeed = Math.max(12, Math.min(825, speedInt))  / 100
+    air = fractionalSpeed
+}
+
+export const airSpeed = () => {
+    return air
+}
+
+const MODE: 'air' | 'paper' = 'air'
 // by default, this system presumes that speed only changes in pre-planned ways, with a linear interpolation between the planned changes.
 // the user will have loaded those into the "plannedSpeedChanges" array.
 // "paper" is the default mode. "air" is the mode where the user can change the speed in real time, or has switched over to do so (at which point the plannedSpeedChanges array is ignored).
 // to get the speed based on pre-planned changes, this function bases it on the ticks (which are constant).
 const currSpeed = (tickCnt: number) => {
+
+    if (MODE === 'air') {
+        return airSpeed()
+    }
+
     if (MODE !== 'paper') {
         throw new Error('At the moment, only paper mode is supported.')
     }
@@ -115,17 +147,10 @@ const currSpeed = (tickCnt: number) => {
     return ret
 }
 
-// should be changeable in the future.
-// right now speed can only be altered via the "plannedSpeedChanges" array, which does not change trackTempo.
-export const trackTempo = 120
+
 const plannedSpeedChanges: TempoChange[] = [
     [0, 1],
-    [tickCounts.bar, 1.5], 
 ]
-
-export const updateCurr = (timeMarker: TimeMarker) => {
-    curr = [timeMarker[0] - fileStart, timeMarker[1]]
-}
 
 export const isAbbreviation = (unk: unknown): unk is Abbreviation => {
     return (Object.keys(abbrev) as string[]).includes(unk as string)
@@ -137,12 +162,12 @@ export const isFraction = (unk: unknown): unk is keyof typeof tickCounts => {
 
 export const timings = {
     msCounts: {
-        [QUARTER]: (tick: number) => msPerQuarterNote(tick),
-        [EIGHTH]: (tick: number) => msPerQuarterNote(tick) / 2,
-        [SIXTEENTH]: (tick: number) => msPerQuarterNote(tick) / 4,
-        [THIRTY_SECOND]: (tick: number) => msPerQuarterNote(tick) / 8,
-        [SIXTY_FOURTH]: (tick: number) => msPerQuarterNote(tick) / 16,
-        [ONE_TWENTY_EIGHTH]: (tick: number) => msPerQuarterNote(tick) / 32
+        [QUARTER]: () => msPerQuarterNote(),
+        [EIGHTH]: () => msPerQuarterNote() / 2,
+        [SIXTEENTH]: () => msPerQuarterNote() / 4,
+        [THIRTY_SECOND]: () => msPerQuarterNote() / 8,
+        [SIXTY_FOURTH]: () => msPerQuarterNote() / 16,
+        [ONE_TWENTY_EIGHTH]: () => msPerQuarterNote() / 32
     }
 }
 
@@ -159,56 +184,25 @@ export let curr: TimeMarker = [0,
 (window as any).curr = curr;
 
 
-
-// To a clock, push midi ticks to be ticked into a queue.
-setInterval(() => {
-    const [lastTime, tick] = curr
-    // This first bit of arithmetic is to determine how many ticks have passed since the last time this interval was fired.
-    // (even though this interval is fired every millisecond, the number of ticks that have passed since the last time this interval was fired is not stable. setInterval is not a real-time clock.)
-    const newTime = Date.now() - fileStart
-    // Given that amount of time, how many ticks should have passed?
-    const newTicks = Math.round(newTime / msPerTick(tick)) // I think this msPerTick call needs the song tick count fed back in, not the universal tick count.
-    let diff = newTicks - tick
-    // push new ticks (which we'll calculate the numbers of, below) until we've caught up to the current time
-    while (diff > 0) {
-        const nextPush =
-            // if the last tick in the queue is defined and is a number, then add 1 and push the next
-            midiTicksQueue[midiTicksQueue.length - 1] !== undefined
-                &&
-                !isNaN(midiTicksQueue[midiTicksQueue.length - 1])
-                ? midiTicksQueue[midiTicksQueue.length - 1] + 1 :
-                // if the queue is empty, then push the current tick + 1
-                (tick + 1)
-
-        if (!isNaN(nextPush)) {
-            midiTicksQueue.push(
-                nextPush
-            )
-        }
-        // one tick down; now we're closer to the current time
-        diff -= 1
-    }
-    // update the current time and tick count.
-    // do this here in case no ticks were pushed in the while loop above.
-    curr = [
-        newTime,
-        midiTicksQueue[midiTicksQueue.length - 1] ?? tick
-    ]
-
-}, 0) // watch for changes every millisecond
-
 // pop ticks from theq queue. fire the ticks to the subscribers (which should be multi-casting subjects, btw)
 export const masterTicksObservable = new Observable(function subscribe(subscriber: Subscriber<any>) {
+    
+    let lastPushTime = Date.now()
+    let lastTick = 0
+
     const intervalId = setInterval(() => {
-        // pop a tick initially, if it's there.
-        let tick1 = midiTicksQueue.pop()
-        // if tick was there, and it's a number, then fire it to the subscribers
-        while (tick1 !== undefined && !isNaN(tick1)) {
+        const msPer = msPerTick()
+        const sinceLast  = Date.now() - lastPushTime
+        let newTicksCnt = Math.floor(Math.round(sinceLast / msPer))
+
+        for (let i = 0; i < newTicksCnt; i++) {
+            const nextTick = lastTick + i
             new Promise((res) => {
-                res(subscriber.next(tick1))
+                res(subscriber.next(lastTick + i))
             })
-            // pop a tick for the next time around
-            tick1 = midiTicksQueue.pop()
+            lastPushTime = Date.now()
+            lastTick = nextTick
+            curr = [lastPushTime, lastTick]
         }
     }, 1)
 
