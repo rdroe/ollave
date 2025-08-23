@@ -1,5 +1,6 @@
 import { Observable, Subscriber, } from 'rxjs'
 import { START_SPEED } from '../../../lib/mapSongToTicks'
+import { mem, Mem } from 'src/lib/mem'
 const fileStart = Date.now()
 
 /*
@@ -206,7 +207,7 @@ export let curr: TimeMarker = [0,
 (window as any).tickCounts = tickCounts;
 (window as any).curr = curr;
 
-
+let latestMap: Mem['latestMap'] = {}
 // pop ticks from theq queue. fire the ticks to the subscribers (which should be multi-casting subjects, btw)
 export const masterTicksObservable = new Observable(function subscribe(subscriber: Subscriber<any>) {
     
@@ -214,6 +215,9 @@ export const masterTicksObservable = new Observable(function subscribe(subscribe
     let lastTick = 0
 
     const intervalId = setInterval(() => {
+        if (latestMap !== mem().latestMap) {
+            latestMap = mem().latestMap
+        }
         const msPer = msPerTick()
         const sinceLast  = Date.now() - lastPushTime
         let newTicksCnt = Math.floor(Math.round(sinceLast / msPer))

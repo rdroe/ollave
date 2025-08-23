@@ -14,7 +14,7 @@ export * as mem from './mem'
 export * as memDb from './mem-db'
 export * as cli from '../cli'
 export * as addTempoSlider from './addTempoSlider'
-
+export * as nextChord from './nextChord'
 
 // Individual function exports for direct access
 // mem-db exports
