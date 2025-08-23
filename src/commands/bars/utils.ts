@@ -1,7 +1,7 @@
 import { isString, peprnIsNum, randId } from '../../lib/helpers'
 import { lookUpGraph } from '../../lib/mem-db'
 import { Chord, ChordType, Note } from 'tonal'
-import { chordNameWithNotes, noteNames } from '../../lib/graphh'
+import { chordNameWithNotes, DynamicChordNames, noteNames } from '../../lib/graphh'
 import { makeNoteByBar, NoteByBar } from '../../lib/mem'
 import { parseNoteTags } from '../../lib/tags'
 const allChordTypes = ChordType.all()
@@ -74,8 +74,9 @@ export const isNoteCsvArg = (str: string): str is string => {
     return true
 }
 
-const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
+const isChordName = (nm: string, scaleTonic?: string, scaleName?: string): boolean => {
     const tokenized = Chord.tokenize(nm)
+
     if (tokenized.length === 2) {
         if (!isNoteNameWithoutOctave(tokenized[0])) {
             console.error('not a note name', tokenized[0])
@@ -85,13 +86,15 @@ const isChordName = (nm: any, scaleTonic?: string, scaleName?: string) => {
             return true
         }
 
-
-        return allChordTypes.find((type) => {
-
+        const isNormalChord = !!allChordTypes.find((type) => {
             return type.name.toLowerCase() === tokenized[1].toLowerCase() || type.aliases.some((alias) => {
                 return alias.toLowerCase() === tokenized[1].toLowerCase()
             })
         })
+        if (isNormalChord) return true
+        const isDyna = Object.keys(DynamicChordNames).map((name) => name.toLowerCase()).includes(nm.toLowerCase())
+
+        return isDyna
     }
 
     return false
@@ -179,6 +182,8 @@ export const isChordCsvArg = (str: string, userTonic?: string, userScale?: strin
 
     if (!isCsvArg(str)) return false
     const csv = parseCsvArg(str)
+
+    if (typeof csv[0] !== 'string') return false
     if (!isChordName(csv[0], userTonic, userScale)) return false
     if (typeof csv[1] !== 'number') return false
 
@@ -201,10 +206,12 @@ export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
             lastLayerAdded.unshift(layerId)
         }
 
+        const allTags = [...extraTags, `lastBarTag=${barTag}`, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `noteId=${randId('', 3)}`]
         const note1: NoteByBar = makeNoteByBar(
             `${letter}${acc}${oct}`,
-            [...extraTags, `lastBarTag=${barTag}`, `noteLetter=${letter}`, `noteAcc=${acc}`, `noteOct=${oct}`, `noteId=${randId('', 3)}`]
+            allTags
         )
+         note1.tagsObj.creatdInUtils = [true]
         return note1
     }
 }

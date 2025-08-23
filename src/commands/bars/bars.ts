@@ -103,13 +103,14 @@ song start
 
                                 const fn = makeFulfilledBarNote(barTag, [...commonTags, ...tags, ...timingTags, groupIdTag])
                                 receptacle.push(...notes.map(fn).map((n, idx) => {
+                                    const noteId = randId('', 6)
                                     return {
                                         ...n,
                                         tags: [
                                             ...n.tags,
                                             `groupIndex=${idx}`,
                                             `chordSize=${notes.length}`,
-
+                                            `noteId=${noteId}`,
                                         ]
                                     }
                                 }))

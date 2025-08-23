@@ -7,13 +7,13 @@ import {
     tickCounts
 } from '../phase/observables/masterTicksObservable'
 import { isCsvArg, parseCsvArg } from '../bars/utils'
-import { NoteByBar, mem, noteByBarSchema } from '../../lib/mem'
+import { mem, noteByBarSchema } from '../../lib/mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from '../../lib/mem-db'
 import { filterDelayTags, parseNoteTags } from '../../lib/tags'
 import { strjson } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
-import { oneIndexedArr, zeroIndexedArr } from '../../lib/graphh'
+import { zeroIndexedArr } from '../../lib/graphh'
 
 const isNoteCnt = (str: string | number) => {
     if (typeof str === 'number') return false
@@ -22,11 +22,7 @@ const isNoteCnt = (str: string | number) => {
 
 
 
-const notesByBarSchema = z.array(noteByBarSchema)
-
-export const isNotesByBar = (obj: unknown): obj is NoteByBar[] => {
-    return notesByBarSchema.safeParse(obj).success
-}
+export const notesByBarSchema = z.array(noteByBarSchema)
 
 export const shiftDollarEntity = (dollar: ParsedCli["positionalNonCommands"]) => {
     const err = '"bar" or "phase" or "tag" is required'
@@ -36,10 +32,7 @@ export const shiftDollarEntity = (dollar: ParsedCli["positionalNonCommands"]) =>
             z.literal('phase'),
             z.literal('tag')
         ], {
-
-        required_error: err,
-        invalid_type_error: err
-
+            error: err
     }).parse(dollar.shift())
 
     return phaseOrBarOrTag
@@ -69,7 +62,6 @@ export const getNotesByEntity = (
         const all = Object.values(mem().notesByBar).flat().filter((n) => {
             const parsed = parseNoteTags(n.tags)
             return parsed.find(([tagName, data]) => {
-
                 const tagNameMatch = tagName === entityName
                 if (!tagNameMatch) return false
                 if (positionalNonCommands === undefined || positionalNonCommands.length === 0) return true
@@ -311,14 +303,15 @@ export default {
                                     fn: async ({ positionalNonCommands: patterns }, calls) => {
 
                                         const notes1 = await calls['notes in $ $']
-
-                                        if (!isNotesByBar(notes1)) {
+                                        const parsed = notesByBarSchema.safeParse(notes1)
+                                        if (parsed.success === false) {
+                                            console.error(parsed.error)
                                             throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
                                         }
 
                                         const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
                                         const delaysPerChordSize = parseDelayMatrix(prepped)
-                                        notes1.forEach((nt) => {
+                                        parsed.data.forEach((nt) => {
 
                                             const parsed = Object.fromEntries(parseNoteTags(nt.tags))
                                             const [subdataKey] = parsed.chordSize

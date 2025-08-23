@@ -6,11 +6,12 @@ import {
 import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
-import { getNotesByEntity, isNotesByBar, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
+import { getNotesByEntity, notesByBarSchema, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
 import { filterDelayTags, latestNote, parseNoteTags, scale } from '../../lib/tags'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
-import { mem } from '../../lib/mem'
+import { makeNoteByBar, mem, noteByBarSchema } from '../../lib/mem'
 import { lookUpGraph } from '../../lib/mem-db'
+import { isNoteNameWithOctave } from '../bars/utils'
 
 export const chord: Module = {
     help: {
@@ -203,7 +204,7 @@ song start
 
 
                                         if (!graph) {
-                                            await fakeCli(`chord graph test ${scaleName[0]} ${scaleName[1]}`)
+                                            await fakeCli(`chord graph create ${scaleName[0]} ${scaleName[1]}`)
                                             graph = lookUpGraph(...scaleName)
                                         }
 
@@ -311,14 +312,30 @@ song start
                                                 const entity = dollar.shift()
                                                 const entityName = dollar.shift()
 
-                                                const notes1 = await fakeCli(`notes in ${entity} ${entityName}`)
+                                                const notes1 = await fakeCli(`notes in ${entity} ${entityName}`).then((notesResult) => {
+                                                    if (Array.isArray(notesResult)) {
+                                                        const notesWithTags = z.array(z.object({
+                                                            note: z.string().refine((str) => isNoteNameWithOctave(str) ?? false),
+                                                            tags: z.array(z.string())
+                                                        })).safeParse(notesResult)
+                                                        if (notesWithTags.success === false) {
+                                                            console.error(notesWithTags.error)
+                                                            throw new Error(`Incorrectly formatted or empty notes from cli boundary: ${strjson(notesResult)}`)
+                                                        }
+                                                        return notesWithTags.data.map(({ note, tags }) => {
+                                                            return makeNoteByBar(note, tags)
+                                                        })
+                                                    }
+                                                    return []
+                                                })
                                                 let maxChordSize = -1
-
-                                                if (!isNotesByBar(notes1)) {
+                                                const parsed = notesByBarSchema.safeParse(notes1)
+                                                if (parsed.success === false) {
+                                                    console.error(parsed.error)
                                                     throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
                                                 }
 
-                                                const notes = notes1.filter((n) => {
+                                                const notes = parsed.data.filter((n) => {
 
                                                     const parsedTags = parseNoteTags(n.tags)
                                                     const isMatch = parsedTags.find(([nm, dat]) => {
@@ -344,7 +361,7 @@ song start
 
                                                 const noteLookup = delaysPerChordSize[subdataKey]
 
-                                                notes.forEach((nt) => {
+                                                parsed.data.forEach((nt) => {
                                                     filterDelayTags(nt, true)
 
                                                     const parsed = Object.fromEntries(parseNoteTags(nt.tags))

@@ -14,6 +14,8 @@ import { addChord } from './commands/index'
 import addNote from './commands/addNote/addNote'
 import { romanChordNameToRealModule } from './lib/subcommands'
 import { tempo } from './commands/tempo/tempo'
+import { nextChord } from './lib/nextChord'
+import { z } from 'zod'
 
 export const app: Parameters<typeof createApp>[0] = {
     id: "cli",
@@ -26,6 +28,20 @@ export const app: Parameters<typeof createApp>[0] = {
         addNote,
         addChord,
         romanChordNameToReal: romanChordNameToRealModule,
+        nextChord: {
+            fn: async ({positionalNonCommands}) => {
+                const [chordCsvArg, userTonic, userScale] = z.tuple([
+                    z.string(),
+                    z.string(),
+                    z.string(),
+                ]).parse(positionalNonCommands)
+            
+                const next = nextChord(
+                    chordCsvArg, userTonic, userScale
+                )
+                return next
+            }
+        },
     },
     catch: (e) => {
         console.error('error', e)
@@ -77,7 +93,6 @@ ${dataContainer.innerHTML}
             if (data?.formatted?.aaChordProgram) {
                 const program = document.querySelector('.program')
                 if (program) {
-
                     (program as HTMLTextAreaElement).value = data.formatted.aaChordProgram
                 }
             }

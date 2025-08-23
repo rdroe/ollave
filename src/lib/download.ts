@@ -83,21 +83,17 @@ const songToEvents = async (mappedTicks: MidiMap) => {
             if (first.onOrOff === 'tempo') {
                 relativized.push([first.tempo, first.abso - max, first.onOrOff])
                 max = first.abso
-                console.log('adding tempo', first.tempo, first.abso, first.onOrOff)
             } else {
                 relativized.push([first.note, first.abso - max, first.onOrOff])
-                console.log('adding note', first.note, first.abso, first.onOrOff)
                 max = first.abso
             }
 
             if (notes.length) {
                 notes.forEach((aNote) => {
                     if (aNote.onOrOff === 'tempo') {
-                        console.log('adding tempo 2', aNote.tempo, aNote.abso, aNote.onOrOff)
                         relativized.push([aNote.tempo, aNote.abso - max, aNote.onOrOff])
                         max = aNote.abso
                     } else {
-                        console.log('adding note 2', aNote.note, aNote.abso, aNote.onOrOff)
                         relativized.push([aNote.note, aNote.abso - max, aNote.onOrOff])
                         max = aNote.abso
                     }
@@ -105,11 +101,6 @@ const songToEvents = async (mappedTicks: MidiMap) => {
             }
         }
     })
-
-    console.log('original and relativized', JSON.parse(JSON.stringify({
-        mappedTicks,
-        relativized,
-    })))
 
     return relativized
 }

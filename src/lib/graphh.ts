@@ -106,7 +106,7 @@ Think of your key as C. The formula for the chord is (using scale degrees) b6, 1
     }]
 }
 
-export type ChordFunction = 'V64' | 'Aug6' | 'N6'
+export type ChordFunction = 'V64' | 'Aug6' | 'N6' | 'V63'
 
 export const isChordFn = (arg: any): arg is ChordFunction => {
     return ['V64', 'Aug6', 'N6'].includes(arg)
@@ -116,9 +116,18 @@ export const fns = {
     V64,
     Aug6,
     N6,
-
+    V63: () => {
+        throw new Error('V63 is not a function')
+    }
 }
 
+export const DynamicChordNames: {
+    [key in Exclude<ChordFunction, 'V63'>]: string 
+} = {
+    V64: "V64",
+    Aug6: "Aug6",
+    N6: "N6",
+} as const
 export type ProgressionGraphNode = {
     name: string, // may be a function name 
     next: string[],
@@ -174,44 +183,15 @@ export const romanChordNameToReal = (scaleTonic: string, scaleName: string, roma
 }
 
 export const getTriadByRomanNumeral = async (scaleTonic: string, scaleName: string, romanNum: string) => {
-
-    const indicesStartsFlat = Object.entries({
-        bI: 0,
-        bII: 1,
-        bIII: 2,
-        bIV: 3,
-        bV: 4,
-        bVI: 5,
-        bVII: 6,
-    })
-
-    const indicesStarts = Object.entries({
-        I: 0,
-        II: 1,
-        III: 2,
-        IV: 3,
-        V: 4,
-        VI: 5,
-        VII: 6,
-    })
-
-
     const prog = (await fakeCli(`chord progressions ${scaleTonic} ${scaleName.toLocaleLowerCase()}`)).formatted[0]
-
-
     const progEntries = Object.entries(prog as { [idx: string]: { roman: string, chordName: string } })
-
-
     const found = progEntries.find(([, progElem]) => {
-
         return progElem.roman === romanNum
     })
-
     return found[1].chordName
 }
 
 function romanEntry(progRoman: string) {
-
     const indicesStartsFlat = Object.entries({
         bI: 0,
         bII: 1,
@@ -221,7 +201,6 @@ function romanEntry(progRoman: string) {
         bVI: 5,
         bVII: 6,
     })
-
     const indicesStarts = Object.entries({
         I: 0,
         II: 1,
@@ -250,10 +229,8 @@ export function romanFromProgRoman(progRoman: string) {
 
 
 const unromanizeSecondaryChord = (tonic: string, scale: string, romanChord: string) => {
-
     const romGuess1 = romanFromProgRoman(romanChord)
     const type = romanChord.replace(romGuess1, '')
-
     const letters = scaleLetters(tonic, scale)
     const romanDegreeIndex = romanEntry(romGuess1)
 
