@@ -1,7 +1,7 @@
 import { Module } from "peprn/util";
-import { airSpeed, curr, exportableTick, setAirSpeed, tempoFromAirSpeed, trackTempo } from "../phase/observables/masterTicksObservable";
-import { mem } from "src/lib";
-import { addTempoSlider } from "src/lib/addTempoSlider";
+import { airSpeed, exportableTick, setAirSpeed, tempoFromAirSpeed } from "../phase/observables/masterTicksObservable";
+import { mem } from "../../lib";
+import { addTempoSlider } from "../../lib/addTempoSlider";
 
 export const tempo = {
     help: {

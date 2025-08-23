@@ -3,7 +3,7 @@ import { RelativeNote } from './music'
 import Midi from 'jsmidgen'
 import { MidiMap } from './mapSongToTicks';
 
-import { trackTempo as startTempo } from 'src/commands/phase/observables/masterTicksObservable';
+import { trackTempo as startTempo } from '../commands/phase/observables/masterTicksObservable';
 
 type IncomingEvent = {
     note: string;

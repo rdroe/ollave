@@ -1,5 +1,5 @@
 import { Observable, Subscriber, } from 'rxjs'
-import { START_SPEED } from 'src/lib/mapSongToTicks'
+import { START_SPEED } from '../../../lib/mapSongToTicks'
 const fileStart = Date.now()
 
 /*
