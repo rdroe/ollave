@@ -1,6 +1,6 @@
 {
     "name": "ollave",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "repository": "git@github.com:rdroe/ollave.git",
     "license": "MIT",
     "description": "framework for developing musical streams",
@@ -22,7 +22,8 @@
         "tonal": "^5.0.0",
         "tone": "14.6.1",
         "user-tables": "^0.0.19",
-        "webmidi": "2.*"
+        "webmidi": "2.*",
+        "zod": "^4.0.17"
     },
     "devDependencies": {
         "@types/isomorphic-fetch": "^0.0.36",

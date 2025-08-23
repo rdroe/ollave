@@ -18,6 +18,7 @@
         "allowSyntheticDefaultImports": true,
 		"module": "ESNext"
     },
+	"strict": true,
     "include": ["./src/**/*.ts"],
     "watchOptions": {
 	"watchDirectory": "useFsEvents"
