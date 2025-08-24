@@ -15,6 +15,8 @@ export * as memDb from './mem-db'
 export * as cli from '../cli'
 export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
+export { makeCompilationSubscribe } from '../commands/phase/subjects/compilationSubject'
+export { makeTickSubscribe } from '../commands/phase/subjects/masterTicksSubject'
 
 // Individual function exports for direct access
 // mem-db exports

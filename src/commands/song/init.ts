@@ -7,7 +7,7 @@ import { SongRecord, TrackRecord } from './song';
 import { browser } from 'user-tables';
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
 import { startCueObservable } from './observables';
-import { compilationSubject } from '../phase/subjects/compilationSubject';
+
 
 
 const { songNames } = mem()

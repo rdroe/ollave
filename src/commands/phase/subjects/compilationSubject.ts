@@ -4,7 +4,7 @@ import { mem, Mem } from "../../../lib/mem";
 import { masterTicksObservable } from "../observables/masterTicksObservable";
 
 
-export const compilationSubject = new Subject<any>();
+const compilationSubject = new Subject<any>();
 
 // utility function to subscribe only when the latestMap reference is updated
 export const makeCompilationSubscribe = <RetType>(obj: {

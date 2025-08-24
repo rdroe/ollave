@@ -1,5 +1,7 @@
 export {default as play} from './play/play'
 export {default as phase} from './phase/phase'
+export {makeCompilationSubscribe} from './phase/subjects/compilationSubject' 
+export {makeTickSubscribe} from './phase/subjects/masterTicksSubject' 
 export {default as song, init } from './song/song'
 export {default as bars} from './bars/bars'
 export {default as bar} from './bar/bar'
@@ -9,6 +11,7 @@ export {default as chords} from './chords/chords'
 export { chord } from './chord/chord'
 export {default as addChord} from './addChord/addChord'
 export {default as addNote} from './addNote/addNote'
+
 export {
     airSpeed,
     setAirSpeed,
