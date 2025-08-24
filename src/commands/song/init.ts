@@ -228,24 +228,6 @@ export async function init() {
     startCueObservable()
     const songName = mem().song.name
     mem().observables[songName] = mem().observables[songName] || {} 
-
-    console.log('mem().observables[songName][compilation]', mem().observables[songName]['compilation'])
-
-    mem().observables[songName]['compilation'] = compilationSubject.subscribe({
-        next: ({
-            prev,
-            selector,
-            compare,
-        }) => {
-            console.log('compilationSubject next', {
-                prev,
-                selector,
-                compare,
-            })
-        }
-    })
-        
-    
     
     mem().songPauses[songName] = [
         null,
@@ -253,7 +235,7 @@ export async function init() {
     ]
 
     Object.values(mem().observables[songName] || {}).forEach((observable) => {
-        observable
+        observable.unsubscribe()
     })
 }
     

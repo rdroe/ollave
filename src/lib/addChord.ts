@@ -1,5 +1,5 @@
 import { isChordCsvArg, parseChordCsvArg } from "../commands/bars/utils"
-import { mem, NoteByBar } from "../lib/mem"
+import { Mem, mem, NoteByBar } from "../lib/mem"
 import { phaseCount } from "../lib/mem-db"
 import { isScaleNameWithTonic, phaseScale, randId } from "./helpers"
 import { abbrev, BAR, isAbbreviation, tickCounts } from "../commands/phase/observables/masterTicksObservable"
@@ -95,21 +95,24 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
         const allTags = [...commonTags /*, ...delayTags */, noteIdTag , `barDelay=${totalDelay}`]
         const noteObj = await addNoteToBar(note, barTag, parseNoteTags(allTags)) 
         allNotes.push(noteObj)
+
         if (doAddSlider) {
             addSlider(barTag, noteId)
             makeCompilationSubscribe({
-                prev: null,
-                selector: () => {
-                    console.log('selector')
-                    return 1
+                selector: (memArg: Mem) => {
+                    return memArg.notesByBar[barTag].reduce((acc, note) => {
+                        if (typeof note.tagsObj.barDelay[0] === 'number') {
+                            return acc + note.tagsObj.barDelay[0]
+                        }
+                        return acc
+                    }, 0 as number)
                 },
                 compare: (a, b) => {
-                    console.log('compare', a, b)
                     return a === b
                 },
             })(new Subscriber({
                 next: (num: number) => {
-                    console.log('next', num)
+                    console.log('next', num) 
                 },
                 complete: () => {
                     console.log('complete')

@@ -7,24 +7,23 @@ import { masterTicksObservable } from "../observables/masterTicksObservable";
 export const compilationSubject = new Subject<any>();
 
 // utility function to subscribe only when the latestMap reference is updated
-export const makeCompilationSubscribe = (obj: {
-    prev: any,
-    selector: (mem: Mem) => any,
-    compare?: (a: any, b: any) => boolean
+export const makeCompilationSubscribe = <RetType>(obj: {
+    selector: (mem: Mem) => RetType,
+    compare?: (a: RetType, b: RetType) => boolean
 }) => {
     let latestMap = mem().latestMap || {}
-    return function subscribe(subscriber: Subscriber<any>) {
+    let prev: RetType | null = null
+    return function subscribe(subscriber: Subscriber<RetType>) {
         const subjectUnsubscribe = compilationSubject.subscribe({
-            next: () => {
+            next: (_: number) => {
                 // if the CURRENT latestMap (that is, on mem) is the same, no next.
                 if (mem().latestMap === latestMap) {
                     return
                 }
                 latestMap = mem().latestMap
                 const newVal = obj.selector(mem())
-                console.log('newVal', newVal)
-                if (obj.compare(newVal, obj.prev)) {
-                    obj.prev = newVal
+                if (!obj.compare(newVal, prev)) {
+                    prev = newVal
                     subscriber.next(newVal)
                 }
             },
