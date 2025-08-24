@@ -7,6 +7,7 @@ import { BAR, EIGHTH, tickCounts } from '../phase/observables/masterTicksObserva
 import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag, parseNoteTags } from '../../lib/tags'
 import { isAbbreviationCsv, sumAbbreviationCsv } from '../notes/notes'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
+import { setLatestMap } from '../phase/observables/compilationObservable'
 
 const { notesByBar } = mem()
 
@@ -16,7 +17,7 @@ export default {
         awaitAll({
             ...subCalls,
         }).then(() => {
-            mem().latestMap = mapSongToMidiTicks()
+            setLatestMap(mapSongToMidiTicks())
         })
     },
     submodules: {

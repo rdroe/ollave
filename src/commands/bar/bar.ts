@@ -7,6 +7,7 @@ import { isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../bars/u
 import { abbrev, isAbbreviation, tickCounts } from '../phase/observables/masterTicksObservable'
 
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
+import { setLatestMap } from '../phase/observables/compilationObservable'
 
 
 const cliDelaysToTags = (delay?: string[]): string[] => {
@@ -31,7 +32,7 @@ export default {
         awaitAll({
             ...subCalls,
         }).then(() => {
-            mem().latestMap = mapSongToMidiTicks()
+            setLatestMap(mapSongToMidiTicks())
         })
     },
     submodules: {

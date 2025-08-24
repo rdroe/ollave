@@ -7,6 +7,7 @@ import { SongRecord, TrackRecord } from './song';
 import { browser } from 'user-tables';
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
 import { startCueObservable } from './observables';
+import { setLatestMap } from '../phase/observables/compilationObservable';
 
 
 
@@ -224,7 +225,7 @@ export async function init() {
     }, 10)
 
     // start and pause the song to get observable set up
-    mem().latestMap = mapSongToMidiTicks()
+    setLatestMap(mapSongToMidiTicks())
     startCueObservable()
     const songName = mem().song.name
     mem().observables[songName] = mem().observables[songName] || {} 

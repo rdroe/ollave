@@ -12,6 +12,7 @@ import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { makeNoteByBar, mem, noteByBarSchema } from '../../lib/mem'
 import { lookUpGraph } from '../../lib/mem-db'
 import { isNoteNameWithOctave } from '../bars/utils'
+import { setLatestMap } from '../phase/observables/compilationObservable'
 
 export const chord: Module = {
     help: {
@@ -166,7 +167,7 @@ song start
                                 awaitAll({
                                     ...subCalls,
                                 }).then(() => {
-                                    mem().latestMap = mapSongToMidiTicks()
+                                    setLatestMap(mapSongToMidiTicks())
                                 })
                             },
                             submodules: {
@@ -373,7 +374,7 @@ song start
                                                     const newTags = noteLookup[chordIdx]
                                                     nt.tags.push(...newTags)
                                                 })
-                                                mem().latestMap = mapSongToMidiTicks()
+                                                setLatestMap(mapSongToMidiTicks())
                                                 return notes
                                             }
                                         }

@@ -11,6 +11,7 @@ import { trackTempo } from '../phase/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../bars/utils'
 import { groupNotesByFirstTagDatum, parseNoteTags } from '../../lib/tags'
 import { setTrackReceptacleSelector, startPrintingNotes, stopPrintingNotes } from './init'
+import { setLatestMap } from '../phase/observables/compilationObservable'
 export { init, setTrackReceptacleSelector } from './init'
 const { songNames } = mem()
 // kebab-case ids props; camelCase data props
@@ -149,7 +150,7 @@ song start
                 }
             },
             fn: async () => {
-                mem().latestMap = mapSongToMidiTicks()
+                setLatestMap(mapSongToMidiTicks())
                 const songPause = mem().songPauses[mem().song.name]
                 if (!songPause) {
                     return startCueObservable()

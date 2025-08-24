@@ -2,6 +2,7 @@ import { tickCounts } from "../commands/phase/observables/masterTicksObservable"
 import { mem, NoteByBar } from "../lib/mem"
 import { peprnIsNum } from "./helpers"
 import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
+import { setLatestMap } from "../commands/phase/observables/compilationObservable"
 
 /**
  * Given a note id, add a slider to move the note to a new time within the bar
@@ -44,7 +45,7 @@ export function updateBarDelay (noteData: NoteByBar, newBarDelay: number) {
     }
     noteData.tagsObj['barDelay'] = [newBarDelay]
     setTimeout(() => {
-        mem().latestMap = mapSongToMidiTicks()
+        setLatestMap(mapSongToMidiTicks())
     }, 50)
     return noteData
 }

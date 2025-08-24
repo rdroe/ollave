@@ -22,6 +22,7 @@ import { randId, randomInt, strjson } from "./helpers"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { mem } from "./mem"
 import { StartEndTuple, phaseBeginningsAndEnds } from "../startEndData"
+import { setLatestMap } from "../commands/phase/observables/compilationObservable"
 
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>
@@ -49,7 +50,7 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
             scaleTonic: null
         }
     }
-    mem().latestMap = mapSongToMidiTicks()
+    setLatestMap(mapSongToMidiTicks())
 }
 
 
@@ -81,7 +82,7 @@ export async function phaseUnfollows(subject: string, objects?: string[]) {
         'follows-ids': []
     }
 
-    mem().latestMap = mapSongToMidiTicks()
+    setLatestMap(mapSongToMidiTicks())
 
 
 }
@@ -202,6 +203,6 @@ export async function phaseCount(phase: string, size: number, skipCopy: boolean 
             })
         }
     }
-    mem().latestMap = mapSongToMidiTicks()
+    setLatestMap(mapSongToMidiTicks())
 }
 

@@ -14,6 +14,7 @@ import { filterDelayTags, parseNoteTags } from '../../lib/tags'
 import { strjson } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { zeroIndexedArr } from '../../lib/graphh'
+import { setLatestMap } from '../phase/observables/compilationObservable'
 
 const isNoteCnt = (str: string | number) => {
     if (typeof str === 'number') return false
@@ -352,7 +353,7 @@ export default {
                                             }
                                         })
 
-                                        mem().latestMap = mapSongToMidiTicks()
+                                        setLatestMap(mapSongToMidiTicks())
                                         return notes1
 
                                     }
