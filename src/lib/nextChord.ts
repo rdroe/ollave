@@ -1,8 +1,7 @@
 import { isScaleNameWithTonic } from "./helpers"
-import { isChordCsvArg, parseChordCsvArg } from "src/commands/bars/utils"
+import { isChordCsvArg } from "../commands/bars/utils"
 import { scale } from "./tags"
 import { lookUpGraph } from "./mem-db"
-import { fakeCli } from "peprn/browser"
 
 
 export const nextChord = (chordCsvArg: string, userTonic: string, userScale: string) => {

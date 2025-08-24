@@ -1,7 +1,5 @@
 import { Observable, Subscriber, } from 'rxjs'
 import { START_SPEED } from '../../../lib/mapSongToTicks'
-import { mem, Mem } from 'src/lib/mem'
-const fileStart = Date.now()
 
 /*
 The formula is 60000 / (BPM * PPQ) (milliseconds).

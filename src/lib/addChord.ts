@@ -6,7 +6,7 @@ import { abbrev, BAR, isAbbreviation, tickCounts } from "../commands/phase/obser
 import { calcFractionalDelay, parseNoteTags } from "./tags"
 import { addNoteToBar } from "./addNote"
 import { addSlider } from "./addSlider"
-import { makeCompilationSubscribe } from "src/commands/phase/subjects/compilationSubject"
+import { makeCompilationSubscribe } from "../commands/phase/subjects/compilationSubject"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
 
 export function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], userScaleTonic: string = 'A', userScaleName: string = 'minor', doAddSlider: boolean = false): {
