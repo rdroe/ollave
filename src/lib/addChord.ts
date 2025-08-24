@@ -110,9 +110,10 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
                 compare: (a, b) => {
                     return a === b
                 },
-            })(new Subscriber({
-                next: (num: number) => {
+            })({
+                next: (num) => {
                     console.log('next', num) 
+                    return num
                 },
                 complete: () => {
                     console.log('complete')
@@ -120,7 +121,7 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
                 error: (err: any) => {
                     console.log('error', err)
                 },
-            }))  
+            }) 
         }
     })
 

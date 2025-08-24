@@ -1,4 +1,4 @@
-import { Subject, Subscriber } from "rxjs";
+import { Observable, Observer, Subject, Subscriber, Subscription } from "rxjs";
 import { mem, Mem } from "../../../lib/mem";
 
 import { masterTicksObservable } from "../observables/masterTicksObservable";
@@ -13,7 +13,8 @@ export const makeCompilationSubscribe = <RetType>(obj: {
 }) => {
     let latestMap = mem().latestMap || {}
     let prev: RetType | null = null
-    return function subscribe(subscriber: Subscriber<RetType>) {
+    const subscribe = (subscriber: Observer<RetType>) => {
+        
         const subjectUnsubscribe = compilationSubject.subscribe({
             next: (_: number) => {
                 // if the CURRENT latestMap (that is, on mem) is the same, no next.
@@ -36,6 +37,7 @@ export const makeCompilationSubscribe = <RetType>(obj: {
             subjectUnsubscribe.unsubscribe()
         }
     }
+    return subscribe
 }
 
 masterTicksObservable.subscribe(compilationSubject)
