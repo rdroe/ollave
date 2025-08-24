@@ -6,6 +6,9 @@ import { abbrev, BAR, isAbbreviation, tickCounts } from "../commands/phase/obser
 import { calcFractionalDelay, parseNoteTags } from "./tags"
 import { addNoteToBar } from "./addNote"
 import { addSlider } from "./addSlider"
+import { getSongName } from "src/commands/song/observables"
+import { compilationSubject, makeCompilationSubscribe } from "src/commands/phase/subjects/compilationSubject"
+import { Subscriber } from "rxjs"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
 
 export function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], userScaleTonic: string = 'A', userScaleName: string = 'minor', doAddSlider: boolean = false): {
@@ -94,8 +97,30 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
         allNotes.push(noteObj)
         if (doAddSlider) {
             addSlider(barTag, noteId)
+            makeCompilationSubscribe({
+                prev: null,
+                selector: () => {
+                    console.log('selector')
+                    return 1
+                },
+                compare: (a, b) => {
+                    console.log('compare', a, b)
+                    return a === b
+                },
+            })(new Subscriber({
+                next: (num: number) => {
+                    console.log('next', num)
+                },
+                complete: () => {
+                    console.log('complete')
+                },
+                error: (err: any) => {
+                    console.log('error', err)
+                },
+            }))  
         }
     })
+
     return {
         noteIds,
         barName: barTag,

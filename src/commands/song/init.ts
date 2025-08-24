@@ -7,6 +7,7 @@ import { SongRecord, TrackRecord } from './song';
 import { browser } from 'user-tables';
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
 import { startCueObservable } from './observables';
+import { compilationSubject } from '../phase/subjects/compilationSubject';
 
 
 const { songNames } = mem()
@@ -226,13 +227,33 @@ export async function init() {
     mem().latestMap = mapSongToMidiTicks()
     startCueObservable()
     const songName = mem().song.name
+    mem().observables[songName] = mem().observables[songName] || {} 
+
+    console.log('mem().observables[songName][compilation]', mem().observables[songName]['compilation'])
+
+    mem().observables[songName]['compilation'] = compilationSubject.subscribe({
+        next: ({
+            prev,
+            selector,
+            compare,
+        }) => {
+            console.log('compilationSubject next', {
+                prev,
+                selector,
+                compare,
+            })
+        }
+    })
+        
+    
+    
     mem().songPauses[songName] = [
         null,
         0
     ]
 
     Object.values(mem().observables[songName] || {}).forEach((observable) => {
-        observable.unsubscribe()
+        observable
     })
 }
     

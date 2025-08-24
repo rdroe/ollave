@@ -5,7 +5,17 @@ import { playTriads } from '../../lib/music'
 import { lastTick } from '../../lib/mem-db'
 import { exportableTick, updateExportableTick } from '../phase/observables/masterTicksObservable'
 
-export const subscribeToSong = (song: string, name: string, fn: (tick: number, rawTick: number, snapShot: Mem, songName: string) => void) => {
+
+export const getSongName = () => {
+    const song = mem()?.song?.name || '' 
+    if (!song) {
+        console.error(JSON.stringify(mem(), null, 2))
+        throw new Error(`Song not initialized yet`)
+    }
+    return song
+}
+
+export const subscribeToSongTicks = (song: string, name: string, fn: (tick: number, rawTick: number, snapShot: Mem, songName: string) => void) => {
     mem().functions[song] = mem().functions[song] || {}
     mem().functions[song][name] = fn
 }
@@ -19,9 +29,10 @@ export const startCueObservable = (startAt?: number) => {
     // make a new observable that subscribes to master ticks
     // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
 
-    const song = mem().song.name
+    const song = mem()?.song?.name
 
     if (!song) {
+        console.error(mem())
         throw new Error(`Song not initialized`)
     }
 
