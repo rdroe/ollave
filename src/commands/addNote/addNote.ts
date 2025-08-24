@@ -14,7 +14,7 @@ export default {
         },
     },
 
-    fn: async ({ positionalNonCommands, barName = 'default:1', updatePhaseScale, tags }) => { 
+    fn: async ({ positionalNonCommands, barName = 'default:1', updatePhaseScale, tags, doAddSlider = false }) => { 
         const [note] = positionalNonCommands
         if (!isNoteNameWithOctave(note)) {
             throw new Error('Note must be a valid note name')
@@ -50,14 +50,9 @@ export default {
         }
         
         const parsedNoteTags = parseNoteTags(tags)
-        addNoteToBar(note, barName, parsedNoteTags)
+        const noteObj = await addNoteToBar(note, barName, parsedNoteTags, z.boolean().parse(doAddSlider))
 
-        return {
-            positionalNonCommands,
-            barIndex,
-            barName,
-            parsedNoteTags,
-        }
+        return noteObj
     },
 
 } as Module

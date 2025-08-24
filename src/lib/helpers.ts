@@ -58,11 +58,14 @@ function randomString(length: number) {
 }
 
 export const randId = (prefix = "", length = 10) => {
-    const randStr = randomString(length);
+    let randStr = randomString(length);
     if (prefix) {
         return `${prefix}.${randStr}`
     }
-    return randStr
+    while (peprnIsNum(randStr)) {
+        randStr = randomString(length);
+    }
+    return `${randStr}`
 }
 export function randomNumber(min: number, max: number) {
     return Math.floor(Math.random() * (max - min) + min);

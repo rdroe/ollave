@@ -1,22 +1,50 @@
-import { makeNoteByBar, mem, NoteByBar } from "../lib/mem"
+import { makeNoteByBar, Mem, mem, NoteByBar } from "../lib/mem"
 import { getTagData, TagEntries, unparseTagEntries } from "./tags"
-import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
-import { setLatestMap } from "../commands/phase/observables/compilationObservable"
 
-export const addNoteToBar = async (note: string, bar: string, tagsIn: TagEntries): Promise<NoteByBar> => {
-    const barObj = mem().notesByBar[bar]
-    if (!barObj) {
-        throw new Error(`Bar ${bar} not found`)
-    }
-    if (typeof getTagData(tagsIn, 'barDelay')?.[0] !== 'number') {
-        console.warn('barDelay tag is missing')
-    }
 
-    if (!['string', 'number'].includes(typeof getTagData(tagsIn, 'noteId')?.[0])) {
-        throw new Error('noteId tag is missing')
-    }
+import { randId } from "./helpers"
+import { addSlider } from "./addSlider"
+import { subscribeToNoteById } from "../commands/notes/subscribers/subscribeToNoteById"
+
+export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEntries, doAddSlider: boolean = false): Promise<NoteByBar> => {
+    const barObj = mem().notesByBar[barName]
     const tags = unparseTagEntries(tagsIn)
-    barObj.push(makeNoteByBar(note, tags))
-    setLatestMap(mapSongToMidiTicks())
-    return makeNoteByBar(note, tags)
+    if (!barObj) {
+        throw new Error(`Bar ${barName} not found`)
+    }
+
+    let noteId = getTagData(tagsIn, 'noteId')?.[0]
+    if (!noteId) {
+        noteId = randId('', 6)
+        tags.push(`noteId=${noteId}`)
+    }
+
+    if (typeof noteId !== 'string') {
+        throw new Error('noteId tag is missing or non-string ' + noteId)
+    }
+
+
+    if (typeof getTagData(tagsIn, 'barDelay')?.[0] !== 'number') {
+        tags.push(`barDelay=0`)
+    }
+    const noteObj = makeNoteByBar(note, tags)
+    barObj.push(noteObj)
+
+    if (doAddSlider) {
+        addSlider(barName, noteId)
+            subscribeToNoteById(noteId)({
+                next: (num) => {
+                    console.log('next in addNote from lib', noteObj.tagsObj.noteId) 
+                },
+                complete: () => {
+                    console.log('complete')
+                },
+                error: (err: any) => {
+                    console.log('error', err)
+                },
+            }) 
+    }
+
+
+    return noteObj
 }

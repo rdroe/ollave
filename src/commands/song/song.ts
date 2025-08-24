@@ -179,7 +179,6 @@ song start
 
                     mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
                     Object.entries(mem().observables[songName] || {}).forEach(([fnName,observable]) => {
-                        console.log('unsubscribing', fnName)
                         observable.unsubscribe()
                     })
                 }

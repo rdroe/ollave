@@ -79,7 +79,7 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
         }, {} as {
             [key in keyof typeof tickCounts]: number
         })
-        // convert to e.g. quarter=1, half=2, etc
+        // convert to e.g. quarter=1, half=2, etc; only leave barDelay
         const delayTagStrings: string[] = Object.entries(delayTagsObj).map(([key, value]) => {
             return `${key}=${value}`
         })
@@ -110,14 +110,12 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
                 },
             })({
                 next: (num) => {
-                    console.log('next', num) 
                     return num
                 },
                 complete: () => {
-                    console.log('complete')
+
                 },
                 error: (err: any) => {
-                    console.log('error', err)
                 },
             }) 
         }

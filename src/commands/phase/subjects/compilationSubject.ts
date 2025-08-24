@@ -2,29 +2,26 @@ import { Observable, Observer, Subject, Subscriber, Subscription } from "rxjs";
 import { mem, Mem } from "../../../lib/mem";
 
 import { masterTicksObservable } from "../observables/masterTicksObservable";
+import { compilationObservable } from "../observables/compilationObservable";
 
 
 const compilationSubject = new Subject<any>();
 
-// utility function to subscribe only when the latestMap reference is updated
 export const makeCompilationSubscribe = <RetType>(obj: {
     selector: (mem: Mem) => RetType,
     compare?: (a: RetType, b: RetType) => boolean
+    clone?: (a: RetType) => RetType
 }) => {
-    let latestMap = mem().latestMap || {}
-    let prev: RetType | null = null
+    let isInitialized: boolean = false
+    let prev: RetType | null =  null
     const subscribe = (subscriber: Observer<RetType>) => {
-        
         const subjectUnsubscribe = compilationSubject.subscribe({
             next: (_: number) => {
-                // if the CURRENT latestMap (that is, on mem) is the same, no next.
-                if (mem().latestMap === latestMap) {
-                    return
-                }
-                latestMap = mem().latestMap
                 const newVal = obj.selector(mem())
-                if (!obj.compare(newVal, prev)) {
-                    prev = newVal
+                const compared = obj.compare(newVal, prev)
+                if (!compared || !isInitialized) {
+                    isInitialized = true
+                    prev = (obj.clone || structuredClone)(newVal)
                     subscriber.next(newVal)
                 }
             },
@@ -40,4 +37,4 @@ export const makeCompilationSubscribe = <RetType>(obj: {
     return subscribe
 }
 
-masterTicksObservable.subscribe(compilationSubject)
+compilationObservable.subscribe(compilationSubject)

@@ -173,7 +173,7 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
     })
 
     let currNum = 0
-    pattern.forEach((noteIdxOrFraction: string | number, idx) => {
+    pattern.forEach((noteIdxOrFraction: string | number) => {
         if (typeof noteIdxOrFraction === 'number') {
             currNum = noteIdxOrFraction
         }

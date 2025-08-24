@@ -14,14 +14,15 @@ export type NoteByBarInner = {
     }
     set tags(tags: string[])
     get tags(): string[]
+
 }
 
-export type NoteByBar = Omit<NoteByBarInner, '_tags'> & {
+export type NoteByBar = Omit<NoteByBarInner, '_tags' | 'clone' > & {
     tags: string[]
 }
 
-const requiredTags = ['noteId', 'barDelay'] 
-const tagsObjSchema = z.array(z.string()).transform(
+const requiredTags = ['noteId', 'barDelay']
+export const tagsObjSchema = z.array(z.string()).transform(
     (tags) => Object.fromEntries((parseNoteTags(tags)))
 )
 const tagsSchema = z.array(z.string()).refine((tags) => {
@@ -39,7 +40,9 @@ export const noteByBarSchema = z.object({
         message: 'Tags must include both noteId and barDelay'
     })
 })
-
+export const cloneNoteByBar = (note: NoteByBar): NoteByBar => {
+    return wrapWithGetters(makeNoteByBar(note.note, structuredClone(note.tags).map((tag) => tag.split('=').join('='))))
+}
 const wrapWithGetters = (note: z.infer<typeof noteByBarSchema>): NoteByBarInner => {
     const _tags = note.tags
     const settableObj: z.infer<typeof tagsObjSchema> = {}
