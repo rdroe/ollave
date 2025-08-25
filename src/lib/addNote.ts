@@ -32,20 +32,24 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
 
     if (doAddSlider) {
         addSlider(barName, noteId)
-        const { store, updateTagsObj, updateNotePitch } = createNoteStoreById(noteId)
+        const { store, updateTagsObj, updateNotePitch, unsubscribe } = createNoteStoreById(noteId)
 
         // to test slider sync and note pitch update etc
 
         // let interval2 = setInterval(() => {
-        //     updateTagsObj({ barDelay: [102] })
+        //     updateTagsObj({ barDelay: [102] }, true)
         //     const randomNumber = Math.floor(Math.random() * 3) + 2
         //     const note = noteNames[
         //         Math.floor(Math.random() * noteNames.length)
         //     ]
-        //     updateNotePitch(`${note}${randomNumber}`)
+        //     updateNotePitch(`${note}${randomNumber}`, true)
 
         // }, 10000)
 
+        // // test unsubscribing
+        // let interval = setInterval(() => { 
+        //     unsubscribe()
+        // }, 10000)
     }
     return noteObj
 }

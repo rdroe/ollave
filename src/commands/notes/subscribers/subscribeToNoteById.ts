@@ -2,10 +2,9 @@ import { cloneNoteByBar, mem, Mem, NoteByBar, tagsObjSchema } from "../../../lib
 import { makeCompilationSubscribe,  parseNoteTags } from "../../../lib";
 import { TagEntries } from "../../../lib/tags";
 import { createStore } from "zustand";
-import { Subscription } from "rxjs";
-import { set } from "zod";
 import { updateNotePitch, updateTagsObj } from "../../../lib/addSlider";
 import { z } from "zod";
+import { deleteNoteById } from "src/lib/deleteNoteById";
 
 export const tagEntriesCompare = (a: TagEntries, b: TagEntries) => {
     if (a.length !== b?.length) {
@@ -84,6 +83,7 @@ export const createNoteStoreById = (noteId?: string, barName?: string) => {
         throw new Error('noteId is required')
     }
     const { store } = singleNoteStore(noteId, barName)
+    let didUnsubscribe = false
     const subscribe = makeCompilationSubscribe({
         selector: (mem: Mem) => {
             if (!barName) { 
@@ -104,13 +104,14 @@ export const createNoteStoreById = (noteId?: string, barName?: string) => {
         clone: (a) => {
             return cloneNoteByBar(a)
         }
-    }) 
+    })
     const unsubscribe = subscribe(({
         next: (note) => {
             store.getState().setNote(note) 
         },
         complete: () => {
-            unsubscribe()
+            didUnsubscribe = true
+            deleteNoteById(noteId, false)
         },
         error: (err: any) => {
             console.error('error', err)
@@ -118,9 +119,13 @@ export const createNoteStoreById = (noteId?: string, barName?: string) => {
     }))
 
     return {store, 
-        updateNotePitch: (note: string) => updateNotePitch(noteId, note),
-        updateTagsObj: (tagsObj: z.infer<typeof tagsObjSchema>)  => updateTagsObj(noteId, tagsObj),
-        unsubscribe
+        updateNotePitch: (note: string, skipSliderSync: boolean = true) => updateNotePitch(noteId, note, skipSliderSync),
+        updateTagsObj: (tagsObj: z.infer<typeof tagsObjSchema>, skipSliderSync: boolean = true)  => updateTagsObj(noteId, tagsObj, skipSliderSync),
+        unsubscribe: () => {
+            if (!didUnsubscribe) {
+                unsubscribe()
+            }
+        }
     }
 
 }

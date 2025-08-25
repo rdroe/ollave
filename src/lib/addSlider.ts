@@ -47,8 +47,7 @@ export function addSlider (barName: string, noteId: string) {
     }
     slider.value = noteDelay.toString()
     slider.oninput = () => {
-        updateBarDelay(noteData, parseInt(slider.value))
-        
+        updateBarDelay(noteData, parseInt(slider.value), false)
     }
     controls1.appendChild(slider)
 }
@@ -56,7 +55,7 @@ let updateBarDelayTimeout: null | ReturnType<typeof setTimeout> = null
 // on the data object, replace the barDelay index by array index value
 // also call the mapSongToMidiTicks function to update the midi map, but 
 // use native JS setTimeout to debounce to 100ms
-export function updateBarDelay (noteData: NoteByBar, newBarDelay: number) {
+export function updateBarDelay (noteData: NoteByBar, newBarDelay: number, skipSliderSync: boolean = true) {
     const index = noteData.tags.findIndex((tag) => tag.startsWith('barDelay='))
     if (index === -1) {
         throw new Error('barDelay tag not found')
@@ -67,12 +66,14 @@ export function updateBarDelay (noteData: NoteByBar, newBarDelay: number) {
     }
     updateBarDelayTimeout = setTimeout(() => {
         setLatestMap(mapSongToMidiTicks())
-        syncSliderValue(noteData.tagsObj.noteId[0].toString())
+        if (!skipSliderSync) {
+            syncSliderValue(noteData.tagsObj.noteId[0].toString())
+        }
     }, 50)
     return noteData
 }
 let updateTagsObjTimeout: null | ReturnType<typeof setTimeout> = null
-export function updateTagsObj (id: string, tagsObj: z.infer<typeof tagsObjSchema>) {
+export function updateTagsObj (id: string, tagsObj: z.infer<typeof tagsObjSchema>, skipSliderSync: boolean = true) {
     const noteData = Object.values(mem().notesByBar).flat().find((note) => note.tags.includes(`noteId=${id}`))
     if (!noteData) {
         throw new Error('note not found')
@@ -86,13 +87,15 @@ export function updateTagsObj (id: string, tagsObj: z.infer<typeof tagsObjSchema
     }
     updateTagsObjTimeout = setTimeout(() => {
         setLatestMap(mapSongToMidiTicks())
-        syncSliderValue(noteData.tagsObj.noteId[0].toString())
+        if (!skipSliderSync) {
+            syncSliderValue(noteData.tagsObj.noteId[0].toString())
+        }
     }, 50)
     return noteData
 }
 
 let updateNotePitchTimeout: null | ReturnType<typeof setTimeout> = null
-export function updateNotePitch (id: string, note: string) {
+export function updateNotePitch (id: string, note: string, skipSliderSync: boolean = true) {
     if (!isNoteNameWithOctave(note)) {
         throw new Error('note is not a valid note name with octave')
     }
@@ -105,7 +108,9 @@ export function updateNotePitch (id: string, note: string) {
     }
     updateNotePitchTimeout = setTimeout(() => {
         setLatestMap(mapSongToMidiTicks())
-        syncSliderValue(noteData.tagsObj.noteId[0].toString())
+        if (!skipSliderSync) {
+            syncSliderValue(noteData.tagsObj.noteId[0].toString())
+        }
     }, 50)
     noteData.note = note.replace(/,/g, '')
 

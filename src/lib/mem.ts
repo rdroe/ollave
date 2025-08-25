@@ -1,11 +1,12 @@
 import { Observable, Subscription } from "rxjs"
 import { PhaseRecord, SongRecord, TrackRecord } from "../commands/song/song"
-import { BarTagPercent, MidiMap } from "./mapSongToTicks"
+import { BarTagPercent, mapSongToMidiTicks, MidiMap } from "./mapSongToTicks"
 import { parseNoteTags, TagData, tagDataSchema, TagEntries, TagEntry } from "./tags"
 type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
 import { z } from "zod"
 import { isNoteNameWithOctave } from "../commands/bars/utils"
 import { randId } from "./helpers"
+import { setLatestMap } from "src/commands/phase/observables/compilationObservable"
 export type NoteByBarInner = {
     note: string;
     _tags: string[]
@@ -162,4 +163,3 @@ const mem_: Mem = {
 
 (window as any).mem = mem_
 export const mem = () => (window as any).mem as Mem
-
