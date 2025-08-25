@@ -4,7 +4,8 @@ import { getTagData, TagEntries, unparseTagEntries } from "./tags"
 
 import { randId } from "./helpers"
 import { addSlider } from "./addSlider"
-import { subscribeToNoteById } from "../commands/notes/subscribers/subscribeToNoteById"
+import { createNoteStoreById } from "../commands/notes/subscribers/subscribeToNoteById"
+import { noteNames } from "./graphh"
 
 export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEntries, doAddSlider: boolean = false): Promise<NoteByBar> => {
     const barObj = mem().notesByBar[barName]
@@ -23,7 +24,6 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
         throw new Error('noteId tag is missing or non-string ' + noteId)
     }
 
-
     if (typeof getTagData(tagsIn, 'barDelay')?.[0] !== 'number') {
         tags.push(`barDelay=0`)
     }
@@ -32,21 +32,20 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
 
     if (doAddSlider) {
         addSlider(barName, noteId)
-        const { subscribe, store } = subscribeToNoteById(noteId)
-        subscribe(({
-            next: (num) => {
-                console.log('next in addNote from lib', noteObj.tagsObj.noteId) 
-            },
-            complete: () => {
-                console.log('complete')
-            },
-            error: (err: any) => {
-                console.log('error', err)
-            },
-        }))
-        let interval = setInterval(() => {
-            console.log('interval', store.getState().note.tagsObj.barDelay[0])
-        }, 1000)
+        const { store, updateTagsObj, updateNotePitch } = createNoteStoreById(noteId)
+
+        // to test slider sync and note pitch update etc
+
+        // let interval2 = setInterval(() => {
+        //     updateTagsObj({ barDelay: [102] })
+        //     const randomNumber = Math.floor(Math.random() * 3) + 2
+        //     const note = noteNames[
+        //         Math.floor(Math.random() * noteNames.length)
+        //     ]
+        //     updateNotePitch(`${note}${randomNumber}`)
+
+        // }, 10000)
+
     }
     return noteObj
 }
