@@ -7,7 +7,7 @@ import { calcFractionalDelay, parseNoteTags } from "./tags"
 import { addNoteToBar } from "./addNote"
 import { addSlider } from "./addSlider"
 import { makeCompilationSubscribe } from "../commands/phase/subjects/compilationSubject"
-import { setLatestMap } from "src/commands"
+import { setLatestMap } from "../commands"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
 
@@ -107,7 +107,7 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
                         return acc
                     }, 0 as number)
                 },
-                
+
                 compare: (a, b) => {
                     return a === b
                 },

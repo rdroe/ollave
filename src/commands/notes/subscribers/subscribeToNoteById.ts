@@ -4,7 +4,7 @@ import { TagEntries } from "../../../lib/tags";
 import { createStore } from "zustand";
 import { updateNotePitch, updateTagsObj } from "../../../lib/addSlider";
 import { z } from "zod";
-import { deleteNoteById } from "src/lib/deleteNoteById";
+import { deleteNoteById } from "../../../lib/deleteNoteById";
 
 export const tagEntriesCompare = (a: TagEntries, b: TagEntries) => {
     if (a.length !== b?.length) {

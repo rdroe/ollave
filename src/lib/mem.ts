@@ -6,7 +6,6 @@ type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
 import { z } from "zod"
 import { isNoteNameWithOctave } from "../commands/bars/utils"
 import { randId } from "./helpers"
-import { setLatestMap } from "src/commands/phase/observables/compilationObservable"
 export type NoteByBarInner = {
     note: string;
     _tags: string[]
