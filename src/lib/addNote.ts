@@ -32,19 +32,21 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
 
     if (doAddSlider) {
         addSlider(barName, noteId)
-            subscribeToNoteById(noteId)({
-                next: (num) => {
-                    console.log('next in addNote from lib', noteObj.tagsObj.noteId) 
-                },
-                complete: () => {
-                    console.log('complete')
-                },
-                error: (err: any) => {
-                    console.log('error', err)
-                },
-            }) 
+        const { subscribe, store } = subscribeToNoteById(noteId)
+        subscribe(({
+            next: (num) => {
+                console.log('next in addNote from lib', noteObj.tagsObj.noteId) 
+            },
+            complete: () => {
+                console.log('complete')
+            },
+            error: (err: any) => {
+                console.log('error', err)
+            },
+        }))
+        let interval = setInterval(() => {
+            console.log('interval', store.getState().note.tagsObj.barDelay[0])
+        }, 1000)
     }
-
-
     return noteObj
 }
