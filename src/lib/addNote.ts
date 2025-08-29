@@ -5,7 +5,7 @@ import { calcFractionalDelay, getTagData, TagEntries, unparseTagEntries } from "
 import { randId } from "./helpers"
 import { addSlider } from "./addSlider"
 import { createNoteStoreById } from "../commands/notes/subscribers/subscribeToNoteById"
-import { parseColonTag } from "src/commands/phase/phase"
+import { parseColonTag } from "../commands/phase/phase"
 import { phaseCount } from "./mem-db"
 import { noteNames } from "./graphh"
 

@@ -6,7 +6,7 @@ import { parseNoteTags } from "../../lib/tags"
 import { addNoteToBar } from "../../lib/addNote"
 import { z } from "zod"
 import { setLatestMap } from "../phase/observables/compilationObservable"
-import { mapSongToMidiTicks } from "src/lib"
+import { mapSongToMidiTicks } from "../../lib"
 
 export default {
     help: {
