@@ -1,17 +1,27 @@
 import { makeNoteByBar, Mem, mem, NoteByBar } from "../lib/mem"
-import { getTagData, TagEntries, unparseTagEntries } from "./tags"
+import { calcFractionalDelay, getTagData, TagEntries, unparseTagEntries } from "./tags"
 
 
 import { randId } from "./helpers"
 import { addSlider } from "./addSlider"
 import { createNoteStoreById } from "../commands/notes/subscribers/subscribeToNoteById"
+import { parseColonTag } from "src/commands/phase/phase"
+import { phaseCount } from "./mem-db"
 import { noteNames } from "./graphh"
 
 export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEntries, doAddSlider: boolean = false): Promise<NoteByBar> => {
-    const barObj = mem().notesByBar[barName]
+    let barObj = mem().notesByBar[barName]
+    let [phaseName, barNumber] = parseColonTag(barName)
     const tags = unparseTagEntries(tagsIn)
+
     if (!barObj) {
-        throw new Error(`Bar ${barName} not found`)
+        if (phaseName) {
+            phaseCount(phaseName, barNumber + 1, true)
+            barObj = mem().notesByBar[barName]
+        }
+        if (!barObj) {
+            throw new Error(`Bar ${barName} not found`)
+        }
     }
 
     let noteId = getTagData(tagsIn, 'noteId')?.[0]
@@ -25,7 +35,11 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
     }
 
     if (typeof getTagData(tagsIn, 'barDelay')?.[0] !== 'number') {
-        tags.push(`barDelay=0`)
+        const fractionalDelay = calcFractionalDelay(tagsIn)
+        if (typeof fractionalDelay !== 'number') {
+            console.warn('timing info is missing or non-number ' + tagsIn.toString())
+        }
+        tags.push(`barDelay=${fractionalDelay}`)
     }
     const noteObj = makeNoteByBar(note, tags)
     barObj.push(noteObj)
@@ -36,17 +50,17 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
 
         // to test slider sync and note pitch update etc
 
-        // let interval2 = setInterval(() => {
-        //     updateTagsObj({ barDelay: [102] }, true)
-        //     const randomNumber = Math.floor(Math.random() * 3) + 2
-        //     const note = noteNames[
-        //         Math.floor(Math.random() * noteNames.length)
-        //     ]
-        //     updateNotePitch(`${note}${randomNumber}`, true)
+        let interval2 = setInterval(() => {
+            updateTagsObj({ barDelay: [102] }, true)
+            const randomNumber = Math.floor(Math.random() * 3) + 2
+            const note = noteNames[
+                Math.floor(Math.random() * noteNames.length)
+            ]
+            updateNotePitch(`${note}${randomNumber}`, true)
 
-        // }, 10000)
+        }, 10000)
 
-        // // test unsubscribing
+        // test unsubscribing
         // let interval = setInterval(() => { 
         //     unsubscribe()
         // }, 10000)

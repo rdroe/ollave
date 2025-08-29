@@ -78,7 +78,6 @@ export function updateTagsObj (id: string, tagsObj: z.infer<typeof tagsObjSchema
     if (!noteData) {
         throw new Error('note not found')
     }
-
     Object.keys(tagsObj).forEach((key) => {
         noteData.tagsObj[key] = tagsObj[key]
     })

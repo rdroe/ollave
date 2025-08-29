@@ -10,17 +10,71 @@ import { chord } from './commands/chord/chord'
 import { strjson } from './lib/helpers'
 import { PEPRN_MULTILINE, PEPRN_MULTILINE_INDEX, PEPRN_MULTILINE_TOTAL } from 'peprn/util'
 
-import { addChord } from './commands/index'
+import { addChord, subscribeToPhaseBarIds } from './commands/index'
 import addNote from './commands/addNote/addNote'
 import { romanChordNameToRealModule } from './lib/subcommands'
 import { tempo } from './commands/tempo/tempo'
 import { nextChord } from './lib/nextChord'
 import { z } from 'zod'
+import { mem } from './lib/mem'
+import { subscribeToNoteIdsByBar } from './commands/notes/subscribers/subscribeToNoteIdsByBar'
 
 export const app: Parameters<typeof createApp>[0] = {
     id: "cli",
-    init: () => {
-        return songInit()
+    init: async () => {
+        await songInit()
+
+        // test the phase bar ids observable
+        const songName = mem().song.name
+        const { store, subscribe } = subscribeToPhaseBarIds()
+        type BarNoteUnsubscribes = {
+            [barId: string]: ReturnType<typeof subscribe>
+        } 
+        const phaseBarNoteIds: {
+            [phaseName: string]: BarNoteUnsubscribes
+        } = {}
+
+        mem().observables[songName] = mem().observables[songName] || {}
+        subscribe({
+            next: (phaseBarIds) => {
+
+                phaseBarNoteIds[songName] = phaseBarNoteIds[songName] || {} as BarNoteUnsubscribes
+                const phaseNoteUnsubscribes = phaseBarNoteIds[songName]
+
+                Object.entries(phaseBarIds).forEach(([phaseName, phaseBarIds]) => {
+                    const barNoteUnsubscribes = (phaseNoteUnsubscribes[phaseName] || {} )as BarNoteUnsubscribes   
+                        
+                    phaseBarIds.forEach((barId) => {
+                        if (!!barNoteUnsubscribes[barId]) {
+                            return
+                        }
+                        const { store: barIdStore, subscribe: barNoteSubscribe } = subscribeToNoteIdsByBar(barId) 
+                            barNoteUnsubscribes[barId] = barNoteSubscribe(
+                                {
+                                    next: (barNoteIds) => {
+                                        if (barNoteIds.length === 0) {
+                                            barNoteUnsubscribes[barId]?.()
+                                            delete barNoteUnsubscribes[barId]
+                                            return
+                                        }
+                                    },
+                                    error: (err) => {
+                                        console.error('error', err)
+                                    },
+                                    complete: () => {
+                                    }
+                                }
+                            )
+                        })
+                    })
+            },
+            error: (err) => {
+                console.error('error', err)
+            },
+            complete: () => {
+                console.log('phase bar ids complete')
+            }
+        })
     },
     modules: {
         chord, play, phase, song, bars, bar, debug, notes,

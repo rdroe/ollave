@@ -5,6 +5,8 @@ import { phaseCount, phaseExists } from "../../lib/mem-db"
 import { parseNoteTags } from "../../lib/tags"
 import { addNoteToBar } from "../../lib/addNote"
 import { z } from "zod"
+import { setLatestMap } from "../phase/observables/compilationObservable"
+import { mapSongToMidiTicks } from "src/lib"
 
 export default {
     help: {
@@ -51,7 +53,9 @@ export default {
         
         const parsedNoteTags = parseNoteTags(tags)
         const noteObj = await addNoteToBar(note, barName, parsedNoteTags, z.boolean().parse(doAddSlider))
-
+        setLatestMap(
+            mapSongToMidiTicks()
+        )
         return noteObj
     },
 

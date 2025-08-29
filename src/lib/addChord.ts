@@ -75,7 +75,7 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
                 const x = delay
                 acc[abbrev[delay]] = acc[abbrev[delay]] ? acc[abbrev[delay]] + 1 : 1
                 return acc
-            } 
+            }
             console.warn(`Error; ${delay} is not a valid fraction`)
             return acc
         }, {} as {

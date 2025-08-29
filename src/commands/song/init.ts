@@ -8,6 +8,7 @@ import { browser } from 'user-tables';
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
 import { startCueObservable } from './observables';
 import { setLatestMap } from '../phase/observables/compilationObservable';
+import { subscribeToPhaseBarIds } from '../notes/subscribers/subscribeToPhaseBarIds';
 
 
 

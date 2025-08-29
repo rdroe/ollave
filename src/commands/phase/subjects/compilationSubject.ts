@@ -4,18 +4,25 @@ import { mem, Mem } from "../../../lib/mem";
 import { masterTicksObservable } from "../observables/masterTicksObservable";
 import { compilationObservable } from "../observables/compilationObservable";
 
+// declare window type a window property for the compilation subject
+declare global {
+    interface Window {
+        compilationSubject: Subject<any>
+        makeCompilationSubscribe_: typeof makeCompilationSubscribe_
+    }
+};
 
-const compilationSubject = new Subject<any>();
+window.compilationSubject = new Subject<any>();
 
-export const makeCompilationSubscribe = <RetType>(obj: {
+function makeCompilationSubscribe_ <RetType>(obj: {
     selector: (mem: Mem) => RetType,
     compare?: (a: RetType, b: RetType) => boolean
     clone?: (a: RetType) => RetType
-}) => {
+}) {
     let isInitialized: boolean = false
     let prev: RetType | null =  null
     const subscribe = (subscriber: Observer<RetType>) => {
-        const subjectUnsubscribe = compilationSubject.subscribe({
+        const subjectUnsubscribe = window.compilationSubject.subscribe({
             next: (_: number) => {
                 const newVal = obj.selector(mem())
                 const compared = obj.compare(newVal, prev)
@@ -24,6 +31,10 @@ export const makeCompilationSubscribe = <RetType>(obj: {
                     prev = (obj.clone || structuredClone)(newVal)
                     subscriber.next(newVal)
                 }
+            },
+            error: (err) => {
+                console.error('compilationSubject error', err)
+                subscriber.error(err)
             },
             complete: () => {
                 subscriber.complete()
@@ -36,5 +47,8 @@ export const makeCompilationSubscribe = <RetType>(obj: {
     }
     return subscribe
 }
+window.makeCompilationSubscribe_ = makeCompilationSubscribe_
+compilationObservable.subscribe(window.compilationSubject)
 
-compilationObservable.subscribe(compilationSubject)
+export const makeCompilationSubscribe = window.makeCompilationSubscribe_ 
+

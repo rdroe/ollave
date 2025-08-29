@@ -19,9 +19,11 @@ phases and tracks
 we need to add the track, song, entities and the track-song (or song-track) property on one of those. 
 */
 
-const parseColonTag = (str: string) => {
+export const parseColonTag = (str: string) => {
     if (str.match(/[^\:]\:[0-9]+/)) {
-        return z.tuple([z.string(), z.number()]).parse(str.split(':'))
+        return z.tuple([z.string(), z.number().or(z.string().transform((str) => {
+            return parseInt(str)
+        }))]).parse(str.split(':'))
     }
     return null
 }

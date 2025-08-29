@@ -4,12 +4,12 @@ import { mem } from "../../../lib/mem";
 
 
 // create custom events
-(window as any).compiledEvent = new window.CustomEvent("compiled");
+(window as any).compiledEvent = 
 (window as any).compileEventTarget = new window.EventTarget();
 
 export function setLatestMap(map: MidiMap) {
     mem().latestMap = map;
-    (window as any).compileEventTarget.dispatchEvent((window as any).compiledEvent)
+    (window as any).compileEventTarget.dispatchEvent(new window.CustomEvent("compiled"))
 }
 
 export const compilationObservable = new Observable<MidiMap>((subscriber) => {
