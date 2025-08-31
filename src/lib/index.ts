@@ -24,7 +24,8 @@ export {
     subscribeToPhaseBarIds, 
     phaseBarIdsStore, 
     usePhaseBarIdsStore, 
-    usePhaseBarIdsCsvStore 
+    usePhaseBarIdsCsvStore,
+    useAllBarNoteIdCsvStore
 } from '../subscribers/subscribeToPhaseBarIds'
 export { 
     createNoteStoreById, 

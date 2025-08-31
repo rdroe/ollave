@@ -1,4 +1,4 @@
-import { mem, Mem } from "../lib/mem";
+import { mem, Mem, NoteByBar } from "../lib/mem";
 import { makeCompilationSubscribe, sortByNumberAfterColon } from "../lib";
 import { createStore, useStore } from "zustand";
 
@@ -123,4 +123,26 @@ export const usePhaseBarIdsCsvStore = () => {
             return sortedBarIdsByPhase
         })
     )
+}
+
+export const useAllBarNoteIdCsvStore = () => {
+    const { store } = createPhaseBarIdsStore()
+    return useStore(
+        store,
+        useShallow(({ phaseBarIds }) => {
+            //return a map in which keys are barIds (regardless of phase) and values are the csv of note ids in that bar
+            const barNoteIdCsvs: { [barId: string]: string } = {}
+            Object.values(phaseBarIds).forEach((phaseBarIds) => {
+                const currentNotesByBar = mem().notesByBar
+                phaseBarIds.forEach((barId) => {
+                    barNoteIdCsvs[barId] = getBarNoteIdCsvs(currentNotesByBar, barId)
+                })
+            })
+            return barNoteIdCsvs
+        })
+    )
+}
+
+function getBarNoteIdCsvs(currentNotesByBar: { [barId: string]: NoteByBar[] }, barId: string): string {
+        return  currentNotesByBar[barId].map((note) => note.tagsObj.noteId[0]).join(',')
 }
