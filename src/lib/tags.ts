@@ -235,3 +235,20 @@ export const updateNoteTag = (note: NoteByBar, tag: string, data: TagData) => {
         note.tags[tagIdx] = `${tag}=${data.join(',')}`
     }
 }
+
+export const tagEntriesCompare = (a: TagEntries, b: TagEntries) => {
+    if (a.length !== b?.length) {
+        return false
+    }
+    const compared = a.every(([tagName, data]) => {
+        return data.every((tagDatum, index2) => {
+            const  bData = b.find(([tagName2]) => {
+                return tagName === tagName2
+            })
+            const bDatum = bData?.[1][index2]
+            const comparedInner = tagDatum === bDatum
+            return comparedInner
+        })
+    }) 
+    return compared
+}

@@ -12,8 +12,8 @@ export { chord } from './chord/chord'
 export {default as addChord} from './addChord/addChord'
 export {default as addNote} from './addNote/addNote'
 export { setLatestMap, compilationObservable } from './phase/observables/compilationObservable'
-export { subscribeToNoteById, tagEntriesCompare, createNoteStoreById, } from './notes/subscribers/subscribeToNoteById'
-export { subscribeToPhaseBarIds } from './notes/subscribers/subscribeToPhaseBarIds'
+export { subscribeToNoteById, createNoteStoreById, } from '../subscribers/subscribeToNoteById'
+export { subscribeToPhaseBarIds } from '../subscribers/subscribeToPhaseBarIds'
 
 export {
     airSpeed,

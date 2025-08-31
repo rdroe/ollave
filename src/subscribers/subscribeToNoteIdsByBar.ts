@@ -1,8 +1,9 @@
-import { mem, Mem } from "../../../lib/mem";
-import { makeCompilationSubscribe } from "../../../lib";
-import { createStore } from "zustand";
+import { mem, Mem } from "../lib/mem";
+import { makeCompilationSubscribe } from "../lib";
+import { createStore, useStore } from "zustand";
 
 import { z } from "zod";
+import { useShallow } from "zustand/shallow";
 
 export const subscribeToNoteIdsByBar = (barId: string) => {
     const { store } = createBarNoteIdsStore(barId)
@@ -87,4 +88,20 @@ export const createBarNoteIdsStore = (barId: string) => {
             }
         }
     }
+}
+
+
+export const useBarNoteIdsStore = (barId: string) => {
+    const { store } = createBarNoteIdsStore(barId)
+    return useStore(store)
+}
+
+export const useBarNoteIdsCsvStore = (barId: string) => {
+    const { store } = createBarNoteIdsStore(barId)
+    return useStore(
+        store,
+        useShallow(({ barNoteIds }) => {
+            return barNoteIds.join(',')
+        })
+    )
 }

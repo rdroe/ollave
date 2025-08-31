@@ -17,7 +17,9 @@ import { tempo } from './commands/tempo/tempo'
 import { nextChord } from './lib/nextChord'
 import { z } from 'zod'
 import { mem } from './lib/mem'
-import { subscribeToNoteIdsByBar } from './commands/notes/subscribers/subscribeToNoteIdsByBar'
+import { subscribeToNoteIdsByBar } from './subscribers/subscribeToNoteIdsByBar'
+import { createTestNotes, subscribeToTags, updateNoteTagValue } from './commands/test/testTagSubscribe'
+
 
 export const app: Parameters<typeof createApp>[0] = {
     id: "cli",
@@ -77,7 +79,9 @@ export const app: Parameters<typeof createApp>[0] = {
         })
     },
     modules: {
-        chord, play, phase, song, bars, bar, debug, notes,
+        chord, play, phase, song, bars, bar, debug, notes, 
+        // test subscribe by tag
+        createTestNotes, subscribeToTags, updateNoteTagValue,
         tempo,
         addNote,
         addChord,

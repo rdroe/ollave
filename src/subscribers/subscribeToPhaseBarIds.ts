@@ -1,8 +1,9 @@
-import { mem, Mem } from "../../../lib/mem";
-import { makeCompilationSubscribe } from "../../../lib";
-import { createStore } from "zustand";
+import { mem, Mem } from "../lib/mem";
+import { makeCompilationSubscribe, sortByNumberAfterColon } from "../lib";
+import { createStore, useStore } from "zustand";
 
 import equal from 'deep-equal'
+import { useShallow } from "zustand/shallow";
 
 export const subscribeToPhaseBarIds = () => {
     const { store } = phaseBarIdsStore()
@@ -64,7 +65,6 @@ export const phaseBarIdsStore = () =>  {
     }
 }
 
-
 export const createPhaseBarIdsStore = () => { 
     const { store } = phaseBarIdsStore()
     let didUnsubscribe = false
@@ -73,7 +73,7 @@ export const createPhaseBarIdsStore = () => {
             return getPhaseBarIds()
         },
         compare: (a, b) => {
-            const comparison = equal({bars: a}, {bars:b})
+            const comparison = equal({bars: a}, {bars:b}, {strict: true})
             if (comparison) {
                 return true
             } else {
@@ -104,4 +104,23 @@ export const createPhaseBarIdsStore = () => {
             }
         }
     }
+}
+
+export const usePhaseBarIdsStore = () => {
+    const { store } = createPhaseBarIdsStore()
+    return useStore(store)
+}
+
+export const usePhaseBarIdsCsvStore = () => {
+    const { store } = createPhaseBarIdsStore()
+    return useStore(
+        store,
+        useShallow(({ phaseBarIds }) => {
+            const sortedBarIdsByPhase: { [phaseName: string]: string } = {}
+            Object.entries(phaseBarIds).forEach(([phaseName, phaseBarIds]) => {
+                sortedBarIdsByPhase[phaseName] = phaseBarIds.sort(sortByNumberAfterColon).join(',')
+            })
+            return sortedBarIdsByPhase
+        })
+    )
 }

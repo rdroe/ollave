@@ -12,12 +12,38 @@ export { words } from './words'
 export * as mapSongToTicks from './mapSongToTicks'
 export * as mem from './mem'
 export * as memDb from './mem-db'
+
 export * as cli from '../cli'
 export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
 export { makeCompilationSubscribe } from '../commands/phase/subjects/compilationSubject'
 export { makeTickSubscribe } from '../commands/phase/subjects/masterTicksSubject'
 export { deleteNoteById } from './deleteNoteById'
+export { 
+    createPhaseBarIdsStore, 
+    subscribeToPhaseBarIds, 
+    phaseBarIdsStore, 
+    usePhaseBarIdsStore, 
+    usePhaseBarIdsCsvStore 
+} from '../subscribers/subscribeToPhaseBarIds'
+export { 
+    createNoteStoreById, 
+    subscribeToNoteById, 
+    useNoteStoreById, 
+    useNoteBarId 
+} from '../subscribers/subscribeToNoteById'
+export { 
+    createBarNoteIdsStore, 
+    subscribeToNoteIdsByBar, 
+    useBarNoteIdsStore, 
+    useBarNoteIdsCsvStore 
+} from '../subscribers/subscribeToNoteIdsByBar'
+export { 
+    createNotesByTagStore, 
+    subscribeToNotesByTag, 
+    useNotesByTagStore, 
+    useNoteIdsByTagStore 
+} from '../subscribers/subscribeToNotesByTag'
 
 // Individual function exports for direct access
 // mem-db exports

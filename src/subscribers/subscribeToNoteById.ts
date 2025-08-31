@@ -1,27 +1,12 @@
-import { cloneNoteByBar, mem, Mem, NoteByBar, tagsObjSchema } from "../../../lib/mem";
-import { makeCompilationSubscribe,  parseNoteTags } from "../../../lib";
-import { TagEntries } from "../../../lib/tags";
-import { createStore } from "zustand";
-import { updateNotePitch, updateTagsObj } from "../../../lib/addSlider";
-import { z } from "zod";
-import { deleteNoteById } from "../../../lib/deleteNoteById";
+import { cloneNoteByBar, mem, Mem, NoteByBar, tagsObjSchema } from "../lib/mem";
+import { makeCompilationSubscribe,  parseNoteTags } from "../lib";
 
-export const tagEntriesCompare = (a: TagEntries, b: TagEntries) => {
-    if (a.length !== b?.length) {
-        return false
-    }
-    const compared = a.every(([tagName, data]) => {
-        return data.every((tagDatum, index2) => {
-            const  bData = b.find(([tagName2]) => {
-                return tagName === tagName2
-            })
-            const bDatum = bData?.[1][index2]
-            const comparedInner = tagDatum === bDatum
-            return comparedInner
-        })
-    }) 
-    return compared
-}
+import { createStore, useStore } from "zustand";
+import { updateNotePitch, updateTagsObj } from "../lib/addSlider";
+import { z } from "zod";
+import { deleteNoteById } from "../lib/deleteNoteById";
+import { tagEntriesCompare } from "../lib/tags";
+import { useShallow } from "zustand/shallow";
 
 export const subscribeToNoteById = (noteId?: string, barName?: string) => { 
     if (!noteId) {
@@ -70,7 +55,7 @@ const singleNoteStore = (noteId: string, barName?: string) =>  {
     }
 }
 
-//
+
 export const createNoteStoreById = (noteId?: string, barName?: string) => { 
     if (!noteId) {
         throw new Error('noteId is required')
@@ -156,4 +141,28 @@ function makeCompare (store: ReturnType<typeof singleNoteStore>['store'])  {
 
 function clone (noteByBar: NoteByBar)  { 
     return cloneNoteByBar(noteByBar)
+}
+
+export const useNoteStoreById = (noteId: string, barName?: string) => {
+    const { store } = createNoteStoreById(noteId, barName)
+    return useStore(store)
+}
+
+export const useNoteBarId= (noteId: string) => {
+    const { store } = createNoteStoreById(noteId)
+    return useStore(
+        store,
+        useShallow(({ note }) => {
+            const noteId = note.tagsObj.noteId[0]
+            if (typeof noteId !== 'string') {
+                throw new Error('noteId is not a string')
+            }
+            return getNoteBarId(noteId)
+        })
+    )
+}
+
+const getNoteBarId = (noteId: string) => {
+    const barContainingNote  =  Object.keys(mem().notesByBar).find((barName) => mem().notesByBar[barName].some((note) => note.tagsObj.noteId[0] === noteId))
+    return barContainingNote
 }

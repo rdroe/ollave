@@ -1,10 +1,9 @@
 import { makeNoteByBar, Mem, mem, NoteByBar } from "../lib/mem"
 import { calcFractionalDelay, getTagData, TagEntries, unparseTagEntries } from "./tags"
 
-
 import { randId } from "./helpers"
 import { addSlider } from "./addSlider"
-import { createNoteStoreById } from "../commands/notes/subscribers/subscribeToNoteById"
+import { createNoteStoreById } from "../subscribers/subscribeToNoteById"
 import { parseColonTag } from "../commands/phase/phase"
 import { phaseCount } from "./mem-db"
 import { noteNames } from "./graphh"
@@ -45,25 +44,26 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
     barObj.push(noteObj)
 
     if (doAddSlider) {
+        // test slider sync via the noteStoreById 
         addSlider(barName, noteId)
         const { store, updateTagsObj, updateNotePitch, unsubscribe } = createNoteStoreById(noteId)
 
         // to test slider sync and note pitch update etc
+        // let interval2 = setInterval(() => {
+        //     updateTagsObj({ barDelay: [102] }, true)
+        //     const randomNumber = Math.floor(Math.random() * 3) + 2
+        //     const note = noteNames[
+        //         Math.floor(Math.random() * noteNames.length)
+        //     ]
+        //     updateNotePitch(`${note}${randomNumber}`, true)
 
-        let interval2 = setInterval(() => {
-            updateTagsObj({ barDelay: [102] }, true)
-            const randomNumber = Math.floor(Math.random() * 3) + 2
-            const note = noteNames[
-                Math.floor(Math.random() * noteNames.length)
-            ]
-            updateNotePitch(`${note}${randomNumber}`, true)
-
-        }, 10000)
+        // }, 10000)
 
         // test unsubscribing
         // let interval = setInterval(() => { 
         //     unsubscribe()
         // }, 10000)
+        
     }
     return noteObj
 }
