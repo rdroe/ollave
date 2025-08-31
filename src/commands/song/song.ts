@@ -1,5 +1,5 @@
 import { Module } from 'peprn/util'
-import { mem, songRecordSchema, trackRecordSchema } from '../../lib/mem'
+import { mem, songRecordSchema, songRecordSchema_, trackRecordSchema } from '../../lib/mem'
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
 const { userTables } = browser
@@ -16,12 +16,7 @@ export { init, setTrackReceptacleSelector } from './init'
 const { songNames } = mem()
 import { z } from 'zod'
 // kebab-case ids props; camelCase data props
-export type SongRecord = {
-    id: number,
-    name: string,
-    tempo: number,
-    "track-ids": [trackId: number, start: number][]
-}
+export type SongRecord = z.infer<typeof songRecordSchema_>
 
 export type TrackRecord = z.infer<typeof trackRecordSchema>
 
@@ -111,11 +106,11 @@ song start
                         const { "song-tracks": songTracks } = fetched.data
 
                         if (songTracks) {
-                            mem().track = {
+                            mem().tracks = [{
                                 id: songTracks[0][0],
                                 "phase-ids": [],
                                 notesByBar: {}
-                            }
+                            }]
                         } else {
                             console.error("no tracks for song", mem().song.id)
                         }

@@ -147,6 +147,6 @@ export function properScaleName(str: string) {
 
 export function initNotesByBar() {
     const song = songRecordSchema.parse(mem().song) 
-    const track = trackRecordSchema.parse(mem().track)
+    const track = trackRecordSchema.parse(mem().tracks[0])
     mem().notesByBar = track.notesByBar
 }

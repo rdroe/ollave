@@ -88,11 +88,11 @@ async function trackInit() {
     const { "track-ids": songTracks } = validSong
 
     if (songTracks) {
-        mem().track = {
+        mem().tracks = [{
             id: songTracks[0][0],
             "phase-ids": [],
             notesByBar: {}
-        }
+        }]
     } else {
         console.error("no tracks for song", mem().song.id)
     }
@@ -127,11 +127,11 @@ async function initLatestOrNewSong() {
     const latestSong = await fetchLatestSongAndTracks()
     if (latestSong) {
         mem().song = songRecordSchema.parse(latestSong.song)
-        mem().track = {
+        mem().tracks = [{
             id: latestSong.tracks[0].id,
             "phase-ids": latestSong.tracks[0]["phase-ids"],
             notesByBar: latestSong.tracks[0].notesByBar
-        }
+        }]
         return latestSong
     }
     const shiftedOff = songNames.shift()

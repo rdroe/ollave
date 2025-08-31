@@ -10,8 +10,7 @@ type StartEndData = {
 
 
 export const phaseBeginningsAndEnds = (): StartEndData => {
-    const { song, track } = mem()
-    const firstPhases = Object.entries(mem().phases).filter(([phaseName, phase]) => {
+    const firstPhases = Object.entries(mem().phases).filter(([_, phase]) => {
         return phase["follows-ids"].length === 0
     })
     const collector: StartEndData = {}

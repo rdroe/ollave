@@ -120,7 +120,7 @@ export type Mem = {
     }
     songNames: string[]
     song: Exclude<SongRecord, "id"> & { id: number } | null,
-    track: Exclude<TrackRecord, "id"> & { id: number } | null,
+    tracks: TrackRecord[],
     phases: {
         [phaseName: string]: PhaseRecord & {
             "temp-id": number | null
@@ -148,7 +148,7 @@ const mem_: Mem = {
     functions: {},
     observables: {},
     song: null,
-    track: null,
+    tracks: [],
     phases: {},
     notesByBar: {},
     songNames: [],
