@@ -1,5 +1,5 @@
 import { strjson } from '../../lib/helpers';
-import { mem } from '../../lib/mem';
+import { mem, songRecordSchema, trackRecordSchema } from '../../lib/mem';
 import { tickCounts } from '../phase/observables/masterTicksObservable';
 import { lastTick } from '../../lib/mem-db';
 
@@ -8,9 +8,8 @@ import { browser } from 'user-tables';
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
 import { startCueObservable } from './observables';
 import { setLatestMap } from '../phase/observables/compilationObservable';
-import { subscribeToPhaseBarIds } from '../../subscribers/subscribeToPhaseBarIds';
-
-
+import { z } from 'zod';
+import { fetchLatestSongAndTracks } from 'src/lib/fetch';
 
 const { songNames } = mem()
 
@@ -21,7 +20,9 @@ const namesPromise = new Promise((res) => {
 });
 
 (() => {
+    console.log('importing words')
     import('../../lib/words').then((w) => {
+        console.log('words imported')
         const wordList = w.words.split('\n')
         for (let i = 0; i < 100; i++) {
             const rand = Math.floor(Math.random() * wordList.length);
@@ -64,15 +65,18 @@ export function stopPrintingNotes() {
     doPrintNotes = false
 }
 async function trackInit() {
-    const trackRecord: TrackRecord = {
-        "start": 0,
-        "phase-ids": []
+    const trackRecord: Omit<TrackRecord, "id"> = {
+        "phase-ids": [],
+        notesByBar: {}
     }
     const trackId = await browser.userTables.add('track', { data: trackRecord })
+    // update the track to have its id in data. 
+    await browser.userTables.update('track', { id: trackId, data: { id: trackId } }, {}) 
+
     await browser.userTables.update('song', {
         id: mem().song.id,
         data: {
-            "song-tracks": [[
+            "track-ids": [[
                 trackId, 0
             ]]
         },
@@ -80,13 +84,14 @@ async function trackInit() {
 
     const coll = await (browser.userTables.where('song', { id: mem().song.id }))
     const fetched = await coll.first()
-    const { "song-tracks": songTracks } = fetched.data
+    const validSong = songRecordSchema.parse(fetched.data)
+    const { "track-ids": songTracks } = validSong
 
     if (songTracks) {
         mem().track = {
             id: songTracks[0][0],
-            start: 0,
-            "phase-ids": []
+            "phase-ids": [],
+            notesByBar: {}
         }
     } else {
         console.error("no tracks for song", mem().song.id)
@@ -94,11 +99,43 @@ async function trackInit() {
 
 }
 
-async function songInit() {
+export async function fetchSongAndTracks(songId: number) {
+    const coll = await (browser.userTables.where('song', { id: songId }))
+    const fetched = await coll.first()
+// get the track ids 
+    const validSong = songRecordSchema.parse(fetched.data) 
+    const trackIds = validSong["track-ids"].map(([trackId]) => {
+        return trackId
+    }).filter((trackId) => {
+        return trackId !== undefined
+    })
+    // now fetch each track
+    const validatedTracks = await Promise.all(trackIds.map(async (trackId) => {
+        const fetched = await (await browser.userTables.where('track', { id: trackId })).first()
+        console.log({fetched})
+        return trackRecordSchema.parse(fetched.data)
+    }))
+
+    return {
+        song: validSong,
+        tracks: validatedTracks
+    }
+}
+
+async function initLatestOrNewSong() {
+
+    const latestSong = await fetchLatestSongAndTracks()
+    if (latestSong) {
+        mem().song = songRecordSchema.parse(latestSong.song)
+        mem().track = {
+            id: latestSong.tracks[0].id,
+            "phase-ids": latestSong.tracks[0]["phase-ids"],
+            notesByBar: latestSong.tracks[0].notesByBar
+        }
+        return latestSong
+    }
     const shiftedOff = songNames.shift()
-
-
-    const data: SongRecord = {
+    const data: Omit<SongRecord, "id"> = {
         name: shiftedOff,
         tempo: 120,
         "track-ids": []
@@ -106,11 +143,12 @@ async function songInit() {
     const createdId = await browser.userTables.add('song', {
         data
     })
+    await browser.userTables.update('song', { id: createdId, data: {
+        id: createdId
+    } }, {})
+    const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
 
-    mem().song = {
-        id: createdId,
-        ...data
-    }
+    mem().song = songRecordSchema.parse(refetched.data)
     await trackInit()
 }
 
@@ -123,7 +161,7 @@ export async function init() {
 
     }
 
-    await songInit()
+    await initLatestOrNewSong()
     let tagsRoot: HTMLDivElement | null = null
     let logItr = 0
     const log = (...args: any[]) => {

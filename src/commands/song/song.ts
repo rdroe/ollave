@@ -1,5 +1,5 @@
 import { Module } from 'peprn/util'
-import { mem } from '../../lib/mem'
+import { mem, songRecordSchema, trackRecordSchema } from '../../lib/mem'
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
 const { userTables } = browser
@@ -14,19 +14,16 @@ import { setTrackReceptacleSelector, startPrintingNotes, stopPrintingNotes } fro
 import { setLatestMap } from '../phase/observables/compilationObservable'
 export { init, setTrackReceptacleSelector } from './init'
 const { songNames } = mem()
+import { z } from 'zod'
 // kebab-case ids props; camelCase data props
 export type SongRecord = {
-    id?: number,
+    id: number,
     name: string,
     tempo: number,
-    "track-ids": number[]
+    "track-ids": [trackId: number, start: number][]
 }
 
-export type TrackRecord = {
-    id?: number,
-    start: number,
-    "phase-ids": number[],
-}
+export type TrackRecord = z.infer<typeof trackRecordSchema>
 
 export type PhaseRecord = {
     id?: number,
@@ -58,7 +55,7 @@ song start
                 const shiftedOff = songNames.shift()
 
 
-                const data: SongRecord = {
+                const data: Omit<SongRecord, "id"> = {
                     name: shiftedOff,
                     tempo: 120,
                     "track-ids": []
@@ -66,11 +63,10 @@ song start
                 const createdId = await browser.userTables.add('song', {
                     data
                 })
+                const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
 
-                mem().song = {
-                    id: createdId,
-                    ...data
-                }
+                mem().song = songRecordSchema.parse(refetched.data)
+                
                 await fakeCli(`song track init`, 'cli')
             }
         },
@@ -96,9 +92,9 @@ song start
                 },
                 init: {
                     fn: async () => {
-                        const trackRecord: TrackRecord = {
-                            "start": 0,
-                            "phase-ids": []
+                        const trackRecord: Omit<TrackRecord, "id"> = {
+                            "phase-ids": [],
+                            notesByBar: {}
                         }
                         const trackId = await browser.userTables.add('track', { data: trackRecord })
                         await browser.userTables.update('song', {
@@ -117,8 +113,8 @@ song start
                         if (songTracks) {
                             mem().track = {
                                 id: songTracks[0][0],
-                                start: 0,
-                                "phase-ids": []
+                                "phase-ids": [],
+                                notesByBar: {}
                             }
                         } else {
                             console.error("no tracks for song", mem().song.id)

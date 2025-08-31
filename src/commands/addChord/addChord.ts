@@ -12,7 +12,15 @@ export default {
             "Cm,3 --arp 0th half,eigth half,quarter --barName aphrodite:0 --tags x=1 y=2 z=3,4": `Add a Cm chord at 0 arpeggiated so that the first note is played at 0, the second at 1/2, the third at a halfplus an eigth, and with the added tags`
         },
     },
-    fn: async ({positionalNonCommands, arp = DEFAULT_ARP, barName = 'default:1', tags, scaleTonic, scaleName, addSlider = false }) => {
+    yargs: {
+        tags: {
+            type: 'string',
+            alias: 't',
+            default: [],
+            array: true, 
+        },
+    },
+    fn: async ({positionalNonCommands, arp = DEFAULT_ARP, barName = 'default:1', tags = [], scaleTonic, scaleName, addSlider = false }) => {
         const [chordName] = positionalNonCommands
         if (typeof chordName !== 'string' || !isChordCsvArg(chordName)) {
             throw new Error('Chord must be a valid chord name with comma-separated octave')

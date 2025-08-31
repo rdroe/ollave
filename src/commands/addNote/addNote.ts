@@ -15,7 +15,14 @@ export default {
             "c3 --barName aphrodite:0 --tags x=1 y=2 z=3,4": `Add a c3 note at 0 with these tags`
         },
     },
-
+    yargs: {
+        tags: {
+            type: 'string',
+            alias: 't',
+            default: [],
+            array: true, 
+        },
+    },
     fn: async ({ positionalNonCommands, barName = 'default:1', updatePhaseScale, tags, doAddSlider = false }) => { 
         const [note] = positionalNonCommands
         if (!isNoteNameWithOctave(note)) {

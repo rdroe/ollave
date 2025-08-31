@@ -1372,9 +1372,9 @@ __metadata:
   linkType: hard
 
 "fake-indexeddb@npm:^5.0.1":
-  version: 5.0.1
-  resolution: "fake-indexeddb@npm:5.0.1"
-  checksum: 1d4a19ed04e1ddfcbf3d52ebd985af3dbe090812df720862c1043e1cf0f90019d2919d6b59be39e03ea3a9a4c5cc0762c37b55b3d57dda6b5a6036f4f4d73400
+  version: 5.0.2
+  resolution: "fake-indexeddb@npm:5.0.2"
+  checksum: 8bbe74fe29c2d8e9bf97928f4c7af87afa63f2458cd4992897f65aa5a8c2828fd48cb6f0510593442eb1ab5465d5cc08a1cd4c478fa234514e22a627adf0e2ac
   languageName: node
   linkType: hard
 
@@ -2390,7 +2390,7 @@ __metadata:
     tonal: "npm:^5.0.0"
     tone: "npm:14.6.1"
     typescript: "npm:^5.0.0"
-    user-tables: "npm:^0.0.19"
+    user-tables: "npm:^0.0.20"
     webmidi: "npm:2.*"
     zod: "npm:^4.0.17"
     zustand: "npm:^5.0.8"
@@ -3192,15 +3192,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"user-tables@npm:^0.0.19":
-  version: 0.0.19
-  resolution: "user-tables@npm:0.0.19"
+"user-tables@npm:^0.0.20":
+  version: 0.0.20
+  resolution: "user-tables@npm:0.0.20"
   dependencies:
     dexie: "npm:^4.0.8"
     dexie-react-hooks: "npm:^1.1.6"
     fake-indexeddb: "npm:^5.0.1"
     typescript: "npm:^5.5.3"
-  checksum: c3014fc65e19efe8c820f728ab8e766f7d1808de78b4f4dcfa1987a3b196bf9a222898674f2ed5d17929003e4c338d5ee035bf0da1d72d2d4cecc8155700756f
+    zod: "npm:^4.1.5"
+  checksum: 5cdfa9b5a48a3a0364d8555e729e731986cbd3f697d7498d8646c4580a03df2448aa6a1cdd4b152d2df357eb4d5594659374c896e338f36c0b698b0bfd9a1ad2
   languageName: node
   linkType: hard
 
@@ -3364,6 +3365,13 @@ __metadata:
   version: 4.0.17
   resolution: "zod@npm:4.0.17"
   checksum: bfdb7f1a7a3dd17e83c6720f9f763d522d4914962c81844fe408512e55df11378c6032d48dea4ec6ca6a260bdd9e92c59ec75bd40cb49f4c12115366744f2def
+  languageName: node
+  linkType: hard
+
+"zod@npm:^4.1.5":
+  version: 4.1.5
+  resolution: "zod@npm:4.1.5"
+  checksum: 2ac6bef2d6647de6e673b6fa07ee392b71eb6fd6ccb2be8899d8d853084dd8b3992d4d2cf267eba6f8495a35803e2ec254509194fd0849ed0a822dea7ae4a765
   languageName: node
   linkType: hard
 

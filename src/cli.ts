@@ -19,6 +19,8 @@ import { z } from 'zod'
 import { mem } from './lib/mem'
 import { subscribeToNoteIdsByBar } from './subscribers/subscribeToNoteIdsByBar'
 import { createTestNotes, subscribeToTags, updateNoteTagValue } from './commands/test/testTagSubscribe'
+import { parseMem } from './commands/test/parseMem'
+import { deleteAllSongsAndTracks, latestSong, listSongs, listTracks } from './commands/song/list'
 
 
 export const app: Parameters<typeof createApp>[0] = {
@@ -82,6 +84,14 @@ export const app: Parameters<typeof createApp>[0] = {
         chord, play, phase, song, bars, bar, debug, notes, 
         // test subscribe by tag
         createTestNotes, subscribeToTags, updateNoteTagValue,
+        // song tests
+        parseMem,
+        listSongs,
+        listTracks,
+        latestSong,
+        deleteAllSongsAndTracks,
+
+
         tempo,
         addNote,
         addChord,

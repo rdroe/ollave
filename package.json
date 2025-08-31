@@ -22,7 +22,7 @@
         "rxjs": "^7.8.2",
         "tonal": "^5.0.0",
         "tone": "14.6.1",
-        "user-tables": "^0.0.19",
+        "user-tables": "^0.0.20",
         "webmidi": "2.*",
         "zod": "^4.0.17",
         "zustand": "^5.0.8"

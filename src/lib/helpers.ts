@@ -18,7 +18,7 @@
 // - properScaleName: Format scale name properly
 
 import { isNumber } from "peprn/util"
-import { mem } from "./mem"
+import { mem, songRecordSchema, trackRecordSchema } from "./mem"
 
 import { allScales } from "./graphh"
 import { isNoteNameWithoutOctave } from "../commands/bars/utils"
@@ -143,4 +143,10 @@ export function properScaleName(str: string) {
         throw new Error(`Scale ${str} not found`)
     }
     return scaleNameExample.name.split(' ')[1]
+}
+
+export function initNotesByBar() {
+    const song = songRecordSchema.parse(mem().song) 
+    const track = trackRecordSchema.parse(mem().track)
+    mem().notesByBar = track.notesByBar
 }

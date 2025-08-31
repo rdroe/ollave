@@ -162,3 +162,53 @@ const mem_: Mem = {
 
 (window as any).mem = mem_
 export const mem = () => (window as any).mem as Mem
+export const songRecordSchema_ = z.object({
+    id: z.number(),
+    name: z.string(),
+    tempo: z.number(),
+    "track-ids": z.array(
+        z.tuple([z.number(), z.number()])
+    ).transform((tracks) => tracks.map(([trackId, start]) => ([ trackId, start ] as [id: number, start: number])))
+})
+
+export const songRecordSchema = {
+    parse: (data: any) => songRecordSchema_.parse(data) as SongRecord
+}
+
+
+
+export const phaseRecordSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    start: z.number(),
+    end: z.number(),
+    "follows-ids": z.array(z.number()),
+    speed: z.number(),
+    barSizeMultiplier: z.number(),
+    scaleName: z.string().nullable(),
+    scaleTonic: z.string().nullable()
+})
+
+export const notesByBarSchema = z.record(z.string(), z.array(noteByBarSchema).transform((notes) => notes.map(note => noteByBarSchema.parse(note))))
+export const trackRecordSchema = z.object({
+    id: z.number(),
+    "phase-ids": z.array(z.number()),
+    notesByBar: notesByBarSchema
+})
+export const latestMapSchema = z.record(z.string(), z.number())
+export const playedMapSchema = z.record(z.string(), z.number())
+export const adjustedCursorSchema = z.number()
+export const doLogSchema = z.boolean()
+
+
+
+export const memSchema = z.object({
+    song: songRecordSchema,
+    track: trackRecordSchema,
+    phases: z.record(z.string(), phaseRecordSchema),
+    notesByBar: notesByBarSchema,
+    latestMap: latestMapSchema,
+    playedMap: playedMapSchema,
+    adjustedCursor: adjustedCursorSchema,
+    doLog: doLogSchema
+})
