@@ -7,7 +7,7 @@ const { userTables } = browser
 import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables'
 
 import { downloadSong } from '../../lib/download'
-import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTicks'
+import { mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTicks'
 import { trackTempo } from '../../core/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../../lib/util/barsUtil'
 import { groupNotesByFirstTagDatum, parseNoteTags } from '../../lib/tags'
@@ -18,7 +18,7 @@ const { songNames } = mem()
 import { z } from 'zod'
 import { loadAndInitSongAndTracks } from 'src/lib/fetch'
 import { initLoadedSong, initNewSong } from 'src/lib/helpers'
-// kebab-case ids props; camelCase data props
+
 export type SongRecord = ReturnType<typeof songRecordSchema.parse>
 
 export type TrackRecord = z.infer<typeof trackRecordSchema>
