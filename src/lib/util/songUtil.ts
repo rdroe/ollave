@@ -1,7 +1,7 @@
 import { initLatestOrNewSong, strjson } from '../helpers';
 import { mem } from '../mem';
 import { tickCounts } from '../../core/observables/masterTicksObservable';
-import { lastTick } from '../mem-db';
+import { lastTick } from './phaseUtil';
 import { mapSongToMidiTicks } from '../mapSongToTicks';
 import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables';
 import { setLatestMap } from '../../core/observables';

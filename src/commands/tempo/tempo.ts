@@ -3,7 +3,7 @@ import { airSpeed, exportableTick, setAirSpeed, tempoFromAirSpeed } from "../../
 import { mem } from "../../lib";
 import { addTempoSlider } from "../../lib/addTempoSlider";
 
-export const tempo = {
+export default {
     help: {
         description: 'Change the speed of a phase',
         examples: {

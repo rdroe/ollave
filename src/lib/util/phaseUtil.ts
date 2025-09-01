@@ -1,28 +1,10 @@
-// This module exports functions for managing phases and musical data in memory.
-// External packages can import individual functions like:
-// import { phaseCount } from 'ollave/lib/mem-db'
-// 
-// Available exports:
-// - phaseFollowsPhase: Manage phase relationships
-// - phaseUnfollows: Remove phase relationships  
-// - sortByNumberAfterColon: Sort phase bars by number
-// - startEndData: Get phase timing data
-// - lookUpGraph: Look up chord progression graphs
-// - lastTick: Get the last tick in the song
-// - getAllPhaseBars: Get all bars for a phase
-// - getAllPhaseBarNotes: Get all notes for a phase
-// - getFollowingPhases: Get phases that follow a given phase
-// - phaseExists: Check if a phase exists
-// - phaseCount: Set the number of bars in a phase
 
-// using the currently loaded song, do any of the following.
-// updated both mem.ts and the database.
-import { ProgressionOptions, minor } from "./graphh"
-import { randId, randomInt, strjson } from "./helpers"
-import { mapSongToMidiTicks } from "./mapSongToTicks"
-import { mem } from "./mem"
-import { StartEndTuple, phaseBeginningsAndEnds } from "../startEndData"
-import { setLatestMap } from "../core/observables"
+import { ProgressionOptions, minor } from "../graphh"
+import { randId, randomInt, strjson } from "../helpers"
+import { mapSongToMidiTicks } from "../mapSongToTicks"
+import { mem } from "../mem"
+import { StartEndTuple, phaseBeginningsAndEnds } from "../../startEndData"
+import { setLatestMap } from "../../core/observables"
 
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>

@@ -1,6 +1,6 @@
 import { Module, awaitAll } from 'peprn/util'
 import { randId } from '../../lib/helpers'
-import { getAllPhaseBars, sortByNumberAfterColon } from '../../lib/mem-db'
+import { getAllPhaseBars, sortByNumberAfterColon } from '../../lib/util/phaseUtil'
 import { NoteByBar, mem } from '../../lib/mem'
 import { isChordCsvArg, isNoteCsvArg, isNoteNameWithOctave, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from '../../lib/util/barsUtil'
 import { BAR, EIGHTH, tickCounts } from '../../core/observables/masterTicksObservable'

@@ -1,6 +1,6 @@
 import { Observable, Subscription } from "rxjs"
 import { PhaseRecord, SongRecord, TrackRecord } from "../commands/song/song"
-import { BarTagPercent, mapSongToMidiTicks, MidiMap } from "./mapSongToTicks"
+import { BarTagPercent, MidiMap } from "./mapSongToTicks"
 import { parseNoteTags, TagData, tagDataSchema, TagEntries, TagEntry } from "./tags"
 type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
 import { z } from "zod"

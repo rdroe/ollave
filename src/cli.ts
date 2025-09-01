@@ -13,7 +13,7 @@ import { PEPRN_MULTILINE, PEPRN_MULTILINE_INDEX, PEPRN_MULTILINE_TOTAL } from 'p
 import { addChord, subscribeToPhaseBarIds } from './commands/index'
 import addNote from './commands/addNote/addNote'
 import { romanChordNameToRealModule } from './lib/subcommands'
-import { tempo } from './commands/tempo/tempo'
+import { tempo } from './commands'
 import { nextChord } from './lib/nextChord'
 import { z } from 'zod'
 import { mem } from './lib/mem'

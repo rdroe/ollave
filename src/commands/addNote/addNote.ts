@@ -1,7 +1,7 @@
 import { Module } from "peprn/util"
 import { isNoteNameWithOctave, isStringArray } from "../../lib/util/barsUtil"
 import { isScaleNameWithTonic, peprnIsNum, phaseScale } from "../../lib/helpers"
-import { phaseCount, phaseExists } from "../../lib/mem-db"
+import { phaseCount, phaseExists } from "../../lib/util/phaseUtil"
 import { parseNoteTags } from "../../lib/tags"
 import { addNoteToBar } from "../../lib/addNote"
 import { z } from "zod"

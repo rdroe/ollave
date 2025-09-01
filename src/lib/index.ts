@@ -11,7 +11,7 @@ export * as addSlider from './addSlider'
 export { words } from './words'
 export * as mapSongToTicks from './mapSongToTicks'
 export * as mem from './mem'
-export * as memDb from './mem-db'
+export * as memDb from './util/phaseUtil'
 
 export * as cli from '../cli'
 export * as addTempoSlider from './addTempoSlider'
@@ -61,7 +61,7 @@ export {
     phaseExists,
     phaseCount,
 
-} from './mem-db'
+} from './util/phaseUtil'
 
 // helpers exports
 export {

@@ -5,7 +5,7 @@ import { randId } from "./helpers"
 import { addSlider } from "./addSlider"
 import { createNoteStoreById } from "../subscribers/subscribeToNoteById"
 import { parseColonTag } from "../commands/phase/phase"
-import { phaseCount } from "./mem-db"
+import { phaseCount } from "./util/phaseUtil"
 
 
 export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEntries, doAddSlider: boolean = false): Promise<NoteByBar> => {

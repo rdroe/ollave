@@ -2,7 +2,7 @@ import { isStringArray } from "../../lib/util/barsUtil"
 import { Module } from "peprn/util"
 import { isChordCsvArg } from "../../lib/util/barsUtil"
 import { peprnIsNum } from "../../lib/helpers"
-import { phaseCount, phaseExists } from "../../lib/mem-db"
+import { phaseCount, phaseExists } from "../../lib/util/phaseUtil"
 import { addChord, DEFAULT_ARP } from "../../lib/addChord"
 import { z } from "zod"
 export default {

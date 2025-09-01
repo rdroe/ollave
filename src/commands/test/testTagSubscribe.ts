@@ -6,9 +6,7 @@
 
 import { fakeCli } from "peprn/browser"
 import { Module } from "peprn/util"
-import { addNoteToBar } from "../../lib/addNote"
 import { mem } from "../../lib/mem"
-import { updateNoteTag } from "../../lib/tags"
 import { createNotesByTagStore } from "../../subscribers/subscribeToNotesByTag"
 import { setLatestMap } from "../../core/observables"
 import { mapSongToMidiTicks } from "../../lib"

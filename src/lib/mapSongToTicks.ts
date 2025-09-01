@@ -2,7 +2,7 @@ import { BAR, tickCounts } from '../core/observables/masterTicksObservable'
 
 import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './tags'
 
-import { getAllPhaseBarNotes, getFollowingPhases } from './mem-db'
+import { getAllPhaseBarNotes, getFollowingPhases } from './util/phaseUtil'
 import { mem, Mem } from './mem'
 
 export const START_SPEED = 1

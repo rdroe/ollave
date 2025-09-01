@@ -58,6 +58,9 @@
             "commands": [
                 "public/js/commands/index.d.ts"
             ],
+            "core": [
+                "public/js/core/index.d.ts"
+            ],
             "cli": [
                 "public/js/cli.d.ts"
             ]

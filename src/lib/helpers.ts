@@ -3,7 +3,7 @@ import { makeNoteByBar, mem, NoteByBar, notesByBarSchema, songRecordSchema, trac
 
 import { allScales } from "./graphh"
 import { isNoteNameWithoutOctave } from "./util/barsUtil"
-import { getAllPhaseBarNotes } from "./mem-db"
+import { getAllPhaseBarNotes } from "./util/phaseUtil"
 import { updateNoteTag } from "./tags"
 import { setLatestMap } from "../core/observables"
 import { browser } from "user-tables"

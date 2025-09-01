@@ -9,7 +9,7 @@ import {
 import { isCsvArg, parseCsvArg } from './barsUtil'
 import { mem, noteByBarSchema } from '../mem'
 import { z } from 'zod'
-import { getAllPhaseBarNotes } from '../mem-db'
+import { getAllPhaseBarNotes } from './phaseUtil'
 import {  parseNoteTags } from '../tags'
 import { strjson } from '../helpers'
 import { zeroIndexedArr } from '../graphh'

@@ -2,7 +2,7 @@ import { Mem, mem } from '../../lib/mem'
 import { Observable, Subscription } from 'rxjs'
 import { makeTickSubscribe } from '../subjects/masterTicksSubject'
 import { playTriads } from '../../lib/music'
-import { lastTick } from '../../lib/mem-db'
+import { lastTick } from '../../lib/util/phaseUtil'
 import { exportableTick, updateExportableTick } from './masterTicksObservable'
 import { barsAtMidi, BarTagPercent } from 'src/lib/mapSongToTicks'
 

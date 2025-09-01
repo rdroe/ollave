@@ -1,6 +1,6 @@
 import { isChordCsvArg, parseChordCsvArg } from "./util/barsUtil"
 import { Mem, mem, NoteByBar } from "../lib/mem"
-import { phaseCount } from "../lib/mem-db"
+import { phaseCount } from "./util/phaseUtil"
 import { isScaleNameWithTonic, phaseScale, randId } from "./helpers"
 import { abbrev, isAbbreviation, tickCounts } from "../core/observables/masterTicksObservable"
 import { calcFractionalDelay, parseNoteTags } from "./tags"

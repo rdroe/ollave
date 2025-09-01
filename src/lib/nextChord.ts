@@ -1,7 +1,7 @@
 import { isScaleNameWithTonic } from "./helpers"
 import { isChordCsvArg } from "./util/barsUtil"
 import { scale } from "./tags"
-import { lookUpGraph } from "./mem-db"
+import { lookUpGraph } from "./util/phaseUtil"
 
 
 export const nextChord = (chordCsvArg: string, userTonic: string, userScale: string) => {

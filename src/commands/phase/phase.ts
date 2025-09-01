@@ -2,7 +2,7 @@ import { Module, } from 'peprn/util';
 import { isNum, isString, randId } from '../../lib/helpers'
 import { mem } from '../../lib/mem';
 import { z } from 'zod'
-import { getAllPhaseBarNotes, phaseCount, phaseFollowsPhase, phaseUnfollows } from '../../lib/mem-db';
+import { getAllPhaseBarNotes, phaseCount, phaseFollowsPhase, phaseUnfollows } from '../../lib/util/phaseUtil';
 const { observables } = mem()
 export const findPhase = (name: string) => {
     return observables[name] || null

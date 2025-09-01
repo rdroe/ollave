@@ -1,5 +1,5 @@
 import { isString, peprnIsNum, randId } from '../helpers'
-import { lookUpGraph } from '../mem-db'
+import { lookUpGraph } from './phaseUtil'
 import { Chord, ChordType, Note } from 'tonal'
 import { chordNameWithNotes, DynamicChordNames, noteNames } from '../graphh'
 import { makeNoteByBar, NoteByBar } from '../mem'
