@@ -1,6 +1,6 @@
 import { Module } from "peprn/util";
 import { airSpeed, exportableTick, setAirSpeed, tempoFromAirSpeed } from "../../core/observables/masterTicksObservable";
-import { mem } from "../../lib/mem";
+import { mem } from "../../core/mem";
 import { addTempoSlider } from "../../lib/addTempoSlider";
 
 export default {

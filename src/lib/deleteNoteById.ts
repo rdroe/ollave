@@ -1,6 +1,6 @@
 import { setLatestMap } from "../core/observables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
-import { mem } from "./mem"
+import { mem } from "../core/mem"
 import { NoteByBar } from "./schemas"
 
 export const deleteNoteById = (noteId: string, skipSliderRemove: boolean = true) => {

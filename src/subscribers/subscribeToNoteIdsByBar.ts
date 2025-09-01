@@ -1,4 +1,4 @@
-import { mem, Mem } from "../lib/mem";
+import { mem, Mem } from "../core/mem";
 
 import { createStore, useStore } from "zustand";
 

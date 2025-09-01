@@ -9,7 +9,7 @@ import { z } from 'zod'
 import { filterDelayTags, latestNote, parseNoteTags, scale } from '../../lib/tags'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { makeNoteByBar } from '../../lib/schemas'
-import { mem } from '../../lib/mem'
+import { mem } from '../../core/mem'
 
 import { lookUpGraph } from '../../lib/util/phaseUtil'
 import { isNoteNameWithOctave } from '../../lib/util/barsUtil'

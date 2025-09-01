@@ -1,6 +1,6 @@
 import { isNumber } from "peprn/util"
 import { makeNoteByBar,  NoteByBar, notesByBarSchema, songRecordSchema, trackRecordSchema } from "./schemas"
-import { mem } from "./mem"
+import { mem } from "../core/mem"
 import { allScales } from "./graphh"
 import { isNoteNameWithoutOctave } from "./util/barsUtil"
 import { getAllPhaseBarNotes } from "./util/phaseUtil"

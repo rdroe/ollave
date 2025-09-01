@@ -1,5 +1,5 @@
 import { airSpeed, exportableTick, parseAirSpeed, setAirSpeed, tempoFromAirSpeed } from "../core/observables/masterTicksObservable"
-import { mem } from "./mem"
+import { mem } from "../core/mem"
 
 /**
  * Given a note id, add a slider to move the note to a new time within the bar

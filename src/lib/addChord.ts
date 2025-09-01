@@ -1,6 +1,6 @@
 import { isChordCsvArg, parseChordCsvArg } from "./util/barsUtil"
 import {  NoteByBar } from "./schemas"
-import { mem, Mem } from "./mem"
+import { mem, Mem } from "../core/mem"
 
 import { phaseCount } from "./util/phaseUtil"
 import { isScaleNameWithTonic, phaseScale, randId } from "./helpers"

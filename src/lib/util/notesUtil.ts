@@ -8,7 +8,7 @@ import {
 } from '../../core/observables/masterTicksObservable'
 import { isCsvArg, parseCsvArg } from './barsUtil'
 import {  noteByBarSchema } from '../schemas'
-import { mem } from '../mem'
+import { mem } from '../../core/mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from './phaseUtil'
 import {  parseNoteTags } from '../tags'

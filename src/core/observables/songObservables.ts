@@ -1,4 +1,4 @@
-import { Mem, mem } from '../../lib/mem'
+import { Mem, mem } from '../mem'
 import { Observable, Subscription } from 'rxjs'
 import { makeTickSubscribe } from '../subjects/masterTicksSubject'
 import { playTriads } from '../../lib/music'
