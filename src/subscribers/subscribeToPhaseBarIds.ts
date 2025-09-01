@@ -5,7 +5,7 @@ import { createStore, useStore } from "zustand";
 
 import equal from 'deep-equal'
 import { useShallow } from "zustand/shallow";
-import { makeCompilationSubscribe } from "src/core/subjects/compilationSubject";
+import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
 
 export const subscribeToPhaseBarIds = () => {
     const { store } = phaseBarIdsStore()

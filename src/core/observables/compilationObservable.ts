@@ -1,7 +1,7 @@
 import { Observable } from "rxjs";
 import {  MidiMap } from "../../lib/mapSongToTicks";
 import { mem } from "../mem";
-import { compileNotesByBarToTracks, saveSongAndTracks } from "src/lib/helpers";
+import { compileNotesByBarToTracks, saveSongAndTracks } from "../../lib/helpers";
 
 
 // create custom events

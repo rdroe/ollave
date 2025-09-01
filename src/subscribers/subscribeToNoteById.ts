@@ -8,7 +8,7 @@ import { z } from "zod";
 import { deleteNoteById } from "../lib/deleteNoteById";
 import { tagEntriesCompare } from "../lib/tags";
 import { useShallow } from "zustand/shallow";
-import { makeCompilationSubscribe } from "src/core/subjects/compilationSubject";
+import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
 
 export const subscribeToNoteById = (noteId?: string, barName?: string) => { 
     if (!noteId) {

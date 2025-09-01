@@ -16,8 +16,8 @@ import { setLatestMap } from '../../core/observables'
 export { init, setTrackReceptacleSelector } from '../../lib/util/songUtil'
 const { songNames } = mem()
 import { z } from 'zod'
-import { loadAndInitSongAndTracks } from 'src/lib/fetch'
-import { initLoadedSong, initNewSong } from 'src/lib/helpers'
+import { loadAndInitSongAndTracks } from '../../lib/fetch'
+import { initLoadedSong, initNewSong } from '../../lib/helpers'
 
 export type SongRecord = ReturnType<typeof songRecordSchema.parse>
 

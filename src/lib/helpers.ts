@@ -10,9 +10,9 @@ import { browser } from "user-tables"
 import { fetchLatestSongAndTracks } from "./fetch"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { addSlider } from "./addSlider"
-import { SongRecord, TrackRecord } from "src/commands/song/song"
-import { getSongNames } from "src/lib/util/songUtil"
-import { deleteCueObservable, startCueObservable, stopCueObservable } from "src/core/observables/songObservables"
+import { SongRecord, TrackRecord } from "../commands/song/song"
+import { getSongNames } from "../lib/util/songUtil"
+import { deleteCueObservable, startCueObservable, stopCueObservable } from "../core/observables/songObservables"
 export const strjson = (arg: any) => JSON.stringify(arg, null, 2)
 export const isString = (arg: any): arg is string => {
     return typeof arg === 'string'

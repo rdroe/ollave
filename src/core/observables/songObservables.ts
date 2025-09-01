@@ -4,7 +4,7 @@ import { makeTickSubscribe } from '../subjects/masterTicksSubject'
 import { playTriads } from '../../lib/music'
 import { lastTick } from '../../lib/util/phaseUtil'
 import { exportableTick, updateExportableTick } from './masterTicksObservable'
-import { barsAtMidi, BarTagPercent } from 'src/lib/mapSongToTicks'
+import { barsAtMidi, BarTagPercent } from '../../lib/mapSongToTicks'
 
 
 export const getSongName = () => {

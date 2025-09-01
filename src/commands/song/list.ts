@@ -1,5 +1,5 @@
 import { browser } from "user-tables"
-import { fetchLatestSongAndTracks } from "src/lib/fetch"
+import { fetchLatestSongAndTracks } from "../../lib/fetch"
 
 
 // list songs by fetching their names from the database

@@ -4,7 +4,7 @@ import { createStore, useStore } from "zustand";
 
 import { z } from "zod";
 import { useShallow } from "zustand/shallow";
-import { makeCompilationSubscribe } from "src/core/subjects/compilationSubject";
+import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
 
 export const subscribeToNoteIdsByBar = (barId: string) => {
     const { store } = createBarNoteIdsStore(barId)

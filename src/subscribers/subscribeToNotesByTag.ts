@@ -16,7 +16,7 @@ import { TagEntries } from "../lib/tags";
 import { createStore, useStore } from "zustand";
 import { useShallow } from "zustand/shallow";
 import { tagEntriesCompare } from "../lib/tags";
-import { makeCompilationSubscribe } from "src/core/subjects/compilationSubject";
+import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
 
 type NoteByBarWithBarId = NoteByBar & {
     barId: string
