@@ -1,6 +1,6 @@
 import { makeNoteByBar,  NoteByBar } from "./schemas"
 import { mem } from "../core/mem"
-import { calcFractionalDelay, getTagData, TagEntries, unparseTagEntries } from "./tags"
+import { calcFractionalDelay, getTagData, TagEntries, unparseTagEntries } from "./util/tagsUtil"
 
 import { randId } from "./helpers"
 import { addSlider } from "./addSlider"

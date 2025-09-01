@@ -6,7 +6,7 @@ import {
 import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
-import { filterDelayTags, latestNote, parseNoteTags, scale } from '../../lib/tags'
+import { filterDelayTags, latestNote, parseNoteTags, scale } from '../../lib/util/tagsUtil'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { makeNoteByBar } from '../../lib/schemas'
 import { mem } from '../../core/mem'

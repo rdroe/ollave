@@ -1,7 +1,7 @@
 // Namespace exports for backward compatibility
 export * as addChord from './addChord'
 export * as addNote from './addNote'
-export * as tags from './tags'
+export * as tags from './util/tagsUtil'
 export * as graphh from './graphh'
 export * as helpers from './helpers'
 export * as music from './music'
@@ -60,7 +60,7 @@ export {
     updateNoteTag,
     parseNoteTags,
     calcFractionalDelay
-} from './tags'
+} from './util/tagsUtil'
 
 // graphh exports
 export { 

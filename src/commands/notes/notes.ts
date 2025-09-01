@@ -1,5 +1,5 @@
 import { Module, ParsedCli } from 'peprn/util'
-import { filterDelayTags, parseNoteTags } from '../../lib/tags'
+import { filterDelayTags, parseNoteTags } from '../../lib/util/tagsUtil'
 import { strjson } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { setLatestMap } from '../../core/observables'

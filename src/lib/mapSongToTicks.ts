@@ -1,6 +1,6 @@
 import { BAR, tickCounts } from '../core/observables/masterTicksObservable'
 
-import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './tags'
+import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './util/tagsUtil'
 
 import { getAllPhaseBarNotes, getFollowingPhases } from './util/phaseUtil'
 import { mem, Mem } from '../core/mem'

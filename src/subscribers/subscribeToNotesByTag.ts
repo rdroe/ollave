@@ -12,10 +12,10 @@
 import { NoteByBar,  cloneNoteByBar } from "../lib/schemas";
 import { mem, Mem } from "../core/mem";
 import {  parseNoteTags } from "../lib";
-import { TagEntries } from "../lib/tags";
+import { TagEntries } from "../lib/util/tagsUtil";
 import { createStore, useStore } from "zustand";
 import { useShallow } from "zustand/shallow";
-import { tagEntriesCompare } from "../lib/tags";
+import { tagEntriesCompare } from "../lib/util/tagsUtil";
 import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
 
 type NoteByBarWithBarId = NoteByBar & {

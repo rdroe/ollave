@@ -1,6 +1,6 @@
 import { isScaleNameWithTonic } from "./helpers"
 import { isChordCsvArg } from "./util/barsUtil"
-import { scale } from "./tags"
+import { scale } from "./util/tagsUtil"
 import { lookUpGraph } from "./util/phaseUtil"
 
 

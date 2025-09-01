@@ -6,7 +6,7 @@ import { createStore, useStore } from "zustand";
 import { updateNotePitch, updateTagsObj } from "../lib/addSlider";
 import { z } from "zod";
 import { deleteNoteById } from "../lib/deleteNoteById";
-import { tagEntriesCompare } from "../lib/tags";
+import { tagEntriesCompare } from "../lib/util/tagsUtil";
 import { useShallow } from "zustand/shallow";
 import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
 

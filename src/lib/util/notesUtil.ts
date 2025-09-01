@@ -11,7 +11,7 @@ import {  noteByBarSchema } from '../schemas'
 import { mem } from '../../core/mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from './phaseUtil'
-import {  parseNoteTags } from '../tags'
+import {  parseNoteTags } from './tagsUtil'
 import { strjson } from '../helpers'
 import { zeroIndexedArr } from '../graphh'
 
