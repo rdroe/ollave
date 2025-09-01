@@ -22,7 +22,7 @@ import { randId, randomInt, strjson } from "./helpers"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { mem } from "./mem"
 import { StartEndTuple, phaseBeginningsAndEnds } from "../startEndData"
-import { setLatestMap } from "../commands/phase/observables/compilationObservable"
+import { setLatestMap } from "../core/observables"
 
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>

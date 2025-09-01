@@ -4,10 +4,10 @@ import { randId } from '../../lib/helpers'
 import { mem } from '../../lib/mem'
 
 import { isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../bars/utils'
-import { abbrev, isAbbreviation, tickCounts } from '../phase/observables/masterTicksObservable'
+import { abbrev, isAbbreviation, tickCounts } from '../../core/observables/masterTicksObservable'
 
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
-import { setLatestMap } from '../phase/observables/compilationObservable'
+import { setLatestMap } from '../../core/observables'
 
 
 const cliDelaysToTags = (delay?: string[]): string[] => {

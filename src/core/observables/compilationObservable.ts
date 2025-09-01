@@ -1,6 +1,6 @@
 import { Observable } from "rxjs";
-import {  MidiMap } from "../../../lib/mapSongToTicks";
-import { mem } from "../../../lib/mem";
+import {  MidiMap } from "../../lib/mapSongToTicks";
+import { mem } from "../../lib/mem";
 import { compileNotesByBarToTracks, saveSongAndTracks } from "src/lib/helpers";
 
 

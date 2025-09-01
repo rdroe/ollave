@@ -3,7 +3,7 @@ import { Observable, Subscription } from 'rxjs'
 import { makeTickSubscribe } from '../phase/subjects/masterTicksSubject'
 import { playTriads } from '../../lib/music'
 import { lastTick } from '../../lib/mem-db'
-import { exportableTick, updateExportableTick } from '../phase/observables/masterTicksObservable'
+import { exportableTick, updateExportableTick } from '../../core/observables/masterTicksObservable'
 import { barsAtMidi, BarTagPercent } from 'src/lib/mapSongToTicks'
 
 

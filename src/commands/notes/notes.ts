@@ -5,7 +5,7 @@ import {
     isAbbreviation,
     isFraction,
     tickCounts
-} from '../phase/observables/masterTicksObservable'
+} from '../../core/observables/masterTicksObservable'
 import { isCsvArg, parseCsvArg } from '../bars/utils'
 import { mem, noteByBarSchema } from '../../lib/mem'
 import { z } from 'zod'
@@ -14,7 +14,7 @@ import { filterDelayTags, parseNoteTags } from '../../lib/tags'
 import { strjson } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { zeroIndexedArr } from '../../lib/graphh'
-import { setLatestMap } from '../phase/observables/compilationObservable'
+import { setLatestMap } from '../../core/observables'
 
 const isNoteCnt = (str: string | number) => {
     if (typeof str === 'number') return false

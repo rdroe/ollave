@@ -5,8 +5,8 @@ import { phaseCount, phaseExists } from "../../lib/mem-db"
 import { parseNoteTags } from "../../lib/tags"
 import { addNoteToBar } from "../../lib/addNote"
 import { z } from "zod"
-import { setLatestMap } from "../phase/observables/compilationObservable"
 import { mapSongToMidiTicks } from "../../lib"
+import { setLatestMap } from "../../core/observables"
 
 export default {
     help: {

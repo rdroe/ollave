@@ -7,11 +7,11 @@ import { startCueObservable, stopCueObservable } from './observables'
 
 import { downloadSong } from '../../lib/download'
 import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTicks'
-import { trackTempo } from '../phase/observables/masterTicksObservable'
+import { trackTempo } from '../../core/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../bars/utils'
 import { groupNotesByFirstTagDatum, parseNoteTags } from '../../lib/tags'
 import { setTrackReceptacleSelector, startPrintingNotes, stopPrintingNotes } from './init'
-import { setLatestMap } from '../phase/observables/compilationObservable'
+import { setLatestMap } from '../../core/observables'
 export { init, setTrackReceptacleSelector } from './init'
 const { songNames } = mem()
 import { z } from 'zod'

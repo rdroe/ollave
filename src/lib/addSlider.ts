@@ -1,8 +1,8 @@
-import { tickCounts } from "../commands/phase/observables/masterTicksObservable"
+import { tickCounts } from "../core/observables/masterTicksObservable"
 import { mem, NoteByBar, tagsObjSchema } from "../lib/mem"
 import { peprnIsNum } from "./helpers"
 import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
-import { setLatestMap } from "../commands/phase/observables/compilationObservable"
+import { setLatestMap } from "../core/observables"
 import { z } from "zod"
 import { isNoteNameWithOctave } from "../commands/bars/utils"
 

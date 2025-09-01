@@ -1,4 +1,4 @@
-import { setLatestMap } from "../commands"
+import { setLatestMap } from "../core/observables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { mem } from "./mem"
 import { NoteByBar } from "./mem"

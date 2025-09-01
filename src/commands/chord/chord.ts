@@ -12,7 +12,7 @@ import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { makeNoteByBar, mem, noteByBarSchema } from '../../lib/mem'
 import { lookUpGraph } from '../../lib/mem-db'
 import { isNoteNameWithOctave } from '../bars/utils'
-import { setLatestMap } from '../phase/observables/compilationObservable'
+import { setLatestMap } from '../../core/observables'
 
 export const chord: Module = {
     help: {

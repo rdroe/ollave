@@ -1,4 +1,4 @@
-import { isFraction, tickCounts } from "../commands/phase/observables/masterTicksObservable"
+import { isFraction, tickCounts } from "../core/observables/masterTicksObservable"
 import { peprnIsNum, strjson } from "./helpers"
 import { isCsvArg, parseCsvArg } from "../commands/bars/utils"
 import { NoteByBar } from "../lib/mem"

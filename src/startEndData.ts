@@ -1,4 +1,4 @@
-import { tickCounts } from './commands/phase/observables/masterTicksObservable'
+import { tickCounts } from './core/observables/masterTicksObservable'
 import { Mem, mem } from './lib/mem'
 import { getAllPhaseBarNotes, getFollowingPhases } from './lib/mem-db'
 export type StartEndTuple = [start: number, end: number]

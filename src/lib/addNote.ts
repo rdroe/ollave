@@ -6,7 +6,7 @@ import { addSlider } from "./addSlider"
 import { createNoteStoreById } from "../subscribers/subscribeToNoteById"
 import { parseColonTag } from "../commands/phase/phase"
 import { phaseCount } from "./mem-db"
-import { noteNames } from "./graphh"
+
 
 export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEntries, doAddSlider: boolean = false): Promise<NoteByBar> => {
     let barObj = mem().notesByBar[barName]

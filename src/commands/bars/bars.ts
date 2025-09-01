@@ -3,11 +3,11 @@ import { randId } from '../../lib/helpers'
 import { getAllPhaseBars, sortByNumberAfterColon } from '../../lib/mem-db'
 import { NoteByBar, mem } from '../../lib/mem'
 import { isChordCsvArg, isNoteCsvArg, isNoteNameWithOctave, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from './utils'
-import { BAR, EIGHTH, tickCounts } from '../phase/observables/masterTicksObservable'
+import { BAR, EIGHTH, tickCounts } from '../../core/observables/masterTicksObservable'
 import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag, parseNoteTags } from '../../lib/tags'
 import { isAbbreviationCsv, sumAbbreviationCsv } from '../notes/notes'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
-import { setLatestMap } from '../phase/observables/compilationObservable'
+import { setLatestMap } from '../../core/observables'
 
 const { notesByBar } = mem()
 

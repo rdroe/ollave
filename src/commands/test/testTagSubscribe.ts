@@ -10,7 +10,7 @@ import { addNoteToBar } from "../../lib/addNote"
 import { mem } from "../../lib/mem"
 import { updateNoteTag } from "../../lib/tags"
 import { createNotesByTagStore } from "../../subscribers/subscribeToNotesByTag"
-import { setLatestMap } from ".."
+import { setLatestMap } from "../../core/observables"
 import { mapSongToMidiTicks } from "../../lib"
 const intervalsByTag: Record<string, ReturnType<typeof setInterval>> = {}
 const unsubscribeByTag: Record<string, () => void> = {}

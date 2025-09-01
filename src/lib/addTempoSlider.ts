@@ -1,5 +1,4 @@
-
-import { airSpeed, exportableTick, parseAirSpeed, setAirSpeed, tempoFromAirSpeed } from "../commands/phase/observables/masterTicksObservable"
+import { airSpeed, exportableTick, parseAirSpeed, setAirSpeed, tempoFromAirSpeed } from "../core/observables/masterTicksObservable"
 import { mem } from "./mem"
 
 /**

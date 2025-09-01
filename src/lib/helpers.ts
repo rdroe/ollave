@@ -1,22 +1,3 @@
-// This module exports utility functions for common operations.
-// External packages can import individual functions like:
-// import { randId, phaseScale } from 'ollave/lib/helpers'
-//
-// Available exports:
-// - strjson: Convert object to formatted JSON string
-// - isString: Type guard for strings
-// - isStringNumNum: Type guard for [string, number, number] arrays
-// - peprnIsNum: Check if value is a number (string or number)
-// - passivelyNumberize: Convert string to number if possible
-// - isNum: Type guard for numbers
-// - randId: Generate random ID with optional prefix
-// - randomNumber: Generate random number in range
-// - randomInt: Generate random integer in range
-// - phaseScale: Get or set phase scale information
-// - isScaleName: Check if string is a valid scale name
-// - isScaleNameWithTonic: Check if string is scale name with tonic
-// - properScaleName: Format scale name properly
-
 import { isNumber } from "peprn/util"
 import { makeNoteByBar, mem, NoteByBar, notesByBarSchema, songRecordSchema, trackRecordSchema } from "./mem"
 
@@ -24,7 +5,7 @@ import { allScales } from "./graphh"
 import { isNoteNameWithoutOctave } from "../commands/bars/utils"
 import { getAllPhaseBarNotes } from "./mem-db"
 import { updateNoteTag } from "./tags"
-import { setLatestMap } from "src/commands"
+import { setLatestMap } from "../core/observables"
 import { browser } from "user-tables"
 import { fetchLatestSongAndTracks } from "./fetch"
 import { mapSongToMidiTicks } from "./mapSongToTicks"

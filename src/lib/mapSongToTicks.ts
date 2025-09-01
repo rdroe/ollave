@@ -1,4 +1,4 @@
-import { BAR, tickCounts } from '../commands/phase/observables/masterTicksObservable'
+import { BAR, tickCounts } from '../core/observables/masterTicksObservable'
 
 import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './tags'
 
