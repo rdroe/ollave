@@ -36,11 +36,6 @@ export const startCueObservable = (startAt?: number) => {
 
     const songObservable = new Observable(makeTickSubscribe(startAt))
     const observables = mem().observables[song] || {}
-    console.log('setting up cue observable for song', song, JSON.parse(JSON.stringify({
-        'mem().observables[song]': mem().observables,
-        'mem().songPauses[song]': mem().songPauses,
-        'mem().functions[song]': mem().functions,
-    })))
 
     observables['tick'] = songObservable.subscribe({
         next: ({ tick }) => {
