@@ -1,4 +1,4 @@
-import { cloneNoteByBar, mem, Mem, NoteByBar, tagsObjSchema } from "../lib/mem";
+import { cloneNoteByBar, mem, Mem, NoteByBar, tagsObjSchema } from "../lib/schemas";
 import {   parseNoteTags } from "../lib";
 
 import { createStore, useStore } from "zustand";

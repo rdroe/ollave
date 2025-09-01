@@ -1,7 +1,7 @@
 import { Module, awaitAll } from 'peprn/util'
 import { randId } from '../../lib/helpers'
 import { getAllPhaseBars, sortByNumberAfterColon } from '../../lib/util/phaseUtil'
-import { NoteByBar, mem } from '../../lib/mem'
+import { NoteByBar, mem } from '../../lib/schemas'
 import { isChordCsvArg, isNoteCsvArg, isNoteNameWithOctave, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from '../../lib/util/barsUtil'
 import { BAR, EIGHTH, tickCounts } from '../../core/observables/masterTicksObservable'
 import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag, parseNoteTags } from '../../lib/tags'

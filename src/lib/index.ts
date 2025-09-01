@@ -10,7 +10,7 @@ export * as subcommands from './subcommands'
 export * as addSlider from './addSlider'
 export { words } from './words'
 export * as mapSongToTicks from './mapSongToTicks'
-export * as mem from './mem'
+export * as mem from './schemas'
 export * as phaseUtil from './util/phaseUtil'
 
 export * as cli from '../cli'

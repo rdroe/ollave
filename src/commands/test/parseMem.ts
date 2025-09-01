@@ -1,4 +1,4 @@
-import { mem, memSchema } from "src/lib/mem"
+import { mem, memSchema } from "src/lib/schemas"
 
 export const parseMem = {
     fn: async () => {

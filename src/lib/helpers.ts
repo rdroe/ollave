@@ -1,5 +1,5 @@
 import { isNumber } from "peprn/util"
-import { makeNoteByBar, mem, NoteByBar, notesByBarSchema, songRecordSchema, trackRecordSchema } from "./mem"
+import { makeNoteByBar, mem, NoteByBar, notesByBarSchema, songRecordSchema, trackRecordSchema } from "./schemas"
 
 import { allScales } from "./graphh"
 import { isNoteNameWithoutOctave } from "./util/barsUtil"

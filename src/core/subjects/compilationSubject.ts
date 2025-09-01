@@ -1,5 +1,5 @@
 import {  Observer, Subject, Subscriber, Subscription } from "rxjs";
-import { mem, Mem } from "../../lib/mem";
+import { mem, Mem } from "../../lib/schemas";
 import { compilationObservable } from "../observables";
 
 // declare window type a window property for the compilation subject

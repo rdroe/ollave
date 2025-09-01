@@ -1,6 +1,6 @@
 
 import { browser } from "user-tables"
-import { mem, songRecordSchema } from "./mem"
+import { mem, songRecordSchema } from "./schemas"
 import { fetchSongAndTracks, initLoadedSong } from "./helpers"
 
 

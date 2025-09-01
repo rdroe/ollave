@@ -2,7 +2,7 @@ import { isString, peprnIsNum, randId } from '../helpers'
 import { lookUpGraph } from './phaseUtil'
 import { Chord, ChordType, Note } from 'tonal'
 import { chordNameWithNotes, DynamicChordNames, noteNames } from '../graphh'
-import { makeNoteByBar, NoteByBar } from '../mem'
+import { makeNoteByBar, NoteByBar } from '../schemas'
 import { parseNoteTags } from '../tags'
 const allChordTypes = ChordType.all()
 export const isRestArg = (arg: any) => {

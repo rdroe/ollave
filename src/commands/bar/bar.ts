@@ -1,7 +1,7 @@
 import { Module, awaitAll } from 'peprn/util'
 import { randId } from '../../lib/helpers'
 
-import { mem } from '../../lib/mem'
+import { mem } from '../../lib/schemas'
 
 import { isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../../lib/util/barsUtil'
 import { abbrev, isAbbreviation, tickCounts } from '../../core/observables/masterTicksObservable'

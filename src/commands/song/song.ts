@@ -1,5 +1,5 @@
 import { Module } from 'peprn/util'
-import { mem, songRecordSchema, songRecordSchema_, trackRecordSchema } from '../../lib/mem'
+import { mem, songRecordSchema, songRecordSchema_, trackRecordSchema } from '../../lib/schemas'
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
 const { userTables } = browser
