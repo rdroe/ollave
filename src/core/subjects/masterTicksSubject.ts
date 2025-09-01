@@ -1,5 +1,5 @@
 import { Subject, Subscriber, } from 'rxjs'
-import { masterTicksObservable, } from '../../../core/observables/masterTicksObservable'
+import { masterTicksObservable, } from '../observables/masterTicksObservable'
 
 const masterTicksSubject = new Subject<number>();
 

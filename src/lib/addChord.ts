@@ -6,7 +6,7 @@ import { abbrev, isAbbreviation, tickCounts } from "../core/observables/masterTi
 import { calcFractionalDelay, parseNoteTags } from "./tags"
 import { addNoteToBar } from "./addNote"
 import { addSlider } from "./addSlider"
-import { makeCompilationSubscribe } from "../commands/phase/subjects/compilationSubject"
+import { makeCompilationSubscribe } from "../core/subjects/compilationSubject"
 import { setLatestMap } from "../core/observables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']

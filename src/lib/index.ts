@@ -16,8 +16,8 @@ export * as memDb from './mem-db'
 export * as cli from '../cli'
 export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
-export { makeCompilationSubscribe } from '../commands/phase/subjects/compilationSubject'
-export { makeTickSubscribe } from '../commands/phase/subjects/masterTicksSubject'
+export { makeCompilationSubscribe } from '../core/subjects/compilationSubject'
+export { makeTickSubscribe } from '../core/subjects/masterTicksSubject'
 export { deleteNoteById } from './deleteNoteById'
 export { 
     createPhaseBarIdsStore, 
