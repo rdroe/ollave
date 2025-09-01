@@ -1,5 +1,5 @@
 import { Module } from 'peprn/util'
-import {  songRecordSchema, songRecordSchema_, trackRecordSchema } from '../../lib/schemas'
+import {  songRecordSchema, trackRecordSchema } from '../../lib/schemas'
 import { mem } from '../../core/mem'
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
@@ -19,7 +19,7 @@ import { z } from 'zod'
 import { loadAndInitSongAndTracks } from 'src/lib/fetch'
 import { initLoadedSong, initNewSong } from 'src/lib/helpers'
 // kebab-case ids props; camelCase data props
-export type SongRecord = z.infer<typeof songRecordSchema_>
+export type SongRecord = ReturnType<typeof songRecordSchema.parse>
 
 export type TrackRecord = z.infer<typeof trackRecordSchema>
 

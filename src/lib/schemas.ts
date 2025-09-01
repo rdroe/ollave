@@ -1,8 +1,6 @@
-import { Observable, Subscription } from "rxjs"
-import { PhaseRecord, SongRecord, TrackRecord } from "../commands/song/song"
-import { BarTagPercent, MidiMap } from "./mapSongToTicks"
-import { parseNoteTags, TagData, tagDataSchema, TagEntries, TagEntry } from "./tags"
-type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
+import { Observable } from "rxjs"
+import { SongRecord } from "../commands/song/song"
+import { parseNoteTags, TagData, tagDataSchema } from "./tags"
 import { z } from "zod"
 import { isNoteNameWithOctave } from "./util/barsUtil"
 import { randId } from "./helpers"
@@ -103,7 +101,7 @@ export const makeNoteByBar = (note: string, tags: string[]): NoteByBar => {
     return wrapWithGetters(noteByBarSansSetters)
 }
 
-export const songRecordSchema_ = z.object({
+const songRecordSchema_ = z.object({
     id: z.number(),
     name: z.string(),
     tempo: z.number(),
@@ -113,22 +111,9 @@ export const songRecordSchema_ = z.object({
 })
 
 export const songRecordSchema = {
-    parse: (data: any) => songRecordSchema_.parse(data) as SongRecord
+    parse: (data: any) => songRecordSchema_.parse(data)
 }
 
-
-
-export const phaseRecordSchema = z.object({
-    id: z.number(),
-    name: z.string(),
-    start: z.number(),
-    end: z.number(),
-    "follows-ids": z.array(z.number()),
-    speed: z.number(),
-    barSizeMultiplier: z.number(),
-    scaleName: z.string().nullable(),
-    scaleTonic: z.string().nullable()
-})
 
 export const notesByBarSchema = z.record(z.string(), z.array(noteByBarSchema).transform((notes) => notes.map(note => noteByBarSchema.parse(note))))
 export const trackRecordSchema = z.object({
@@ -136,21 +121,4 @@ export const trackRecordSchema = z.object({
     "phase-ids": z.array(z.number()),
     "phase-names": z.array(z.string()),
     notesByBar: notesByBarSchema
-})
-export const latestMapSchema = z.record(z.string(), z.number())
-export const playedMapSchema = z.record(z.string(), z.number())
-export const adjustedCursorSchema = z.number()
-export const doLogSchema = z.boolean()
-
-
-
-export const memSchema = z.object({
-    song: songRecordSchema,
-    track: trackRecordSchema,
-    phases: z.record(z.string(), phaseRecordSchema),
-    notesByBar: notesByBarSchema,
-    latestMap: latestMapSchema,
-    playedMap: playedMapSchema,
-    adjustedCursor: adjustedCursorSchema,
-    doLog: doLogSchema
 })

@@ -17,7 +17,6 @@ import { tempo } from './commands'
 import { nextChord } from './lib/nextChord'
 import { z } from 'zod'
 import { createTestNotes, subscribeToTags, updateNoteTagValue } from './commands/test/testTagSubscribe'
-import { parseMem } from './commands/test/parseMem'
 import { deleteAllSongsAndTracks, latestSong, listSongs, listTracks } from './commands/song/list'
 
 
@@ -32,7 +31,6 @@ export const app: Parameters<typeof createApp>[0] = {
         // test subscribe by tag
         createTestNotes, subscribeToTags, updateNoteTagValue,
         // song tests
-        parseMem,
         listSongs,
         listTracks,
         latestSong,
