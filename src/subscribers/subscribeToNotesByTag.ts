@@ -9,7 +9,8 @@
  * 
  */
 
-import { NoteByBar, mem, Mem, cloneNoteByBar } from "../lib/schemas";
+import { NoteByBar,  cloneNoteByBar } from "../lib/schemas";
+import { mem, Mem } from "../lib/mem";
 import {  parseNoteTags } from "../lib";
 import { TagEntries } from "../lib/tags";
 import { createStore, useStore } from "zustand";

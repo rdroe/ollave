@@ -1,4 +1,5 @@
-import { mem, Mem, NoteByBar } from "../lib/schemas";
+import { NoteByBar } from "../lib/schemas";
+import { mem, Mem } from "../lib/mem";
 import {  sortByNumberAfterColon } from "../lib";
 import { createStore, useStore } from "zustand";
 

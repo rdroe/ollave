@@ -1,5 +1,5 @@
 import { Module } from 'peprn/util'
-import { mem } from '../../lib/schemas'
+import { mem } from '../../lib/mem'
 
 export default {
 

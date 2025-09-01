@@ -1,5 +1,6 @@
 import { tickCounts } from "../core/observables/masterTicksObservable"
-import { mem, NoteByBar, tagsObjSchema } from "./schemas"
+import { NoteByBar, tagsObjSchema } from "./schemas"
+import { mem } from "./mem"
 import { peprnIsNum } from "./helpers"
 import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
 import { setLatestMap } from "../core/observables"

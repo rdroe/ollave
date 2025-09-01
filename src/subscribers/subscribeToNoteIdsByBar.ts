@@ -1,4 +1,4 @@
-import { mem, Mem } from "../lib/schemas";
+import { mem, Mem } from "../lib/mem";
 
 import { createStore, useStore } from "zustand";
 

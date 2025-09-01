@@ -1,6 +1,6 @@
 import { Module } from "peprn/util";
 import { airSpeed, exportableTick, setAirSpeed, tempoFromAirSpeed } from "../../core/observables/masterTicksObservable";
-import { mem } from "../../lib";
+import { mem } from "../../lib/mem";
 import { addTempoSlider } from "../../lib/addTempoSlider";
 
 export default {
@@ -15,9 +15,9 @@ export default {
         if (typeof speed !== 'number') throw new Error('Speed must be a number')
         setAirSpeed(speed)
         const currTick = exportableTick()
-        mem.mem().playedMap[currTick] = mem.mem().playedMap[currTick] || []
+        mem().playedMap[currTick] = mem().playedMap[currTick] || []
         
-        mem.mem().playedMap[currTick].push({
+        mem().playedMap[currTick].push({
             note: `tempo: ${tempoFromAirSpeed(airSpeed())}`,
             compositionTags: []
         })

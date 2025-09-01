@@ -1,8 +1,8 @@
 
 import { browser } from "user-tables"
-import { mem, songRecordSchema } from "./schemas"
+import { songRecordSchema } from "./schemas"
 import { fetchSongAndTracks, initLoadedSong } from "./helpers"
-
+import { mem } from "./mem"
 
 
 export const fetchLatestSongAndTracks = async () => {

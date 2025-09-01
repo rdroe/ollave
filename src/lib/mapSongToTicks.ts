@@ -3,7 +3,7 @@ import { BAR, tickCounts } from '../core/observables/masterTicksObservable'
 import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './tags'
 
 import { getAllPhaseBarNotes, getFollowingPhases } from './util/phaseUtil'
-import { mem, Mem } from './schemas'
+import { mem, Mem } from './mem'
 
 export const START_SPEED = 1
 // Detailed structure of a phase (possibly a phase part)

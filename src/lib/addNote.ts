@@ -1,4 +1,5 @@
-import { makeNoteByBar, Mem, mem, NoteByBar } from "./schemas"
+import { makeNoteByBar,  NoteByBar } from "./schemas"
+import { mem } from "./mem"
 import { calcFractionalDelay, getTagData, TagEntries, unparseTagEntries } from "./tags"
 
 import { randId } from "./helpers"

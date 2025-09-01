@@ -1,12 +1,12 @@
 import { initLatestOrNewSong, strjson } from '../helpers';
-import { mem } from '../schemas';
+import { mem } from '../mem';
 import { tickCounts } from '../../core/observables/masterTicksObservable';
 import { lastTick } from './phaseUtil';
 import { mapSongToMidiTicks } from '../mapSongToTicks';
 import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables';
 import { setLatestMap } from '../../core/observables';
 
-const { songNames } = mem()
+const { songNames } = mem() //
 
 let namesResolver: Function | null = null
 

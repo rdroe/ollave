@@ -2,7 +2,7 @@
 import { ProgressionOptions, minor } from "../graphh"
 import { randId, randomInt, strjson } from "../helpers"
 import { mapSongToMidiTicks } from "../mapSongToTicks"
-import { mem } from "../schemas"
+import { mem } from "../mem"
 import { StartEndTuple, phaseBeginningsAndEnds } from "../../startEndData"
 import { setLatestMap } from "../../core/observables"
 
