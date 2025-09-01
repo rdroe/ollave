@@ -1,16 +1,10 @@
-import { compileTracksToNotesByBar, compileTracksToPhasesProperties, loadAndInitLatestSongAndTracks, strjson } from '../../lib/helpers';
-import { mem, NoteByBar, notesByBarSchema, songRecordSchema, trackRecordSchema } from '../../lib/mem';
+import { initLatestOrNewSong, strjson } from '../../lib/helpers';
+import { mem } from '../../lib/mem';
 import { tickCounts } from '../phase/observables/masterTicksObservable';
 import { lastTick } from '../../lib/mem-db';
-
-import { SongRecord, TrackRecord } from './song';
-import { browser } from 'user-tables';
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
-import { startCueObservable } from './observables';
+import { startCueObservable, stopCueObservable } from './observables';
 import { setLatestMap } from '../phase/observables/compilationObservable';
-import { z } from 'zod';
-import { fetchLatestSongAndTracks } from 'src/lib/fetch';
-import { addSlider } from 'src/lib/addSlider';
 
 const { songNames } = mem()
 
@@ -19,6 +13,12 @@ let namesResolver: Function | null = null
 const namesPromise = new Promise((res) => {
     namesResolver = res
 });
+
+export const getSongNames = () => {
+    return namesPromise.then(() => {
+        return songNames
+    })
+}
 
 (() => {
     console.log('importing words')
@@ -64,88 +64,6 @@ export function startPrintingNotes() {
 export function stopPrintingNotes() {
     doPrintNotes = false
 }
-async function trackInit() {
-    const trackRecord: Omit<TrackRecord, "id"> = {
-        "phase-ids": [],
-        "phase-names": [],
-        notesByBar: {}
-    }
-    const trackId = await browser.userTables.add('track', { data: trackRecord })
-    // update the track to have its id in data. 
-    await browser.userTables.update('track', { id: trackId, data: { id: trackId } }, {}) 
-
-    await browser.userTables.update('song', {
-        id: mem().song.id,
-        data: {
-            "track-ids": [[
-                trackId, 0
-            ]]
-        },
-    }, {})
-
-    const coll = await (browser.userTables.where('song', { id: mem().song.id }))
-    const fetched = await coll.first()
-    const validSong = songRecordSchema.parse(fetched.data)
-    const { "track-ids": songTracks } = validSong
-
-    if (songTracks) {
-        mem().tracks = [{
-            id: songTracks[0][0],
-            "phase-ids": [],
-            "phase-names": [],
-            notesByBar: {}
-        }]
-    } else {
-        console.error("no tracks for song", mem().song.id)
-    }
-
-}
-
-export async function fetchSongAndTracks(songId: number) {
-    const coll = await (browser.userTables.where('song', { id: songId }))
-    const fetched = await coll.first()
-// get the track ids 
-    const validSong = songRecordSchema.parse(fetched.data) 
-    const trackIds = validSong["track-ids"].map(([trackId]) => {
-        return trackId
-    }).filter((trackId) => {
-        return trackId !== undefined
-    })
-    // now fetch each track
-    const validatedTracks = await Promise.all(trackIds.map(async (trackId) => {
-        const fetched = await (await browser.userTables.where('track', { id: trackId })).first()
-        return trackRecordSchema.parse(fetched.data)
-    }))
-
-    return {
-        song: validSong,
-        tracks: validatedTracks
-    }
-}
-
-async function initLatestOrNewSong() {
-
-    const didLoadLatest = await loadAndInitLatestSongAndTracks()
-    if (didLoadLatest) {
-        return
-    }
-    const shiftedOff = songNames.shift()
-    const data: Omit<SongRecord, "id"> = {
-        name: shiftedOff,
-        tempo: 120,
-        "track-ids": []
-    }
-    const createdId = await browser.userTables.add('song', {
-        data
-    })
-    await browser.userTables.update('song', { id: createdId, data: {
-        id: createdId
-    } }, {})
-    const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
-
-    mem().song = songRecordSchema.parse(refetched.data)
-    await trackInit()
-}
 
 export async function init() {
     await namesPromise
@@ -153,18 +71,10 @@ export async function init() {
     if (doc) {
         doc.style.backgroundColor =
             "darkblue"
-
     }
 
     await initLatestOrNewSong()
-    compileTracksToNotesByBar()
-    compileTracksToPhasesProperties()
-    setLatestMap(mapSongToMidiTicks())
-    Object.entries(mem().notesByBar).forEach(([barId, notes]) => {
-        notes.forEach((note) => {
-            addSlider(barId, note.tagsObj.noteId[0].toString())
-        })
-    })
+
 
     let tagsRoot: HTMLDivElement | null = null
     let logItr = 0
@@ -191,6 +101,7 @@ export async function init() {
         if (start2 !== undefined) {
             ranges.push([start2, lastTick()])
         }
+
         // analyze the ticks already showing
         const showingTicks = new Set<number>; // for comparison to those we're about to add (skip if they're already added)
 
@@ -270,17 +181,6 @@ export async function init() {
     // start and pause the song to get observable set up
     setLatestMap(mapSongToMidiTicks())
     startCueObservable()
-    const songName = mem().song.name
-    mem().observables[songName] = mem().observables[songName] || {} 
-    
-    mem().songPauses[songName] = [
-        null,
-        0
-    ]
-
-    Object.values(mem().observables[songName] || {}).forEach((observable) => {
-        observable.unsubscribe()
-    })
+    stopCueObservable()
 }
-    
 

@@ -24,9 +24,14 @@ import { allScales } from "./graphh"
 import { isNoteNameWithoutOctave } from "../commands/bars/utils"
 import { getAllPhaseBarNotes } from "./mem-db"
 import { updateNoteTag } from "./tags"
-import { notes } from "src/commands"
+import { setLatestMap } from "src/commands"
 import { browser } from "user-tables"
 import { fetchLatestSongAndTracks } from "./fetch"
+import { mapSongToMidiTicks } from "./mapSongToTicks"
+import { addSlider } from "./addSlider"
+import { SongRecord, TrackRecord } from "src/commands/song/song"
+import { getSongNames } from "src/commands/song/init"
+import { deleteCueObservable, startCueObservable, stopCueObservable } from "src/commands/song/observables"
 export const strjson = (arg: any) => JSON.stringify(arg, null, 2)
 export const isString = (arg: any): arg is string => {
     return typeof arg === 'string'
@@ -183,6 +188,7 @@ export async function loadAndInitLatestSongAndTracks() {
     }
     return null
 }
+
 // make the notesByBar from tracks live on the song.
 export function compileTracksToNotesByBar() {
     const { tracks } = mem()
@@ -220,4 +226,129 @@ export function saveSongAndTracks() {
     mem().tracks.forEach((track) => {
         browser.userTables.update('track', { id: track.id, data: track }, {})
     })
+}
+
+
+
+async function trackInit() {
+
+    const trackRecord: Omit<TrackRecord, "id"> = {
+        "phase-ids": [],
+        "phase-names": [],
+        notesByBar: {}
+    }
+
+    const trackId = await browser.userTables.add('track', { data: trackRecord })
+    // update the track to have its id in data. 
+    await browser.userTables.update('track', { id: trackId, data: { id: trackId } }, {}) 
+
+    await browser.userTables.update('song', {
+        id: mem().song.id,
+        data: {
+            "track-ids": [[
+                trackId, 0
+            ]]
+        },
+    }, {})
+
+    const coll = await (browser.userTables.where('song', { id: mem().song.id }))
+    const fetched = await coll.first()
+    const validSong = songRecordSchema.parse(fetched.data)
+    const { "track-ids": songTracks } = validSong
+
+    if (songTracks) {
+        mem().tracks = [{
+            id: songTracks[0][0],
+            "phase-ids": [],
+            "phase-names": [],
+            notesByBar: {}
+        }]
+    } else {
+        console.error("no tracks for song", mem().song.id)
+    }
+}
+
+export async function fetchSongAndTracks(songId: number) {
+    const coll = await (browser.userTables.where('song', { id: songId }))
+    const fetched = await coll.first()
+// get the track ids 
+    const validSong = songRecordSchema.parse(fetched.data) 
+    const trackIds = validSong["track-ids"].map(([trackId]) => {
+        return trackId
+    }).filter((trackId) => {
+        return trackId !== undefined
+    })
+    // now fetch each track
+    const validatedTracks = await Promise.all(trackIds.map(async (trackId) => {
+        const fetched = await (await browser.userTables.where('track', { id: trackId })).first()
+        return trackRecordSchema.parse(fetched.data)
+    }))
+
+    return {
+        song: validSong,
+        tracks: validatedTracks
+    }
+}
+
+export async function initNewSong() {
+    const songNames = await getSongNames()
+    const shiftedOff = songNames.shift()
+    const data: Omit<SongRecord, "id"> = {
+        name: shiftedOff,
+        tempo: 120,
+        "track-ids": []
+    }
+    const createdId = await browser.userTables.add('song', {
+        data
+    })
+    await browser.userTables.update('song', { id: createdId, data: {
+        id: createdId
+    } }, {})
+    const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
+
+    mem().song = songRecordSchema.parse(refetched.data)
+    await trackInit()
+
+} 
+
+export async function initLatestOrNewSong() {
+
+    const didLoadLatest = await loadAndInitLatestSongAndTracks()
+    if (didLoadLatest) {
+        initLoadedSong()
+        return
+    }
+    await initNewSong()
+    return initLoadedSong()
+}
+
+export async function initLoadedSong() {
+    // first clear any existing dom elements with the class note-slider
+
+    let previousSongName: null | string = null 
+    let previousSongId: null | number = null 
+
+    if (mem().song) {
+        previousSongName = mem().song.name
+        previousSongId = mem().song.id
+        stopCueObservable()
+        deleteCueObservable(previousSongName)
+    }
+
+    const sliders = document.querySelectorAll('.note-slider')
+    sliders.forEach((slider) => {
+        slider.remove()
+    })
+    compileTracksToNotesByBar()
+    compileTracksToPhasesProperties()
+    setLatestMap(mapSongToMidiTicks())
+    Object.entries(mem().notesByBar).forEach(([barId, notes]) => {
+        notes.forEach((note) => {
+            addSlider(barId, note.tagsObj.noteId[0].toString())
+        })
+    })
+
+    startCueObservable()
+    stopCueObservable()
+    mem().adjustedCursor = 0
 }

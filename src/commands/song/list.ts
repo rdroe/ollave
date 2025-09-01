@@ -1,5 +1,4 @@
 import { browser } from "user-tables"
-import { fetchSongAndTracks,  } from "./init"
 import { fetchLatestSongAndTracks } from "src/lib/fetch"
 
 
@@ -7,8 +6,11 @@ import { fetchLatestSongAndTracks } from "src/lib/fetch"
 export const listSongs = {
     fn: async () => {
         const songs = (await (await browser.userTables.where('song', {})).toArray())
-        console.log({length: songs.length}, songs)
-        return songs
+        return {
+            formatted: {
+                songs: songs.map(({ id, data }) => ({ id, name: data.name }))
+            }
+        }
     }
 }
 
@@ -44,11 +46,11 @@ export const deleteAllSongsAndTracks = {
             return browser.userTables.delete('track', { id: track.id })
         }))
         const tracksListAfterDeletionLength = (await (await browser.userTables.where('track', {})).toArray()).length
-        console.log({
+        return { formatted: {
             songListInitLength,
             songListAfterDeletionLength,
             trackListInitLength,
             tracksListAfterDeletionLength
-        })
+        }}
     }
 }

@@ -1,5 +1,8 @@
-import { fetchSongAndTracks } from "src/commands/song/init"
+
 import { browser } from "user-tables"
+import { mem, songRecordSchema } from "./mem"
+import { fetchSongAndTracks, initLoadedSong } from "./helpers"
+
 
 
 export const fetchLatestSongAndTracks = async () => {
@@ -9,4 +12,25 @@ export const fetchLatestSongAndTracks = async () => {
         return null
     }
     return fetchSongAndTracks(song.id)
+}
+
+export const fetchSongAndTracksBySongId = async (songId: number) => {
+    const song = await (await browser.userTables.where('song', { id: songId})).first()
+    if (!song) {
+        console.error('no song found')
+        return null
+    }
+    return fetchSongAndTracks(song.id)
+}
+
+
+export async function loadAndInitSongAndTracks(songId: number) {
+    const latestSong = await fetchSongAndTracksBySongId(songId)
+    if (latestSong) {
+        mem().song = songRecordSchema.parse(latestSong.song)
+        mem().tracks = [latestSong.tracks[0]]
+        return latestSong
+    }
+    await initLoadedSong()
+    return latestSong
 }

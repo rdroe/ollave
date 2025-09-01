@@ -31,7 +31,7 @@ export function addSlider (barName: string, noteId: string) {
         throw new Error('controls-1 not found')
     }
     const slider = document.createElement('input')
-    slider.setAttribute('class', `slider-${noteId}`)
+    slider.setAttribute('class', `slider-${noteId} note-slider`)
     slider.type = 'range'
     slider.min = '0'
     slider.max = `${tickCounts.bar}`

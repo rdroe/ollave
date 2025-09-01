@@ -3,7 +3,7 @@ import { mem, songRecordSchema, songRecordSchema_, trackRecordSchema } from '../
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
 const { userTables } = browser
-import { startCueObservable } from './observables'
+import { startCueObservable, stopCueObservable } from './observables'
 
 import { downloadSong } from '../../lib/download'
 import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTicks'
@@ -15,6 +15,8 @@ import { setLatestMap } from '../phase/observables/compilationObservable'
 export { init, setTrackReceptacleSelector } from './init'
 const { songNames } = mem()
 import { z } from 'zod'
+import { loadAndInitSongAndTracks } from 'src/lib/fetch'
+import { initLoadedSong, initNewSong } from 'src/lib/helpers'
 // kebab-case ids props; camelCase data props
 export type SongRecord = z.infer<typeof songRecordSchema_>
 
@@ -43,6 +45,38 @@ phase aphrodite 20
 song start
 `, "cli")
 
+            },
+        },
+        list: {
+            fn: async () => {
+                const songs = (await (await browser.userTables.where('song', {})).toArray())
+                return {
+                    formatted: {
+                        songs: songs.map(({ id, data }) => ({ id, name: data.name }))
+                    }
+                }
+            }
+        },
+        load: {
+
+            fn: async ({ positionalNonCommands }) => {
+                const [songId] = positionalNonCommands
+                if (!z.number().safeParse(songId).success) {
+                    return {
+                        formatted: {
+                            error: 'no song id provided or it is not a number'
+                        }
+                    }
+                }
+                stopCueObservable()
+                await loadAndInitSongAndTracks(songId)
+                return initLoadedSong()
+            }
+        },
+        new: {
+            fn: async () => {
+                await initNewSong()
+                return initLoadedSong()
             }
         },
         init: {
@@ -85,6 +119,7 @@ song start
                         
                     }
                 },
+
                 init: {
                     fn: async () => {
                         const trackRecord: Omit<TrackRecord, "id"> = {
@@ -149,7 +184,6 @@ song start
                     return startCueObservable()
                 }
                 const pauseMidi = midiAtBar(songPause) ?? 0
-
                 return startCueObservable(pauseMidi)
             }
         },
@@ -161,20 +195,7 @@ song start
                 }
             },
             fn: async () => {
-
-                const songName = mem().song.name
-                const publishedCursro = mem().adjustedCursor
-
-                const observable =
-                    mem().observables[songName]
-
-                if (observable) {
-
-                    mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
-                    Object.entries(mem().observables[songName] || {}).forEach(([fnName,observable]) => {
-                        observable.unsubscribe()
-                    })
-                }
+                return stopCueObservable()
             }
         },
         dl: {
@@ -193,6 +214,7 @@ song start
                 }
             }
         },
+        
         chord: {
             submodules: {
                 last: {
