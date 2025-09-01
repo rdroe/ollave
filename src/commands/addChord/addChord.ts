@@ -1,6 +1,6 @@
-import { isStringArray } from "../bars/utils"
+import { isStringArray } from "../../lib/util/barsUtil"
 import { Module } from "peprn/util"
-import { isChordCsvArg } from "../bars/utils"
+import { isChordCsvArg } from "../../lib/util/barsUtil"
 import { peprnIsNum } from "../../lib/helpers"
 import { phaseCount, phaseExists } from "../../lib/mem-db"
 import { addChord, DEFAULT_ARP } from "../../lib/addChord"

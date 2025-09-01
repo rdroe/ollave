@@ -3,7 +3,7 @@ import { randId } from '../../lib/helpers'
 
 import { mem } from '../../lib/mem'
 
-import { isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../bars/utils'
+import { isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../../lib/util/barsUtil'
 import { abbrev, isAbbreviation, tickCounts } from '../../core/observables/masterTicksObservable'
 
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
@@ -28,7 +28,7 @@ const cliDelaysToTags = (delay?: string[]): string[] => {
     return tags
 }
 export default {
-    fn: async (args, subCalls) => {
+    fn: async (_, subCalls) => {
         awaitAll({
             ...subCalls,
         }).then(() => {

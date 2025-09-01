@@ -6,7 +6,7 @@ import {
     isFraction,
     tickCounts
 } from '../../core/observables/masterTicksObservable'
-import { isCsvArg, parseCsvArg } from '../bars/utils'
+import { isCsvArg, parseCsvArg } from '../../lib/util/barsUtil'
 import { mem, noteByBarSchema } from '../../lib/mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from '../../lib/mem-db'

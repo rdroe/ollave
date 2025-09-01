@@ -1,6 +1,6 @@
 import { isFraction, tickCounts } from "../core/observables/masterTicksObservable"
 import { peprnIsNum, strjson } from "./helpers"
-import { isCsvArg, parseCsvArg } from "../commands/bars/utils"
+import { isCsvArg, parseCsvArg } from "./util/barsUtil"
 import { NoteByBar } from "../lib/mem"
 import { z } from 'zod'
 

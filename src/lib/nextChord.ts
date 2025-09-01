@@ -1,5 +1,5 @@
 import { isScaleNameWithTonic } from "./helpers"
-import { isChordCsvArg } from "../commands/bars/utils"
+import { isChordCsvArg } from "./util/barsUtil"
 import { scale } from "./tags"
 import { lookUpGraph } from "./mem-db"
 

@@ -2,7 +2,7 @@ import { isNumber } from "peprn/util"
 import { makeNoteByBar, mem, NoteByBar, notesByBarSchema, songRecordSchema, trackRecordSchema } from "./mem"
 
 import { allScales } from "./graphh"
-import { isNoteNameWithoutOctave } from "../commands/bars/utils"
+import { isNoteNameWithoutOctave } from "./util/barsUtil"
 import { getAllPhaseBarNotes } from "./mem-db"
 import { updateNoteTag } from "./tags"
 import { setLatestMap } from "../core/observables"

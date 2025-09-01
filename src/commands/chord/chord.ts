@@ -11,7 +11,7 @@ import { filterDelayTags, latestNote, parseNoteTags, scale } from '../../lib/tag
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { makeNoteByBar, mem, noteByBarSchema } from '../../lib/mem'
 import { lookUpGraph } from '../../lib/mem-db'
-import { isNoteNameWithOctave } from '../bars/utils'
+import { isNoteNameWithOctave } from '../../lib/util/barsUtil'
 import { setLatestMap } from '../../core/observables'
 
 export const chord: Module = {

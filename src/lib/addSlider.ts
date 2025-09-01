@@ -4,7 +4,7 @@ import { peprnIsNum } from "./helpers"
 import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
 import { setLatestMap } from "../core/observables"
 import { z } from "zod"
-import { isNoteNameWithOctave } from "../commands/bars/utils"
+import { isNoteNameWithOctave } from "./util/barsUtil"
 
 
 // as after a barDelay change, update the slider value, finding it in the dom via noteId
