@@ -3,7 +3,7 @@ import { filterDelayTags, parseNoteTags } from '../../lib/tags'
 import { strjson } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { setLatestMap } from '../../core/observables'
-import { getNotesByEntity, notesByBarArraySchema, parseDelayMatrix, prepDelayMatrix } from './notesUtil'
+import { getNotesByEntity, notesByBarArraySchema, parseDelayMatrix, prepDelayMatrix } from '../../lib/util/notesUtil'
 
 export default {
     fn: async () => { },

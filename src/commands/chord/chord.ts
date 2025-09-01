@@ -12,7 +12,7 @@ import { makeNoteByBar, mem } from '../../lib/mem'
 import { lookUpGraph } from '../../lib/mem-db'
 import { isNoteNameWithOctave } from '../../lib/util/barsUtil'
 import { setLatestMap } from '../../core/observables'
-import { getNotesByEntity, notesByBarArraySchema, parseDelayMatrix, prepDelayMatrix } from '../notes/notesUtil'
+import { getNotesByEntity, notesByBarArraySchema, parseDelayMatrix, prepDelayMatrix } from '../../lib/util/notesUtil'
 
 export const chord: Module = {
     help: {

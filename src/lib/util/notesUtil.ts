@@ -6,13 +6,13 @@ import {
     isFraction,
     tickCounts
 } from '../../core/observables/masterTicksObservable'
-import { isCsvArg, parseCsvArg } from '../../lib/util/barsUtil'
-import { mem, noteByBarSchema } from '../../lib/mem'
+import { isCsvArg, parseCsvArg } from './barsUtil'
+import { mem, noteByBarSchema } from '../mem'
 import { z } from 'zod'
-import { getAllPhaseBarNotes } from '../../lib/mem-db'
-import {  parseNoteTags } from '../../lib/tags'
-import { strjson } from '../../lib/helpers'
-import { zeroIndexedArr } from '../../lib/graphh'
+import { getAllPhaseBarNotes } from '../mem-db'
+import {  parseNoteTags } from '../tags'
+import { strjson } from '../helpers'
+import { zeroIndexedArr } from '../graphh'
 
 const isNoteCnt = (str: string | number) => {
     if (typeof str === 'number') return false
