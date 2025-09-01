@@ -3,7 +3,7 @@ import { mem, songRecordSchema, songRecordSchema_, trackRecordSchema } from '../
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
 const { userTables } = browser
-import { startCueObservable, stopCueObservable } from './observables'
+import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables'
 
 import { downloadSong } from '../../lib/download'
 import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTicks'

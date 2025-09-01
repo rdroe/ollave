@@ -3,7 +3,7 @@ import { mem } from '../../lib/mem';
 import { tickCounts } from '../../core/observables/masterTicksObservable';
 import { lastTick } from '../../lib/mem-db';
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
-import { startCueObservable, stopCueObservable } from './observables';
+import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables';
 import { setLatestMap } from '../../core/observables';
 
 const { songNames } = mem()

@@ -1,9 +1,9 @@
 import { Mem, mem } from '../../lib/mem'
 import { Observable, Subscription } from 'rxjs'
-import { makeTickSubscribe } from '../../core/subjects/masterTicksSubject'
+import { makeTickSubscribe } from '../subjects/masterTicksSubject'
 import { playTriads } from '../../lib/music'
 import { lastTick } from '../../lib/mem-db'
-import { exportableTick, updateExportableTick } from '../../core/observables/masterTicksObservable'
+import { exportableTick, updateExportableTick } from './masterTicksObservable'
 import { barsAtMidi, BarTagPercent } from 'src/lib/mapSongToTicks'
 
 

@@ -12,7 +12,7 @@ import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { addSlider } from "./addSlider"
 import { SongRecord, TrackRecord } from "src/commands/song/song"
 import { getSongNames } from "src/commands/song/init"
-import { deleteCueObservable, startCueObservable, stopCueObservable } from "src/commands/song/observables"
+import { deleteCueObservable, startCueObservable, stopCueObservable } from "src/core/observables/songObservables"
 export const strjson = (arg: any) => JSON.stringify(arg, null, 2)
 export const isString = (arg: any): arg is string => {
     return typeof arg === 'string'
