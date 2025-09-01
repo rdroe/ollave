@@ -115,22 +115,15 @@ export const createNotesByTagStore = (tagStrings: string[]) => {
 // select the notes by tag and data. review ALL notes in the mem.notesByBar.
 function selector(mem: Mem, targetTags: TagEntries): NoteByBarWithBarId[] {
     const matchingNotes: NoteByBarWithBarId[] = []
-    
     Object.entries(mem.notesByBar).forEach(([barId, notes]) => {
-
         notes.forEach((note) => {
-
             // filter tag entries from note to those matching the target tags.
             const noteTags = parseNoteTags(note.tags).filter(([tagName]) => targetTags.some(([targetTagName]) => targetTagName === tagName))
-            console.log('does this note match the target tags?', {targetTags, noteTags})
             if (tagEntriesCompare(targetTags, noteTags)) {
-                console.log('note matches target tags', {noteTags})
                 matchingNotes.push({
                     ...note,
                     barId
                 })
-            } else {
-                console.log('note does not match target tags!', {noteTags})
             }
         })
     })

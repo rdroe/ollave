@@ -18,12 +18,15 @@
 // - properScaleName: Format scale name properly
 
 import { isNumber } from "peprn/util"
-import { mem, songRecordSchema, trackRecordSchema } from "./mem"
+import { makeNoteByBar, mem, NoteByBar, notesByBarSchema, songRecordSchema, trackRecordSchema } from "./mem"
 
 import { allScales } from "./graphh"
 import { isNoteNameWithoutOctave } from "../commands/bars/utils"
 import { getAllPhaseBarNotes } from "./mem-db"
 import { updateNoteTag } from "./tags"
+import { notes } from "src/commands"
+import { browser } from "user-tables"
+import { fetchLatestSongAndTracks } from "./fetch"
 export const strjson = (arg: any) => JSON.stringify(arg, null, 2)
 export const isString = (arg: any): arg is string => {
     return typeof arg === 'string'
@@ -146,7 +149,75 @@ export function properScaleName(str: string) {
 }
 
 export function initNotesByBar() {
-    const song = songRecordSchema.parse(mem().song) 
-    const track = trackRecordSchema.parse(mem().tracks[0])
-    mem().notesByBar = track.notesByBar
+    songRecordSchema.parse(mem().song) 
+    const notesByBar = mem().tracks.reduce((acc, track) => {
+        return {
+            ...acc,
+            ...track.notesByBar
+        }
+    }, {} as Record<string, NoteByBar[]>)
+    mem().notesByBar = notesByBarSchema.parse(notesByBar)
+}
+
+export function compileNotesByBarToTracks() {
+    songRecordSchema.parse(mem().song)
+    const { tracks } = mem()
+    const notesByBar = notesByBarSchema.parse(mem().notesByBar)
+    Object.keys(notesByBar).forEach((barId) => {
+        const phaseIdForBar = barId.split(':')[0]
+        const owningTrack = tracks.find((track) => track["phase-names"].includes(phaseIdForBar))
+        if (owningTrack) {
+            owningTrack.notesByBar[barId] = notesByBar[barId]
+        }
+    })
+    mem().tracks = tracks
+
+}
+
+export async function loadAndInitLatestSongAndTracks() {
+    const latestSong = await fetchLatestSongAndTracks()
+    if (latestSong) {
+        mem().song = songRecordSchema.parse(latestSong.song)
+        mem().tracks = [latestSong.tracks[0]]
+        return latestSong
+    }
+    return null
+}
+// make the notesByBar from tracks live on the song.
+export function compileTracksToNotesByBar() {
+    const { tracks } = mem()
+    const notesByBar = tracks.reduce((acc, track) => {
+        return {
+            ...acc,
+            ...Object.fromEntries(Object.entries(track.notesByBar).map(([barId, notes]) => [barId, notes.map((note) => makeNoteByBar(note.note, note.tags))]))
+        }
+    }, {} as Record<string, NoteByBar[]>)
+    mem().notesByBar = notesByBar
+}
+
+export function compileTracksToPhasesProperties() {
+    const { tracks } = mem()
+    tracks.forEach((track, idx) => {
+        track["phase-names"] .forEach((phaseName, idx) => {
+            mem().phases[phaseName] = {
+                id: track.id,
+                name: phaseName,
+                "follows-ids": [],
+                "temp-id": track["phase-ids"][idx],
+                speed: 1,
+                barSizeMultiplier: 1,
+                scaleName: null,
+                scaleTonic: null
+            }
+        })
+    })
+}
+
+export function saveSongAndTracks() {
+
+    const songId = mem().song.id
+    browser.userTables.update('song', { id: songId, data: mem().song }, {})
+    mem().tracks.forEach((track) => {
+        browser.userTables.update('track', { id: track.id, data: track }, {})
+    })
 }

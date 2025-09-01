@@ -34,12 +34,14 @@ export const startCueObservable = (startAt?: number) => {
     if (!song) {
         console.error(mem())
         throw new Error(`Song not initialized`)
+
     }
 
     const songObservable = new Observable(makeTickSubscribe(startAt))
     const observables = mem().observables[song] || {}
     observables['tick'] = songObservable.subscribe({
         next: ({ tick }) => {
+
             const expTick = exportableTick()
             // get the midi tick relative to the start of the song
             const adjustedCursor = getSongCursor(tick)

@@ -47,7 +47,8 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
             barSizeMultiplier: null,
             speed: null,
             scaleName: null,
-            scaleTonic: null
+            scaleTonic: null,
+            name: subject
         }
     }
     setLatestMap(mapSongToMidiTicks())
@@ -152,17 +153,30 @@ export const phaseExists = (phase: string) => {
 }
 
 // update phase to have n bars.
-export async function phaseCount(phase: string, size: number, skipCopy: boolean = false) {
+export async function phaseCount(phase: string, size: number, skipCopy: boolean = false, rawTrackId: number | null = null) {
     const { phases, notesByBar } = mem()
     if (!phases[phase]) {
         phases[phase] = {
             id: null,
-            "temp-id": randomInt(),
+            "temp-id": randomInt(0, 900000),
             "follows-ids": [],
             barSizeMultiplier: null,
             speed: null,
             scaleTonic: null,
-            scaleName: null
+            scaleName: null,
+            name: phase
+        }
+        const trackId = rawTrackId ? rawTrackId : mem().tracks[0].id 
+        if (typeof trackId === 'number') {
+            const track = mem().tracks.find((track) => track.id === trackId)
+            if (track) {
+                track["phase-ids"].push(phases[phase]["temp-id"])
+                track["phase-names"].push(phase)
+            } else {
+                throw new Error(`Track ${trackId} not found`)
+            }
+        } else {
+            throw new Error(`Track id is not a number`)
         }
     }
     // get all the phase bars.

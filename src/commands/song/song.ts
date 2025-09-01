@@ -89,6 +89,7 @@ song start
                     fn: async () => {
                         const trackRecord: Omit<TrackRecord, "id"> = {
                             "phase-ids": [],
+                            "phase-names": [],
                             notesByBar: {}
                         }
                         const trackId = await browser.userTables.add('track', { data: trackRecord })
@@ -109,6 +110,7 @@ song start
                             mem().tracks = [{
                                 id: songTracks[0][0],
                                 "phase-ids": [],
+                                "phase-names": [],
                                 notesByBar: {}
                             }]
                         } else {

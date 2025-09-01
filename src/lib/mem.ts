@@ -44,7 +44,7 @@ export const cloneNoteByBar = (note: NoteByBar): NoteByBar => {
     return wrapWithGetters(makeNoteByBar(note.note, structuredClone(note.tags).map((tag) => tag.split('=').join('='))))
 }
 const wrapWithGetters = (note: z.infer<typeof noteByBarSchema>): NoteByBarInner => {
-    const _tags = note.tags
+    const _tags = note.tags.concat()
     const settableObj: z.infer<typeof tagsObjSchema> = {}
     const handler = {
         set(target: z.infer<typeof tagsObjSchema>, prop: string, value: TagData) {
@@ -123,7 +123,8 @@ export type Mem = {
     tracks: TrackRecord[],
     phases: {
         [phaseName: string]: PhaseRecord & {
-            "temp-id": number | null
+            "temp-id": number | null,
+            name: string
         }
     }
     notesByBar: {
@@ -193,6 +194,7 @@ export const notesByBarSchema = z.record(z.string(), z.array(noteByBarSchema).tr
 export const trackRecordSchema = z.object({
     id: z.number(),
     "phase-ids": z.array(z.number()),
+    "phase-names": z.array(z.string()),
     notesByBar: notesByBarSchema
 })
 export const latestMapSchema = z.record(z.string(), z.number())

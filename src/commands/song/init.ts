@@ -1,5 +1,5 @@
-import { strjson } from '../../lib/helpers';
-import { mem, songRecordSchema, trackRecordSchema } from '../../lib/mem';
+import { compileTracksToNotesByBar, compileTracksToPhasesProperties, loadAndInitLatestSongAndTracks, strjson } from '../../lib/helpers';
+import { mem, NoteByBar, notesByBarSchema, songRecordSchema, trackRecordSchema } from '../../lib/mem';
 import { tickCounts } from '../phase/observables/masterTicksObservable';
 import { lastTick } from '../../lib/mem-db';
 
@@ -10,6 +10,7 @@ import { startCueObservable } from './observables';
 import { setLatestMap } from '../phase/observables/compilationObservable';
 import { z } from 'zod';
 import { fetchLatestSongAndTracks } from 'src/lib/fetch';
+import { addSlider } from 'src/lib/addSlider';
 
 const { songNames } = mem()
 
@@ -22,7 +23,6 @@ const namesPromise = new Promise((res) => {
 (() => {
     console.log('importing words')
     import('../../lib/words').then((w) => {
-        console.log('words imported')
         const wordList = w.words.split('\n')
         for (let i = 0; i < 100; i++) {
             const rand = Math.floor(Math.random() * wordList.length);
@@ -67,6 +67,7 @@ export function stopPrintingNotes() {
 async function trackInit() {
     const trackRecord: Omit<TrackRecord, "id"> = {
         "phase-ids": [],
+        "phase-names": [],
         notesByBar: {}
     }
     const trackId = await browser.userTables.add('track', { data: trackRecord })
@@ -91,6 +92,7 @@ async function trackInit() {
         mem().tracks = [{
             id: songTracks[0][0],
             "phase-ids": [],
+            "phase-names": [],
             notesByBar: {}
         }]
     } else {
@@ -112,7 +114,6 @@ export async function fetchSongAndTracks(songId: number) {
     // now fetch each track
     const validatedTracks = await Promise.all(trackIds.map(async (trackId) => {
         const fetched = await (await browser.userTables.where('track', { id: trackId })).first()
-        console.log({fetched})
         return trackRecordSchema.parse(fetched.data)
     }))
 
@@ -124,15 +125,9 @@ export async function fetchSongAndTracks(songId: number) {
 
 async function initLatestOrNewSong() {
 
-    const latestSong = await fetchLatestSongAndTracks()
-    if (latestSong) {
-        mem().song = songRecordSchema.parse(latestSong.song)
-        mem().tracks = [{
-            id: latestSong.tracks[0].id,
-            "phase-ids": latestSong.tracks[0]["phase-ids"],
-            notesByBar: latestSong.tracks[0].notesByBar
-        }]
-        return latestSong
+    const didLoadLatest = await loadAndInitLatestSongAndTracks()
+    if (didLoadLatest) {
+        return
     }
     const shiftedOff = songNames.shift()
     const data: Omit<SongRecord, "id"> = {
@@ -162,6 +157,15 @@ export async function init() {
     }
 
     await initLatestOrNewSong()
+    compileTracksToNotesByBar()
+    compileTracksToPhasesProperties()
+    setLatestMap(mapSongToMidiTicks())
+    Object.entries(mem().notesByBar).forEach(([barId, notes]) => {
+        notes.forEach((note) => {
+            addSlider(barId, note.tagsObj.noteId[0].toString())
+        })
+    })
+
     let tagsRoot: HTMLDivElement | null = null
     let logItr = 0
     const log = (...args: any[]) => {
