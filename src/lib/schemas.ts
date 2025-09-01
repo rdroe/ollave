@@ -1,9 +1,9 @@
-import { Observable } from "rxjs"
-import { SongRecord } from "../commands/song/song"
+
 import { parseNoteTags, TagData, tagDataSchema } from "./util/tagsUtil"
 import { z } from "zod"
 import { isNoteNameWithOctave } from "./util/barsUtil"
 import { randId } from "./helpers"
+
 export type NoteByBarInner = {
     note: string;
     _tags: string[]
