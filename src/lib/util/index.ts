@@ -25,3 +25,27 @@ export {
     notesByBarArraySchema,
     getNotesByEntity
 } from './notesUtil'
+
+
+export {
+    filterDelayTags,
+    filterBarDelayTag,
+    groupNotesByFirstTagDatum,
+    parseNoteTags,
+    updateNoteTag,
+    unparseTagEntries,
+    getTagData,
+    tagsDeleteMatching1,
+    tagsDeleteMatching2,
+    calcFractionalDelay, 
+    calcTickDelay,
+    tagEntriesCompare,
+    tagDataSchema,
+    TagEntry,
+    TagEntries,
+    tagDataOrNull,
+    latestNote,
+    earliestNote,
+    scale,
+    TagData,
+} from './tagsUtil'
