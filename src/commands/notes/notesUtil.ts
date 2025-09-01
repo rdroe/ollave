@@ -19,7 +19,7 @@ const isNoteCnt = (str: string | number) => {
     return !!str.match(/[0-9]+x/)
 }
 
-export const notesByBarSchema = z.array(noteByBarSchema)
+export const notesByBarArraySchema = z.array(noteByBarSchema)
 
 export const shiftDollarEntity = (dollar: ParsedCli["positionalNonCommands"]) => {
     const err = '"bar" or "phase" or "tag" is required'

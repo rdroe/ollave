@@ -12,7 +12,7 @@ import { makeNoteByBar, mem } from '../../lib/mem'
 import { lookUpGraph } from '../../lib/mem-db'
 import { isNoteNameWithOctave } from '../../lib/util/barsUtil'
 import { setLatestMap } from '../../core/observables'
-import { getNotesByEntity, notesByBarSchema, parseDelayMatrix, prepDelayMatrix } from '../notes/notesUtil'
+import { getNotesByEntity, notesByBarArraySchema, parseDelayMatrix, prepDelayMatrix } from '../notes/notesUtil'
 
 export const chord: Module = {
     help: {
@@ -330,7 +330,7 @@ song start
                                                     return []
                                                 })
                                                 let maxChordSize = -1
-                                                const parsed = notesByBarSchema.safeParse(notes1)
+                                                const parsed = notesByBarArraySchema.safeParse(notes1)
                                                 if (parsed.success === false) {
                                                     console.error(parsed.error)
                                                     throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)

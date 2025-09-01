@@ -3,7 +3,7 @@ import { filterDelayTags, parseNoteTags } from '../../lib/tags'
 import { strjson } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { setLatestMap } from '../../core/observables'
-import { getNotesByEntity, notesByBarSchema, parseDelayMatrix, prepDelayMatrix } from './notesUtil'
+import { getNotesByEntity, notesByBarArraySchema, parseDelayMatrix, prepDelayMatrix } from './notesUtil'
 
 export default {
     fn: async () => { },
@@ -43,7 +43,7 @@ export default {
                                     fn: async ({ positionalNonCommands: patterns }, calls) => {
 
                                         const notes1 = await calls['notes in $ $']
-                                        const parsed = notesByBarSchema.safeParse(notes1)
+                                        const parsed = notesByBarArraySchema.safeParse(notes1)
                                         if (parsed.success === false) {
                                             console.error(parsed.error)
                                             throw new Error(`Incorrectly formatted or empty notes:${strjson(notes1)}`)
