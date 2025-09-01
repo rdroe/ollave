@@ -1,8 +1,8 @@
-import { initLatestOrNewSong, strjson } from '../../lib/helpers';
-import { mem } from '../../lib/mem';
+import { initLatestOrNewSong, strjson } from '../helpers';
+import { mem } from '../mem';
 import { tickCounts } from '../../core/observables/masterTicksObservable';
-import { lastTick } from '../../lib/mem-db';
-import { mapSongToMidiTicks } from '../../lib/mapSongToTicks';
+import { lastTick } from '../mem-db';
+import { mapSongToMidiTicks } from '../mapSongToTicks';
 import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables';
 import { setLatestMap } from '../../core/observables';
 
@@ -22,7 +22,7 @@ export const getSongNames = () => {
 
 (() => {
     console.log('importing words')
-    import('../../lib/words').then((w) => {
+    import('../words').then((w) => {
         const wordList = w.words.split('\n')
         for (let i = 0; i < 100; i++) {
             const rand = Math.floor(Math.random() * wordList.length);

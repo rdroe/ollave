@@ -10,9 +10,9 @@ import { barsAtMidi, mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTi
 import { trackTempo } from '../../core/observables/masterTicksObservable'
 import { getLastChordLayerName } from '../../lib/util/barsUtil'
 import { groupNotesByFirstTagDatum, parseNoteTags } from '../../lib/tags'
-import { setTrackReceptacleSelector, startPrintingNotes, stopPrintingNotes } from './init'
+import { setTrackReceptacleSelector, startPrintingNotes, stopPrintingNotes } from '../../lib/util/songUtil'
 import { setLatestMap } from '../../core/observables'
-export { init, setTrackReceptacleSelector } from './init'
+export { init, setTrackReceptacleSelector } from '../../lib/util/songUtil'
 const { songNames } = mem()
 import { z } from 'zod'
 import { loadAndInitSongAndTracks } from 'src/lib/fetch'
