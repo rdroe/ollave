@@ -1,9 +1,10 @@
 import { mem, Mem } from "../lib/mem";
-import { makeCompilationSubscribe } from "../lib";
+
 import { createStore, useStore } from "zustand";
 
 import { z } from "zod";
 import { useShallow } from "zustand/shallow";
+import { makeCompilationSubscribe } from "src/core/subjects/compilationSubject";
 
 export const subscribeToNoteIdsByBar = (barId: string) => {
     const { store } = createBarNoteIdsStore(barId)

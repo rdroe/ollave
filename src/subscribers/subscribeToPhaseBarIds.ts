@@ -1,9 +1,10 @@
 import { mem, Mem, NoteByBar } from "../lib/mem";
-import { makeCompilationSubscribe, sortByNumberAfterColon } from "../lib";
+import {  sortByNumberAfterColon } from "../lib";
 import { createStore, useStore } from "zustand";
 
 import equal from 'deep-equal'
 import { useShallow } from "zustand/shallow";
+import { makeCompilationSubscribe } from "src/core/subjects/compilationSubject";
 
 export const subscribeToPhaseBarIds = () => {
     const { store } = phaseBarIdsStore()

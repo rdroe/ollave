@@ -1,5 +1,5 @@
 import { cloneNoteByBar, mem, Mem, NoteByBar, tagsObjSchema } from "../lib/mem";
-import { makeCompilationSubscribe,  parseNoteTags } from "../lib";
+import {   parseNoteTags } from "../lib";
 
 import { createStore, useStore } from "zustand";
 import { updateNotePitch, updateTagsObj } from "../lib/addSlider";
@@ -7,6 +7,7 @@ import { z } from "zod";
 import { deleteNoteById } from "../lib/deleteNoteById";
 import { tagEntriesCompare } from "../lib/tags";
 import { useShallow } from "zustand/shallow";
+import { makeCompilationSubscribe } from "src/core/subjects/compilationSubject";
 
 export const subscribeToNoteById = (noteId?: string, barName?: string) => { 
     if (!noteId) {
