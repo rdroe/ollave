@@ -5,7 +5,7 @@ import { NoteByBar, mem } from '../../lib/mem'
 import { isChordCsvArg, isNoteCsvArg, isNoteNameWithOctave, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from '../../lib/util/barsUtil'
 import { BAR, EIGHTH, tickCounts } from '../../core/observables/masterTicksObservable'
 import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag, parseNoteTags } from '../../lib/tags'
-import { isAbbreviationCsv, sumAbbreviationCsv } from '../notes/notes'
+import { isAbbreviationCsv, sumAbbreviationCsv } from '../notes/notesUtil'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { setLatestMap } from '../../core/observables'
 

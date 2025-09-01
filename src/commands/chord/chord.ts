@@ -6,13 +6,13 @@ import {
 import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
-import { getNotesByEntity, notesByBarSchema, parseDelayMatrix, prepDelayMatrix } from '../notes/notes'
 import { filterDelayTags, latestNote, parseNoteTags, scale } from '../../lib/tags'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
-import { makeNoteByBar, mem, noteByBarSchema } from '../../lib/mem'
+import { makeNoteByBar, mem } from '../../lib/mem'
 import { lookUpGraph } from '../../lib/mem-db'
 import { isNoteNameWithOctave } from '../../lib/util/barsUtil'
 import { setLatestMap } from '../../core/observables'
+import { getNotesByEntity, notesByBarSchema, parseDelayMatrix, prepDelayMatrix } from '../notes/notesUtil'
 
 export const chord: Module = {
     help: {
