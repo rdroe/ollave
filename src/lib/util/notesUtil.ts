@@ -72,7 +72,6 @@ export const getNotesByEntity = (
     }
 }
 
-
 export const tuplize = (array: (string | number)[]) => {
     const allExceptPossiblyLast = array.reduce(function(r, a, i) {
         if (i % 2) {
@@ -237,6 +236,7 @@ export const prepDelayMatrix = (positionalNonCommands: ParsedCli['positionalNonC
 
     return entries as [noteIdx: string, data: (string | number)[]][]
 }
+
 const deleteSupernumeraries = (dmRow: ReturnType<typeof parseDelayMatrixRow>, cs: number) => {
     return Object.fromEntries(
         Object.entries(dmRow).filter(([key]) => {
