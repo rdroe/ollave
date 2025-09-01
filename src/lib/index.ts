@@ -98,3 +98,5 @@ export {
 export { 
     mapSongToMidiTicks
 } from './mapSongToTicks'
+
+export  * as util from './util'
