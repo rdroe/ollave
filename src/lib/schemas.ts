@@ -32,11 +32,7 @@ const tagsSchema = z.array(z.string()).refine((tags) => {
 export const noteByBarSchema = z.object({
     note: z.string().refine((str) => isNoteNameWithOctave(str) ?? false),
     tags: tagsSchema,
-    tagsObj: z.record(z.string(), tagDataSchema).refine((obj) => {
-        return requiredTags.every((tag) => obj[tag] !== undefined)
-    }, {
-        message: 'Tags must include both noteId and barDelay'
-    })
+    tagsObj: z.record(z.string(),z.array(z.any()))
 })
 export const cloneNoteByBar = (note: NoteByBar): NoteByBar => {
     return wrapWithGetters(makeNoteByBar(note.note, structuredClone(note.tags).map((tag) => tag.split('=').join('='))))

@@ -5,7 +5,11 @@ import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './util/tagsUt
 import { getAllPhaseBarNotes, getFollowingPhases } from './util/phaseUtil'
 import { mem, Mem } from '../core/mem'
 
-export const START_SPEED = 1
+const startSpeedRef_ = {
+     START_SPEED: 1,
+};
+(window as any).startSpeedRef = startSpeedRef_;
+export const START_SPEED = (window as any).startSpeedRef.START_SPEED
 // Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {
     [tick: number]: {
