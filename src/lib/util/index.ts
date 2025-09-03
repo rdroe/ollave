@@ -23,7 +23,9 @@ export {
     tuplize,
     isAbbreviationCsv,  
     notesByBarArraySchema,
-    getNotesByEntity
+    getNotesByEntity,
+    quantizeValueToAbbreviation,
+    quantizeNote,
 } from './notesUtil'
 
 

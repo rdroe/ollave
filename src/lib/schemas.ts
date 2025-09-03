@@ -32,7 +32,12 @@ const tagsSchema = z.array(z.string()).refine((tags) => {
 export const noteByBarSchema = z.object({
     note: z.string().refine((str) => isNoteNameWithOctave(str) ?? false),
     tags: tagsSchema,
-    tagsObj: z.record(z.string(),z.array(z.any()))
+    tagsObj: z.record(
+       z.string(), 
+        /* tag data */ z.array(
+            z.string().or(z.number()).or(z.boolean()).or(z.null())
+        )
+    )
 })
 export const cloneNoteByBar = (note: NoteByBar): NoteByBar => {
     return wrapWithGetters(makeNoteByBar(note.note, structuredClone(note.tags).map((tag) => tag.split('=').join('='))))
@@ -98,7 +103,7 @@ export const makeNoteByBar = (note: string, tags: string[]): NoteByBar => {
 }
 
 const songRecordSchema_ = z.object({
-    id: z.number(),
+    id: z.number().refine((id) => id !== undefined, { message: 'id is required' }),
     name: z.string(),
     tempo: z.number(),
     "track-ids": z.array(
@@ -109,7 +114,16 @@ const songRecordSchema_ = z.object({
 export const songRecordSchema = {
     parse: (data: any) => songRecordSchema_.parse(data)
 }
+export const phaseRecordSchema = z.object({
+    id: z.number(),
+    name: z.string(), // 
+    scaleName: z.string().nullable(),
+    scaleTonic: z.string().nullable(),
+    "follows-ids": z.array(z.number()),
+    speed: z.number().nullable().optional(),
+    barSizeMultiplier: z.number().nullable().optional()
 
+})
 
 export const notesByBarSchema = z.record(z.string(), z.array(noteByBarSchema).transform((notes) => notes.map(note => noteByBarSchema.parse(note))))
 export const trackRecordSchema = z.object({

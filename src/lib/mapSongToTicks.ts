@@ -1,15 +1,16 @@
 import { BAR, tickCounts } from '../core/observables/masterTicksObservable'
-
-import { calcFractionalDelay, calcTickDelay, parseNoteTags } from './util/tagsUtil'
-
+import { parseNoteTags} from './util/tagsUtil'
 import { getAllPhaseBarNotes, getFollowingPhases } from './util/phaseUtil'
 import { mem, Mem } from '../core/mem'
+import { quantizeNote } from './util/notesUtil';
 
 const startSpeedRef_ = {
      START_SPEED: 1,
 };
+
 (window as any).startSpeedRef = startSpeedRef_;
 export const START_SPEED = (window as any).startSpeedRef.START_SPEED
+
 // Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {
     [tick: number]: {
@@ -152,10 +153,8 @@ export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
             })
         })
     }, {} as PhaseMap)
-
     return ret
-
-}
+} //
 
 
 function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: MidiMap[] = []) {
@@ -173,12 +172,7 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
         // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
         barNotes.forEach((note) => {
             const parsedTags = parseNoteTags(note.tags)
-            let thisNoteOffset = 0
-            // look at this notes tags to determine how much to delay this note
-            thisNoteOffset += calcFractionalDelay(parsedTags) // e.g half, 4th etc
-            thisNoteOffset += calcTickDelay(parsedTags)// e.g barDelay=1
-            const thisNoteTick = Math.round(startTick + thisBarOffset + thisNoteOffset)
-
+            const thisNoteTick = quantizeNote(parsedTags) + startTick + thisBarOffset
             if (!phaseMidi[thisNoteTick]) {
                 phaseMidi[thisNoteTick] = []
             }
@@ -251,8 +245,6 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
                 data1: [`${phaseName}:${barIndex}`],
                 data2: []
             })
-
-
         })
 
         if (!phaseData[barEndTick]) {

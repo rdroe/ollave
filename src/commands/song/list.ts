@@ -46,11 +46,22 @@ export const deleteAllSongsAndTracks = {
             return browser.userTables.delete('track', { id: track.id })
         }))
         const tracksListAfterDeletionLength = (await (await browser.userTables.where('track', {})).toArray()).length
+
+        // same for phases; fetch and delete all 
+        const phases = (await (await browser.userTables.where('phase', {})).toArray())
+        const phaseListInitLength = phases.length
+        await Promise.all(phases.map((phase) => {
+            return browser.userTables.delete('phase', { id: phase.id })
+        }))
+        const phaseListAfterDeletionLength = (await (await browser.userTables.where('phase', {})).toArray()).length
+
         return { formatted: {
             songListInitLength,
             songListAfterDeletionLength,
             trackListInitLength,
-            tracksListAfterDeletionLength
+            tracksListAfterDeletionLength,
+            phaseListInitLength,
+            phaseListAfterDeletionLength
         }}
     }
 }

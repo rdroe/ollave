@@ -56,9 +56,7 @@ export const subscribeToTags = {
             unsubscribeByTag[tagString]()
             delete unsubscribeByTag[tagString]
         }
-        intervalsByTag[tagString] = setInterval(() => {
-            console.log(`notesByTagStore for ${tagString}`, store.getState().notes)
-        }, 5000) 
+
         unsubscribeByTag[tagString] = unsubscribe
         // return output (success, etc)
         return {

@@ -121,6 +121,7 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
 
                 },
                 error: (err: any) => {
+                    console.error('error in addChord makeCompilationSubscribe', err)
                 },
             }) 
         }

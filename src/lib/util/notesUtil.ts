@@ -11,7 +11,7 @@ import {  noteByBarSchema } from '../schemas'
 import { mem } from '../../core/mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from './phaseUtil'
-import {  parseNoteTags } from './tagsUtil'
+import {  calcFractionalDelay, calcTickDelay, parseNoteTags, TagData, TagEntries } from './tagsUtil'
 import { strjson } from '../helpers'
 import { zeroIndexedArr } from '../graphh'
 
@@ -261,4 +261,37 @@ export const parseDelayMatrix = (entries: [chordSize: string, row: (string | num
             ]
         })
     )
+}
+
+const quantizeOffset = (rawOffset: number, parsedTags: TagEntries) => {
+    const quantizeAmount = parsedTags.find(([name]: [nm: string, data: TagData]) => {
+        return name === 'quantize'
+    })
+    if (quantizeAmount) {
+        const [quantizeTargetAbbrev] = quantizeAmount[1] 
+        if (isAbbreviation(quantizeTargetAbbrev)) {
+            return quantizeValueToAbbreviation(rawOffset, quantizeTargetAbbrev)
+        }
+        console.error(`${quantizeTargetAbbrev} is not a valid abbreviation for a quantization target`)
+    }
+    return rawOffset
+}
+
+export const quantizeValueToAbbreviation = (rawOffset: number, quantizeTargetAbbrev: Abbreviation) => {
+    if (isAbbreviation(quantizeTargetAbbrev)) {
+        const quantizeTargetNum = tickCounts[abbrev[quantizeTargetAbbrev]]
+        const quantized = Math.round(rawOffset / quantizeTargetNum) * quantizeTargetNum
+        return quantized
+    }
+    console.error(`${quantizeTargetAbbrev} is not a valid abbreviation for a quantization target`)
+    return rawOffset
+}
+
+
+export const quantizeNote = (parsedTags: TagEntries, rawOffset: number = 0) => {
+    let thisNoteOffset = rawOffset
+    thisNoteOffset += calcFractionalDelay(parsedTags) // e.g half, 4th etc
+    thisNoteOffset += calcTickDelay(parsedTags)// e.g barDelay=1
+    thisNoteOffset = quantizeOffset(thisNoteOffset, parsedTags)
+    return thisNoteOffset
 }

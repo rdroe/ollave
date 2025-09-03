@@ -3,9 +3,11 @@ import { NoteByBar, tagsObjSchema } from "./schemas"
 import { mem } from "../core/mem"
 import { peprnIsNum } from "./helpers"
 import { mapSongToMidiTicks } from "../lib/mapSongToTicks"
-import { setLatestMap } from "../core/observables"
+import { isAbbreviation, setLatestMap } from "../core/observables"
 import { z } from "zod"
 import { isNoteNameWithOctave } from "./util/barsUtil"
+import { parseNoteTags } from "./util"
+import { quantizeValueToAbbreviation } from "./util/notesUtil"
 
 
 // as after a barDelay change, update the slider value, finding it in the dom via noteId
@@ -19,6 +21,14 @@ const syncSliderValue = (noteId: string) => {
         throw new Error('newVal is not a number')
     }
     (slider as HTMLInputElement).value = newVal.toString()
+}
+
+const setSliderValue = (noteId: string, value: number) => {
+    const slider = document.querySelector(`input.slider-${noteId}`)
+    if (!slider) {
+        throw new Error('slider not found')
+    }
+    (slider as HTMLInputElement).value = value.toString()
 }
 
 /**
@@ -48,10 +58,13 @@ export function addSlider (barName: string, noteId: string) {
     }
     slider.value = noteDelay.toString()
     slider.oninput = () => {
-        updateBarDelay(noteData, parseInt(slider.value), false)
+        const abbrev = noteData.tagsObj.quantize[0] 
+        const quantizedBarDelay =  isAbbreviation(abbrev) ? quantizeValueToAbbreviation(parseFloat(slider.value), abbrev) : parseInt(slider.value)
+        updateBarDelay(noteData, quantizedBarDelay, false)
+        setSliderValue(noteId, quantizedBarDelay)
     }
     controls1.appendChild(slider)
-}
+}//
 let updateBarDelayTimeout: null | ReturnType<typeof setTimeout> = null
 // on the data object, replace the barDelay index by array index value
 // also call the mapSongToMidiTicks function to update the midi map, but 

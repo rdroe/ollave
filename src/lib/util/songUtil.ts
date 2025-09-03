@@ -1,10 +1,11 @@
-import { initLatestOrNewSong, strjson } from '../helpers';
+import {  strjson } from '../helpers';
 import { mem } from '../../core/mem';
 import { tickCounts } from '../../core/observables/masterTicksObservable';
 import { lastTick } from './phaseUtil';
 import { mapSongToMidiTicks } from '../mapSongToTicks';
 import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables';
 import { setLatestMap } from '../../core/observables';
+import { initLatestOrNewSong } from '../fetch';
 
 const { songNames } = mem() //
 

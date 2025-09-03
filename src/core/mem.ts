@@ -24,7 +24,6 @@ export type Mem = {
     tracks: TrackRecord[],
     phases: {
         [phaseName: string]: PhaseRecord & {
-            "temp-id": number | null,
             name: string
         }
     }
@@ -64,3 +63,4 @@ const mem_: Mem = {
 
 (window as any).mem = mem_
 export const mem = () => (window as any).mem as Mem
+

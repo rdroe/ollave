@@ -33,7 +33,7 @@ export default {
             throw new Error('Phase should match phaseName:barIndex; instead got ' + barName)
         }
         if (!phaseExists(phaseName)) {
-            phaseCount(phaseName, parseInt(barIndex) + 1)
+            await phaseCount(phaseName, parseInt(barIndex) + 1)
         }
         if (!Array.isArray(tags) || !isStringArray(tags)) {
             throw new Error('Tags must be a string array')

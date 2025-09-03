@@ -1,5 +1,5 @@
 import { Module } from 'peprn/util'
-import {  songRecordSchema, trackRecordSchema } from '../../lib/schemas'
+import {  phaseRecordSchema, songRecordSchema, trackRecordSchema } from '../../lib/schemas'
 import { mem } from '../../core/mem'
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
@@ -16,21 +16,14 @@ import { setLatestMap } from '../../core/observables'
 export { init, setTrackReceptacleSelector } from '../../lib/util/songUtil'
 const { songNames } = mem()
 import { z } from 'zod'
-import { loadAndInitSongAndTracks } from '../../lib/fetch'
-import { initLoadedSong, initNewSong } from '../../lib/helpers'
+import { initLoadedSong, initNewSong, loadAndInitSongAndTracks } from '../../lib/fetch'
+
 
 export type SongRecord = ReturnType<typeof songRecordSchema.parse>
 
 export type TrackRecord = z.infer<typeof trackRecordSchema>
 
-export type PhaseRecord = {
-    id?: number,
-    "follows-ids": number[],
-    speed: number,
-    barSizeMultiplier: number,
-    scaleName: string | null,
-    scaleTonic: string | null
-}
+export type PhaseRecord = z.infer<typeof phaseRecordSchema>
 
 export default {
     fn: async () => {

@@ -5,6 +5,9 @@ import { mapSongToMidiTicks } from "../mapSongToTicks"
 import { mem } from "../../core/mem"
 import { StartEndTuple, phaseBeginningsAndEnds } from "../../startEndData"
 import { setLatestMap } from "../../core/observables"
+import { browser } from "user-tables"
+import { z } from "zod"
+import { PhaseRecord } from "../../commands/song/song"
 
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>
@@ -18,19 +21,23 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
 
     // if subject exists, add follows-ids.
     if (phases[subject]) {
-        phases[subject]["follows-ids"] = phases[subject]["follows-ids"].concat(objects.map((obj) => phases[obj].id ?? phases[obj]["temp-id"]))
+        phases[subject]["follows-ids"] = phases[subject]["follows-ids"].concat(objects.map((obj) => phases[obj].id ?? phases[obj].id))
 
         // if subject does not exist, create it with a default note block (1 empty bar) and the specified  follows-ids.
     } else {
-        phases[subject] = {
-            id: null,
-            "temp-id": null,
+        const phaseData: Omit<PhaseRecord, "id"> = {
             "follows-ids": objects.map((obj) => phases[obj].id),
             barSizeMultiplier: null,
             speed: null,
             scaleName: null,
             scaleTonic: null,
             name: subject
+        }
+        // create the phase in the db to get the id
+        const phaseId = (await browser.userTables.add('phase', { data: phaseData }))
+        phases[subject] = {
+            ...phaseData,
+            id: z.number().parse(phaseId)
         }
     }
     setLatestMap(mapSongToMidiTicks())
@@ -39,7 +46,7 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
 
 const getPhaseId = (phaseName: string) => {
     const phase = mem().phases[phaseName]
-    return phase.id || phase['temp-id']
+    return phase.id
 }
 
 export async function phaseUnfollows(subject: string, objects?: string[]) {
@@ -124,7 +131,7 @@ export const getFollowingPhases = (phaseName: string) => {
     const followsPhases = Object.entries(mem().phases).filter((
         [,
             { "follows-ids": followsIds }
-        ]) => phase.id !== null && followsIds.includes(phase.id) || phase["temp-id"] !== null && followsIds.includes(phase["temp-id"]))
+        ]) => phase.id !== null && followsIds.includes(phase.id) || phase.id !== null && followsIds.includes(phase["id"]))
 
     return followsPhases
 }
@@ -138,9 +145,7 @@ export const phaseExists = (phase: string) => {
 export async function phaseCount(phase: string, size: number, skipCopy: boolean = false, rawTrackId: number | null = null) {
     const { phases, notesByBar } = mem()
     if (!phases[phase]) {
-        phases[phase] = {
-            id: null,
-            "temp-id": randomInt(0, 900000),
+        const phaseData: Omit<PhaseRecord, "id"> = {
             "follows-ids": [],
             barSizeMultiplier: null,
             speed: null,
@@ -148,11 +153,16 @@ export async function phaseCount(phase: string, size: number, skipCopy: boolean 
             scaleName: null,
             name: phase
         }
+        const phaseId = (await browser.userTables.add('phase', { data: phaseData })) 
+        phases[phase] = {
+            ...phaseData,
+            id: z.number().parse(phaseId)
+        }
         const trackId = rawTrackId ? rawTrackId : mem().tracks[0].id 
         if (typeof trackId === 'number') {
             const track = mem().tracks.find((track) => track.id === trackId)
             if (track) {
-                track["phase-ids"].push(phases[phase]["temp-id"])
+                track["phase-ids"].push(phases[phase].id)
                 track["phase-names"].push(phase)
             } else {
                 throw new Error(`Track ${trackId} not found`)
