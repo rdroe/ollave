@@ -1,0 +1,400 @@
+{
+  "cli.ts": [
+    "commands/addNote/addNote.ts",
+    "commands/bar/bar.ts",
+    "commands/bars/bars.ts",
+    "commands/chord/chord.ts",
+    "commands/debug/debug.ts",
+    "commands/index.ts",
+    "commands/nextChord/nextChord.ts",
+    "commands/notes/notes.ts",
+    "commands/phase/phase.ts",
+    "commands/play/play.ts",
+    "commands/song/list.ts",
+    "commands/song/song.ts",
+    "commands/test/testTagSubscribe.ts",
+    "lib/helpers.ts",
+    "lib/subcommands.ts"
+  ],
+  "commands/addChord/addChord.ts": [
+    "lib/addChord.ts",
+    "lib/helpers.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/phaseUtil.ts"
+  ],
+  "commands/addNote/addNote.ts": [
+    "core/observables/index.ts",
+    "lib/addNote.ts",
+    "lib/helpers.ts",
+    "lib/index.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "commands/bar/bar.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/masterTicksObservable.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/util/barsUtil.ts"
+  ],
+  "commands/bars/bars.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/masterTicksObservable.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/notesUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "commands/chord/chord.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "lib/graphh.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/notesUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "commands/chords/chords.ts": [],
+  "commands/debug/debug.ts": [
+    "core/mem.ts"
+  ],
+  "commands/index.ts": [
+    "commands/addChord/addChord.ts",
+    "commands/addNote/addNote.ts",
+    "commands/bar/bar.ts",
+    "commands/bars/bars.ts",
+    "commands/chord/chord.ts",
+    "commands/chords/chords.ts",
+    "commands/debug/debug.ts",
+    "commands/nextChord/nextChord.ts",
+    "commands/notes/notes.ts",
+    "commands/phase/phase.ts",
+    "commands/play/play.ts",
+    "commands/song/list.ts",
+    "commands/song/song.ts",
+    "commands/tempo/tempo.ts"
+  ],
+  "commands/nextChord/nextChord.ts": [
+    "lib/nextChord.ts",
+    "lib/romanize.ts",
+    "lib/romans.ts"
+  ],
+  "commands/notes/notes.ts": [
+    "core/observables/index.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/util/notesUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "commands/phase/phase.ts": [
+    "core/mem.ts",
+    "lib/helpers.ts",
+    "lib/util/phaseUtil.ts"
+  ],
+  "commands/play/play.ts": [],
+  "commands/song/list.ts": [
+    "lib/fetch.ts"
+  ],
+  "commands/song/song.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/masterTicksObservable.ts",
+    "core/observables/songObservables.ts",
+    "lib/download.ts",
+    "lib/fetch.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/songUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "commands/tempo/tempo.ts": [
+    "core/mem.ts",
+    "core/observables/masterTicksObservable.ts",
+    "lib/addTempoSlider.ts"
+  ],
+  "commands/test/testTagSubscribe.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "lib/index.ts",
+    "subscribers/subscribeToNotesByTag.ts"
+  ],
+  "core/index.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/songObservables.ts",
+    "core/subjects/index.ts"
+  ],
+  "core/mem.ts": [
+    "commands/song/song.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts"
+  ],
+  "core/observables/compilationObservable.ts": [
+    "core/mem.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts"
+  ],
+  "core/observables/index.ts": [
+    "core/observables/compilationObservable.ts",
+    "core/observables/masterTicksObservable.ts"
+  ],
+  "core/observables/masterTicksObservable.ts": [
+    "lib/mapSongToTicks.ts"
+  ],
+  "core/observables/songObservables.ts": [
+    "core/mem.ts",
+    "core/observables/masterTicksObservable.ts",
+    "core/subjects/masterTicksSubject.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/music.ts",
+    "lib/util/phaseUtil.ts"
+  ],
+  "core/subjects/compilationSubject.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts"
+  ],
+  "core/subjects/index.ts": [
+    "core/subjects/compilationSubject.ts",
+    "core/subjects/masterTicksSubject.ts"
+  ],
+  "core/subjects/masterTicksSubject.ts": [
+    "core/observables/masterTicksObservable.ts"
+  ],
+  "lib/addChord.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/masterTicksObservable.ts",
+    "core/subjects/compilationSubject.ts",
+    "lib/addNote.ts",
+    "lib/addSlider.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/addNote.ts": [
+    "commands/phase/phase.ts",
+    "core/mem.ts",
+    "lib/addSlider.ts",
+    "lib/helpers.ts",
+    "lib/schemas.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts",
+    "subscribers/subscribeToNoteById.ts"
+  ],
+  "lib/addSlider.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/masterTicksObservable.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/index.ts",
+    "lib/util/notesUtil.ts"
+  ],
+  "lib/addTempoSlider.ts": [
+    "core/mem.ts",
+    "core/observables/masterTicksObservable.ts"
+  ],
+  "lib/deleteNoteById.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts"
+  ],
+  "lib/download.ts": [
+    "core/observables/masterTicksObservable.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/midi.ts",
+    "lib/music.ts"
+  ],
+  "lib/fetch.ts": [
+    "commands/song/song.ts",
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/songObservables.ts",
+    "lib/addSlider.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts",
+    "lib/util/songUtil.ts"
+  ],
+  "lib/graphh.ts": [],
+  "lib/helpers.ts": [
+    "commands/song/song.ts",
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/songObservables.ts",
+    "lib/addSlider.ts",
+    "lib/fetch.ts",
+    "lib/graphh.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/schemas.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/songUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/index.ts": [
+    "cli.ts",
+    "lib/addChord.ts",
+    "lib/addNote.ts",
+    "lib/addSlider.ts",
+    "lib/addTempoSlider.ts",
+    "lib/deleteNoteById.ts",
+    "lib/graphh.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/midi.ts",
+    "lib/music.ts",
+    "lib/nextChord.ts",
+    "lib/romanize.ts",
+    "lib/schemas.ts",
+    "lib/subcommands.ts",
+    "lib/util/index.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts",
+    "lib/words.js"
+  ],
+  "lib/mapSongToTicks.ts": [
+    "core/mem.ts",
+    "core/observables/masterTicksObservable.ts",
+    "lib/util/notesUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/midi.ts": [
+    "lib/music.ts"
+  ],
+  "lib/music.ts": [],
+  "lib/nextChord.ts": [
+    "lib/helpers.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/romanize.ts": [
+    "lib/helpers.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/romans.ts": [
+    "lib/helpers.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/schemas.ts": [
+    "lib/helpers.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/subcommands.ts": [
+    "lib/graphh.ts"
+  ],
+  "lib/util/barsUtil.ts": [
+    "lib/graphh.ts",
+    "lib/helpers.ts",
+    "lib/schemas.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/util/index.ts": [
+    "lib/util/barsUtil.ts",
+    "lib/util/notesUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/util/notesUtil.ts": [
+    "core/mem.ts",
+    "core/observables/masterTicksObservable.ts",
+    "lib/graphh.ts",
+    "lib/helpers.ts",
+    "lib/schemas.ts",
+    "lib/util/barsUtil.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "lib/util/phaseUtil.ts": [
+    "commands/song/song.ts",
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "lib/graphh.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "startEndData.ts"
+  ],
+  "lib/util/songUtil.ts": [
+    "core/mem.ts",
+    "core/observables/index.ts",
+    "core/observables/masterTicksObservable.ts",
+    "core/observables/songObservables.ts",
+    "lib/fetch.ts",
+    "lib/helpers.ts",
+    "lib/mapSongToTicks.ts",
+    "lib/util/phaseUtil.ts",
+    "lib/words.js"
+  ],
+  "lib/util/tagsUtil.ts": [
+    "core/observables/masterTicksObservable.ts",
+    "lib/helpers.ts",
+    "lib/schemas.ts",
+    "lib/util/barsUtil.ts"
+  ],
+  "lib/words.js": [],
+  "myapp.ts": [
+    "cli.ts",
+    "lib/music.ts"
+  ],
+  "startEndData.ts": [
+    "core/mem.ts",
+    "core/observables/masterTicksObservable.ts",
+    "lib/util/phaseUtil.ts"
+  ],
+  "subscribers/index.ts": [
+    "subscribers/subscribeToNoteById.ts",
+    "subscribers/subscribeToNoteIdsByBar.ts",
+    "subscribers/subscribeToNotesByTag.ts",
+    "subscribers/subscribeToPhaseBarIds.ts"
+  ],
+  "subscribers/subscribeToNoteById.ts": [
+    "core/mem.ts",
+    "core/subjects/compilationSubject.ts",
+    "lib/addSlider.ts",
+    "lib/deleteNoteById.ts",
+    "lib/index.ts",
+    "lib/schemas.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "subscribers/subscribeToNoteIdsByBar.ts": [
+    "core/mem.ts",
+    "core/subjects/compilationSubject.ts"
+  ],
+  "subscribers/subscribeToNotesByTag.ts": [
+    "core/mem.ts",
+    "core/subjects/compilationSubject.ts",
+    "lib/index.ts",
+    "lib/schemas.ts",
+    "lib/util/tagsUtil.ts"
+  ],
+  "subscribers/subscribeToPhaseBarIds.ts": [
+    "core/mem.ts",
+    "core/subjects/compilationSubject.ts",
+    "lib/index.ts",
+    "lib/schemas.ts"
+  ]
+}

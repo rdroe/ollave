@@ -1,47 +1,7 @@
-import { Observable, Subscription } from "rxjs"
-import { PhaseRecord, SongRecord, TrackRecord } from "../commands/song/song"
-import { BarTagPercent, MidiMap } from "../lib/mapSongToTicks"
-type Unsubscribe = ReturnType<Observable<any>["subscribe"]>
-import { NoteByBar } from "../lib/schemas"
+import { Mem } from "./types"
 
-export type Mem = {
-    subscriptions: {
-        [key: string]: Subscription
-    }
-    functions: {
-        [songName: string]:{ [fnName: string]: (tick: number, rawTick: number, snapShot: Mem, songName: string) => void}
-    },  
-    observables: {
-        [songName: string]: {
-            [fnName: string]: Unsubscribe
-        }
-    }
-    songPauses: {
-        [key: string]: BarTagPercent
-    }
-    songNames: string[]
-    song: Exclude<SongRecord, "id"> & { id: number } | null,
-    tracks: TrackRecord[],
-    phases: {
-        [phaseName: string]: PhaseRecord & {
-            name: string
-        }
-    }
-    notesByBar: {
-        [barTag: string]: NoteByBar[]
-    },
-    latestMap: MidiMap
-    playedMap: MidiMap
-    graphs: { [userScaleWithTonic: string]: any[] }
-    played: {
-        songTick: number
-        note: string
-        tags: string[]
-        time: number
-    }[],
-    adjustedCursor: number,
-    doLog: boolean
-}
+// Re-export Mem type for backward compatibility
+export type { Mem }
 
 const mem_: Mem = {
     subscriptions: {},

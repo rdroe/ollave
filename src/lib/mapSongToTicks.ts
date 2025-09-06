@@ -1,8 +1,9 @@
-import { BAR, tickCounts } from '../core/observables/masterTicksObservable'
+import { BAR, tickCounts } from './util/constantsUtil'
 import { parseNoteTags} from './util/tagsUtil'
-import { getAllPhaseBarNotes, getFollowingPhases } from './util/phaseUtil'
+import { getAllPhaseBarNotes } from './util/phaseNotesUtil'
+import { getFollowingPhases } from './util/phaseRelationsUtil'
 import { mem, Mem } from '../core/mem'
-import { quantizeNote } from './util/notesUtil';
+import { quantizeNote } from './util/quantizeUtil';
 
 const startSpeedRef_ = {
      START_SPEED: 1,

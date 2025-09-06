@@ -17,13 +17,10 @@ export { init, setTrackReceptacleSelector } from '../../lib/util/songUtil'
 const { songNames } = mem()
 import { z } from 'zod'
 import { initLoadedSong, initNewSong, loadAndInitSongAndTracks } from '../../lib/fetch'
+import { SongRecord, TrackRecord, PhaseRecord } from '../../lib/types'
 
-
-export type SongRecord = ReturnType<typeof songRecordSchema.parse>
-
-export type TrackRecord = z.infer<typeof trackRecordSchema>
-
-export type PhaseRecord = z.infer<typeof phaseRecordSchema>
+// Re-export types for backward compatibility
+export type { SongRecord, TrackRecord, PhaseRecord }
 
 export default {
     fn: async () => {

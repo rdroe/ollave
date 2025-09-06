@@ -1,8 +1,9 @@
 
-import { parseNoteTags, TagData, tagDataSchema } from "./util/tagsUtil"
+import { TagData, tagDataSchema } from "./schemaTypes"
+import { parseNoteTags } from "./util/noteParsingUtil"
 import { z } from "zod"
-import { isNoteNameWithOctave } from "./util/barsUtil"
-import { randId } from "./helpers"
+import { isNoteNameWithOctave } from "./util/noteValidationUtil"
+import { randId } from "./util/common"
 
 export type NoteByBarInner = {
     note: string;

@@ -1,7 +1,7 @@
-import {  strjson } from '../helpers';
+import { strjson } from './common';
 import { mem } from '../../core/mem';
 import { tickCounts } from '../../core/observables/masterTicksObservable';
-import { lastTick } from './phaseUtil';
+import { lastTick } from './startEndUtil';
 import { mapSongToMidiTicks } from '../mapSongToTicks';
 import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables';
 import { setLatestMap } from '../../core/observables';
@@ -15,11 +15,7 @@ const namesPromise = new Promise((res) => {
     namesResolver = res
 });
 
-export const getSongNames = () => {
-    return namesPromise.then(() => {
-        return songNames
-    })
-}
+// getSongNames moved to songNamesUtil.ts
 
 (() => {
     console.log('importing words')

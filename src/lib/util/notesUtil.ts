@@ -1,18 +1,13 @@
 import { ParsedCli } from 'peprn/util'
-import {
-    Abbreviation,
-    abbrev,
-    isAbbreviation,
-    isFraction,
-    tickCounts
-} from '../../core/observables/masterTicksObservable'
+import { Abbreviation, abbrev, isAbbreviation, isAbbreviationCsv, parseAbbreviationCsv, sumAbbreviationCsv, quantizeValueToAbbreviation } from './abbreviationUtil'
+import { isFraction, tickCounts } from './tickUtil'
 import { isCsvArg, parseCsvArg } from './barsUtil'
 import {  noteByBarSchema } from '../schemas'
 import { mem } from '../../core/mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from './phaseUtil'
 import {  calcFractionalDelay, calcTickDelay, parseNoteTags, TagData, TagEntries } from './tagsUtil'
-import { strjson } from '../helpers'
+import { strjson } from './common'
 import { zeroIndexedArr } from '../graphh'
 
 const isNoteCnt = (str: string | number) => {
@@ -90,51 +85,9 @@ export const tuplize = (array: (string | number)[]) => {
     return allExceptPossiblyLast
 }
 
-export const isAbbreviationCsv = (csvOrSingleFract: any) => {
-    if (typeof csvOrSingleFract !== 'string') {
-        return false
-    }
-    if (isCsvArg(csvOrSingleFract)) {
-        return parseCsvArg(csvOrSingleFract).find((x) => !isAbbreviation(x)) === undefined
-    } else if (isAbbreviation(csvOrSingleFract)) {
-        return true
-    }
-    return false
-}
-export const parseAbbreviationCsv = (csvOrSingleFract: string) => {
-    let parsedCsvArg: Abbreviation[] | undefined
-    if (csvOrSingleFract === null) {
-        parsedCsvArg = []
-    } else if (isCsvArg(csvOrSingleFract)) {
-        const parsed = parseCsvArg(csvOrSingleFract).filter((elem) => {
-            // clean up for empty caused by e.g, "16th," (trailing comma)
-            if (typeof elem === 'string') return elem.length > 0
-            return true
-        })
-        const filtered: Abbreviation[] = parsed.filter((elem) => isAbbreviation(elem)) as Abbreviation[]
-
-        if (parsed.length !== filtered.length) {
-            throw new Error(`Found a non-abbreviation where all elements should have ${strjson({ parsed, filtered })}`)
-        }
-        parsedCsvArg = filtered
-    } else if (isAbbreviation(csvOrSingleFract)) {
-        parsedCsvArg = [csvOrSingleFract]
-    } else {
-        throw new Error(`Should be a csv arg of fractions or single fraction: ${csvOrSingleFract}`)
-    }
-    return parsedCsvArg
-}
-
-export const sumAbbreviationCsv = (csv: string) => {
-    const arr = parseAbbreviationCsv(csv)
-    return arr.reduce((accum: number, elem: (typeof arr)[number]) => {
-        if (!isAbbreviation(elem)) {
-            throw new Error(`Non-abbreviation found error`)
-        }
-        const fract = abbrev[elem]
-        return accum + tickCounts[fract]
-    }, 0)
-}
+// Re-export functions from their new locations
+export { isAbbreviationCsv, parseAbbreviationCsv, sumAbbreviationCsv, quantizeValueToAbbreviation } from "./abbreviationUtil"
+export { quantizeNote } from "./quantizeUtil"
 
 export const parseDelayMatrixRow = (pattern: (string | number)[]): {
     [idx: number]: (keyof typeof tickCounts)[]
@@ -277,21 +230,7 @@ const quantizeOffset = (rawOffset: number, parsedTags: TagEntries) => {
     return rawOffset
 }
 
-export const quantizeValueToAbbreviation = (rawOffset: number, quantizeTargetAbbrev: Abbreviation) => {
-    if (isAbbreviation(quantizeTargetAbbrev)) {
-        const quantizeTargetNum = tickCounts[abbrev[quantizeTargetAbbrev]]
-        const quantized = Math.round(rawOffset / quantizeTargetNum) * quantizeTargetNum
-        return quantized
-    }
-    console.error(`${quantizeTargetAbbrev} is not a valid abbreviation for a quantization target`)
-    return rawOffset
-}
-
-
-export const quantizeNote = (parsedTags: TagEntries, rawOffset: number = 0) => {
-    let thisNoteOffset = rawOffset
-    thisNoteOffset += calcFractionalDelay(parsedTags) // e.g half, 4th etc
-    thisNoteOffset += calcTickDelay(parsedTags)// e.g barDelay=1
-    thisNoteOffset = quantizeOffset(thisNoteOffset, parsedTags)
-    return thisNoteOffset
-}
+// Additional re-exports
+export { getAllPhaseBarNotes } from "./phaseNotesUtil"
+export { parseNoteTags, TagData, TagEntries } from "./noteParsingUtil"
+export { isCsvArg, parseCsvArg } from "./common"

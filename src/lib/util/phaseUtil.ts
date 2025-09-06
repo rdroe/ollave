@@ -1,13 +1,16 @@
 
 import { ProgressionOptions, minor } from "../graphh"
-import { randId, randomInt, strjson } from "../helpers"
+import { randomInt } from "../helpers"
+import { strjson } from "./common"
+import { randId } from "./common"
 import { mapSongToMidiTicks } from "../mapSongToTicks"
 import { mem } from "../../core/mem"
-import { StartEndTuple, phaseBeginningsAndEnds } from "../../startEndData"
+import { startEndData, lastTick } from "./startEndUtil"
 import { setLatestMap } from "../../core/observables"
 import { browser } from "user-tables"
 import { z } from "zod"
-import { PhaseRecord } from "../../commands/song/song"
+import { PhaseRecord } from "./phaseTypes"
+import { getAllPhaseBars, getAllPhaseBarNotes, sortByNumberAfterColon } from "./phaseNotesUtil"
 
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>
@@ -77,64 +80,11 @@ export async function phaseUnfollows(subject: string, objects?: string[]) {
 
 }
 
-export const sortByNumberAfterColon = (a: string, b: string) => {
-    const aNumber = parseInt(a.split(':')[1])
-    const bNumber = parseInt(b.split(':')[1])
-    return aNumber - bNumber
-}
-
-export const startEndData = (phaseName: string): StartEndTuple[] => {
-    const startEndData = phaseBeginningsAndEnds()
-    return startEndData[phaseName] || []
-}
-export const lookUpGraph = (userTonic: string, userScale: string): {
-    [chordName: string]: ProgressionOptions
-} => {
-    const place = mem().graphs[`${userTonic} ${userScale}`]
-    if (place) {
-        if (place[0]) return place[0]
-    }
-    return null
-}
-
-export const lastTick = () => {
-    // this is called very frequently!
-    const songStartEndData = phaseBeginningsAndEnds()
-    const lastTick = Object.values(songStartEndData).reduce((acc, curr) => {
-        const lastPhaseTick = curr[curr.length - 1][1]
-        return Math.max(acc, lastPhaseTick)
-    }, 0)
-    return lastTick
-}
-
-
-export const getAllPhaseBars = (phase: string) => {
-
-    if (typeof phase !== 'string') { throw new Error(`String arg is required in getAllPhaseBars; instead ${strjson(phase)}`) }
-    const nbb = mem().notesByBar
-    const lookedUp = Object.keys(nbb).filter((barTag) => barTag.startsWith(`${phase}:`)).sort(sortByNumberAfterColon)
-
-    return lookedUp
-}
-
-export const getAllPhaseBarNotes = (phase: string) => {
-    const barNames = getAllPhaseBars(phase)
-    const nbb = mem().notesByBar
-
-    const myNoteGroups = barNames.map((barName) => nbb[barName])
-
-    return myNoteGroups
-}
-
-export const getFollowingPhases = (phaseName: string) => {
-    const phase = mem().phases[phaseName]
-    const followsPhases = Object.entries(mem().phases).filter((
-        [,
-            { "follows-ids": followsIds }
-        ]) => phase.id !== null && followsIds.includes(phase.id) || phase.id !== null && followsIds.includes(phase["id"]))
-
-    return followsPhases
-}
+// Re-export functions from their new locations
+export { sortByNumberAfterColon, getAllPhaseBars, getAllPhaseBarNotes } from "./phaseNotesUtil"
+export { startEndData, lastTick } from "./startEndUtil"
+export { lookUpGraph } from "./graphUtil"
+export { getFollowingPhases } from "./phaseRelationsUtil"
 
 export const phaseExists = (phase: string) => {
     const { phases } = mem()

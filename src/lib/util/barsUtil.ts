@@ -1,9 +1,11 @@
-import { isString, peprnIsNum, randId } from '../helpers'
-import { lookUpGraph } from './phaseUtil'
+import { isString, peprnIsNum, isCsvArg, parseCsvArg } from './common'
+import { randId } from './common'
+import { lookUpGraph } from './graphUtil'
+import { isNoteNameWithoutOctave, isNoteNameWithOctave } from './noteValidationUtil'
 import { Chord, ChordType, Note } from 'tonal'
 import { chordNameWithNotes, DynamicChordNames, noteNames } from '../graphh'
 import { makeNoteByBar, NoteByBar } from '../schemas'
-import { parseNoteTags } from './tagsUtil'
+import { parseNoteTags } from './noteParsingUtil'
 const allChordTypes = ChordType.all()
 export const isRestArg = (arg: any) => {
     return isString(arg)
@@ -15,24 +17,8 @@ export const isRestArg = (arg: any) => {
         )
 }
 
-export const isNoteNameWithoutOctave = (nm: any): nm is string => {
-    if (typeof nm !== 'string' || nm.length === 0) return false
-    if (!isString(nm)) return false 
-    if (peprnIsNum(nm[nm.length - 1])) return false
-    const allButLastWithUpperFirst = nm.charAt(0).toUpperCase() + nm.slice(1)
-    const result = noteNames.includes(allButLastWithUpperFirst)
-    if (!result) return false
-    return true
-}
-
-export const isNoteNameWithOctave = (nm: any): nm is string => {
-    if (!isString(nm)) return false 
-    const allButLastChar = nm.slice(0, -1)
-    if (!isNoteNameWithoutOctave(allButLastChar)) return false
-    const lastChar = nm[nm.length - 1]
-    if (!peprnIsNum(lastChar)) return false
-    return !!Note.get(nm)?.pc
-}
+// Re-export functions from their new locations
+export { isNoteNameWithoutOctave, isNoteNameWithOctave } from "./noteValidationUtil"
 export const isStringArray = (arr: any[]): arr is string[] => {
     return arr.every((arg) => isString(arg))
 }
@@ -40,21 +26,8 @@ const isNoteNameArray = (arr: any[]): arr is string[] => {
     return arr.every((arg) => isNoteNameWithOctave(arg) || isRestArg(arg))
 }
 
-export const isCsvArg = (str: string): str is string => {
-    return str.includes(',')
-}
-
-export const parseCsvArg = (str: string): (string | number | boolean | null)[] => {
-    if (!isCsvArg(str)) return [str]
-
-    return str.split(',').map((splitOff) => {
-        if (splitOff === 'null') return null
-        if (peprnIsNum(splitOff)) return parseFloat(splitOff)
-        if (splitOff === 'true') return true
-        if (splitOff === 'false') return false
-        return splitOff
-    })
-}
+// Re-export functions from their new locations
+export { isCsvArg, parseCsvArg } from "./common"
 
 const hasOctaveFilter = (noteStrs: string[]) => {
     return noteStrs.map((str) => {

@@ -1,7 +1,7 @@
 import { Observable } from "rxjs";
 import {  MidiMap } from "../../lib/mapSongToTicks";
 import { mem } from "../mem";
-import { compileNotesByBarToTracks, compilePhasesToTracks, saveSongAndTracks } from "../../lib/helpers";
+import { compileNotesByBarToTracks, compilePhasesToTracks, saveSongAndTracks } from "../../lib/util/schemaUtil";
 
 (window as any).compileEventTarget = new window.EventTarget();
 

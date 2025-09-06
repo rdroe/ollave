@@ -1,10 +1,10 @@
 
 import { browser } from "user-tables"
 import { phaseRecordSchema, songRecordSchema, trackRecordSchema } from "./schemas"
-import { compileTracksToNotesByBar } from "./helpers"
+import { compileTracksToNotesByBar } from "./util/schemaUtil"
 import { mem } from "../core/mem"
-import { PhaseRecord, SongRecord, TrackRecord } from "../commands/song/song"
-import { getSongNames } from "./util/songUtil"
+import { PhaseRecord, SongRecord, TrackRecord } from "./types"
+import { getSongNames } from "./util/songNamesUtil"
 import { deleteCueObservable, startCueObservable, stopCueObservable } from "../core/observables/songObservables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 import { setLatestMap } from "../core/observables"

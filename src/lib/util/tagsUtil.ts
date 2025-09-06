@@ -1,43 +1,20 @@
-import { isFraction, tickCounts } from "../../core/observables/masterTicksObservable"
-import { peprnIsNum, strjson } from "../helpers"
-import { isCsvArg, parseCsvArg } from "./barsUtil"
+import { isFraction } from "./tickUtil"
+import { strjson } from "./common"
+import { parseNoteTags } from "./noteParsingUtil"
+import { TagData, TagEntry, TagEntries } from "../schemaTypes"
 import { NoteByBar } from "../schemas"
 import { z } from 'zod'
+import { tickCounts } from "./constantsUtil"
 
-export type TagData = (number | string | boolean | null)[]
-
-export const tagDataSchema = z.array(z.string().or(z.number()).or(z.boolean()).or(z.null())) 
-export type TagEntry = [name: string, data: TagData]
-export type TagEntries = [name: string, data: TagData][]
+// Re-export functions from their new locations
+export { parseNoteTags, TagData, TagEntry, TagEntries } from "./noteParsingUtil"
+export { updateNoteTag } from "./tagUpdateUtil"
 /**
  * Input is eg ['x=1', 'y=2', 'z=3,4']
  * @param tags 
  * @returns 
  */
-export const parseNoteTags = (tags: string[]): TagEntries => {
-
-    const parsedTags = tags.reduce((accum, tag) => {
-        if (!tag.includes('=')) {
-            return [...accum, [tag, []] as [nm: string, data: TagData]]
-        }
-        const split = tag.split('=')
-        let tagDat: TagData = []
-
-        if (peprnIsNum(split[1])) {
-            tagDat = [parseFloat(split[1])]
-        } else if (isCsvArg(split[1])) {
-            tagDat = parseCsvArg(split[1])
-        } else {
-            tagDat = [split[1]]
-        }
-
-        return [...accum, [
-            split[0], tagDat
-        ]] as TagEntries
-    }, [] as TagEntries)
-
-    return parsedTags
-}
+// parseNoteTags moved to noteParsingUtil.ts to break circular dependency
 
 export const unparseTagEntries = (tes: TagEntries) => {
     return tes.map(
@@ -226,15 +203,7 @@ export const scale = function parseNoteScale(note: NoteByBar): [ltr: string, nam
 
 }
 
-export const updateNoteTag = (note: NoteByBar, tag: string, data: TagData) => {
-    const tagIdx = note.tags.findIndex(([k]) => k === tag)
-    const updated = `${tag}=${data.join(',')}`
-    if (tagIdx === -1) {
-        note.tags.push(updated)
-    } else {
-        note.tags[tagIdx] = `${tag}=${data.join(',')}`
-    }
-}
+// updateNoteTag moved to tagUpdateUtil.ts to break circular dependency
 
 export const tagEntriesCompare = (a: TagEntries, b: TagEntries) => {
     if (a.length !== b?.length) {

@@ -13,7 +13,7 @@ export * as mapSongToTicks from './mapSongToTicks'
 export * as mem from './schemas'
 export * as phaseUtil from './util/phaseUtil'
 
-export * as cli from '../cli'
+// Removed cli export to break circular dependency
 export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
 export * as romanize from './romanize'

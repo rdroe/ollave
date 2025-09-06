@@ -2,9 +2,9 @@ import { makeNoteByBar,  NoteByBar } from "./schemas"
 import { mem } from "../core/mem"
 import { calcFractionalDelay, getTagData, TagEntries, unparseTagEntries } from "./util/tagsUtil"
 
-import { randId } from "./helpers"
+import { randId } from "./util/common"
 import { addSlider } from "./addSlider"
-import { createNoteStoreById } from "../subscribers/subscribeToNoteById"
+import { createNoteStoreById } from "./util/noteStoreUtil"
 import { parseColonTag } from "../commands/phase/phase"
 import { phaseCount } from "./util/phaseUtil"
 
