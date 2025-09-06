@@ -16,7 +16,9 @@ export * as phaseUtil from './util/phaseUtil'
 export * as cli from '../cli'
 export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
+export * as romanize from './romanize'
 export * as deleteNoteById from './deleteNoteById'
+
 
 // Individual function exports for direct access
 // mem-db exports

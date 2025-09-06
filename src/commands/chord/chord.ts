@@ -240,6 +240,7 @@ song start
 
                         const [userLetter = "", userScale = ""] = positionalNonCommands
                         const lookedUp = lookUpGraph(userLetter, userScale)
+
                         if (lookedUp) return lookedUp
                         const names = Object.keys(minor)
                         const untranslatable = names.map((romanName) => {
@@ -287,6 +288,7 @@ song start
                         const idx = userLetter && userScale ? `${userLetter} ${userScale}` : Date.now()
                         mem().graphs[idx] = mem().graphs[idx] || [] as any[]
                         mem().graphs[idx].push(formatted)
+                        console.log('lookedUp', JSON.parse(JSON.stringify(formatted, null, 2)))
                         return {
                             formatted
 

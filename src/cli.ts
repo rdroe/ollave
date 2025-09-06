@@ -10,14 +10,13 @@ import { chord } from './commands/chord/chord'
 import { strjson } from './lib/helpers'
 import { PEPRN_MULTILINE, PEPRN_MULTILINE_INDEX, PEPRN_MULTILINE_TOTAL } from 'peprn/util'
 
-import { addChord } from './commands/index'
+import { addChord, nextChord } from './commands/index'
 import addNote from './commands/addNote/addNote'
 import { romanChordNameToRealModule } from './lib/subcommands'
 import { tempo } from './commands'
-import { nextChord } from './lib/nextChord'
-import { z } from 'zod'
 import { createTestNotes, subscribeToTags, updateNoteTagValue } from './commands/test/testTagSubscribe'
 import { deleteAllSongsAndTracks, latestSong, listSongs, listTracks } from './commands/song/list'
+import { romanize, romans } from './commands/nextChord/nextChord'
 
 
 
@@ -35,26 +34,13 @@ export const app: Parameters<typeof createApp>[0] = {
         listTracks,
         latestSong,
         deleteAllSongsAndTracks,
-
-
+        romans,
         tempo,
         addNote,
         addChord,
         romanChordNameToReal: romanChordNameToRealModule,
-        nextChord: {
-            fn: async ({positionalNonCommands}) => {
-                const [chordCsvArg, userTonic, userScale] = z.tuple([
-                    z.string(),
-                    z.string(),
-                    z.string(),
-                ]).parse(positionalNonCommands)
-            
-                const next = nextChord(
-                    chordCsvArg, userTonic, userScale
-                )
-                return next
-            }
-        },
+        nextChord,
+        romanize
     },
     catch: (e) => {
         console.error('error', e)

@@ -12,8 +12,23 @@ import { makeCompilationSubscribe } from "../core/subjects/compilationSubject"
 import { setLatestMap } from "../core/observables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
+const DEFAULT_ARP_ZERO = DEFAULT_ARP 
+const DEFAULT_ARP_ONE = 'quarter'.repeat(7).split('')
+const DEFAULT_ARP_TWO = 'half'.repeat(7).split('') 
+const DEFAULT_ARP_THREE = 'half,quarter'.repeat(7).split('')
+export const DEFAULT_CHORD_PLACEMENTS = {
+    0: DEFAULT_ARP_ZERO,
+    1: DEFAULT_ARP_ONE,
+    2: DEFAULT_ARP_TWO,
+    3: DEFAULT_ARP_THREE,
+}
 
-export function addChord(chordCsvArg: string, phaseName: string, barIndex: number, arp: string[], tags: string[], userScaleTonic: string = 'A', userScaleName: string = 'minor', doAddSlider: boolean = false): {
+
+export function addChord(
+    chordCsvArg: string, 
+    phaseName: string, 
+    barIndex: number,
+    arp: string[] | 0 | 1 | 2 | 3, tags: string[], userScaleTonic: string = 'A', userScaleName: string = 'minor', doAddSlider: boolean = false): {
     noteIds: string[],
     barName: string,
     commonTags: string[],
@@ -72,7 +87,8 @@ export function addChord(chordCsvArg: string, phaseName: string, barIndex: numbe
     }
 
     notes.forEach(async(note, idx) => {
-        const delayTagsObj = (arp[idx] ?? DEFAULT_ARP[idx]).split(',').reduce((acc, delay) => {
+        const arpArg = typeof arp === 'number' ? DEFAULT_CHORD_PLACEMENTS[arp] : arp[idx]
+        const delayTagsObj = (arpArg[idx] ?? DEFAULT_ARP[idx]).split(',').reduce((acc, delay) => {
             if (isAbbreviation(delay)) {
                 const x = delay
                 acc[abbrev[delay]] = acc[abbrev[delay]] ? acc[abbrev[delay]] + 1 : 1

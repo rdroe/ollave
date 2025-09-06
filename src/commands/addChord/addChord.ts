@@ -3,8 +3,12 @@ import { Module } from "peprn/util"
 import { isChordCsvArg } from "../../lib/util/barsUtil"
 import { peprnIsNum } from "../../lib/helpers"
 import { phaseCount, phaseExists } from "../../lib/util/phaseUtil"
-import { addChord, DEFAULT_ARP } from "../../lib/addChord"
+import { addChord, DEFAULT_ARP, DEFAULT_CHORD_PLACEMENTS } from "../../lib/addChord"
 import { z } from "zod"
+
+const isChordPlacement = (arp: unknown): arp is 0 | 1 | 2 | 3 => {
+    return typeof arp === 'number' && [0, 1, 2, 3].includes(arp)
+}
 export default {
     help: {
         description: "Add a chord to a phase and bar",
@@ -38,14 +42,15 @@ export default {
         if (!Array.isArray(tags) || !isStringArray(tags)) {
             throw new Error('Tags must be a string array')
         }
-        if (!Array.isArray(arp) || !isStringArray(arp)) {
-            throw new Error('Arp must be a string array')
+        const finalArp = isChordPlacement(arp) ? DEFAULT_CHORD_PLACEMENTS[arp] : arp
+        if (!Array.isArray(finalArp) || !isStringArray(finalArp)) {
+            throw new Error('Arp must be a string array or 1,2, or 3')
         }
         if (!['string', 'undefined'].includes(typeof scaleTonic) || !['string', 'undefined'].includes(typeof scaleName)) {
             throw new Error('Scale tonic and scale name must be strings')
         }
 
-        const retVar = addChord(chordName, phaseName, parseInt(barIndex), arp, tags, z.string().or(z.undefined()).parse(scaleTonic), z.string().or(z.undefined()).parse(scaleName), z.boolean().or(z.undefined()).parse(addSlider) ?? false)
+        const retVar = addChord(chordName, phaseName, parseInt(barIndex), finalArp, tags, z.string().or(z.undefined()).parse(scaleTonic), z.string().or(z.undefined()).parse(scaleName), z.boolean().or(z.undefined()).parse(addSlider) ?? false)
 
         return retVar
     },
