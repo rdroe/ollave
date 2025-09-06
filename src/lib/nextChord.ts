@@ -26,7 +26,6 @@ export const nextChord = (chordCsvArgRaw: string, userTonicRaw: string, userScal
     }
 
     let graph = lookUpGraph(userTonic, userScale)
-    console.log('graph', JSON.parse(JSON.stringify(graph, null, 2)))
 
 
     if (!graph) {

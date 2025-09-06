@@ -108,7 +108,8 @@ export async function phaseCount(phase: string, size: number, skipCopy: boolean 
             scaleName: null,
             name: phase
         }
-        const phaseId = (await browser.userTables.add('phase', { data: phaseData })) 
+
+        const phaseId = (await browser.userTables.add('phase', { data: phaseData }))
         phases[phase] = {
             id: z.number().parse(phaseId),
             name: phase,
@@ -118,7 +119,7 @@ export async function phaseCount(phase: string, size: number, skipCopy: boolean 
             scaleName: 'C major',
             scaleTonic: 'C'
         }
-        const trackId = rawTrackId ? rawTrackId : mem().tracks[0].id 
+        const trackId = rawTrackId ? rawTrackId : mem()?.tracks?.[0]?.id
         if (typeof trackId === 'number') {
             const track = mem().tracks.find((track) => track.id === trackId)
             if (track) {
@@ -140,7 +141,7 @@ export async function phaseCount(phase: string, size: number, skipCopy: boolean 
         allBars = getAllPhaseBars(phase)
     }
     // if size is less than the number of bars, remove bars from the end.
-    // if size is more than the number of bars, add bars to the end (copy the existing pattern fully or partially until the size is reached)    
+    // if size is more than the number of bars, add bars to the end (copy the existing pattern fully or partially until the size is reached)
     // if size is the same as the number of bars, do nothing.
     if (allBars.length > size) {
         const barsToRemove = allBars.slice(size)

@@ -22,24 +22,28 @@ export type NoteByBar = Omit<NoteByBarInner, '_tags' | 'clone' > & {
 
 const requiredTags = ['noteId', 'barDelay']
 export const tagsObjSchema = z.array(z.string()).transform(
-    (tags) => Object.fromEntries((parseNoteTags(tags)))
+  (tags) => {
+
+    return Object.fromEntries((parseNoteTags(tags)))}
 )
 const tagsSchema = z.array(z.string()).refine((tags) => {
-    const tagNames = tags.map((tag) => tag.split('=')[0]) 
+    const tagNames = tags.map((tag) => tag.split('=')[0])
     return requiredTags.every((tag) => tagNames.includes(tag))
 }, {
     message: 'Tags must include both noteId and barDelay'
 })
 export const noteByBarSchema = z.object({
-    note: z.string().refine((str) => isNoteNameWithOctave(str) ?? false),
-    tags: tagsSchema,
-    tagsObj: z.record(
-       z.string(), 
-        /* tag data */ z.array(
-            z.string().or(z.number()).or(z.boolean()).or(z.null())
-        )
-    )
+  note: z.string().refine((str) => isNoteNameWithOctave(str) ?? false),
+  tags: tagsSchema,
+  tagsObj: z.record(
+     z.string(),
+      /* tag data */ z.array(
+          z.string().or(z.number()).or(z.boolean()).or(z.null())
+      )
+  )
 })
+
+
 export const cloneNoteByBar = (note: NoteByBar): NoteByBar => {
     return wrapWithGetters(makeNoteByBar(note.note, structuredClone(note.tags).map((tag) => tag.split('=').join('='))))
 }
@@ -48,7 +52,7 @@ const wrapWithGetters = (note: z.infer<typeof noteByBarSchema>): NoteByBarInner 
     const settableObj: z.infer<typeof tagsObjSchema> = {}
     const handler = {
         set(target: z.infer<typeof tagsObjSchema>, prop: string, value: TagData) {
-            target[prop] = value 
+            target[prop] = value
             const existingTagsIndex = _tags.findIndex((tag) => tag.startsWith(`${prop}=`))
             if (existingTagsIndex !== -1) {
                 _tags[existingTagsIndex] = `${prop}=${value.join(',')}`
@@ -104,18 +108,19 @@ export const makeNoteByBar = (note: string, tags: string[]): NoteByBar => {
 }
 
 const songRecordSchema_ = z.object({
-    id: z.number().refine((id) => id !== undefined, { message: 'id is required' }),
-    name: z.string(),
-    tempo: z.number(),
-    "track-ids": z.array(z.number()).optional()
+  id: z.number().refine((id) => id !== undefined, { message: 'id is required' }),
+  name: z.string(),
+  tempo: z.number(),
+  "track-ids": z.array(
+      z.tuple([z.number(), z.number()])
+  ).transform((tracks) => tracks.map(([trackId, start]) => ([ trackId, start ] as [id: number, start: number])))
 })
-
-export const songRecordSchema = {
+export const songRecordSchema = { //
     parse: (data: any) => songRecordSchema_.parse(data)
 }
 export const phaseRecordSchema = z.object({
     id: z.number(),
-    name: z.string(), // 
+    name: z.string(), //
     scaleName: z.string().nullable().optional(),
     scaleTonic: z.string().nullable().optional(),
     "follows-ids": z.array(z.number()),

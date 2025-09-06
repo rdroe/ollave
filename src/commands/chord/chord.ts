@@ -288,7 +288,6 @@ song start
                         const idx = userLetter && userScale ? `${userLetter} ${userScale}` : Date.now()
                         mem().graphs[idx] = mem().graphs[idx] || [] as any[]
                         mem().graphs[idx].push(formatted)
-                        console.log('lookedUp', JSON.parse(JSON.stringify(formatted, null, 2)))
                         return {
                             formatted
 
@@ -361,7 +360,7 @@ song start
                                                 })
                                                 const prepped = prepDelayMatrix(patterns as ParsedCli['positionalNonCommands'])
                                                 const delaysPerChordSize = parseDelayMatrix(prepped)
-                                                
+
                                                 const subdataKey = `${maxChordSize}x`
 
                                                 const noteLookup = delaysPerChordSize[subdataKey]

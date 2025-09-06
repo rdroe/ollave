@@ -5,7 +5,7 @@ export type SongRecord = {
     id: number
     name: string
     tempo: number
-    "track-ids": number[]
+    "track-ids"?: [id: number, dat: number][]
 }
 
 export type TrackRecord = z.infer<typeof trackRecordSchema>

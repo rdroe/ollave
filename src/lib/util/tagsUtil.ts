@@ -13,8 +13,8 @@ export { updateNoteTag } from "./tagUpdateUtil"
 export { tagDataSchema } from "../schemaTypes"
 /**
  * Input is eg ['x=1', 'y=2', 'z=3,4']
- * @param tags 
- * @returns 
+ * @param tags
+ * @returns
  */
 // parseNoteTags moved to noteParsingUtil.ts to break circular dependency
 
@@ -220,6 +220,6 @@ export const tagEntriesCompare = (a: TagEntries, b: TagEntries) => {
             const comparedInner = tagDatum === bDatum
             return comparedInner
         })
-    }) 
+    })
     return compared
 }

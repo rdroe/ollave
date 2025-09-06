@@ -13,7 +13,6 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
     let barObj = mem().notesByBar[barName]
     let [phaseName, barNumber] = parseColonTag(barName)
     const tags = unparseTagEntries(tagsIn)
-
     if (!barObj) {
         if (phaseName) {
             phaseCount(phaseName, barNumber + 1, true)
@@ -41,11 +40,12 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
         }
         tags.push(`barDelay=${fractionalDelay}`)
     }
+
     const noteObj = makeNoteByBar(note, tags)
     barObj.push(noteObj)
 
     if (doAddSlider) {
-        // test slider sync via the noteStoreById 
+        // test slider sync via the noteStoreById
         addSlider(barName, noteId)
         const { store, updateTagsObj, updateNotePitch, unsubscribe } = createNoteStoreById(noteId)
 
@@ -61,10 +61,10 @@ export const addNoteToBar = async (note: string, barName: string, tagsIn: TagEnt
         // }, 10000)
 
         // test unsubscribing
-        // let interval = setInterval(() => { 
+        // let interval = setInterval(() => {
         //     unsubscribe()
         // }, 10000)
-        
+
     }
     return noteObj
 }

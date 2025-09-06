@@ -14,9 +14,9 @@ import { makeCompilationSubscribe } from "../core/subjects/compilationSubject"
 import { setLatestMap } from "../core/observables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
-const DEFAULT_ARP_ZERO = DEFAULT_ARP 
+const DEFAULT_ARP_ZERO = DEFAULT_ARP
 const DEFAULT_ARP_ONE = 'quarter'.repeat(7).split('')
-const DEFAULT_ARP_TWO = 'half'.repeat(7).split('') 
+const DEFAULT_ARP_TWO = 'half'.repeat(7).split('')
 const DEFAULT_ARP_THREE = 'half,quarter'.repeat(7).split('')
 export const DEFAULT_CHORD_PLACEMENTS = {
     0: DEFAULT_ARP_ZERO,
@@ -27,8 +27,8 @@ export const DEFAULT_CHORD_PLACEMENTS = {
 
 
 export function addChord(
-    chordCsvArg: string, 
-    phaseName: string, 
+    chordCsvArg: string,
+    phaseName: string,
     barIndex: number,
     arp: string[] | 0 | 1 | 2 | 3, tags: string[], userScaleTonic: string = 'A', userScaleName: string = 'minor', doAddSlider: boolean = false): {
     noteIds: string[],
@@ -64,7 +64,7 @@ export function addChord(
         }
         phaseScale(phaseName, userScaleName, userScaleTonic)
     }
-    
+
     const currentScale = phaseScale(phaseName)
 
     if (currentScale.scaleName) {
@@ -105,7 +105,7 @@ export function addChord(
         const delayTagStrings: string[] = Object.entries(delayTagsObj).map(([key, value]) => {
             return `${key}=${value}`
         })
-        
+
         const totalDelay = calcFractionalDelay(parseNoteTags(delayTagStrings))
 
         // const delayTags = Object.entries(delayTagsObj).map(([key, value]) => `${key}=${value}`)
@@ -113,7 +113,8 @@ export function addChord(
         noteIds.push(noteId)
         const noteIdTag = `noteId=${noteId}`
         const allTags = [...commonTags /*, ...delayTags */, noteIdTag , `barDelay=${totalDelay}`]
-        const noteObj = await addNoteToBar(note, barTag, parseNoteTags(allTags)) 
+
+        const noteObj = await addNoteToBar(note, barTag, parseNoteTags(allTags))
         allNotes.push(noteObj)
 
         if (doAddSlider) {
@@ -141,7 +142,7 @@ export function addChord(
                 error: (err: any) => {
                     console.error('error in addChord makeCompilationSubscribe', err)
                 },
-            }) 
+            })
         }
     })
     setLatestMap(mapSongToMidiTicks())

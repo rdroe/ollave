@@ -21,14 +21,14 @@ export default {
             type: 'string',
             alias: 't',
             default: [],
-            array: true, 
+            array: true,
         },
     },
     fn: async ({positionalNonCommands, arp = DEFAULT_ARP, barName = 'default:1', tags = [], scaleTonic, scaleName, addSlider = false }) => {
         const [chordName] = positionalNonCommands
         if (typeof chordName !== 'string' || !isChordCsvArg(chordName)) {
             throw new Error('Chord must be a valid chord name with comma-separated octave')
-        } 
+        }
         if (typeof barName !== 'string') {
             throw new Error('Bar name must be a string')
         }

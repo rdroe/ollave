@@ -9,9 +9,6 @@ masterTicksObservable.subscribe(masterTicksSubject)
 // utility function to subscribe on a bar-length basis
 export const makeTickSubscribe = (initTick: number = 0) => {
     return function subscribe(subscriber: Subscriber<{tick: number}>) {
-        if (window.localStorage.getItem('loggg')) {
-            console.log('making tick subscribe')
-        }
         let tick = initTick
         const subjectUnsubscribe = masterTicksSubject.subscribe({
             next: () => {

@@ -5,7 +5,7 @@ export const isString = (arg: any): arg is string => {
 }
 
 export const peprnIsNum = (arg: string | number) => {
-    return typeof arg === 'number' || !isNaN(Number(arg))
+    return typeof arg === 'number' || arg !== "" && !isNaN(Number(arg))
 }
 
 function randomString(length: number) {

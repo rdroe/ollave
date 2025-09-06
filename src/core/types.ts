@@ -1,4 +1,5 @@
 import { Observable } from "rxjs"
+import { SongRecord } from "src/lib/types"
 
 // Forward declarations to avoid circular imports
 export type BarTagPercent = any
@@ -13,7 +14,7 @@ export type Mem = {
     }
     functions: {
         [songName: string]:{ [fnName: string]: (tick: number, rawTick: number, snapShot: Mem, songName: string) => void}
-    },  
+    },
     observables: {
         [songName: string]: {
             [fnName: string]: Unsubscribe
@@ -23,13 +24,8 @@ export type Mem = {
         [key: string]: BarTagPercent
     }
     songNames: string[]
-    song: {
-        id: number
-        name: string
-        tempo: number
-        "track-ids": number[]
-    } | null,
-    tracks: {
+    song: Exclude<SongRecord, "id"> & { id: number } | null,
+     tracks: {
         id: number
         "phase-ids": number[]
         "phase-names": string[]

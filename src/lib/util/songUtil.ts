@@ -6,20 +6,12 @@ import { mapSongToMidiTicks } from '../mapSongToTicks';
 import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables';
 import { setLatestMap } from '../../core/observables';
 import { initLatestOrNewSong } from '../fetch';
-
-const { songNames } = mem() //
-
-let namesResolver: Function | null = null
-
-const namesPromise = new Promise((res) => {
-    namesResolver = res
-});
-
-// getSongNames moved to songNamesUtil.ts
+import { namesPromise, namesResolver } from './songNamesUtil';
 
 (() => {
     console.log('importing words')
     import('../words').then((w) => {
+        const  { songNames } = mem()
         const wordList = w.words.split('\n')
         for (let i = 0; i < 100; i++) {
             const rand = Math.floor(Math.random() * wordList.length);
@@ -171,7 +163,7 @@ export async function init() {
             })
         }
         logItr += 1
-        
+
 
     }, 10)
 

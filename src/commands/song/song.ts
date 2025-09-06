@@ -86,11 +86,12 @@ song start
                 const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
 
                 const parsedSong = songRecordSchema.parse(refetched.data)
+
                 mem().song = {
                     ...parsedSong,
-                    "track-ids": parsedSong["track-ids"] || []
+                    "track-ids": parsedSong["track-ids"] as [number, number][]
                 }
-                
+
                 await fakeCli(`song track init`, 'cli')
             }
         },
@@ -111,7 +112,7 @@ song start
                             } else {
                                 console.warn('no selector provided for printing notes')
                             }
-                        
+
                     }
                 },
 
@@ -209,19 +210,19 @@ song start
                 }
             }
         },
-        
+
         chord: {
             submodules: {
                 last: {
                     fn: async ({ $: dollar, positionalNonCommands, delay }) => {
-                        const allNotes = Object.values(mem().notesByBar).flat() 
-                        const lastChordLayerName = getLastChordLayerName() 
+                        const allNotes = Object.values(mem().notesByBar).flat()
+                        const lastChordLayerName = getLastChordLayerName()
                         const grouped = groupNotesByFirstTagDatum(allNotes, 'layer').flat().filter((note) => {
                             const tagData = parseNoteTags(note.tags).find(([tagName]) => tagName === "layer")
                             return tagData?.[1][0] === lastChordLayerName
                         })
-                        return grouped 
-                        
+                        return grouped
+
                     }
                 }
             }

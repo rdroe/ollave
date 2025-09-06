@@ -30,7 +30,6 @@ export const romanize = (chordCsvArgRaw: string, userTonicRaw: string, userScale
     }
 
     let graph = lookUpGraph(userTonic, userScale)
-    console.log('graph', JSON.parse(JSON.stringify(graph, null, 2)))
 
 
     if (!graph) {

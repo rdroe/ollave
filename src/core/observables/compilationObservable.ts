@@ -5,10 +5,11 @@ import { compileNotesByBarToTracks, compilePhasesToTracks, saveSongAndTracks } f
 
 (window as any).compileEventTarget = new window.EventTarget();
 
-export function setLatestMap(map: MidiMap) {  
+export function setLatestMap(map: MidiMap) {
     mem().latestMap = map;
-    mem().song["track-ids"] = mem().tracks.map((track) => track.id)
-    compilePhasesToTracks(); // ensures that only active phases are saved, old ones oprhaned in db. @todo: code does exist that looks at orphaned ids, but nothing is done with them 
+    // mem().song["track-ids"] = mem().tracks.map((track) => track.id)
+    mem().song["track-ids"] = mem().tracks.map((track) => [track.id, 0])
+    compilePhasesToTracks(); // ensures that only active phases are saved, old ones oprhaned in db. @todo: code does exist that looks at orphaned ids, but nothing is done with them
     compileNotesByBarToTracks();
     saveSongAndTracks();
     (window as any).compileEventTarget.dispatchEvent(new window.CustomEvent("compiled"))

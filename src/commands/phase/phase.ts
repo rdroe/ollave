@@ -11,21 +11,30 @@ export const findPhase = (name: string) => {
 /**
 Should work like this:
 a cue equals a "phase" from notes.
-this command should be renamed "phase" or possibly "phases". 
+this command should be renamed "phase" or possibly "phases".
 start cue aphro should start a new subject that subscribes to the master ticks subject. the arguments include (at least) a length in bars.
-a new command 
- 
-phases and tracks
-we need to add the track, song, entities and the track-song (or song-track) property on one of those. 
-*/
+a new command
 
-export const parseColonTag = (str: string) => {
+phases and tracks
+we need to add the track, song, entities and the track-song (or song-track) property on one of those.
+*/
+const isTuple = (tuple: any): tuple is [string, number] => {
+    return tuple && tuple.length === 2
+}
+export const parseColonTag = (str: string): null | [semantic: string, number: number] => {
+    let result: null | [semantic: string, number: number] = null
     if (str.match(/[^\:]\:[0-9]+/)) {
-        return z.tuple([z.string(), z.number().or(z.string().transform((str) => {
+        const tuple = z.tuple([z.string(), z.number().or(z.string().transform((str) => {
+            if (typeof str !== 'string') {
+                throw new Error('str is not a string')
+            }
             return parseInt(str)
         }))]).parse(str.split(':'))
+        if (isTuple(tuple)) {
+            result = tuple
+        }
     }
-    return null
+    return result
 }
 
 const notes = (phaseOrBarTag?: string) => {

@@ -58,41 +58,43 @@ export async function loadAndInitSongAndTracks(songId: number) {
 }
 
 
+
 export async function fetchSongAndTracks(songId: number) {
-    const coll = await (browser.userTables.where('song', { id: songId }))
-    const fetched = await coll.first()
-    // get the track ids  //
-    const validSong = songRecordSchema.parse(fetched.data) 
-    const trackIds = validSong["track-ids"].filter((trackId) => {
-        return trackId !== undefined
-    })
-    // now fetch each track
-    const validatedTracks = await Promise.all(trackIds.map(async (trackId) => {
-        const fetched = await (await browser.userTables.where('track', { id: trackId })).first()
-        return trackRecordSchema.parse(fetched.data)
-    }))
+  const coll = await (browser.userTables.where('song', { id: songId }))
+  const fetched = await coll.first()
+  // get the track ids  //
+  const validSong = songRecordSchema.parse(fetched.data)
+  const trackIds = validSong["track-ids"].map(([trackId]) => {
+      return trackId
+  }).filter((trackId) => {
+      return trackId !== undefined
+  })
+  // now fetch each track
+  const validatedTracks = await Promise.all(trackIds.map(async (trackId) => {
+      const fetched = await (await browser.userTables.where('track', { id: trackId })).first()
+      return trackRecordSchema.parse(fetched.data)
+  }))
 
-    const allDbPhases = (await (await browser.userTables.where('phase', {})).toArray()).map(({ data }) => data)
-    const phases = await Promise.all(validatedTracks.flatMap((track) => track["phase-ids"].map(async (phaseId) => {
-        const phase = allDbPhases.find((phase) => phase.id === phaseId)
-        if (!phase) {
-            throw new Error(`phase ${phaseId} not found`)
-        }
-        return phaseRecordSchema.parse(phase)
-    })))
+  const allDbPhases = (await (await browser.userTables.where('phase', {})).toArray()).map(({ data }) => data)
+  const phases = await Promise.all(validatedTracks.flatMap((track) => track["phase-ids"].map(async (phaseId) => {
+      const phase = allDbPhases.find((phase) => phase.id === phaseId)
+      if (!phase) {
+          throw new Error(`phase ${phaseId} not found`)
+      }
+      return phaseRecordSchema.parse(phase)
+  })))
 
-    return {
-        song: validSong,
-        tracks: validatedTracks,
-        phases
-    }
+  return {
+      song: validSong,
+      tracks: validatedTracks,
+      phases
+  }
 }
-
 
 export async function loadAndInitLatestSongAndTracks() {
     const latestSong = await fetchLatestSongAndTracks()
     if (latestSong) {
-        const validSong = songRecordSchema.parse(latestSong.song) 
+        const validSong = songRecordSchema.parse(latestSong.song)
         if (!validSong.id) {
             throw new Error('song id is required')
         }
@@ -124,8 +126,8 @@ export async function loadAndInitLatestSongAndTracks() {
 export async function initLoadedSong() {
     // first clear any existing dom elements with the class note-slider
 
-    let previousSongName: null | string = null 
-    let previousSongId: null | number = null 
+    let previousSongName: null | string = null
+    let previousSongId: null | number = null
 
     if (mem().song) {
         previousSongName = mem().song.name
@@ -151,69 +153,63 @@ export async function initLoadedSong() {
     mem().adjustedCursor = 0
 }
 
-
 export async function initNewSong() {
-    const songNames = await getSongNames()
-    const shiftedOff = songNames.shift()
-    const data: Omit<SongRecord, "id"> = {
-        name: shiftedOff,
-        tempo: 120,
-        "track-ids": []
-    }
-    const createdId = await browser.userTables.add('song', {
-        data
-    })
-    await browser.userTables.update('song', { id: createdId, data: {
-        id: createdId
-    } }, {})
-    const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
+  const songNames = await getSongNames()
+  const shiftedOff = songNames.shift()
+  const data: Omit<SongRecord, "id"> = {
+      name: shiftedOff,
+      tempo: 120,
+      "track-ids": []
+  }
 
-    const parsedSong = songRecordSchema.parse(refetched.data)
-    mem().song = {
-        ...parsedSong,
-        "track-ids": parsedSong["track-ids"] || []
-    }
-    await initNewTrack()
-} 
+  const createdId = await browser.userTables.add('song', {
+      data
+  })
+
+  await browser.userTables.update('song', { id: createdId, data: {
+      id: createdId
+  } }, {})
+  const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
+  mem().song = songRecordSchema.parse(refetched.data)
+  await initNewTrack()
+}
 
 // set up a brand new track.
 async function initNewTrack() {
-    const trackRecord: Omit<TrackRecord, "id"> = {
-        "phase-ids": [],
-        "phase-names": [],
-        notesByBar: {}
-    }
+  const trackRecord: Omit<TrackRecord, "id"> = {
+      "phase-ids": [],
+      "phase-names": [],
+      notesByBar: {}
+  }
 
-    const trackId = await browser.userTables.add('track', { data: trackRecord })
-    // update the track to have its id in data. 
-    await browser.userTables.update('track', { id: trackId, data: { id: trackId } }, {}) 
-    await browser.userTables.update('song', {
-        id: mem().song.id,
-        data: {
-            "track-ids": [[
-                trackId, 0
-            ]]
-        },
-    }, {})
+  const trackId = await browser.userTables.add('track', { data: trackRecord })
+  // update the track to have its id in data.
+  await browser.userTables.update('track', { id: trackId, data: { id: trackId } }, {})
+  await browser.userTables.update('song', {
+      id: mem().song.id,
+      data: {
+          "track-ids": [[
+              trackId, 0
+          ]]
+      },
+  }, {})
 
-    const coll = await (browser.userTables.where('song', { id: mem().song.id }))
-    const fetched = await coll.first()
-    const validSong = songRecordSchema.parse(fetched.data)
-    const { "track-ids": songTracks } = validSong
+  const coll = await (browser.userTables.where('song', { id: mem().song.id }))
+  const fetched = await coll.first()
+  const validSong = songRecordSchema.parse(fetched.data)
+  const { "track-ids": songTracks } = validSong
 
-    if (songTracks && songTracks.length > 0) {
-        mem().tracks = [{
-            id: songTracks[0],
-            "phase-ids": [],
-            "phase-names": [],
-            notesByBar: {}
-        }]
-    } else {
-        console.error("no tracks for song", mem().song.id)
-    }
+  if (songTracks) {
+      mem().tracks = [{
+          id: songTracks[0][0],
+          "phase-ids": [],
+          "phase-names": [],
+          notesByBar: {}
+      }]
+  } else {
+      console.error("no tracks for song", mem().song.id)
+  }
 }
-
-
 export async function initLatestOrNewSong() {
 
     const didLoadLatest = await loadAndInitLatestSongAndTracks()
