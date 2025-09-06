@@ -4,10 +4,11 @@ import { randId } from '../../lib/helpers'
 import { mem } from '../../core/mem'
 
 import { isChordCsvArg, makeFulfilledBarNote, parseChordCsvArg } from '../../lib/util/barsUtil'
-import { abbrev, isAbbreviation, tickCounts } from '../../core/observables/masterTicksObservable'
+import {  isAbbreviation } from '../../core/observables/masterTicksObservable'
 
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { setLatestMap } from '../../core/observables'
+import { abbrev, tickCounts } from 'src/lib/util/constantsUtil'
 
 
 const cliDelaysToTags = (delay?: string[]): string[] => {
@@ -63,15 +64,15 @@ export default {
 
                                         const [notes, chordTags] = parseChordCsvArg(chordName)
                                         const [ticks] = positionalNonCommands
-                                        let finalTicks: null | number = null  
+                                        let finalTicks: null | number = null
                                         if (typeof ticks === 'number') {
-                                            finalTicks = ticks 
+                                            finalTicks = ticks
                                         } else {
                                             if (typeof ticks !== 'string') {
                                                 throw new Error(`Ticks must be a number or a string`)
                                             }
-                                            if (!isAbbreviation(ticks)) { 
-                                                throw new Error(`Ticks must be a number or a string`) 
+                                            if (!isAbbreviation(ticks)) {
+                                                throw new Error(`Ticks must be a number or a string`)
                                             }
                                             finalTicks = tickCounts[abbrev[ticks]]
                                         }
@@ -92,7 +93,7 @@ export default {
                                                     ...initNote.tags,
                                                     `groupIndex=${idx}`,
                                                     `chordSize=${notes.length}`,
-        
+
                                                 ]
                                             }
                                         }))

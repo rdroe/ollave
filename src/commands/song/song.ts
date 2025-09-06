@@ -174,7 +174,9 @@ song start
                 }
             },
             fn: async () => {
+
                 setLatestMap(mapSongToMidiTicks())
+
                 const songPause = mem().songPauses[mem().song.name]
                 if (!songPause) {
                     return startCueObservable()

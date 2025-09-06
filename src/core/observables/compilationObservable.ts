@@ -14,6 +14,7 @@ export function setLatestMap(map: MidiMap) {
     saveSongAndTracks();
     (window as any).compileEventTarget.dispatchEvent(new window.CustomEvent("compiled"))
 }
+//
 
 export const compilationObservable = new Observable<MidiMap>((subscriber) => {
     (window as any).compileEventTarget.addEventListener("compiled", () => {

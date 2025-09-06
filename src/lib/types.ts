@@ -14,7 +14,7 @@ export type PhaseRecord = {
     id: number
     name: string
     "follows-ids": number[]
-    barSizeMultiplier: number
+    barSizeMultiplier: number | null
     speed: number
     scaleName: string
     scaleTonic: string

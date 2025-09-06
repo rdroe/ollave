@@ -22,20 +22,23 @@ export * as deleteNoteById from './deleteNoteById'
 
 // Individual function exports for direct access
 // mem-db exports
-export { 
+export {
     phaseFollowsPhase,
     phaseUnfollows,
     sortByNumberAfterColon,
-    startEndData,
     lookUpGraph,
-    lastTick,
     getAllPhaseBars,
     getAllPhaseBarNotes,
     getFollowingPhases,
     phaseExists,
     phaseCount,
-
 } from './util/phaseUtil'
+
+
+export {
+  lastTick,
+  startEndData,
+} from './util/startEndUtil'
 
 // helpers exports
 export {
@@ -58,21 +61,21 @@ export {
 export { addNoteToBar } from './addNote'
 
 // tags exports
-export { 
+export {
     updateNoteTag,
     parseNoteTags,
     calcFractionalDelay
 } from './util/tagsUtil'
 
 // graphh exports
-export { 
+export {
     ProgressionOptions,
     minor,
     allScales
 } from './graphh'
 
 // music exports
-export { 
+export {
     Triad,
     RelativeNote,
     samplerState,
@@ -81,7 +84,7 @@ export {
 } from './music'
 
 // midi exports
-export { 
+export {
     saveRaw,
     addEvents,
     addNoteEvents,
@@ -89,7 +92,7 @@ export {
 } from './midi'
 
 // subcommands exports
-export { 
+export {
     Subcommand,
     SubcommandPatterns,
     runSubcommandsOrNull,
@@ -97,7 +100,7 @@ export {
 } from './subcommands'
 
 // mapSongToTicks exports
-export { 
+export {
     mapSongToMidiTicks
 } from './mapSongToTicks'
 

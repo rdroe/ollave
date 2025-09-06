@@ -1,11 +1,7 @@
-
-import { ProgressionOptions, minor } from "../graphh"
-import { randomInt } from "../helpers"
-import { strjson } from "./common"
 import { randId } from "./common"
 import { mapSongToMidiTicks } from "../mapSongToTicks"
 import { mem } from "../../core/mem"
-import { startEndData, lastTick } from "./startEndUtil"
+
 import { setLatestMap } from "../../core/observables"
 import { browser } from "user-tables"
 import { z } from "zod"
@@ -42,7 +38,7 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
             id: z.number().parse(phaseId),
             name: subject,
             "follows-ids": [],
-            barSizeMultiplier: 1,
+            barSizeMultiplier: null,
             speed: 1,
             scaleName: 'C major',
             scaleTonic: 'C'
@@ -87,7 +83,6 @@ export async function phaseUnfollows(subject: string, objects?: string[]) {
 
 // Re-export functions from their new locations
 export { sortByNumberAfterColon, getAllPhaseBars, getAllPhaseBarNotes } from "./phaseNotesUtil"
-export { startEndData, lastTick } from "./startEndUtil"
 export { lookUpGraph } from "./graphUtil"
 export { getFollowingPhases } from "./phaseRelationsUtil"
 

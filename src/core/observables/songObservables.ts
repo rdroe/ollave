@@ -2,13 +2,13 @@ import { Mem, mem } from '../mem'
 import { Observable, Subscription } from 'rxjs'
 import { makeTickSubscribe } from '../subjects/masterTicksSubject'
 import { playTriads } from '../../lib/music'
-import { lastTick } from '../../lib/util/phaseUtil'
+import { lastTick } from '../../lib/util/startEndUtil'
 import { exportableTick, updateExportableTick } from './masterTicksObservable'
 import { barsAtMidi, BarTagPercent } from '../../lib/mapSongToTicks'
 
 
 export const getSongName = () => {
-    const song = mem()?.song?.name || '' 
+    const song = mem()?.song?.name || ''
     if (!song) {
         console.error(JSON.stringify(mem(), null, 2))
         throw new Error(`Song not initialized yet`)
@@ -39,7 +39,6 @@ export const startCueObservable = (startAt?: number) => {
 
     observables['tick'] = songObservable.subscribe({
         next: ({ tick }) => {
-
             const expTick = exportableTick()
             // get the midi tick relative to the start of the song
             const adjustedCursor = getSongCursor(tick)
@@ -77,7 +76,7 @@ export const startCueObservable = (startAt?: number) => {
 
 
 export const stopCueObservable = () => {
- 
+
     const songName = mem().song.name
     const publishedCursro = mem().adjustedCursor
 
@@ -100,11 +99,11 @@ export const stopCueObservable = () => {
 }
 
 export const deleteCueObservable = (songName: string) => {
-    const observables: { [songName: string]: { [fnName: string]: Subscription } } = Object.fromEntries(Object.entries(mem().observables).filter(([key]) => key !== songName)) 
+    const observables: { [songName: string]: { [fnName: string]: Subscription } } = Object.fromEntries(Object.entries(mem().observables).filter(([key]) => key !== songName))
     const songPauses: { [songName: string]: BarTagPercent } = Object.fromEntries(Object.entries(mem().songPauses).filter(([key]) => key !== songName))
     const functions: { [songName: string]: { [fnName: string]: (tick: number, rawTick: number, snapShot: Mem, songName: string) => void } } = Object.fromEntries(Object.entries(mem().functions).filter(([key]) => key !== songName))
-    mem().songPauses = songPauses 
-    mem().observables = observables 
-    mem().functions = functions 
+    mem().songPauses = songPauses
+    mem().observables = observables
+    mem().functions = functions
 }
 
