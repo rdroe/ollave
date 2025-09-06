@@ -85,7 +85,11 @@ song start
                 })
                 const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
 
-                mem().song = songRecordSchema.parse(refetched.data)
+                const parsedSong = songRecordSchema.parse(refetched.data)
+                mem().song = {
+                    ...parsedSong,
+                    "track-ids": parsedSong["track-ids"] || []
+                }
                 
                 await fakeCli(`song track init`, 'cli')
             }

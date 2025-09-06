@@ -120,7 +120,7 @@ function selector(mem: Mem, targetTags: TagEntries): NoteByBarWithBarId[] {
     Object.entries(mem.notesByBar).forEach(([barId, notes]) => {
         notes.forEach((note) => {
             // filter tag entries from note to those matching the target tags.
-            const noteTags = parseNoteTags(note.tags).filter(([tagName]) => targetTags.some(([targetTagName]) => targetTagName === tagName))
+            const noteTags = parseNoteTags(note.tags).filter(([tagName]) => targetTags.some(([targetTagName]: [string, any]) => targetTagName === tagName))
             if (tagEntriesCompare(targetTags, noteTags)) {
                 matchingNotes.push({
                     ...note,

@@ -103,6 +103,9 @@ export const phaseScale = (phaseName: string, userScale?: string, userTonic?: st
 // Re-export functions from their new locations
 export { isScaleName, isScaleNameWithTonic, properScaleName } from "./util/scaleUtil"
 
+// Import for local use
+import { properScaleName } from "./util/scaleUtil"
+
 // Re-export schema functions from their new locations
 export { initNotesByBar, compileNotesByBarToTracks, compilePhasesToTracks, compileTracksToNotesByBar, compileTracksToPhasesProperties } from "./util/schemaUtil"
 

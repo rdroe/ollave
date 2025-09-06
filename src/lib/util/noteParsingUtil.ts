@@ -1,6 +1,9 @@
 import { peprnIsNum, isCsvArg, parseCsvArg } from './common'
 import { TagData, TagEntry, TagEntries } from '../schemaTypes'
 
+// Re-export types for backward compatibility
+export type { TagData, TagEntry, TagEntries }
+
 /**
  * Input is eg ['x=1', 'y=2', 'z=3,4']
  * @param tags 

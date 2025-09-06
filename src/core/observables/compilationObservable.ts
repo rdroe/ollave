@@ -7,7 +7,7 @@ import { compileNotesByBarToTracks, compilePhasesToTracks, saveSongAndTracks } f
 
 export function setLatestMap(map: MidiMap) {  
     mem().latestMap = map;
-    mem().song["track-ids"] = mem().tracks.map((track) => [track.id, 0])
+    mem().song["track-ids"] = mem().tracks.map((track) => track.id)
     compilePhasesToTracks(); // ensures that only active phases are saved, old ones oprhaned in db. @todo: code does exist that looks at orphaned ids, but nothing is done with them 
     compileNotesByBarToTracks();
     saveSongAndTracks();

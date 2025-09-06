@@ -232,5 +232,6 @@ const quantizeOffset = (rawOffset: number, parsedTags: TagEntries) => {
 
 // Additional re-exports
 export { getAllPhaseBarNotes } from "./phaseNotesUtil"
-export { parseNoteTags, TagData, TagEntries } from "./noteParsingUtil"
+export { parseNoteTags } from "./noteParsingUtil"
+export type { TagData, TagEntries } from "./noteParsingUtil"
 export { isCsvArg, parseCsvArg } from "./common"

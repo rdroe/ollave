@@ -33,15 +33,21 @@ export const fetchSongAndTracksBySongId = async (songId: number) => {
 export async function loadAndInitSongAndTracks(songId: number) {
     const latestSong = await fetchSongAndTracksBySongId(songId)
     if (latestSong) {
-        mem().song = songRecordSchema.parse(latestSong.song)
+        const parsedSong = songRecordSchema.parse(latestSong.song)
+        mem().song = {
+            ...parsedSong,
+            "track-ids": parsedSong["track-ids"] || []
+        }
         mem().tracks = [latestSong.tracks[0]]
         mem().phases = latestSong.phases.reduce((acc, phase) => {
             acc[phase.name] = {
-                ...phase,
+                id: phase.id,
                 name: phase.name,
                 "follows-ids": [],
                 speed: 1,
                 barSizeMultiplier: 1,
+                scaleName: 'C major',
+                scaleTonic: 'C'
             }
             return acc
         }, {} as { [phaseName: string]: PhaseRecord })
@@ -57,9 +63,7 @@ export async function fetchSongAndTracks(songId: number) {
     const fetched = await coll.first()
     // get the track ids  //
     const validSong = songRecordSchema.parse(fetched.data) 
-    const trackIds = validSong["track-ids"].map(([trackId]) => {
-        return trackId
-    }).filter((trackId) => {
+    const trackIds = validSong["track-ids"].filter((trackId) => {
         return trackId !== undefined
     })
     // now fetch each track
@@ -94,11 +98,20 @@ export async function loadAndInitLatestSongAndTracks() {
         }
         mem().song = {
             ...validSong,
-            id: validSong.id
+            id: validSong.id,
+            "track-ids": validSong["track-ids"] || []
         }
         mem().tracks = [latestSong.tracks[0]]
         mem().phases = latestSong.phases.reduce((acc, phase) => {
-            acc[phase.name] = phase
+            acc[phase.name] = {
+                id: phase.id,
+                name: phase.name,
+                "follows-ids": phase["follows-ids"] || [],
+                speed: phase.speed || 1,
+                barSizeMultiplier: phase.barSizeMultiplier || 1,
+                scaleName: phase.scaleName || 'C major',
+                scaleTonic: phase.scaleTonic || 'C'
+            }
             return acc
         }, {} as { [phaseName: string]: PhaseRecord })
         return latestSong
@@ -155,7 +168,11 @@ export async function initNewSong() {
     } }, {})
     const refetched = await (await browser.userTables.where('song', { id: createdId })).first()
 
-    mem().song = songRecordSchema.parse(refetched.data)
+    const parsedSong = songRecordSchema.parse(refetched.data)
+    mem().song = {
+        ...parsedSong,
+        "track-ids": parsedSong["track-ids"] || []
+    }
     await initNewTrack()
 } 
 
@@ -184,9 +201,9 @@ async function initNewTrack() {
     const validSong = songRecordSchema.parse(fetched.data)
     const { "track-ids": songTracks } = validSong
 
-    if (songTracks) {
+    if (songTracks && songTracks.length > 0) {
         mem().tracks = [{
-            id: songTracks[0][0],
+            id: songTracks[0],
             "phase-ids": [],
             "phase-names": [],
             notesByBar: {}

@@ -39,8 +39,13 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
         // create the phase in the db to get the id
         const phaseId = (await browser.userTables.add('phase', { data: phaseData }))
         phases[subject] = {
-            ...phaseData,
-            id: z.number().parse(phaseId)
+            id: z.number().parse(phaseId),
+            name: subject,
+            "follows-ids": [],
+            barSizeMultiplier: 1,
+            speed: 1,
+            scaleName: 'C major',
+            scaleTonic: 'C'
         }
     }
     setLatestMap(mapSongToMidiTicks())
@@ -105,8 +110,13 @@ export async function phaseCount(phase: string, size: number, skipCopy: boolean 
         }
         const phaseId = (await browser.userTables.add('phase', { data: phaseData })) 
         phases[phase] = {
-            ...phaseData,
-            id: z.number().parse(phaseId)
+            id: z.number().parse(phaseId),
+            name: phase,
+            "follows-ids": [],
+            barSizeMultiplier: 1,
+            speed: 1,
+            scaleName: 'C major',
+            scaleTonic: 'C'
         }
         const trackId = rawTrackId ? rawTrackId : mem().tracks[0].id 
         if (typeof trackId === 'number') {

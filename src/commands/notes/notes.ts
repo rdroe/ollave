@@ -88,7 +88,7 @@ export default {
                                             // this is a weird behavior for re-processing or trying multiple combos in a session
                                             if (newTags.length) {
                                                 filterDelayTags(nt, true)
-                                                nt.tags.push(...newTags)
+                                                nt.tags.push(...(newTags as string[]))
                                             }
                                         })
 

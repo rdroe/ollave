@@ -107,9 +107,7 @@ const songRecordSchema_ = z.object({
     id: z.number().refine((id) => id !== undefined, { message: 'id is required' }),
     name: z.string(),
     tempo: z.number(),
-    "track-ids": z.array(
-        z.tuple([z.number(), z.number()])
-    ).transform((tracks) => tracks.map(([trackId, start]) => ([ trackId, start ] as [id: number, start: number])))
+    "track-ids": z.array(z.number()).optional()
 })
 
 export const songRecordSchema = {
@@ -118,8 +116,8 @@ export const songRecordSchema = {
 export const phaseRecordSchema = z.object({
     id: z.number(),
     name: z.string(), // 
-    scaleName: z.string().nullable(),
-    scaleTonic: z.string().nullable(),
+    scaleName: z.string().nullable().optional(),
+    scaleTonic: z.string().nullable().optional(),
     "follows-ids": z.array(z.number()),
     speed: z.number().nullable().optional(),
     barSizeMultiplier: z.number().nullable().optional()

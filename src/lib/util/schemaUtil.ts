@@ -44,7 +44,15 @@ export function compilePhasesToTracks() {
     })
     // clean up phases in memory
     mem().phases = Object.values(mem().phases).filter((phase) => activePhaseTempIds.includes(phase.id)).reduce((acc, phase) => {
-        acc[phase.name] = phase
+        acc[phase.name] = {
+            id: phase.id,
+            name: phase.name,
+            "follows-ids": phase["follows-ids"] || [],
+            barSizeMultiplier: phase.barSizeMultiplier || 1,
+            speed: phase.speed || 1,
+            scaleName: phase.scaleName || 'C major',
+            scaleTonic: phase.scaleTonic || 'C'
+        }
         return acc
     }, {} as { [phaseName: string]: PhaseRecord })
 }
@@ -67,11 +75,13 @@ export function compileTracksToPhasesProperties() {
         track["phase-names"] .forEach((phaseName, idx) => {
             const existingPhase = mem().phases[phaseName]
             const phaseRecord: PhaseRecord = {
-                ...existingPhase,
                 id: track["phase-ids"][idx],
+                name: phaseName,
                 "follows-ids": [],
                 speed: 1,
-                barSizeMultiplier: 1, 
+                barSizeMultiplier: 1,
+                scaleName: 'C major',
+                scaleTonic: 'C'
             }
             mem().phases[phaseName] = phaseRecord
         })

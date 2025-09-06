@@ -47,7 +47,7 @@ export function addSlider (barName: string, noteId: string) {
     slider.min = '0'
     slider.max = `${tickCounts.bar}`
     const noteData = mem().notesByBar[barName].find((note) => note.tags.includes(`noteId=${noteId}`))
-    const noteDelay = noteData?.tags.find((tag) => tag.startsWith('barDelay='))?.split('=')[1]
+    const noteDelay = noteData?.tags.find((tag: string) => tag.startsWith('barDelay='))?.split('=')[1]
     if (typeof noteDelay !== 'string' || !peprnIsNum(noteDelay)) {
         console.error('barDelay datum should be a number; insteaed got ' + noteDelay)
         console.error('noteData', noteData) 

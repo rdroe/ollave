@@ -46,7 +46,7 @@ export const startCueObservable = (startAt?: number) => {
             mem().adjustedCursor = adjustedCursor
             document.querySelector('.ollave-ticks').innerHTML = mem().adjustedCursor.toString()
 
-            mem().latestMap[adjustedCursor]?.forEach((note) => {
+            mem().latestMap[adjustedCursor]?.forEach((note: any) => {
                 playTriads([[note.note, 0.5, 0.1]])
                 mem().played.unshift({
                     time: Date.now(),

@@ -376,7 +376,7 @@ song start
                                                         throw new Error(`Note lacked a chord index: ${msg}`)
                                                     }
                                                     const newTags = noteLookup[chordIdx]
-                                                    nt.tags.push(...newTags)
+                                                    nt.tags.push(...(newTags as string[]))
                                                 })
                                                 setLatestMap(mapSongToMidiTicks())
                                                 return notes

@@ -7,8 +7,10 @@ import { z } from 'zod'
 import { tickCounts } from "./constantsUtil"
 
 // Re-export functions from their new locations
-export { parseNoteTags, TagData, TagEntry, TagEntries } from "./noteParsingUtil"
+export { parseNoteTags } from "./noteParsingUtil"
+export type { TagData, TagEntry, TagEntries } from "./noteParsingUtil"
 export { updateNoteTag } from "./tagUpdateUtil"
+export { tagDataSchema } from "../schemaTypes"
 /**
  * Input is eg ['x=1', 'y=2', 'z=3,4']
  * @param tags 
