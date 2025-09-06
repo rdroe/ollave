@@ -35,7 +35,7 @@ const tickCounts_ = {
     [THIRTY_SECOND]: ppq * 4 / 32, // 16
     [SIXTY_FOURTH]: ppq * 4 / 64, // 8
     [ONE_TWENTY_EIGHTH]: ppq * 4 / 128, // 4
-};
+} as { [key: string]: number };
 
 (window as any).tickCounts = tickCounts_
 export const tickCounts = tickCounts_

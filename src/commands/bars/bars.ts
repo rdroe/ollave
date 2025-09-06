@@ -4,7 +4,7 @@ import { getAllPhaseBars, sortByNumberAfterColon } from '../../lib/util/phaseUti
 import { NoteByBar } from '../../lib/schemas'
 import {  mem } from '../../core/mem'
 import { isChordCsvArg, isNoteCsvArg, isNoteNameWithOctave, isRestArg, makeFulfilledBarNote, parseChordCsvArg } from '../../lib/util/barsUtil'
-import { BAR, EIGHTH, tickCounts } from '../../core/observables/masterTicksObservable'
+import { BAR, EIGHTH, tickCounts } from '../../lib/util/constantsUtil'
 import { filterDelayTags, groupNotesByFirstTagDatum, filterBarDelayTag, parseNoteTags } from '../../lib/util/tagsUtil'
 import { isAbbreviationCsv, sumAbbreviationCsv } from '../../lib/util/notesUtil'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
@@ -280,7 +280,7 @@ the above line stuffs the existing bars' timing more tightly into  aphrodite's b
 fractional example:
 bars aphrodite repack --stuff 4th,8th half 4th,16th
 
-this example stuffs the existing bars' timing more tightly into  aphrodite's bars. in this example,the  evenly-spaced original bars will be resituatied with  4th to bar 0, 8th to bar 1, half to bar 2, 4th to bar 3, 16th to bar 4, and so on. 
+this example stuffs the existing bars' timing more tightly into  aphrodite's bars. in this example,the  evenly-spaced original bars will be resituatied with  4th to bar 0, 8th to bar 1, half to bar 2, 4th to bar 3, 16th to bar 4, and so on.
 `
                     },
                     yargs: {
@@ -309,7 +309,7 @@ this example stuffs the existing bars' timing more tightly into  aphrodite's bar
                         if (pack.length === 0 && stuff.length === 0) {
                             throw new Error('Either --pack or --stuff is required')
                         }
-                        const packOrStuff: 'pack' | 'stuff' = pack.length > 0 ? 'pack' : 'stuff' 
+                        const packOrStuff: 'pack' | 'stuff' = pack.length > 0 ? 'pack' : 'stuff'
                         const packk = pack.length > 0 ? pack : stuff
 
 
@@ -336,15 +336,15 @@ this example stuffs the existing bars' timing more tightly into  aphrodite's bar
                         switch (caseName) {
                             case 'numeric-pack':
                                 numericPack(bars, packk, detachedBars, barSizeMod)
-                                break 
+                                break
                             case 'numeric-stuff':
                                 numericStuff(bars, packk, detachedBars, barSizeMod)
-                                break 
+                                break
                             case 'fractional-pack':
                                 throw new Error('--pack cannot be used with a fractional plan; instead whole-number eg "--pack 0 2 4 1" to resequence chords into the whole song')
                             case 'fractional-stuff':
                                 fractionalStuff(bars, packk, detachedBars)
-                                break 
+                                break
                             default:
                         }
                     }
@@ -416,7 +416,7 @@ function fractionalStuff(bars: string[], packk: string[], detachedBars: NoteByBa
         prior += tickCounts[BAR]
         return nxt
     })
-    // receptacle for the re-packed bars 
+    // receptacle for the re-packed bars
     const newNotesByBar =
         Object.fromEntries(
             bars.map((bar) => [bar, []] as [bar: string, notes: NoteByBar[]])

@@ -1,4 +1,4 @@
-import { tickCounts } from "../core/observables/masterTicksObservable"
+import { tickCounts } from "./util/constantsUtil"
 import { NoteByBar, tagsObjSchema } from "./schemas"
 import { mem } from "../core/mem"
 import { peprnIsNum } from "./util/common"
@@ -34,7 +34,7 @@ const setSliderValue = (noteId: string, value: number) => {
 /**
  * Given a note id, add a slider to move the note to a new time within the bar
  * controls-1 is the div that will contain the slider
- * 
+ *
  */
 export function addSlider (barName: string, noteId: string) {
     const controls1 = document.getElementById('controls-1')
@@ -50,7 +50,7 @@ export function addSlider (barName: string, noteId: string) {
     const noteDelay = noteData?.tags.find((tag: string) => tag.startsWith('barDelay='))?.split('=')[1]
     if (typeof noteDelay !== 'string' || !peprnIsNum(noteDelay)) {
         console.error('barDelay datum should be a number; insteaed got ' + noteDelay)
-        console.error('noteData', noteData) 
+        console.error('noteData', noteData)
         console.error('barName', barName)
         console.error('noteId', noteId)
         console.error('bar data', mem().notesByBar[barName])
@@ -58,7 +58,7 @@ export function addSlider (barName: string, noteId: string) {
     }
     slider.value = noteDelay.toString()
     slider.oninput = () => {
-        const abbrev = noteData.tagsObj.quantize[0] 
+        const abbrev = noteData.tagsObj.quantize[0]
         const quantizedBarDelay =  isAbbreviation(abbrev) ? quantizeValueToAbbreviation(parseFloat(slider.value), abbrev) : parseInt(slider.value)
         updateBarDelay(noteData, quantizedBarDelay, false)
         setSliderValue(noteId, quantizedBarDelay)
@@ -67,7 +67,7 @@ export function addSlider (barName: string, noteId: string) {
 }//
 let updateBarDelayTimeout: null | ReturnType<typeof setTimeout> = null
 // on the data object, replace the barDelay index by array index value
-// also call the mapSongToMidiTicks function to update the midi map, but 
+// also call the mapSongToMidiTicks function to update the midi map, but
 // use native JS setTimeout to debounce to 100ms
 export function updateBarDelay (noteData: NoteByBar, newBarDelay: number, skipSliderSync: boolean = true) {
     const index = noteData.tags.findIndex((tag) => tag.startsWith('barDelay='))

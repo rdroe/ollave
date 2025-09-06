@@ -1,6 +1,6 @@
 import { strjson } from './common';
 import { mem } from '../../core/mem';
-import { tickCounts } from '../../core/observables/masterTicksObservable';
+import { tickCounts } from './constantsUtil';
 import { lastTick } from './startEndUtil';
 import { mapSongToMidiTicks } from '../mapSongToTicks';
 import { startCueObservable, stopCueObservable } from '../../core/observables/songObservables';
@@ -10,7 +10,7 @@ import { namesPromise, namesResolver } from './songNamesUtil';
 
 (() => {
     console.log('importing words')
-    import('../words').then((w) => {
+    import('../words.js').then((w) => {
         const  { songNames } = mem()
         const wordList = w.words.split('\n')
         for (let i = 0; i < 100; i++) {
