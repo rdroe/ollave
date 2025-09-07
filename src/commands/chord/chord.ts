@@ -1,7 +1,7 @@
 import fakeCli from 'peprn/fakeCli'
 import { Module, ParsedCli, awaitAll } from 'peprn/util'
 import {
-    fns, ProgressionGraphNode, allScales, detectScales, makeProgNodeTranslator, minor, noteInversions, optionalRomans, romanChordNameToReal, scaleLetters, combineEntriesByName, ProgressionOptions, romanFromProgRoman, isChordFn, unromanizeSecondaryChords, randomElement, chordNameWithNotes, fnChordNameWithNotes, ChordNameWithNotes,
+  allScales, detectScales, noteInversions, romanChordNameToReal, scaleLetters, ProgressionOptions, romanFromProgRoman, isChordFn, unromanizeSecondaryChords, randomElement, chordNameWithNotes, fnChordNameWithNotes, ChordNameWithNotes,
 } from '../../lib/graphh'
 import { randomInt, strjson } from '../../lib/helpers'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
@@ -9,12 +9,12 @@ import { z } from 'zod'
 import { filterDelayTags, latestNote, parseNoteTags, scale } from '../../lib/util/tagsUtil'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { makeNoteByBar } from '../../lib/schemas'
-import { mem } from '../../core/mem'
 
 import { lookUpGraph } from '../../lib/util/phaseUtil'
 import { isNoteNameWithOctave } from '../../lib/util/barsUtil'
 import { setLatestMap } from '../../core/observables'
 import { getNotesByEntity, notesByBarArraySchema, parseDelayMatrix, prepDelayMatrix } from '../../lib/util/notesUtil'
+import { chordGraphCreate } from 'src/lib/util/graphUtil'
 
 export const chord: Module = {
     help: {
@@ -239,59 +239,8 @@ song start
                     fn: async ({ positionalNonCommands }) => {
 
                         const [userLetter = "", userScale = ""] = positionalNonCommands
-                        const lookedUp = lookUpGraph(userLetter, userScale)
+                        return chordGraphCreate(userLetter, userScale)
 
-                        if (lookedUp) return lookedUp
-                        const names = Object.keys(minor)
-                        const untranslatable = names.map((romanName) => {
-
-                            if (isChordFn(romanName)) { return null }
-                            const translated = romanChordNameToReal(userLetter, userScale, romanName)
-                            if (!translated) {
-                                return romanName
-                            }
-
-                            return null
-                        }).filter((elem) => elem !== null && !optionalRomans.includes(elem))
-
-                        if (untranslatable.length) {
-                            throw new Error(`Not all roman names were translatable.Make sure this is a minor key.${JSON.stringify(untranslatable)} ; scale: ${userLetter} ${userScale} `)
-                        }
-
-                        const scaledGraph =
-                            Object.entries(minor).reduce((accum, [romanName, progNodes]) => {
-
-                                const realizedName = fns[romanName as keyof typeof fns]
-                                    ? romanName
-                                    : romanChordNameToReal(userLetter, userScale, romanName)
-
-                                if (accum.find(([x, _]) => x === realizedName)) {
-                                    console.error(`prog node already translated; ${romanName} in ${userLetter} ${userScale} ${JSON.stringify({ romanName, realizedName, progNodes }, null, 2)} `)
-                                }
-
-                                const realizedOptions = progNodes.map(makeProgNodeTranslator(userLetter, userScale))
-
-
-                                return [...accum, [realizedName, realizedOptions]]
-
-                            }, [] as [romanName: string, progNodes: ProgressionGraphNode][])
-
-                        const combinedScaleGraphEntries = scaledGraph.map(([name, pOpts]: [nm: string, pOpts: ProgressionOptions[]]) => {
-                            return [name, combineEntriesByName(
-                                pOpts)
-
-                            ]
-                        }) as [name: string, pOpt: ProgressionOptions][]
-
-                        const formatted = Object.fromEntries(combinedScaleGraphEntries)
-
-                        const idx = userLetter && userScale ? `${userLetter} ${userScale}` : Date.now()
-                        mem().graphs[idx] = mem().graphs[idx] || [] as any[]
-                        mem().graphs[idx].push(formatted)
-                        return {
-                            formatted
-
-                        }
                     }
                 },
             }

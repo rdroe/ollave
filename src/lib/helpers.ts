@@ -77,15 +77,16 @@ export const phaseScale = (phaseName: string, userScale?: string, userTonic?: st
             scaleTonic: phase.scaleTonic,
         }
     }
-    if (!userScale || !userTonic) {
-        throw new Error(`Scale and tonic must both be provided to set phase scale`)
-    }
-    const properlyCasedScaleName = properScaleName(userScale) 
+
+    const properlyCasedScaleName = properScaleName(userScale)
 
     phase.scaleName = properlyCasedScaleName
     phase.scaleTonic = userTonic
 
     if (doUpdatePhase) {
+      if (!userScale || !userTonic) {
+        throw new Error(`Scale and tonic must both be provided to set phase scale`)
+      }
         getAllPhaseBarNotes(phaseName).forEach((bar) => {
             bar.forEach((note) => {
                 updateNoteTag(note, 'scaleTonic', [userTonic])

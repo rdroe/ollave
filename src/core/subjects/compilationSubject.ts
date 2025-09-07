@@ -1,7 +1,7 @@
 import {  Observer, Subject, Subscriber, Subscription } from "rxjs";
 import { mem, Mem } from "../mem";
 import { compilationObservable } from "../observables";
-import { getDebugLgger } from "src/lib/log";
+import { getDebugLgger } from "../../lib/log";
 
 // declare window type a window property for the compilation subject
 declare global {

@@ -17,9 +17,19 @@ import { createStore, useStore } from "zustand";
 import { useShallow } from "zustand/shallow";
 import { tagEntriesCompare } from "../lib/util/tagsUtil";
 import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
+import { useState } from "react";
 
 type NoteByBarWithBarId = NoteByBar & {
     barId: string
+}
+
+export const useNotesByTag = (tagStrings: string[]) => {
+    const store = useNotesByTagStore(tagStrings)
+    return {
+      notes: store.notes,
+      didUnsubscribe: store.didUnsubscribe,
+      unsubscribe: store.unsubscribe
+    }
 }
 
 export const subscribeToNotesByTag = (tagStrings: string[]) => {
@@ -27,13 +37,15 @@ export const subscribeToNotesByTag = (tagStrings: string[]) => {
         throw new Error('tagStrings array is required and cannot be empty')
     }
 
-    const { store } = createInternalNotesByTagStore(tagStrings)
+    let noteObjs: NoteByBarWithBarId[] = []
+    let didUnsubscribe = false
+
     // select the notes by tag and data. review ALL notes in the mem.notesByBar.
     const selector = makeSelector(tagStrings)
     // if the note ids or bar ids have changed, this returns false (so that subscribers can be updated)
     const compare = makeCompare()
     // subscribe using selector, compare, and clone.
-    const subscribe = makeCompilationSubscribe({
+    const unsubscribe = makeCompilationSubscribe({
         selector: (mem: Mem) => {
             return selector(mem)
         },
@@ -45,10 +57,29 @@ export const subscribeToNotesByTag = (tagStrings: string[]) => {
         // but afterwards, it adds the barId to the note.
         clone,
         name: 'subscribeToNotesByTag'
+    })({
+        next: (notes) => {
+            noteObjs = notes
+        },
+        complete: () => {
+            didUnsubscribe = true
+            if (!didUnsubscribe) {
+                unsubscribe()
+            }
+        },
+        error: (err: any) => {
+            console.error('error', err)
+        }
     })
     return {
-        store,
-        subscribe
+      notes: noteObjs,
+      didUnsubscribe,
+      unsubscribe: () => {
+        didUnsubscribe = true
+        if (!didUnsubscribe) {
+            unsubscribe()
+        }
+      }
     }
 }
 
@@ -56,6 +87,7 @@ type NotesByTagStore = {
     notes: NoteByBarWithBarId[]
     setNotes: (notes: NoteByBarWithBarId[]) => void
     unsubscribe: () => void
+    didUnsubscribe: boolean
 }
 
 const createInternalNotesByTagStore = (tagStrings: string[]) => {
@@ -65,21 +97,20 @@ const createInternalNotesByTagStore = (tagStrings: string[]) => {
     const store = createStore<NotesByTagStore>((set) => ({
         notes: initialNotes,
         setNotes: (notes: NoteByBarWithBarId[]) => set({ notes }),
+        didUnsubscribe: false,
         unsubscribe: () => {}
     }))
 
-    return {
-        store,
-    }
+    return store
+
 }
 
 export const createNotesByTagStore = (tagStrings: string[]) => {
     if (!tagStrings || tagStrings.length === 0) {
         throw new Error('tagStrings array is required and cannot be empty')
     }
-
     const targetTags = parseNoteTags(tagStrings)
-    const { store } = createInternalNotesByTagStore(tagStrings)
+    const store = createInternalNotesByTagStore(tagStrings)
     let didUnsubscribe = false
     const compare = makeCompare()
     const subscribe = makeCompilationSubscribe({
@@ -96,26 +127,22 @@ export const createNotesByTagStore = (tagStrings: string[]) => {
             store.getState().setNotes(notes)
         },
         complete: () => {
-            if (didUnsubscribe) {
-                return
-            }
-            didUnsubscribe = true
+            store.setState({ didUnsubscribe: true, unsubscribe: () => {} })
         },
         error: (err: any) => {
             console.error('error', err)
         },
     }))
-
-    return {
-        store,
-        unsubscribe: () => {
-            if (!didUnsubscribe) {
-                didUnsubscribe = true
-                unsubscribe()
-            }
-        }
+    store.setState({ unsubscribe: () => {
+      if (!didUnsubscribe) {
+        store.setState({ didUnsubscribe: true, unsubscribe: () => {} })
+        unsubscribe()
+      }
     }
+  })
+  return store
 }
+
 // select the notes by tag and data. review ALL notes in the mem.notesByBar.
 function selector(mem: Mem, targetTags: TagEntries): NoteByBarWithBarId[] {
     const matchingNotes: NoteByBarWithBarId[] = []
@@ -165,12 +192,12 @@ function clone(notes: NoteByBarWithBarId[]): NoteByBarWithBarId[] {
 }
 
 export const useNotesByTagStore = (tagStrings: string[]) => {
-    const { store } = createNotesByTagStore(tagStrings)
+    const store  = createNotesByTagStore(tagStrings)
     return useStore(store)
 }
 
 export const useNoteIdsByTagStore = (tagStrings: string[]) => {
-    const { store } = createNotesByTagStore(tagStrings)
+    const store = createNotesByTagStore(tagStrings)
     return useStore(
         store,
         useShallow(

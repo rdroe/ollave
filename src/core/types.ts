@@ -1,5 +1,5 @@
 import { Observable } from "rxjs"
-import { SongRecord } from "src/lib/types"
+import { SongRecord } from "../lib/types"
 
 // Forward declarations to avoid circular imports
 export type BarTagPercent = any

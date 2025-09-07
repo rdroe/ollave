@@ -2,7 +2,7 @@ import { browser } from "user-tables"
 import { fetchLatestSongAndTracks } from "../../lib/fetch"
 import z from "zod"
 import { Module } from "peprn/util"
-import { songRecordSchema, trackRecordSchema } from "src/lib/schemas"
+import { trackRecordSchema } from "../../lib/schemas"
 
 
 // list songs by fetching their names from the database

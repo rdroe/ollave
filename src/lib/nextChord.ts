@@ -1,9 +1,7 @@
 import { isScaleNameWithTonic } from "./util/scaleUtil"
 import { isChordCsvArg } from "./util/barsUtil"
-import { scale } from "./util/tagsUtil"
 import { lookUpGraph } from "./util/phaseUtil"
 import z from "zod"
-
 
 export const nextChord = (chordCsvArgRaw: string, userTonicRaw: string, userScaleRaw: string) => {
     const [chordCsvArg, userTonic, userScale] = z.tuple([
@@ -15,7 +13,6 @@ export const nextChord = (chordCsvArgRaw: string, userTonicRaw: string, userScal
                 userTonicRaw,
                 userScaleRaw
             ])
-
 
     if (!isScaleNameWithTonic(`${userTonic} ${userScale}`)) {
         throw new Error(`Invalid scale name: ${userTonic} ${userScale}`)

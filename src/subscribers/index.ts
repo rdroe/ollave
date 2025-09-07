@@ -27,3 +27,7 @@ export {
     createAllNoteIdsByBarStore,
     useBarNoteIdsCsvsStore,
 } from './subscribeToBarNoteIdsCsvs'
+
+export {
+  useSubscribeToIds,
+} from './subscribeToIds'

@@ -1,11 +1,14 @@
-import { makeCompilationSubscribe } from "src/core/subjects/compilationSubject"
+import { makeCompilationSubscribe } from "../core/subjects/compilationSubject"
 
-import { Mem } from "src/core/mem"
+import { mem, Mem } from "src/core/mem"
 import deepEqual from "deep-equal"
 import { createStore, useStore } from "zustand"
 import { useShallow } from "zustand/shallow"
 
 type NoteAndGroupIds = {
+  barsByPhase: {
+    [phaseId: string]: string[]
+  }
   notesByBar: {
     [barId: string]: string[]
   }
@@ -17,6 +20,12 @@ type NoteAndGroupIds = {
   },
   barByGroupId: {
     [groupId: string]: string
+  },
+  notesByGroupId: {
+    [groupId: string]: string[]
+  },
+  groupByNoteId: {
+    [noteId: string]: string
   }
 }
 
@@ -44,23 +53,45 @@ const hashLookup = (lookup: { [id: string]: string[] }): { [id: string]: string 
     })
     return obj
 }
+const getPhaseBarIds = (barIds: string[]): { [phaseId: string]: string[] } => {
+  return barIds.reduce((acc, barId) => {
+    const phaseId = barId.split(':')[0]
+    if (!acc[phaseId]) {
+      acc[phaseId] = []
+    }
+    acc[phaseId].push(barId)
+    return acc
+  }, {} as { [phaseId: string]: string[] })
+}
+const buildNotesByGroupId = (mem: Mem) => {
+  return Object.keys(mem.notesByBar).reduce((acc, barId) => {
+    mem.notesByBar[barId].forEach((note) => {
+      if (!acc[note.tagsObj.groupId[0]]) {
+        acc[note.tagsObj.groupId[0]] = []
+      }
+      acc[note.tagsObj.groupId[0]].push(note.tagsObj.noteId[0])
+    })
+    return acc
+  }, {} as { [groupId: string]: string[] })
+}
 const buildNoteAndGroupIdsStore = (mem: Mem): NoteAndGroupIds => {
   const groupsByBar = buildGroupsByBar(mem)
   const notesByBarObj = notesByBar(mem)
+  const notesByGroupId = buildNotesByGroupId(mem)
   return {
+    barsByPhase: getPhaseBarIds(Object.keys(mem.notesByBar)),
     notesByBar: notesByBarObj,
     groupsByBar,
     barByNoteId: hashLookup(notesByBarObj),
     barByGroupId: hashLookup(groupsByBar),
+    notesByGroupId,
+    groupByNoteId: hashLookup(notesByGroupId)
   }
 }
 
-export const useSubscribeToNoteAndGroupIds = () => {
+export const useSubscribeToIds = () => {
   const store = createStore<NoteAndGroupIds>((set) => ({
-    notesByBar: {},
-    groupsByBar: {},
-    barByNoteId: {},
-    barByGroupId: {}
+    ...buildNoteAndGroupIdsStore(mem())
   }))
   let didUnsubscribe = false
   const unsubscribe = makeCompilationSubscribe({
@@ -68,7 +99,7 @@ export const useSubscribeToNoteAndGroupIds = () => {
       return buildNoteAndGroupIdsStore(mem)
     },
     compare: (a, b) => {
-      return deepEqual(a, b)
+      return deepEqual(a, b, { strict: true })
     },
     name: 'useSubscribeToNoteAndGroupIds'
   })({
@@ -90,11 +121,20 @@ export const useSubscribeToNoteAndGroupIds = () => {
   const shallowGroupsByBar = useStore(store, useShallow((state) => state.groupsByBar))
   const shallowBarByNoteId = useStore(store, useShallow((state) => state.barByNoteId))
   const shallowBarByGroupId = useStore(store, useShallow((state) => state.barByGroupId))
+  const shallowBarsByPhase = useStore(store, useShallow((state) => state.barsByPhase))
+  const shallowNotesByGroupId = useStore(store, useShallow((state) => state.notesByGroupId))
+  const shallowGroupByNoteId = useStore(store, useShallow((state) => state.groupByNoteId))
 
   return {
     notesByBar: shallowNotesByBar,
     groupsByBar: shallowGroupsByBar,
     barByNoteId: shallowBarByNoteId,
-    barByGroupId: shallowBarByGroupId
+    barByGroupId: shallowBarByGroupId,
+    barsByPhase: shallowBarsByPhase,
+    notesByGroupId: shallowNotesByGroupId,
+    groupByNoteId: shallowGroupByNoteId,
+    unsubscribe: () => {
+      unsubscribe()
+    }
   }
 }

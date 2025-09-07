@@ -21,7 +21,7 @@ export {
     sumAbbreviationCsv,
     parseAbbreviationCsv,
     tuplize,
-    isAbbreviationCsv,  
+    isAbbreviationCsv,
     notesByBarArraySchema,
     getNotesByEntity,
     quantizeValueToAbbreviation,
@@ -39,7 +39,7 @@ export {
     getTagData,
     tagsDeleteMatching1,
     tagsDeleteMatching2,
-    calcFractionalDelay, 
+    calcFractionalDelay,
     calcTickDelay,
     tagEntriesCompare,
     tagDataSchema,
@@ -51,3 +51,8 @@ export {
     scale,
     TagData,
 } from './tagsUtil'
+
+export {
+    chordGraphCreate,
+    lookUpGraph
+} from './graphUtil'

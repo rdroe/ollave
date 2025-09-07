@@ -3,6 +3,8 @@ import { isNum, isString, randId } from '../../lib/helpers'
 import { mem } from '../../core/mem';
 import { z } from 'zod'
 import { getAllPhaseBarNotes, phaseCount, phaseFollowsPhase, phaseUnfollows } from '../../lib/util/phaseUtil';
+import { mapSongToMidiTicks } from 'src/lib/mapSongToTicks';
+import { setLatestMap } from 'src/core';
 const { observables } = mem()
 export const findPhase = (name: string) => {
     return observables[name] || null
@@ -110,7 +112,7 @@ const module: Module = {
                 },
                 scale: {
                     fn: async ({ '$': $, positionalNonCommands }) => {
-
+                      console.log('scale', positionalNonCommands)
                         const [userTonic = '', userScale = ''] = positionalNonCommands
                         const [phaseName1] = $
 
@@ -118,6 +120,7 @@ const module: Module = {
                         mem().phases[phaseName1].scaleTonic = userTonic
                         notes(phaseName1).tag(`scaleTonic=${userTonic}`)
                         notes(phaseName1).tag(`scaleName=${userScale}`)
+                        setLatestMap(mapSongToMidiTicks())
 
                     }
                 },

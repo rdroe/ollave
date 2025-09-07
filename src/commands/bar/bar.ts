@@ -8,7 +8,7 @@ import {  isAbbreviation } from '../../core/observables/masterTicksObservable'
 
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { setLatestMap } from '../../core/observables'
-import { abbrev, tickCounts } from 'src/lib/util/constantsUtil'
+import { abbrev, tickCounts } from '../../lib/util/constantsUtil'
 
 
 const cliDelaysToTags = (delay?: string[]): string[] => {

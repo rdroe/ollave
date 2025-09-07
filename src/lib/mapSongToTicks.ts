@@ -118,21 +118,25 @@ export const barsAtMidi = (songTick: number): BarTagPercent[] => {
 }
 
 
-export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
-    const firstPhases = Object.entries(mem().phases).filter(([, phase]) => {
-        return phase["follows-ids"].length === 0
-    })
+export const midiAtBarUtil = (mem: Mem) => {
+    const firstPhases = Object.entries(mem.phases).filter(([, phase]) => {
+      return phase["follows-ids"].length === 0
+  })
 
-    const collector: PhaseMap[] = []
+  const collector: PhaseMap[] = []
 
-    firstPhases.forEach(([phaseName, phase]) => {
-        mapPhaseData(phaseName, phase, 0, collector)
-    })
+  firstPhases.forEach(([phaseName, phase]) => {
+      mapPhaseData(phaseName, phase, 0, collector)
+  })
 
+  return (soughtTagName: string, percent: number): number => {
     let ret: number = 0
-
+    let done = false
     collector.forEach((curr) => {
         Object.entries(curr).forEach(([tickRaw, dat]) => {
+            if (done) {
+                return
+            }
             const tick = parseInt(tickRaw)
             dat.forEach((phaseMapSubelement) => {
                 const { occassion, data1, data2 } = phaseMapSubelement
@@ -148,13 +152,19 @@ export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
                         const len = barEnd - barStart
                         const tick = percent * len / 100
                         ret = barStart + Math.round(tick)
+                        done = true
 
                     }
+
                 }
             })
         })
-    }, {} as PhaseMap)
+    })
     return ret
+} }
+
+export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
+  return midiAtBarUtil(mem())(soughtTagName, percent)
 } //
 
 
@@ -166,10 +176,10 @@ function mapPhaseTicks(phaseName: string, phase: Mem['phases'][string], startTic
     const phaseBars = getAllPhaseBarNotes(phaseName)
     // initialize the midi map where we will put each note on a numeric midi property
     const phaseMidi: MidiMap = {}
-    // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick. 
+    // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick.
     phaseBars.forEach((barNotes, barIndex) => {
         // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
-        const thisBarOffset = (barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) ) 
+        const thisBarOffset = (barIndex * barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) )
         // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
         barNotes.forEach((note) => {
             const parsedTags = parseNoteTags(note.tags)
@@ -205,11 +215,11 @@ export function mapPhaseData(phaseName: string, phase: Mem['phases'][string], st
     const phaseData: PhaseMap = {}
     let barEndTick = startTick
 
-    // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick. 
+    // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick.
     phaseBars.forEach((barNotes, barIndex) => {
         // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
-        const thisBarOffset = barIndex * (barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) )    
-        const thisBarLen = barTickFactor * ((typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) ) 
+        const thisBarOffset = barIndex * (barTickFactor * (typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) )
+        const thisBarLen = barTickFactor * ((typeof phase?.barSizeMultiplier === 'number' ? phase.barSizeMultiplier : 1) )
 
         barEndTick += thisBarLen
 
