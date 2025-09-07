@@ -10,10 +10,11 @@ export const subscribeToNoteIdsByBar = (barId: string) => {
     const { store } = createBarNoteIdsStore(barId)
     const subscribe = makeCompilationSubscribe({
         selector: (mem: Mem) => {
+            console.log('mem selector; subscribeToNoteIdsByBar', barId)
             if (!mem.notesByBar[barId]) {
                 return []
             }
-            const noteIdTags = 
+            const noteIdTags =
             z.array(
                 z.tuple([z.string()])).parse(mem.notesByBar[barId].map((tag) => tag.tagsObj.noteId)
             )
@@ -23,7 +24,7 @@ export const subscribeToNoteIdsByBar = (barId: string) => {
             if (b === null) {
                 return false
             }
-            return a.every((id) => b.includes(id)) && b.every((id) => a.includes(id))  
+            return a.every((id) => b.includes(id)) && b.every((id) => a.includes(id))
         },
         clone: (a) => {
             return  structuredClone(a)
@@ -53,7 +54,7 @@ export const createBarNoteIdsStore = (barId: string) => {
             if (!mem.notesByBar[barId]) {
                 return []
             }
-            const noteIdTags = 
+            const noteIdTags =
             z.array(
                 z.tuple([z.string()])).parse(mem.notesByBar[barId].map((tag) => tag.tagsObj.noteId)
             )
@@ -63,7 +64,7 @@ export const createBarNoteIdsStore = (barId: string) => {
             if (b === null) {
                 return false
             }
-            return a.every((id) => b.includes(id)) && b.every((id) => a.includes(id))  
+            return a.every((id) => b.includes(id)) && b.every((id) => a.includes(id))
         },
         clone: (a) => {
             return  structuredClone(a)

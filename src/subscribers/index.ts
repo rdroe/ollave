@@ -3,7 +3,7 @@ export {
     createPhaseBarIdsStore,
     usePhaseBarIdsCsvStore,
     usePhaseBarIdsStore,
-    useAllBarNoteIdCsvStore, 
+    useAllBarNoteIdCsvStore,
 }from './subscribeToPhaseBarIds'
 export {
     subscribeToNoteById,
@@ -17,9 +17,14 @@ export {
     useBarNoteIdsStore,
     useBarNoteIdsCsvStore,
 } from './subscribeToNoteIdsByBar'
-export { 
+export {
     subscribeToNotesByTag,
     createNotesByTagStore,
     useNoteIdsByTagStore,
-    useNotesByTagStore
+    useNotesByTagStore,
 } from './subscribeToNotesByTag'
+export {
+    subscribeToBarNoteIdsCsvs,
+    createAllNoteIdsByBarStore,
+    useBarNoteIdsCsvsStore,
+} from './subscribeToBarNoteIdsCsvs'

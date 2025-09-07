@@ -3,7 +3,19 @@ import {  MidiMap } from "../../lib/mapSongToTicks";
 import { mem } from "../mem";
 import { compileNotesByBarToTracks, compilePhasesToTracks, saveSongAndTracks } from "../../lib/util/schemaUtil";
 
-(window as any).compileEventTarget = new window.EventTarget();
+const compileEventTarget = new window.EventTarget();
+
+
+const compilationObservable_ = new Observable<MidiMap>((subscriber) => {
+  compileEventTarget.addEventListener("compiled", () => {
+      console.log('makeCompilationSubscribe event listener triggered')
+      subscriber.next(mem())
+  })
+});
+(window as any).compilationObservable_ = compilationObservable_ as Observable<MidiMap>
+
+export const compilationObservable = (window as any).compilationObservable_ as Observable<MidiMap>
+
 
 export function setLatestMap(map: MidiMap) {
     mem().latestMap = map;
@@ -12,12 +24,8 @@ export function setLatestMap(map: MidiMap) {
     compilePhasesToTracks(); // ensures that only active phases are saved, old ones oprhaned in db. @todo: code does exist that looks at orphaned ids, but nothing is done with them
     compileNotesByBarToTracks();
     saveSongAndTracks();
-    (window as any).compileEventTarget.dispatchEvent(new window.CustomEvent("compiled"))
+    console.log('setLatestMap dispatching event for makeCompilationSubscribe');
+    compileEventTarget.dispatchEvent(new CustomEvent(("compiled")))
 }
 //
 
-export const compilationObservable = new Observable<MidiMap>((subscriber) => {
-    (window as any).compileEventTarget.addEventListener("compiled", () => {
-        subscriber.next(mem())
-    })
-})

@@ -60,7 +60,7 @@ export function addSlider (barName: string, noteId: string) {
     slider.oninput = () => {
         const abbrev = noteData.tagsObj.quantize[0]
         const quantizedBarDelay =  isAbbreviation(abbrev) ? quantizeValueToAbbreviation(parseFloat(slider.value), abbrev) : parseInt(slider.value)
-        updateBarDelay(noteData, quantizedBarDelay, false)
+        updateBarDelayFromSlder(noteData, quantizedBarDelay, false)
         setSliderValue(noteId, quantizedBarDelay)
     }
     controls1.appendChild(slider)
@@ -69,7 +69,7 @@ let updateBarDelayTimeout: null | ReturnType<typeof setTimeout> = null
 // on the data object, replace the barDelay index by array index value
 // also call the mapSongToMidiTicks function to update the midi map, but
 // use native JS setTimeout to debounce to 100ms
-export function updateBarDelay (noteData: NoteByBar, newBarDelay: number, skipSliderSync: boolean = true) {
+export function updateBarDelayFromSlder (noteData: NoteByBar, newBarDelay: number, skipSliderSync: boolean = true) {
     const index = noteData.tags.findIndex((tag) => tag.startsWith('barDelay='))
     if (index === -1) {
         throw new Error('barDelay tag not found')

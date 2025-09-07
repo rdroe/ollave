@@ -17,11 +17,13 @@ function makeCompilationSubscribe_ <RetType>(obj: {
     compare?: (a: RetType, b: RetType) => boolean
     clone?: (a: RetType) => RetType
 }) {
+  console.log('makeCompilationSubscribe', obj.selector)
     let isInitialized: boolean = false
     let prev: RetType | null =  null
     const subscribe = (subscriber: Observer<RetType>) => {
         const subjectUnsubscribe = window.compilationSubject.subscribe({
             next: (_: number) => {
+                console.log('compilationSubject next', obj.selector)
                 const newVal = obj.selector(mem())
                 const compared = obj.compare(newVal, prev)
                 if (!compared || !isInitialized) {
@@ -48,5 +50,5 @@ function makeCompilationSubscribe_ <RetType>(obj: {
 window.makeCompilationSubscribe_ = makeCompilationSubscribe_
 compilationObservable.subscribe(window.compilationSubject)
 
-export const makeCompilationSubscribe = window.makeCompilationSubscribe_ 
+export const makeCompilationSubscribe = window.makeCompilationSubscribe_
 

@@ -13,14 +13,14 @@ export const subscribeToPhaseBarIds = () => {
         selector: () => {
             return getPhaseBarIds()
         },
-            compare: (a, b) => {
+        compare: (a, b) => {
             const comparison = equal(a, b)
             if (comparison) {
                 return true
             } else {
                 return false
             }
-        }, 
+        },
         clone: (a) => {
             return structuredClone(a)
         }
@@ -67,7 +67,7 @@ export const phaseBarIdsStore = () =>  {
     }
 }
 
-export const createPhaseBarIdsStore = () => { 
+export const createPhaseBarIdsStore = () => {
     const { store } = phaseBarIdsStore()
     let didUnsubscribe = false
     const subscribe = makeCompilationSubscribe({
@@ -75,20 +75,19 @@ export const createPhaseBarIdsStore = () => {
             return getPhaseBarIds()
         },
         compare: (a, b) => {
-            const comparison = equal({bars: a}, {bars:b}, {strict: true})
-            if (comparison) {
+            const comparison = equal({bars: a}, {bars:b}, {strict: true})            if (comparison) {
                 return true
             } else {
                 return false
             }
-        }, 
+        },
         clone: (a) => {
             return structuredClone(a)
         }
     })
     const unsubscribe = subscribe(({
         next: (phaseBarIds) => {
-            store.getState().setPhaseBarIds(phaseBarIds) 
+            store.getState().setPhaseBarIds(phaseBarIds)
         },
         complete: () => {
             didUnsubscribe = true

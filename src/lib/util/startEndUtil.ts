@@ -9,13 +9,6 @@ export type StartEndTuple = [number, number]
 type StartEndData = {
   [phaseName: string]: StartEndTuple[]
 }
-let doLog = false
-let intervalId = setInterval(() => {
-
-    if ((Date.now() % 1000) < 5) {
-        doLog = true
-    }
-}, 1)
 
 function relativeStartEnd(phaseName: string, phase: Mem['phases'][string], startTick: number, collector: StartEndData) {
   if (!collector[phaseName]) {
@@ -56,15 +49,6 @@ export const phaseBeginningsAndEnds = (): StartEndData => {
   firstPhases.forEach(([phaseName, phase]) => {
       relativeStartEnd(phaseName, phase, 0, collector)
   })
-  if (doLog) {
-    console.log('phaseBeginningsAndEnds 0', {
-      collector,
-      firstPhases,
-      phases: mem().phases,
-      doLog,
-  })
-    doLog = false
-  }
   return collector
 }
 

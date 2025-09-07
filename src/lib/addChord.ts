@@ -76,7 +76,7 @@ export function addChord(
         phaseTags.push(`scaleTonic=${currentScale.scaleTonic}`)
     }
 
-    let commonTags = [layerTag].concat(phaseTags).concat(tags).concat([groupIdTag, barTag])
+    let commonTags = [layerTag].concat(phaseTags).concat(tags).concat([groupIdTag, `barId=${barTag}`])
 
     if (!isChordCsvArg(chordCsvArg)) {
         throw new Error(`Error; ${chordCsvArg} is not a valid chord`)

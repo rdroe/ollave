@@ -44,7 +44,10 @@ export const noteByBarSchema = z.object({
 })
 
 
-export const cloneNoteByBar = (note: NoteByBar): NoteByBar => {
+export const cloneNoteByBar = (note: NoteByBar | null): NoteByBar | null => {
+  if (!note) {
+    return null
+  }
     return wrapWithGetters(makeNoteByBar(note.note, structuredClone(note.tags).map((tag) => tag.split('=').join('='))))
 }
 const wrapWithGetters = (note: z.infer<typeof noteByBarSchema>): NoteByBarInner => {

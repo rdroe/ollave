@@ -1,14 +1,15 @@
 import { ParsedCli } from 'peprn/util'
-import { Abbreviation, abbrev, isAbbreviation, isAbbreviationCsv, parseAbbreviationCsv, sumAbbreviationCsv, quantizeValueToAbbreviation } from './abbreviationUtil'
+import {  abbrev, isAbbreviation, isAbbreviationCsv, parseAbbreviationCsv, sumAbbreviationCsv, quantizeValueToAbbreviation } from './abbreviationUtil'
 import { isFraction, tickCounts } from './tickUtil'
-import { isCsvArg, parseCsvArg } from './barsUtil'
-import {  noteByBarSchema } from '../schemas'
+import { isCsvArg } from './barsUtil'
+import {  NoteByBar, noteByBarSchema } from '../schemas'
 import { mem } from '../../core/mem'
 import { z } from 'zod'
 import { getAllPhaseBarNotes } from './phaseUtil'
-import {  calcFractionalDelay, calcTickDelay, parseNoteTags, TagData, TagEntries } from './tagsUtil'
-import { strjson } from './common'
+import {   parseNoteTags, TagData, TagEntries } from './tagsUtil'
 import { zeroIndexedArr } from '../graphh'
+import { mapSongToTicks } from '..'
+import { setLatestMap } from '../../core/observables'
 
 const isNoteCnt = (str: string | number) => {
     if (typeof str === 'number') return false
@@ -151,7 +152,7 @@ export const parseDelayMatrixRow = (pattern: (string | number)[]): {
             }, 'a fraction is required (entry being returned as matrix'
             ))
         ] //close tuple def
-        ) // close tuple call 
+        ) // close tuple call
     ).parse(entries)
 
 
@@ -221,7 +222,7 @@ const quantizeOffset = (rawOffset: number, parsedTags: TagEntries) => {
         return name === 'quantize'
     })
     if (quantizeAmount) {
-        const [quantizeTargetAbbrev] = quantizeAmount[1] 
+        const [quantizeTargetAbbrev] = quantizeAmount[1]
         if (isAbbreviation(quantizeTargetAbbrev)) {
             return quantizeValueToAbbreviation(rawOffset, quantizeTargetAbbrev)
         }
@@ -230,8 +231,81 @@ const quantizeOffset = (rawOffset: number, parsedTags: TagEntries) => {
     return rawOffset
 }
 
+
+/**
+ * Updates the bar delay for a note and triggers a map update
+ */
+export const updateBarDelay = (
+  noteData: NoteByBar,
+  newBarDelay: number
+): NoteByBar => {
+  const notes = Object.values(mem().notesByBar).flat()
+  const note = notes.find(
+    (note) => note.tagsObj.noteId[0] === noteData.tagsObj.noteId[0]
+  )
+  if (!note) {
+    throw new Error('note not found')
+  }
+  note.tagsObj.barDelay = [newBarDelay]
+
+  return noteData
+}
+
+export const moveNotesToBarById = (noteIds: string[], targetBarId: string) => {
+  const currentNotesByBar = mem().notesByBar
+  // current notes by bar is a record of bar ids to arrays of note by bar
+
+  const barIds = Object.keys(currentNotesByBar)
+  const notesToMove: NoteByBar[] = []
+
+  // go through each bar and set it to the same notes filtered by note ids
+  barIds.forEach((aBarId) => {
+    currentNotesByBar[aBarId] = currentNotesByBar[aBarId].filter((note) => {
+      const matchingNote = noteIds.includes(note.tagsObj.noteId[0] as string)
+      if (matchingNote) {
+        notesToMove.push(note)
+        note.tagsObj.barId = [targetBarId]
+      }
+      return !matchingNote
+    })
+  })
+
+  // remove the notes from the original bar
+  currentNotesByBar[targetBarId] = [
+    ...(currentNotesByBar[targetBarId] ?? []),
+    ...notesToMove,
+  ]
+}
+
+export const moveNotesToBarByNoteIdsAndUpdateMap = (
+  noteIds: string[],
+  targetBarId: string
+) => {
+  moveNotesToBarById(noteIds, targetBarId)
+  setLatestMap(mapSongToTicks.mapSongToMidiTicks())
+}
+
+// Filter a note from any mem > notesByBar array where it is present
+export const deleteNotesById = (noteIds: string[]) => {
+  const notesByBar = mem().notesByBar
+  Object.entries(notesByBar).forEach(([barId, notes]) => {
+    notesByBar[barId] = notes.filter(
+      (note) => !noteIds.includes(note.tagsObj.noteId[0] as string)
+    )
+  })
+}
+
+export const deleteNotesByIdAndUpdateMap = (noteIds: string[]) => {
+  deleteNotesById(noteIds)
+  console.log('deleteNotesByIdAndUpdateMap deleting notes', noteIds)
+  setLatestMap(mapSongToTicks.mapSongToMidiTicks())
+}
+
+
 // Additional re-exports
 export { getAllPhaseBarNotes } from "./phaseNotesUtil"
 export { parseNoteTags } from "./noteParsingUtil"
 export type { TagData, TagEntries } from "./noteParsingUtil"
 export { isCsvArg, parseCsvArg } from "./common"
+
+
