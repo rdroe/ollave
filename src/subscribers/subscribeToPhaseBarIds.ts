@@ -75,7 +75,8 @@ export const createPhaseBarIdsStore = () => {
             return getPhaseBarIds()
         },
         compare: (a, b) => {
-            const comparison = equal({bars: a}, {bars:b}, {strict: true})            if (comparison) {
+            const comparison = equal({bars: a}, {bars:b}, {strict: true});
+            if (comparison) {
                 return true
             } else {
                 return false
