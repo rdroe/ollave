@@ -18,13 +18,11 @@ const getBarNoteIdsCsvs = (mem: Mem) => {
 export const subscribeToBarNoteIdsCsvs = () => {
     const subscribe = makeCompilationSubscribe({
         selector: (mem) => {
-          console.log('mem selector; subscribeToBarNoteIdsCsvs')
             const barIdsToNoteIdCsv: { [barId: string]: string } = getBarNoteIdsCsvs(mem)
             return barIdsToNoteIdCsv
         },
         compare: (a, b) => {
             const comparison = equal(a, b, {strict: true})
-            console.log('comparison; subscribeToBarNoteIdsCsvs', {comparison, a, b})
             if (comparison) {
                 return true
             } else {
@@ -33,7 +31,8 @@ export const subscribeToBarNoteIdsCsvs = () => {
         },
         clone: (a) => {
             return structuredClone(a)
-        }
+        },
+        name: 'subscribeToBarNoteIdsCsvs'
     })
 
     return {subscribe}
@@ -55,7 +54,6 @@ export const createAllNoteIdsByBarStore = () => {
 
     const unsubscribe = subscribeToBarNoteIdsCsvs().subscribe({
       next: (barNoteIdsCsvs) => {
-        console.log('barNoteIdsCsvs in next; createAllNoteIdsByBarStore', barNoteIdsCsvs)
         store.getState().setAllNoteIdsByBar(barNoteIdsCsvs)
       },
       error: (err) => {
@@ -63,7 +61,6 @@ export const createAllNoteIdsByBarStore = () => {
       },
       complete: () => {
         didUnsubscribe = true
-        console.log('complete; createAllNoteIdsByBarStore')
         unsubscribe()
       }
     })
@@ -71,7 +68,6 @@ export const createAllNoteIdsByBarStore = () => {
     store.setState({
       allNoteIdsByBar: getBarNoteIdsCsvs(mem()),
       unsubscribe: () => {
-        console.log('unsubscribe; createAllNoteIdsByBarStore')
         if (!didUnsubscribe) {
             unsubscribe()
             didUnsubscribe = true

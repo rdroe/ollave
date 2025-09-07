@@ -43,7 +43,8 @@ export const subscribeToNotesByTag = (tagStrings: string[]) => {
         },
         // clone function clones the note after the fashion of the note by id subscriber.
         // but afterwards, it adds the barId to the note.
-        clone
+        clone,
+        name: 'subscribeToNotesByTag'
     })
     return {
         store,
@@ -87,7 +88,8 @@ export const createNotesByTagStore = (tagStrings: string[]) => {
             const result = compare(a, b)
             return result
         },
-        clone
+        clone,
+        name: 'createNotesByTagStore'
     })
     const unsubscribe = subscribe(({
         next: (notes) => {

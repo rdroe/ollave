@@ -2,7 +2,6 @@ import { Module } from 'peprn/util'
 import { mem } from '../../core/mem'
 
 export default {
-
     fn: () => Promise.resolve(),
     submodules: {
         loggle: {

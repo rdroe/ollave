@@ -10,7 +10,6 @@ export const subscribeToNoteIdsByBar = (barId: string) => {
     const { store } = createBarNoteIdsStore(barId)
     const subscribe = makeCompilationSubscribe({
         selector: (mem: Mem) => {
-            console.log('mem selector; subscribeToNoteIdsByBar', barId)
             if (!mem.notesByBar[barId]) {
                 return []
             }
@@ -28,7 +27,8 @@ export const subscribeToNoteIdsByBar = (barId: string) => {
         },
         clone: (a) => {
             return  structuredClone(a)
-        }
+        },
+        name: 'subscribeToNoteIdsByBar'
     })
     return {
         store,
@@ -68,7 +68,8 @@ export const createBarNoteIdsStore = (barId: string) => {
         },
         clone: (a) => {
             return  structuredClone(a)
-        }
+        },
+        name: 'createBarNoteIdsStore'
     })
     const unsubscribe = subscribe(({
         next: (barNoteIds) => {

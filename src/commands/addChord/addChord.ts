@@ -42,6 +42,7 @@ export default {
         if (!Array.isArray(tags) || !isStringArray(tags)) {
             throw new Error('Tags must be a string array')
         }
+
         const finalArp = isChordPlacement(arp) ? DEFAULT_CHORD_PLACEMENTS[arp] : arp
         if (!Array.isArray(finalArp) || !isStringArray(finalArp)) {
             throw new Error('Arp must be a string array or 1,2, or 3')
@@ -49,7 +50,6 @@ export default {
         if (!['string', 'undefined'].includes(typeof scaleTonic) || !['string', 'undefined'].includes(typeof scaleName)) {
             throw new Error('Scale tonic and scale name must be strings')
         }
-
         const retVar = addChord(chordName, phaseName, parseInt(barIndex), finalArp, tags, z.string().or(z.undefined()).parse(scaleTonic), z.string().or(z.undefined()).parse(scaleName), z.boolean().or(z.undefined()).parse(addSlider) ?? false)
 
         return retVar

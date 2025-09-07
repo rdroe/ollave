@@ -10,7 +10,7 @@ import { tagEntriesCompare } from "../lib/util/tagsUtil";
 import { useShallow } from "zustand/shallow";
 import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
 
-export const subscribeToNoteById = (noteId?: string, barName?: string) => { 
+export const subscribeToNoteById = (noteId?: string, barName?: string) => {
     if (!noteId) {
         throw new Error('noteId is required')
     }
@@ -23,14 +23,15 @@ export const subscribeToNoteById = (noteId?: string, barName?: string) => {
             return selector(mem)
         },
         compare: (a, b) => {
-            const result = compare(a, b) 
+            const result = compare(a, b)
             if (result === "UNSUBSCRIBE") {
                 store.getState().unsubscribe()
                 return true
             }
             return result
-        }, 
-        clone
+        },
+        clone,
+        name: 'subscribeToNoteById'
     })
     return {
         store,
@@ -45,7 +46,7 @@ type SingleNoteStore = {
 }
 
 const singleNoteStore = (noteId: string, barName?: string) =>  {
-    const initialNote = barName ? mem().notesByBar[barName].find((note) => note.tagsObj.noteId[0] === noteId) : Object.values(mem().notesByBar).flat().find((note) => note.tagsObj.noteId[0] === noteId) 
+    const initialNote = barName ? mem().notesByBar[barName].find((note) => note.tagsObj.noteId[0] === noteId) : Object.values(mem().notesByBar).flat().find((note) => note.tagsObj.noteId[0] === noteId)
     const store = createStore<SingleNoteStore>((set) => ({
         note: initialNote,
         setNote: (note: NoteByBar) => set({ note }),
@@ -58,7 +59,7 @@ const singleNoteStore = (noteId: string, barName?: string) =>  {
 }
 
 
-export const createNoteStoreById = (noteId?: string, barName?: string) => { 
+export const createNoteStoreById = (noteId?: string, barName?: string) => {
     if (!noteId) {
         throw new Error('noteId is required')
     }
@@ -68,14 +69,15 @@ export const createNoteStoreById = (noteId?: string, barName?: string) => {
     const subscribe = makeCompilationSubscribe({
         selector: makeSelector(noteId, barName),
         compare: (a, b) => {
-            const result = compare(a, b)  
+            const result = compare(a, b)
             if (result === "UNSUBSCRIBE") {
                 unsubscribe()
                 return true
             }
             return result
-        }, 
-        clone
+        },
+        clone,
+        name: 'createNoteStoreById'
     })
     const unsubscribe = subscribe(({
         next: (note) => {
@@ -94,9 +96,9 @@ export const createNoteStoreById = (noteId?: string, barName?: string) => {
         },
     }))
 
-    return {store, 
-        updateNotePitch: (note: string, skipSliderSync: boolean = true) => { 
-            updateNotePitch(noteId, note, skipSliderSync) 
+    return {store,
+        updateNotePitch: (note: string, skipSliderSync: boolean = true) => {
+            updateNotePitch(noteId, note, skipSliderSync)
         },
         updateTagsObj: (tagsObj: z.infer<typeof tagsObjSchema>, skipSliderSync: boolean = true)  => updateTagsObj(noteId, tagsObj, skipSliderSync),
         unsubscribe: () => {
@@ -108,7 +110,7 @@ export const createNoteStoreById = (noteId?: string, barName?: string) => {
     }
 }
 
-function makeSelector (noteId: string, barName?: string)  { 
+function makeSelector (noteId: string, barName?: string)  {
     return function (mem: Mem): NoteByBar | null  {
         if (barName && mem.notesByBar[barName]) {
             const clone = mem.notesByBar[barName].find((note) => note.tagsObj.noteId[0] === noteId)
@@ -125,9 +127,9 @@ function makeSelector (noteId: string, barName?: string)  {
     }
 }
 
-function makeCompare (store: ReturnType<typeof singleNoteStore>['store'])  { 
+function makeCompare (store: ReturnType<typeof singleNoteStore>['store'])  {
     return (a: NoteByBar, b: NoteByBar): boolean | "UNSUBSCRIBE" => {
-        if (a===null) {
+        if (a === null) {
             return "UNSUBSCRIBE"
         }
         const comparison = tagEntriesCompare(parseNoteTags(a.tags), parseNoteTags(b?.tags || []))
@@ -141,7 +143,7 @@ function makeCompare (store: ReturnType<typeof singleNoteStore>['store'])  {
     }
 }
 
-function clone (noteByBar: NoteByBar)  { 
+function clone (noteByBar: NoteByBar)  {
     return cloneNoteByBar(noteByBar)
 }
 

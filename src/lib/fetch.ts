@@ -154,7 +154,7 @@ export async function initLoadedSong() {
 }
 
 export async function initNewSong() {
-  const songNames = await getSongNames()
+  const songNames = mem().songNames
   const shiftedOff = songNames.shift()
   const data: Omit<SongRecord, "id"> = {
       name: shiftedOff,

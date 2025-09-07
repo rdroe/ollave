@@ -11,10 +11,12 @@ export const subscribeToPhaseBarIds = () => {
     const { store } = phaseBarIdsStore()
     const subscribe = makeCompilationSubscribe({
         selector: () => {
-            return getPhaseBarIds()
+          const phaseBarIds = getPhaseBarIds()
+
+            return phaseBarIds
         },
         compare: (a, b) => {
-            const comparison = equal(a, b)
+            const comparison = equal(a, b, {strict: true})
             if (comparison) {
                 return true
             } else {
@@ -23,7 +25,8 @@ export const subscribeToPhaseBarIds = () => {
         },
         clone: (a) => {
             return structuredClone(a)
-        }
+        },
+        name: 'subscribeToPhaseBarIds'
     })
 
     return {
@@ -84,7 +87,8 @@ export const createPhaseBarIdsStore = () => {
         },
         clone: (a) => {
             return structuredClone(a)
-        }
+        },
+        name: 'createPhaseBarIdsStore'
     })
     const unsubscribe = subscribe(({
         next: (phaseBarIds) => {
@@ -123,24 +127,6 @@ export const usePhaseBarIdsCsvStore = () => {
                 sortedBarIdsByPhase[phaseName] = phaseBarIds.sort(sortByNumberAfterColon).join(',')
             })
             return sortedBarIdsByPhase
-        })
-    )
-}
-
-export const useAllBarNoteIdCsvStore = () => {
-    const { store } = createPhaseBarIdsStore()
-    return useStore(
-        store,
-        useShallow(({ phaseBarIds }) => {
-            //return a map in which keys are barIds (regardless of phase) and values are the csv of note ids in that bar
-            const barNoteIdCsvs: { [barId: string]: string } = {}
-            Object.values(phaseBarIds).forEach((phaseBarIds) => {
-                const currentNotesByBar = mem().notesByBar
-                phaseBarIds.forEach((barId) => {
-                    barNoteIdCsvs[barId] = getBarNoteIdCsvs(currentNotesByBar, barId)
-                })
-            })
-            return barNoteIdCsvs
         })
     )
 }

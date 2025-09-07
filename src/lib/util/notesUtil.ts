@@ -297,7 +297,6 @@ export const deleteNotesById = (noteIds: string[]) => {
 
 export const deleteNotesByIdAndUpdateMap = (noteIds: string[]) => {
   deleteNotesById(noteIds)
-  console.log('deleteNotesByIdAndUpdateMap deleting notes', noteIds)
   setLatestMap(mapSongToTicks.mapSongToMidiTicks())
 }
 

@@ -16,6 +16,7 @@ import { namesPromise, namesResolver } from './songNamesUtil';
         for (let i = 0; i < 100; i++) {
             const rand = Math.floor(Math.random() * wordList.length);
             songNames.push(wordList[rand])
+            console.log("songNames imported")
         }
         namesResolver()
     })

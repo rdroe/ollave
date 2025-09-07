@@ -16,9 +16,9 @@ import { setLatestMap } from "../core/observables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
 const DEFAULT_ARP_ZERO = DEFAULT_ARP
-const DEFAULT_ARP_ONE = 'quarter'.repeat(7).split('')
-const DEFAULT_ARP_TWO = 'half'.repeat(7).split('')
-const DEFAULT_ARP_THREE = 'half,quarter'.repeat(7).split('')
+const DEFAULT_ARP_ONE = 'quarter|'.repeat(7).split('|').slice(0, 7)
+const DEFAULT_ARP_TWO = 'half|'.repeat(7).split('|').slice(0, 7)
+const DEFAULT_ARP_THREE = 'half,quarter|'.repeat(7).split('|').slice(0, 7)
 export const DEFAULT_CHORD_PLACEMENTS = {
     0: DEFAULT_ARP_ZERO,
     1: DEFAULT_ARP_ONE,
@@ -31,11 +31,15 @@ export function addChord(
     chordCsvArg: string,
     phaseName: string,
     barIndex: number,
-    arp: string[] | 0 | 1 | 2 | 3, tags: string[], userScaleTonic: string = 'A', userScaleName: string = 'minor', doAddSlider: boolean = false): {
-    noteIds: string[],
-    barName: string,
-    commonTags: string[],
-    notes: NoteByBar[],
+    arp: string[] | 0 | 1 | 2 | 3,
+    tags: string[],
+    userScaleTonic: string = 'A',
+    userScaleName: string = 'minor',
+    doAddSlider: boolean = false): {
+      noteIds: string[],
+      barName: string,
+      commonTags: string[],
+      notes: NoteByBar[],
 }  {
     if (!isChordCsvArg(chordCsvArg)) {
         throw new Error('Chord must be a valid chord name with comma-separated octave')
@@ -90,8 +94,8 @@ export function addChord(
     }
 
     notes.forEach(async(note, idx) => {
-        const arpArg = typeof arp === 'number' ? DEFAULT_CHORD_PLACEMENTS[arp] : arp[idx]
-        const delayTagsObj = (arpArg[idx] ?? DEFAULT_ARP[idx]).split(',').reduce((acc, delay) => {
+        const arpArg = typeof arp === 'number' ? DEFAULT_CHORD_PLACEMENTS[arp][idx] : arp[idx]
+        const delayTagsObj = (arpArg ?? DEFAULT_ARP[idx]).split(',').reduce((acc, delay) => {
             if (isAbbreviation(delay)) {
                 const x = delay
                 acc[abbrev[delay]] = acc[abbrev[delay]] ? acc[abbrev[delay]] + 1 : 1
@@ -129,10 +133,10 @@ export function addChord(
                         return acc
                     }, 0 as number)
                 },
-
                 compare: (a, b) => {
                     return a === b
                 },
+                name: 'addChord'
             })({
                 next: (num) => {
                     return num

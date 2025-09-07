@@ -8,7 +8,6 @@ const compileEventTarget = new window.EventTarget();
 
 const compilationObservable_ = new Observable<MidiMap>((subscriber) => {
   compileEventTarget.addEventListener("compiled", () => {
-      console.log('makeCompilationSubscribe event listener triggered')
       subscriber.next(mem())
   })
 });
@@ -24,7 +23,6 @@ export function setLatestMap(map: MidiMap) {
     compilePhasesToTracks(); // ensures that only active phases are saved, old ones oprhaned in db. @todo: code does exist that looks at orphaned ids, but nothing is done with them
     compileNotesByBarToTracks();
     saveSongAndTracks();
-    console.log('setLatestMap dispatching event for makeCompilationSubscribe');
     compileEventTarget.dispatchEvent(new CustomEvent(("compiled")))
 }
 //
