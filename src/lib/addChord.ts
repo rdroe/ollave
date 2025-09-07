@@ -14,6 +14,7 @@ import { addSlider } from "./addSlider"
 import { makeCompilationSubscribe } from "../core/subjects/compilationSubject"
 import { setLatestMap } from "../core/observables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
+export const DEFAULT_GLISS = ['0th', 'quarter', 'quarter,eighth', 'half', 'half,eighth']
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
 const DEFAULT_ARP_ZERO = DEFAULT_ARP
 const DEFAULT_ARP_ONE = 'quarter|'.repeat(7).split('|').slice(0, 7)

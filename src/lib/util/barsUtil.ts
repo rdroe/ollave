@@ -1,4 +1,4 @@
-import { isString, peprnIsNum, isCsvArg, parseCsvArg } from './common'
+import { isString, isCsvArg, parseCsvArg } from './common'
 import { randId } from './common'
 import { lookUpGraph } from './graphUtil'
 import { isNoteNameWithoutOctave, isNoteNameWithOctave } from './noteValidationUtil'
@@ -113,7 +113,7 @@ export const parseChordCsvArg = (str: string, userScaleAndTonic?: string): [note
     if (typeof csv[0] !== 'string' || csv[0] === "") throw new Error(`${csv} is not a non-empty string`)
 
     if (typeof csv[1] !== 'number') throw new Error(`${str} is not a chord csv arg; second part is not an octave (number)`)
-    // const 
+    // const
     //   if (!notes) throw new Error(`${str} is not a chord csv arg; could not get notes`)
 
     const [userTonic, userScale] = userScaleAndTonic ? userScaleAndTonic.split(' ') : []
@@ -167,14 +167,14 @@ export const makeFulfilledBarNote = (barTag: string, extraTags: string[]) => {
     return (noteName: string): NoteByBar => {
 
         const noteProperties = Note.get(noteName)
-        const { oct, letter, acc } = noteProperties 
+        const { oct, letter, acc } = noteProperties
         const parsed = parseNoteTags(extraTags)
         const layer  = parsed.find(([tag]) => {
             return tag === 'layer'
         })?.[1]
-        
+
         const layerId = layer ? layer[0] : null
-        
+
         if (typeof layerId === 'string' && layerId !== lastLayerAdded[0]) {
             lastLayerAdded.unshift(layerId)
         }

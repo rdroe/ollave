@@ -4,6 +4,7 @@ import { mem, Mem } from "src/core/mem"
 import deepEqual from "deep-equal"
 import { createStore, useStore } from "zustand"
 import { useShallow } from "zustand/shallow"
+import { useEffect, useMemo, useState } from "react"
 
 type NoteAndGroupIds = {
   barsByPhase: {
@@ -26,7 +27,17 @@ type NoteAndGroupIds = {
   },
   groupByNoteId: {
     [noteId: string]: string
-  }
+  },
+  notesByGroupIdCsv: {
+    [groupId: string]: string
+  },
+  notesByBarCsv: {
+    [barId: string]: string
+  },
+  groupsByBarCsv: {
+    [barId: string]: string
+  },
+
 }
 
 const buildGroupsByBar = (mem: Mem) => {
@@ -85,23 +96,57 @@ const buildNoteAndGroupIdsStore = (mem: Mem): NoteAndGroupIds => {
     barByNoteId: hashLookup(notesByBarObj),
     barByGroupId: hashLookup(groupsByBar),
     notesByGroupId,
-    groupByNoteId: hashLookup(notesByGroupId)
+    groupByNoteId: hashLookup(notesByGroupId),
+    notesByGroupIdCsv: {
+      ...Object.keys(notesByGroupId).reduce((acc, groupId) => {
+        acc[groupId] = notesByGroupId[groupId].join(',')
+        return acc
+      }, {} as { [groupId: string]: string })
+    },
+    notesByBarCsv: {
+      ...Object.keys(notesByBarObj).reduce((acc, barId) => {
+        acc[barId] = notesByBarObj[barId].join(',')
+        return acc
+      }, {} as { [barId: string]: string })
+    },
+    groupsByBarCsv: {
+      ...Object.keys(groupsByBar).reduce((acc, barId) => {
+        acc[barId] = groupsByBar[barId].join(',')
+        return acc
+      }, {} as { [barId: string]: string })
+    }
   }
 }
 
 export const useSubscribeToIds = () => {
-  const store = createStore<NoteAndGroupIds>((set) => ({
+  const store = useMemo(() => createStore<NoteAndGroupIds>((set) => ({
     ...buildNoteAndGroupIdsStore(mem())
-  }))
-  let didUnsubscribe = false
-  const unsubscribe = makeCompilationSubscribe({
+  })), [])
+  const [didUnsubscribe, setDidUnsubscribe] = useState(false)
+  useEffect(() => {
+    const unsubscribe = makeCompilationSubscribe({
     selector: (mem: Mem) => {
       return buildNoteAndGroupIdsStore(mem)
     },
-    compare: (a, b) => {
-      return deepEqual(a, b, { strict: true })
+    compare: (a, bDefault) => {
+      const b = bDefault || buildNoteAndGroupIdsStore(mem())
+      // we need to find the mismiatch.
+      // do deep equal on all the properties
+      const properties = Object.keys(a).filter((property) => property !== 'unsubscribe')
+      const comparison = properties.every((property) => {
+        const comparison = deepEqual(a[property as keyof NoteAndGroupIds], b[property as keyof NoteAndGroupIds], { strict: true })
+        if (!comparison) {
+          console.log('false comparison', comparison, {a: a[property as keyof NoteAndGroupIds], b: b[property as keyof NoteAndGroupIds]})
+        }
+        return comparison
+      })
+      if (comparison) {
+        return true
+      } else {
+        return false
+      }
     },
-    name: 'useSubscribeToNoteAndGroupIds'
+    name: 'useSubscribeToIds'
   })({
     next: (noteAndGroupIds) => {
       store.setState(noteAndGroupIds)
@@ -110,12 +155,15 @@ export const useSubscribeToIds = () => {
       console.error('error', err)
     },
     complete: () => {
-      didUnsubscribe = true
       if (!didUnsubscribe) {
+        setDidUnsubscribe(true)
         unsubscribe()
+
       }
     }
   })
+
+}, [didUnsubscribe])
 
   const shallowNotesByBar = useStore(store, useShallow((state) => state.notesByBar))
   const shallowGroupsByBar = useStore(store, useShallow((state) => state.groupsByBar))
@@ -124,7 +172,9 @@ export const useSubscribeToIds = () => {
   const shallowBarsByPhase = useStore(store, useShallow((state) => state.barsByPhase))
   const shallowNotesByGroupId = useStore(store, useShallow((state) => state.notesByGroupId))
   const shallowGroupByNoteId = useStore(store, useShallow((state) => state.groupByNoteId))
-
+  const shallowNotesByGroupIdCsv = useStore(store, useShallow((state) => state.notesByGroupIdCsv))
+  const shallowNotesByBarCsv = useStore(store, useShallow((state) => state.notesByBarCsv))
+  const shallowGroupsByBarCsv = useStore(store, useShallow((state) => state.groupsByBarCsv))
   return {
     notesByBar: shallowNotesByBar,
     groupsByBar: shallowGroupsByBar,
@@ -133,8 +183,8 @@ export const useSubscribeToIds = () => {
     barsByPhase: shallowBarsByPhase,
     notesByGroupId: shallowNotesByGroupId,
     groupByNoteId: shallowGroupByNoteId,
-    unsubscribe: () => {
-      unsubscribe()
-    }
+    notesByGroupIdCsv: shallowNotesByGroupIdCsv,
+    notesByBarCsv: shallowNotesByBarCsv,
+    groupsByBarCsv: shallowGroupsByBarCsv
   }
 }

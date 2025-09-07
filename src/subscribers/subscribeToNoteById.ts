@@ -9,6 +9,7 @@ import { deleteNoteById } from "../lib/deleteNoteById";
 import { tagEntriesCompare } from "../lib/util/tagsUtil";
 import { useShallow } from "zustand/shallow";
 import { makeCompilationSubscribe } from "../core/subjects/compilationSubject";
+import { useMemo } from "react";
 
 export const subscribeToNoteById = (noteId?: string, barName?: string) => {
     if (!noteId) {
@@ -64,6 +65,7 @@ export const createNoteStoreById = (noteId?: string, barName?: string) => {
         throw new Error('noteId is required')
     }
     const { store } = singleNoteStore(noteId, barName)
+
     let didUnsubscribe = false
     const compare = makeCompare(store)
     const subscribe = makeCompilationSubscribe({
@@ -148,7 +150,7 @@ function clone (noteByBar: NoteByBar)  {
 }
 
 export const useNoteStoreById = (noteId: string, barName?: string) => {
-    const { store } = createNoteStoreById(noteId, barName)
+    const { store } = useMemo(() => createNoteStoreById(noteId, barName), [noteId, barName])
     return useStore(store)
 }
 
