@@ -1,4 +1,4 @@
-import { NoteByBar } from 'src/lib/schemas'
+import { NoteByBar } from '../lib/schemas'
 
 import { Mem } from './types'
 

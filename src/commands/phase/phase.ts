@@ -1,13 +1,21 @@
-import { Module, } from 'peprn/util';
-import { isNum, isString, randId } from '../../lib/helpers'
-import { mem } from '../../core/mem';
+import { Module } from 'peprn/util'
 import { z } from 'zod'
-import { getAllPhaseBarNotes, phaseCount, phaseFollowsPhase, phaseUnfollows } from '../../lib/util/phaseUtil';
-import { mapSongToMidiTicks } from 'src/lib/mapSongToTicks';
-import { setLatestMap } from 'src/core';
+
+import { mem } from '../../core/mem'
+import { setLatestMap } from '../../core/observables'
+import { isNum, isString } from '../../lib/helpers'
+import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
+import { copyBarNotesWithNoteIdsAndGroupIds } from '../../lib/util/barsUtil'
+import {
+  getAllPhaseBarNotes,
+  phaseCount,
+  phaseFollowsPhase,
+  phaseUnfollows,
+} from '../../lib/util/phaseUtil'
+
 const { observables } = mem()
 export const findPhase = (name: string) => {
-    return observables[name] || null
+  return observables[name] || null
 }
 
 /**
@@ -20,117 +28,126 @@ a new command
 phases and tracks
 we need to add the track, song, entities and the track-song (or song-track) property on one of those.
 */
-const isTuple = (tuple: any): tuple is [string, number] => {
-    return tuple && tuple.length === 2
+const isTuple = (tuple: unknown): tuple is [string, number] => {
+  return Array.isArray(tuple) && tuple.length === 2
 }
-export const parseColonTag = (str: string): null | [semantic: string, number: number] => {
-    let result: null | [semantic: string, number: number] = null
-    if (str.match(/[^\:]\:[0-9]+/)) {
-        const tuple = z.tuple([z.string(), z.number().or(z.string().transform((str) => {
+export const parseColonTag = (
+  str: string
+): null | [semantic: string, number: number] => {
+  let result: null | [semantic: string, number: number] = null
+  if (str.match(/[^\:]\:[0-9]+/)) {
+    const tuple = z
+      .tuple([
+        z.string(),
+        z.number().or(
+          z.string().transform((str) => {
             if (typeof str !== 'string') {
-                throw new Error('str is not a string')
+              throw new Error('str is not a string')
             }
             return parseInt(str)
-        }))]).parse(str.split(':'))
-        if (isTuple(tuple)) {
-            result = tuple
-        }
+          })
+        ),
+      ])
+      .parse(str.split(':'))
+    if (isTuple(tuple)) {
+      result = tuple
     }
-    return result
+  }
+  return result
 }
 
 const notes = (phaseOrBarTag?: string) => {
-    let notes: ReturnType<typeof mem>["notesByBar"]["string"] = []
-    if (!phaseOrBarTag) {
-        notes = Object.values(mem().notesByBar).flat()
-    } else if (mem().phases[phaseOrBarTag]) {
-        notes = getAllPhaseBarNotes(phaseOrBarTag).flat()
-    } else if (parseColonTag(phaseOrBarTag)) {
-        notes = mem().notesByBar[phaseOrBarTag]
-    }
-    return {
-        tag: (newTag: string) => {
-            notes.forEach((note) => {
-                note.tags.push(newTag)
-            })
-        }
-    }
+  let notes: ReturnType<typeof mem>['notesByBar']['string'] = []
+  if (!phaseOrBarTag) {
+    notes = Object.values(mem().notesByBar).flat()
+  } else if (mem().phases[phaseOrBarTag]) {
+    notes = getAllPhaseBarNotes(phaseOrBarTag).flat()
+  } else if (parseColonTag(phaseOrBarTag)) {
+    notes = mem().notesByBar[phaseOrBarTag]
+  }
+  return {
+    tag: (newTag: string) => {
+      notes.forEach((note) => {
+        note.tags.push(newTag)
+      })
+    },
+  }
 }
 
 const module: Module = {
-    help: {
-        description: 'Create a subscribable time interval',
-    },
+  help: {
+    description: 'Create a subscribable time interval',
+  },
 
-    fn: async ({
-        $: dollar,
-        positionalNonCommands: [phaseName, ...rest]
-    }) => {
+  fn: async () => {
+    // can't recall why this was here
+    // if (!isString(phaseName)) {
+    //     throw new Error('Phase name is required')
+    // }
 
-        // can't recall why this was here
-        // if (!isString(phaseName)) {
-        //     throw new Error('Phase name is required')
-        // }
+    // if (rest.length === 0) {
+    //     throw new Error('Further arguments are required')
+    // }
+    return null
+  },
+  submodules: {
+    $: {
+      fn: async (args) => {
+        const [phaseName] = args['$']
+        const [barCnt] = args.positionalNonCommands
 
-        // if (rest.length === 0) {
-        //     throw new Error('Further arguments are required')
-        // }
-        return null
-    },
-    submodules: {
-        '$': {
-            fn: async (args) => {
-                const [phaseName] = args['$']
-                const [barCnt] = args.positionalNonCommands
-
-                if (isString(phaseName) && isNum(barCnt)) {
-                    phaseCount(phaseName, barCnt)
-                    return getAllPhaseBarNotes(phaseName)
-                }
-                return phaseName
-            },
-            submodules: {
-                follows: {
-                    fn: async (args, familialCalls) => {
-                        const off = args?.off
-                        const phaseName1 = await familialCalls['phase $']
-                        const objects = args.positionalNonCommands
-                        if (off) {
-                            return phaseUnfollows(phaseName1, objects)
-                        }
-                        return phaseFollowsPhase(phaseName1, objects)
-                    }
-                },
-                unfollows: {
-                    fn: async (args, familialCalls) => {
-
-                        const phaseName1 = await familialCalls['phase $']
-                        const objects = args.positionalNonCommands
-                        return phaseUnfollows(phaseName1, objects)
-
-                    }
-                },
-                scale: {
-                    fn: async ({ '$': $, positionalNonCommands }) => {
-                      console.log('scale', positionalNonCommands)
-                        const [userTonic = '', userScale = ''] = positionalNonCommands
-                        const [phaseName1] = $
-
-                        mem().phases[phaseName1].scaleName = userScale
-                        mem().phases[phaseName1].scaleTonic = userTonic
-                        notes(phaseName1).tag(`scaleTonic=${userTonic}`)
-                        notes(phaseName1).tag(`scaleName=${userScale}`)
-                        setLatestMap(mapSongToMidiTicks())
-
-                    }
-                },
-                push: {
-
-                },
-
-            }
+        if (isString(phaseName) && isNum(barCnt)) {
+          phaseCount(phaseName, barCnt)
+          return getAllPhaseBarNotes(phaseName)
         }
-    }
+        return phaseName
+      },
+      submodules: {
+        follows: {
+          fn: async (args, familialCalls) => {
+            const off = args?.off
+            const phaseName1 = await familialCalls['phase $']
+            const objects = args.positionalNonCommands
+            if (off) {
+              return phaseUnfollows(phaseName1, objects)
+            }
+            return phaseFollowsPhase(phaseName1, objects)
+          },
+        },
+        unfollows: {
+          fn: async (args, familialCalls) => {
+            const phaseName1 = await familialCalls['phase $']
+            const objects = args.positionalNonCommands
+            return phaseUnfollows(phaseName1, objects)
+          },
+        },
+        scale: {
+          fn: async ({ $: $, positionalNonCommands }) => {
+            console.log('scale', positionalNonCommands)
+            const [userTonic = '', userScale = ''] = positionalNonCommands
+            const [phaseName1] = $
+
+            mem().phases[phaseName1].scaleName = userScale
+            mem().phases[phaseName1].scaleTonic = userTonic
+            notes(phaseName1).tag(`scaleTonic=${userTonic}`)
+            notes(phaseName1).tag(`scaleName=${userScale}`)
+            setLatestMap(mapSongToMidiTicks())
+          },
+        },
+        push: {},
+      },
+    },
+    copyBarNotes: {
+      fn: async ({ positionalNonCommands }) => {
+        const [barId1, barId2] = z
+          .array(z.string())
+          .parse(positionalNonCommands)
+        console.log('barId1', barId1)
+        console.log('barId2', barId2)
+        copyBarNotesWithNoteIdsAndGroupIds(barId1, barId2)
+      },
+    },
+  },
 }
 
 export default module

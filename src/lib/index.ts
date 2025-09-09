@@ -19,42 +19,37 @@ export * as nextChord from './nextChord'
 export * as romanize from './romanize'
 export * as deleteNoteById from './deleteNoteById'
 
-
 // Individual function exports for direct access
 // mem-db exports
 export {
-    phaseFollowsPhase,
-    phaseUnfollows,
-    sortByNumberAfterColon,
-    lookUpGraph,
-    getAllPhaseBars,
-    getAllPhaseBarNotes,
-    getFollowingPhases,
-    phaseExists,
-    phaseCount,
+  phaseFollowsPhase,
+  phaseUnfollows,
+  sortByNumberAfterColon,
+  lookUpGraph,
+  getAllPhaseBars,
+  getAllPhaseBarNotes,
+  getFollowingPhases,
+  phaseExists,
+  phaseCount,
 } from './util/phaseUtil'
 
-
-export {
-  lastTick,
-  startEndData,
-} from './util/startEndUtil'
+export { lastTick, startEndData } from './util/startEndUtil'
 
 // helpers exports
 export {
-    strjson,
-    isString,
-    isStringNumNum,
-    peprnIsNum,
-    passivelyNumberize,
-    isNum,
-    randId,
-    randomNumber,
-    randomInt,
-    phaseScale,
-    isScaleName,
-    isScaleNameWithTonic,
-    properScaleName
+  strjson,
+  isString,
+  isStringNumNum,
+  peprnIsNum,
+  passivelyNumberize,
+  isNum,
+  randId,
+  randomNumber,
+  randomInt,
+  phaseScale,
+  isScaleName,
+  isScaleNameWithTonic,
+  properScaleName,
 } from './helpers'
 
 // addNote exports
@@ -62,46 +57,27 @@ export { addNoteToBar } from './addNote'
 
 // tags exports
 export {
-    updateNoteTag,
-    parseNoteTags,
-    calcFractionalDelay
+  updateNoteTag,
+  parseNoteTags,
+  calcFractionalDelay,
 } from './util/tagsUtil'
 
 // graphh exports
-export {
-    ProgressionOptions,
-    minor,
-    allScales
-} from './graphh'
+export { minor, allScales } from './graphh'
 
 // music exports
-export {
-    Triad,
-    RelativeNote,
-    samplerState,
-    getSampler,
-    playTriads
-} from './music'
+export type { Triad, RelativeNote, samplerState } from './music'
+export type { ProgressionOptions, ProgressionOptionsEntry } from './graphh'
+export { getSampler, playTriads } from './music'
 
 // midi exports
-export {
-    saveRaw,
-    addEvents,
-    addNoteEvents,
-    playNotes
-} from './midi'
+export { saveRaw, addEvents, addNoteEvents, playNotes } from './midi'
 
 // subcommands exports
-export {
-    Subcommand,
-    SubcommandPatterns,
-    runSubcommandsOrNull,
-    romanChordNameToRealModule
-} from './subcommands'
+export { runSubcommandsOrNull, romanChordNameToRealModule } from './subcommands'
+export type { Subcommand, SubcommandPatterns } from './subcommands'
 
 // mapSongToTicks exports
-export {
-    mapSongToMidiTicks
-} from './mapSongToTicks'
+export { mapSongToMidiTicks } from './mapSongToTicks'
 
-export  * as util from './util'
+export * as util from './util'

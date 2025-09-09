@@ -1,5 +1,6 @@
-import { peprnIsNum, isCsvArg, parseCsvArg } from './common'
 import { TagData, TagEntry, TagEntries } from '../schemaTypes'
+
+import { peprnIsNum, isCsvArg, parseCsvArg } from './common'
 
 // Re-export types for backward compatibility
 export type { TagData, TagEntry, TagEntries }
@@ -11,25 +12,21 @@ export type { TagData, TagEntry, TagEntries }
  */
 export const parseNoteTags = (tags: string[]): TagEntries => {
   const parsedTags = tags.reduce((accum, tag) => {
-      if (!tag.includes('=')) {
-          return [...accum, [tag, []] as [nm: string, data: TagData]]
-      }
-      const split = tag.split('=')
-      let tagDat: TagData = []
-      if (peprnIsNum(split[1])) {
-          tagDat = [parseFloat(split[1])]
-      } else if (isCsvArg(split[1])) {
-          tagDat = parseCsvArg(split[1])
-      } else {
-          tagDat = [split[1]]
-      }
+    if (!tag.includes('=')) {
+      return [...accum, [tag, []] as [nm: string, data: TagData]]
+    }
+    const split = tag.split('=')
+    let tagDat: TagData = []
+    if (peprnIsNum(split[1])) {
+      tagDat = [parseFloat(split[1])]
+    } else if (isCsvArg(split[1])) {
+      tagDat = parseCsvArg(split[1])
+    } else {
+      tagDat = [split[1]]
+    }
 
-      return [...accum, [
-          split[0], tagDat
-      ]] as TagEntries
-
+    return [...accum, [split[0], tagDat]] as TagEntries
   }, [] as TagEntries)
 
   return parsedTags
 }
-

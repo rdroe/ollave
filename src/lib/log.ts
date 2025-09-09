@@ -1,9 +1,9 @@
-import { mem } from "src/core/mem"
+import { mem } from '../core/mem'
 
-
-
-export const getDebugLgger = () => (...args: any[]) => {
+export const getDebugLgger =
+  () =>
+  (...args: any[]) => {
     if (mem().doLog) {
-        console.log(...args)
+      console.log(...args)
     }
-}
+  }

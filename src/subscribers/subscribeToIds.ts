@@ -5,8 +5,7 @@ import { z } from 'zod'
 import { createStore, useStore } from 'zustand'
 import { useShallow } from 'zustand/shallow'
 
-import { mem, Mem } from 'src/core/mem'
-
+import { mem, Mem } from '../core/mem'
 import { makeCompilationSubscribe } from '../core/subjects/compilationSubject'
 
 type NoteAndGroupIds = {
@@ -152,7 +151,7 @@ const buildNoteAndGroupIdsStore = (mem: Mem): NoteAndGroupIds => {
 export const useSubscribeToIds = () => {
   const store = useMemo(
     () =>
-      createStore<NoteAndGroupIds>((set) => ({
+      createStore<NoteAndGroupIds>(() => ({
         ...buildNoteAndGroupIdsStore(mem()),
       })),
     []
@@ -177,7 +176,12 @@ export const useSubscribeToIds = () => {
             { strict: true }
           )
           if (!comparison) {
-            console.log('false comparison', comparison, {
+            console.log('false comparison in subscribeToIds', comparison, {
+              a: a[property as keyof NoteAndGroupIds],
+              b: b[property as keyof NoteAndGroupIds],
+            })
+          } else {
+            console.log('true comparison in subscribeToIds', comparison, {
               a: a[property as keyof NoteAndGroupIds],
               b: b[property as keyof NoteAndGroupIds],
             })

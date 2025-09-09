@@ -3,8 +3,6 @@ import { Module, ParsedCli, awaitAll } from 'peprn/util'
 import { Chord, Note, Scale, Mode, Progression, RomanNumeral } from 'tonal'
 import { z } from 'zod'
 
-import { chordGraphCreate } from 'src/lib/util/graphUtil'
-
 import { setLatestMap } from '../../core/observables'
 import {
   allScales,
@@ -25,6 +23,7 @@ import { randomInt, strjson } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import { makeNoteByBar } from '../../lib/schemas'
 import { isNoteNameWithOctave } from '../../lib/util/barsUtil'
+import { chordGraphCreate } from '../../lib/util/graphUtil'
 import {
   getNotesByEntity,
   notesByBarArraySchema,
@@ -53,8 +52,7 @@ export const chord: Module = {
         description: 'Dev facilities for playing with triads',
       },
       fn: async (args) => {
-        const [userLetter = '', userScale = '', noteLetter = null] =
-          args.positionalNonCommands
+        const [userLetter = '', userScale = ''] = args.positionalNonCommands
         const formatted = allScales.map((sc) => ({
           scaleTonic: sc.tonic,
           scaleType: sc.type,

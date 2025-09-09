@@ -1,8 +1,7 @@
 import { Observable } from 'rxjs'
 
-import { ProgressionOptions } from 'src/lib'
-import { NoteByBar } from 'src/lib/schemas'
-
+import { ProgressionOptions } from '../lib'
+import { NoteByBar } from '../lib/schemas'
 import { SongRecord } from '../lib/types'
 
 // Forward declarations to avoid circular imports
