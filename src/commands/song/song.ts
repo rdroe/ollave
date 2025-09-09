@@ -1,6 +1,6 @@
 import { Module } from 'peprn/util'
 import {  phaseRecordSchema, songRecordSchema, trackRecordSchema } from '../../lib/schemas'
-import { mem } from '../../core/mem'
+import { Mem, mem } from '../../core/mem'
 import { browser } from 'user-tables'
 import fakeCli from 'peprn/fakeCli'
 const { userTables } = browser
@@ -163,7 +163,7 @@ song start
                 if (all) {
                     return mem()
                 }
-                return mem().notesByBar
+                return printSong(mem())
             }
         },
         start: {
@@ -232,3 +232,58 @@ song start
 
     }
 } as Module
+
+
+function printSong(m: Mem) {
+
+  return {
+    formatted: {
+      song: m.song,
+      tracks: m.tracks,
+      phases: m.phases,
+      notesByBar: formatNotesByBar(m)
+    }
+  }
+}
+
+function formatNotesByBar(m: Mem) {
+  return {
+    sizes: Object.fromEntries(Object.keys(m.notesByBar).map((barId) => {
+      return[
+        barId,
+        m.notesByBar[barId].length
+      ]
+    })),
+    abbreviated: {
+      notesByBar: Object.keys(m.notesByBar).map((barId) => {
+        return {
+          barId,
+          notes: Object.fromEntries(m.notesByBar[barId].map((note,idx) => [`${idx} in ${note.tagsObj.chord[0]} (${idx})`, note.tagsObj.barDelay[0]])),
+          size: m.notesByBar[barId].length,
+          // unique chords
+          chords:[
+            ...new Set(m.notesByBar[barId].map((note) => note.tagsObj.chord[0])),
+          ]
+        }
+      })
+    },
+    // detailed: {
+    //   notesByBar: Object.keys(m.notesByBar).map((barId) => {
+    //     return {
+    //       barId,
+    //       notes: Object.fromEntries(m.notesByBar[barId].map((note, idx) => {
+    //           return [`${idx} in ${note.tagsObj.chord[0]} (${idx})`, {
+    //           tags: [
+    //             ...new Set(m.notesByBar[barId].map((note) => [note.note, uniqArray(note.tags)])),
+    //           ]
+    //         }]}
+    //       )),
+    //     }
+    //   })
+    // }
+  }
+}
+
+const uniqArray = (arr: any[]) => {
+  return [...new Set(arr)]
+}
