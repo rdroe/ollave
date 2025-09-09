@@ -25,6 +25,7 @@ export default {
         },
     },
     fn: async ({positionalNonCommands, arp = DEFAULT_ARP, barName = 'default:1', tags = [], scaleTonic, scaleName, addSlider = false }) => {
+      console.log('arp', arp)
         const [chordName] = positionalNonCommands
         if (typeof chordName !== 'string' || !isChordCsvArg(chordName)) {
             throw new Error('Chord must be a valid chord name with comma-separated octave')
@@ -43,10 +44,24 @@ export default {
             throw new Error('Tags must be a string array')
         }
 
-        const finalArp = isChordPlacement(arp) ? DEFAULT_CHORD_PLACEMENTS[arp] : arp
-        if (!Array.isArray(finalArp) || !isStringArray(finalArp)) {
-            throw new Error('Arp must be a string array or 1,2, or 3')
+        let finalArp: number[] | string[] | 0 | 1 | 2 | 3 | null = null
+        if (isChordPlacement(arp)) {
+          finalArp = DEFAULT_CHORD_PLACEMENTS[arp]
+        } else {
+          const stringParse = z.array(z.string()).safeParse(arp)
+          const numberParse = z.array(z.number()).safeParse(arp)
+          if (stringParse.success) {
+            finalArp = stringParse.data
+          } else if (numberParse.success) {
+            finalArp = numberParse.data
+          } else {
+            finalArp = null
+          }
         }
+        if (!finalArp) {
+          throw new Error('Arp must be a string array, number array, or the number 1, 2, or 3')
+        }
+
         if (!['string', 'undefined'].includes(typeof scaleTonic) || !['string', 'undefined'].includes(typeof scaleName)) {
             throw new Error('Scale tonic and scale name must be strings')
         }

@@ -109,16 +109,3 @@ import { properScaleName } from "./util/scaleUtil"
 
 // Re-export schema functions from their new locations
 export { initNotesByBar, compileNotesByBarToTracks, compilePhasesToTracks, compileTracksToNotesByBar, compileTracksToPhasesProperties } from "./util/schemaUtil"
-
-export function saveSongAndTracks() {
-    const songId = mem().song.id
-    browser.userTables.update('song', { id: songId, data: mem().song }, {})
-    Object.values(mem().phases).forEach((phase) => {
-        browser.userTables.update('phase', { id: phase.id, data: phase }, {
-            id: phase.id
-        })
-    })
-    mem().tracks.forEach((track) => {
-        browser.userTables.update('track', { id: track.id, data: track }, {})
-    })
-}

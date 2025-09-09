@@ -1,4 +1,4 @@
-import { isChordCsvArg, parseChordCsvArg } from "./util/barsUtil"
+import { isChordCsvArg, isStringArray, parseChordCsvArg } from "./util/barsUtil"
 import {  NoteByBar } from "./schemas"
 import { mem, Mem } from "../core/mem"
 
@@ -14,6 +14,7 @@ import { addSlider } from "./addSlider"
 import { makeCompilationSubscribe } from "../core/subjects/compilationSubject"
 import { setLatestMap } from "../core/observables"
 import { mapSongToMidiTicks } from "./mapSongToTicks"
+import z from "zod"
 export const DEFAULT_GLISS = ['0th', 'quarter', 'quarter,eighth', 'half', 'half,eighth']
 export const DEFAULT_ARP = ['0th','0th','0th','0th','0th', '0th', '0th']
 const DEFAULT_ARP_ZERO = DEFAULT_ARP
@@ -27,12 +28,11 @@ export const DEFAULT_CHORD_PLACEMENTS = {
     3: DEFAULT_ARP_THREE,
 }
 
-
 export function addChord(
     chordCsvArg: string,
     phaseName: string,
     barIndex: number,
-    arp: string[] | 0 | 1 | 2 | 3,
+    arp: string[]  | number[] | 0 | 1 | 2 | 3,
     tags: string[],
     userScaleTonic: string = 'A',
     userScaleName: string = 'minor',
@@ -95,29 +95,11 @@ export function addChord(
     }
 
     notes.forEach(async(note, idx) => {
-        const arpArg = typeof arp === 'number' ? DEFAULT_CHORD_PLACEMENTS[arp][idx] : arp[idx]
-        const delayTagsObj = (arpArg ?? DEFAULT_ARP[idx]).split(',').reduce((acc, delay) => {
-            if (isAbbreviation(delay)) {
-                const x = delay
-                acc[abbrev[delay]] = acc[abbrev[delay]] ? acc[abbrev[delay]] + 1 : 1
-                return acc
-            }
-            console.warn(`Error; ${delay} is not a valid fraction`)
-            return acc
-        }, {} as {
-            [key in keyof typeof tickCounts]: number
-        })
-        // convert to e.g. quarter=1, half=2, etc; only leave barDelay
-        const delayTagStrings: string[] = Object.entries(delayTagsObj).map(([key, value]) => {
-            return `${key}=${value}`
-        })
-
-        const totalDelay = calcFractionalDelay(parseNoteTags(delayTagStrings))
-
         // const delayTags = Object.entries(delayTagsObj).map(([key, value]) => `${key}=${value}`)
         const noteId = randId('', 6)
         noteIds.push(noteId)
         const noteIdTag = `noteId=${noteId}`
+        const totalDelay = caculateNoteDelay(arp, idx)
         const allTags = [...commonTags /*, ...delayTags */, noteIdTag , `barDelay=${totalDelay}`]
 
         const noteObj = await addNoteToBar(note, barTag, parseNoteTags(allTags))
@@ -158,4 +140,37 @@ export function addChord(
         commonTags,
         notes: allNotes,
     }
+}
+
+export function caculateNoteDelay(arp: string[] | number[] | 0 | 1 | 2 | 3, idx: number) {
+  if (typeof arp === 'number' || Array.isArray(arp) && isStringArray(arp)) {
+    return calculateNormalNoteDelay(arp, idx)
+  } else if (Array.isArray(arp)) {
+    return calculateNumbericNoteDelay(arp, idx)
+  }
+}
+function calculateNormalNoteDelay(arp: string[] | 0 | 1 | 2 | 3, idx: number) {
+  const arpArg = typeof arp === 'number' ? DEFAULT_CHORD_PLACEMENTS[arp][idx] : arp[idx]
+  const delayTagsObj = (arpArg ?? DEFAULT_ARP[idx]).split(',').reduce((acc, delay) => {
+      if (isAbbreviation(delay)) {
+          const x = delay
+          acc[abbrev[delay]] = acc[abbrev[delay]] ? acc[abbrev[delay]] + 1 : 1
+          return acc
+      }
+      console.warn(`Error; ${delay} is not a valid fraction`)
+      return acc
+  }, {} as {
+      [key in keyof typeof tickCounts]: number
+  })
+  // convert to e.g. quarter=1, half=2, etc; only leave barDelay
+  const delayTagStrings: string[] = Object.entries(delayTagsObj).map(([key, value]) => {
+      return `${key}=${value}`
+  })
+
+  const totalDelay = calcFractionalDelay(parseNoteTags(delayTagStrings))
+  return totalDelay
+}
+
+function calculateNumbericNoteDelay(arp: number[], idx: number) {
+  return arp[idx]
 }

@@ -4,7 +4,7 @@ import { PhaseRecord, SongRecord, TrackRecord } from "../types"
 import { browser } from "user-tables"
 
 export function initNotesByBar() {
-    songRecordSchema.parse(mem().song) 
+    songRecordSchema.parse(mem().song)
     const notesByBar = mem().tracks.reduce((acc, track) => {
         return {
             ...acc,
@@ -18,11 +18,18 @@ export function compileNotesByBarToTracks() {
     songRecordSchema.parse(mem().song)
     const { tracks } = mem()
     const notesByBar = notesByBarSchema.parse(mem().notesByBar)
+    console.log('notesByBar before save', notesByBar)
     Object.keys(notesByBar).forEach((barId) => {
         const phaseIdForBar = barId.split(':')[0]
         const owningTrack = tracks.find((track) => track["phase-names"].includes(phaseIdForBar))
         if (owningTrack) {
             owningTrack.notesByBar[barId] = notesByBar[barId]
+            // remove excess bars from owningTrack.notesByBar
+            const trackBarsToRemove = Object.keys(owningTrack.notesByBar).filter((barId) => !Object.keys(notesByBar).includes(barId))
+            trackBarsToRemove.forEach((barId) => {
+                delete owningTrack.notesByBar[barId]
+            })
+
         }
     })
     mem().tracks = tracks
@@ -97,6 +104,7 @@ export function saveSongAndTracks() {
         })
     })
     mem().tracks.forEach((track) => {
+      console.log('track', track)
         browser.userTables.update('track', { id: track.id, data: track }, {})
     })
 }

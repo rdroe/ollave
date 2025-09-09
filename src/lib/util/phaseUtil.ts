@@ -7,6 +7,7 @@ import { browser } from "user-tables"
 import { z } from "zod"
 import { PhaseRecord } from "./phaseTypes"
 import { getAllPhaseBars, getAllPhaseBarNotes, sortByNumberAfterColon } from "./phaseNotesUtil"
+import { NoteByBar } from "../schemas"
 
 // temp-id is for in-memory only. id is for the database.
 // phase <new-phase> follows <existing-phase>
@@ -139,10 +140,12 @@ export async function phaseCount(phase: string, size: number, skipCopy: boolean 
     // if size is more than the number of bars, add bars to the end (copy the existing pattern fully or partially until the size is reached)
     // if size is the same as the number of bars, do nothing.
     if (allBars.length > size) {
-        const barsToRemove = allBars.slice(size)
-        barsToRemove.forEach((barTag) => {
-            delete notesByBar[barTag]
-        })
+        const barsToKeep = allBars.slice(0, size)
+        mem().notesByBar = barsToKeep.reduce((acc, barTag) => {
+            acc[barTag] = notesByBar[barTag]
+            return acc
+        }, {} as Record<string, NoteByBar[]>)
+        console.log('mem() after phase adjust', mem())
     } else if (allBars.length < size) {
 
         const barsToAdd = size - allBars.length

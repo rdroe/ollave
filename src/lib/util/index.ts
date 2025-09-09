@@ -54,5 +54,6 @@ export {
 
 export {
     chordGraphCreate,
-    lookUpGraph
+    lookUpGraph,
+    getPhaseChordNames,
 } from './graphUtil'
