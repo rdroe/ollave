@@ -6,16 +6,22 @@ import { parseColonTag } from '../../commands/phase/phase'
 import { mem } from '../../core/mem'
 import { setLatestMap } from '../../core/observables'
 import { chordNameWithNotes, DynamicChordNames } from '../graphh'
-import { cloneNoteByBar, makeNoteByBar, NoteByBar } from '../schemas'
+import {
+  cloneNoteByBar,
+  makeNoteByBar,
+  NoteByBar,
+  tagsObjSchema,
+} from '../schemas'
 
 import { isString, isCsvArg, parseCsvArg } from './common'
 import { randId } from './common'
 import { lookUpGraph } from './graphUtil'
-import { parseNoteTags } from './noteParsingUtil'
+import { parseNoteTags, TagEntries } from './noteParsingUtil'
 import {
   isNoteNameWithoutOctave,
   isNoteNameWithOctave,
 } from './noteValidationUtil'
+import { tagEntriesCompare } from './tagsUtil'
 
 const allChordTypes = ChordType.all()
 export const isRestArg = (arg: unknown) => {
@@ -223,9 +229,10 @@ export const getLastChordLayerName = () => {
 
 export const copyBarNotesWithNoteIdsAndGroupIds = (
   sourceBarTag: string,
-  targetBarTag: string
+  targetBarTag: string,
+  tags?: TagEntries,
+  move?: boolean
 ) => {
-  console.log('copyBarNotesWithNoteIdsAndGroupIds', sourceBarTag, targetBarTag)
   const [sourcePhase, sourceBarIndex] = parseColonTag(sourceBarTag)
   const [targetPhase, targetBarIndex] = parseColonTag(targetBarTag)
   if (!phaseExists(sourcePhase)) {
@@ -234,6 +241,7 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
   if (!phaseExists(targetPhase)) {
     throw new Error(`Target phase ${targetPhase} does not exist`)
   }
+
   if (!mem().notesByBar[sourceBarTag]) {
     phaseCount(sourcePhase, sourceBarIndex + 1, true)
   }
@@ -241,9 +249,22 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
     phaseCount(targetPhase, targetBarIndex + 1, true)
   }
 
-  const sourceBar = mem().notesByBar[sourceBarTag]
+  const allSourceNotes = mem().notesByBar[sourceBarTag]
+  const sourceBarNotes = tags
+    ? allSourceNotes.filter((note) => {
+        const parsedTags = parseNoteTags(note.tags)
+        const compare = tagEntriesCompare(tags, parsedTags)
+        console.log('source; tags and parsed filterable tags', {
+          tags,
+          parsedTags,
+          compare,
+        })
+        return compare
+      })
+    : allSourceNotes
+
   const uniqueNoteGroupIds = [
-    ...new Set(sourceBar.map((note) => note.tagsObj.groupId[0])),
+    ...new Set(sourceBarNotes.map((note) => note.tagsObj.groupId[0])),
   ]
   const replacmentNoteGroupIds = z.record(z.string(), z.string()).parse(
     Object.fromEntries(
@@ -253,7 +274,7 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
     )
   )
   const uniqueLayerIds = [
-    ...new Set(sourceBar.map((note) => note.tagsObj.layer[0])),
+    ...new Set(sourceBarNotes.map((note) => note.tagsObj.layer[0])),
   ]
   const replacmentLayerIds = z.record(z.string(), z.string()).parse(
     Object.fromEntries(
@@ -263,7 +284,7 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
     )
   )
 
-  const clonedNotes = sourceBar.map((note) => {
+  const clonedNotes = sourceBarNotes.map((note) => {
     const clonedNote = cloneNoteByBar(note)
     const noteGroupId = z.string().parse(note.tagsObj.groupId[0])
     const noteLayerId = z.string().parse(note.tagsObj.layer[0])
@@ -274,9 +295,15 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
     clonedNote.tagsObj.barId = [targetBarTag]
     return clonedNote
   })
-  console.log('clonedNotes', clonedNotes)
 
   mem().notesByBar[targetBarTag] = mem().notesByBar[targetBarTag] || []
   mem().notesByBar[targetBarTag].push(...clonedNotes)
+  if (move) {
+    mem().notesByBar[sourceBarTag] = mem().notesByBar[sourceBarTag].filter(
+      (note) => {
+        return !sourceBarNotes.includes(note)
+      }
+    )
+  }
   setLatestMap(mapSongToMidiTicks())
 }

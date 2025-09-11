@@ -153,7 +153,7 @@ export const phaseRecordSchema = z.object({
   scaleTonic: z.string().nullable().optional(),
   'follows-ids': z.array(z.number()),
   speed: z.number().nullable().optional(),
-  barSizeMultiplier: z.number().nullable().optional(),
+  barSizeMultiplier: z.number().nullable(),
 })
 
 export const notesByBarSchema = z.record(

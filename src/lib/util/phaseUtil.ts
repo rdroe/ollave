@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { mem } from '../../core/mem'
 import { setLatestMap } from '../../core/observables'
 import { mapSongToMidiTicks } from '../mapSongToTicks'
-import { NoteByBar } from '../schemas'
+import { NoteByBar, phaseRecordSchema } from '../schemas'
 
 import { randId } from './common'
 import { getAllPhaseBars } from './phaseNotesUtil'
@@ -44,7 +44,7 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
       'follows-ids': [],
       barSizeMultiplier: null,
       speed: 1,
-      scaleName: 'C major',
+      scaleName: 'major',
       scaleTonic: 'C',
     }
   }
@@ -107,23 +107,19 @@ export async function phaseCount(
   if (!phases[phase]) {
     const phaseData: Omit<PhaseRecord, 'id'> = {
       'follows-ids': [],
-      barSizeMultiplier: null,
+      barSizeMultiplier: 1,
       speed: null,
-      scaleTonic: null,
-      scaleName: null,
+      scaleTonic: 'C',
+      scaleName: 'major',
       name: phase,
     }
 
     const phaseId = await browser.userTables.add('phase', { data: phaseData })
-    phases[phase] = {
+    const songPhase = phaseRecordSchema.parse({
+      ...phaseData,
       id: z.number().parse(phaseId),
-      name: phase,
-      'follows-ids': [],
-      barSizeMultiplier: 1,
-      speed: 1,
-      scaleName: 'C major',
-      scaleTonic: 'C',
-    }
+    })
+    phases[phase] = songPhase
     const trackId = rawTrackId ? rawTrackId : mem()?.tracks?.[0]?.id
     if (typeof trackId === 'number') {
       const track = mem().tracks.find((track) => track.id === trackId)

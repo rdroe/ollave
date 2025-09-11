@@ -176,15 +176,25 @@ export const useSubscribeToIds = () => {
             { strict: true }
           )
           if (!comparison) {
-            console.log('false comparison in subscribeToIds', comparison, {
-              a: a[property as keyof NoteAndGroupIds],
-              b: b[property as keyof NoteAndGroupIds],
-            })
+            console.log(
+              'false comparison in subscribeToIds',
+              property,
+              comparison,
+              {
+                a: a[property as keyof NoteAndGroupIds],
+                b: b[property as keyof NoteAndGroupIds],
+              }
+            )
           } else {
-            console.log('true comparison in subscribeToIds', comparison, {
-              a: a[property as keyof NoteAndGroupIds],
-              b: b[property as keyof NoteAndGroupIds],
-            })
+            console.log(
+              'true comparison in subscribeToIds',
+              property,
+              comparison,
+              {
+                a: a[property as keyof NoteAndGroupIds],
+                b: b[property as keyof NoteAndGroupIds],
+              }
+            )
           }
           return comparison
         })

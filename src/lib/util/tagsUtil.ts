@@ -203,7 +203,12 @@ export const scale = function parseNoteScale(
 
 // updateNoteTag moved to tagUpdateUtil.ts to break circular dependency
 
-export const tagEntriesCompare = (a: TagEntries, b: TagEntries) => {
+export const tagEntriesCompare = (a: TagEntries, bAll: TagEntries) => {
+  const b = bAll.filter(([tagName]) => {
+    return a.some(([tagName2]) => {
+      return tagName === tagName2
+    })
+  })
   if (a.length !== b?.length) {
     return false
   }

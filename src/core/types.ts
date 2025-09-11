@@ -1,5 +1,7 @@
 import { Observable } from 'rxjs'
 
+import { PhaseRecord } from 'src/lib/util/phaseTypes'
+
 import { ProgressionOptions } from '../lib'
 import { NoteByBar } from '../lib/schemas'
 import { SongRecord } from '../lib/types'
@@ -45,15 +47,7 @@ export type Mem = {
     notesByBar: Record<string, NoteByBar[]>
   }[]
   phases: {
-    [phaseName: string]: {
-      id: number
-      'follows-ids': number[]
-      barSizeMultiplier: number | null
-      speed: number | null
-      scaleName: string | null
-      scaleTonic: string | null
-      name: string
-    }
+    [phaseName: string]: PhaseRecord
   }
   notesByBar: {
     [barTag: string]: NoteByBar[]

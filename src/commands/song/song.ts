@@ -17,13 +17,9 @@ import {
   loadAndInitSongAndTracks,
 } from '../../lib/fetch'
 import { mapSongToMidiTicks, midiAtBar } from '../../lib/mapSongToTicks'
-import {
-  phaseRecordSchema,
-  songRecordSchema,
-  trackRecordSchema,
-} from '../../lib/schemas'
-
+import { songRecordSchema } from '../../lib/schemas'
 const { userTables } = browser
+import { SongRecord, TrackRecord } from '../../lib/types'
 import { getLastChordLayerName } from '../../lib/util/barsUtil'
 import {
   setTrackReceptacleSelector,
@@ -38,10 +34,8 @@ import {
 export { init, setTrackReceptacleSelector } from '../../lib/util/songUtil'
 const { songNames } = mem()
 
-import { SongRecord, TrackRecord, PhaseRecord } from '../../lib/types'
-
 // Re-export types for backward compatibility
-export type { SongRecord, TrackRecord, PhaseRecord }
+export type { SongRecord, TrackRecord }
 
 export default {
   fn: async () => {
@@ -225,6 +219,13 @@ song start
         return stopCueObservable()
       },
     },
+    moveCursorTo: {
+      fn: async ({ positionalNonCommands }) => {
+        const tick = z.number().parse(positionalNonCommands[0])
+        stopCueObservable()
+        startCueObservable(tick)
+      },
+    },
     dl: {
       yargs: {
         played: {
@@ -245,7 +246,7 @@ song start
     chord: {
       submodules: {
         last: {
-          fn: async ({ $: dollar, positionalNonCommands, delay }) => {
+          fn: async () => {
             const allNotes = Object.values(mem().notesByBar).flat()
             const lastChordLayerName = getLastChordLayerName()
             const grouped = groupNotesByFirstTagDatum(allNotes, 'layer')
@@ -304,23 +305,5 @@ function formatNotesByBar(n: Mem['notesByBar']) {
         }
       }),
     },
-    // detailed: {
-    //   notesByBar: Object.keys(m.notesByBar).map((barId) => {
-    //     return {
-    //       barId,
-    //       notes: Object.fromEntries(m.notesByBar[barId].map((note, idx) => {
-    //           return [`${idx} in ${note.tagsObj.chord[0]} (${idx})`, {
-    //           tags: [
-    //             ...new Set(m.notesByBar[barId].map((note) => [note.note, uniqArray(note.tags)])),
-    //           ]
-    //         }]}
-    //       )),
-    //     }
-    //   })
-    // }
   }
-}
-
-const uniqArray = (arr: any[]) => {
-  return [...new Set(arr)]
 }

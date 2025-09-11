@@ -1,21 +1,16 @@
-import { z } from "zod"
-import { phaseRecordSchema, songRecordSchema, trackRecordSchema } from "./schemas"
+import { z } from 'zod'
+
+import {
+  phaseRecordSchema,
+  songRecordSchema,
+  trackRecordSchema,
+} from './schemas'
 
 export type SongRecord = {
-    id: number
-    name: string
-    tempo: number
-    "track-ids"?: [id: number, dat: number][]
+  id: number
+  name: string
+  tempo: number
+  'track-ids'?: [id: number, dat: number][]
 }
 
 export type TrackRecord = z.infer<typeof trackRecordSchema>
-
-export type PhaseRecord = {
-    id: number
-    name: string
-    "follows-ids": number[]
-    barSizeMultiplier: number | null
-    speed: number
-    scaleName: string
-    scaleTonic: string
-}
