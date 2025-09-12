@@ -5,13 +5,17 @@ import { getAllPhaseBarNotes } from './util/phaseNotesUtil'
 import { getFollowingPhases } from './util/phaseRelationsUtil'
 import { quantizeNote } from './util/quantizeUtil'
 import { parseNoteTags } from './util/tagsUtil'
+import { getWorkerManager } from './workerManager'
 
 const startSpeedRef_ = {
   START_SPEED: 1,
 }
 
-;(window as any).startSpeedRef = startSpeedRef_
-export const START_SPEED = (window as any).startSpeedRef.START_SPEED
+;(window as unknown as { startSpeedRef: typeof startSpeedRef_ }).startSpeedRef =
+  startSpeedRef_
+export const START_SPEED = (
+  window as unknown as { startSpeedRef: typeof startSpeedRef_ }
+).startSpeedRef.START_SPEED
 
 // Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {
@@ -34,7 +38,28 @@ export type PhaseMap = {
 
 export type BarTagPercent = [tagName: string | null, percent: number]
 
-export const mapSongToMidiTicks = () => {
+export const mapSongToMidiTicks = async (): Promise<MidiMap> => {
+  const memData = mem()
+  const workerManager = getWorkerManager()
+
+  try {
+    // Use web worker for processing
+    return await workerManager.mapSongToMidiTicks(
+      memData.phases,
+      memData.notesByBar
+    )
+  } catch (error) {
+    console.warn(
+      'Web worker failed, falling back to synchronous processing:',
+      error
+    )
+    // Fallback to synchronous processing
+    return mapSongToMidiTicksSync()
+  }
+}
+
+// Synchronous fallback implementation
+export const mapSongToMidiTicksSync = (): MidiMap => {
   const firstPhases = Object.entries(mem().phases).filter(([_, phase]) => {
     return phase['follows-ids'].length === 0
   })
@@ -61,7 +86,7 @@ export const mapSongToMidiTicks = () => {
 
 export const barsAtMidi = (songTick: number): BarTagPercent[] => {
   const firstPhases = Object.entries(mem().phases).filter(
-    ([phaseName, phase]) => {
+    ([_phaseName, phase]) => {
       return phase['follows-ids'].length === 0
     }
   )
@@ -268,7 +293,7 @@ export function mapPhaseData(
         data2: [barEndTick],
       })
     }
-    barNotes.forEach((note, idx) => {
+    barNotes.forEach((_note, _idx) => {
       const thisNoteOffset = 0
       // any need for per-note delays?
       // todo: for now, assuming not.

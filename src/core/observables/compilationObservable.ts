@@ -21,7 +21,8 @@ const compilationObservable_ = new Observable<MidiMap>((subscriber) => {
 export const compilationObservable = (window as any)
   .compilationObservable_ as Observable<MidiMap>
 
-export function setLatestMap(map: MidiMap) {
+export async function setLatestMap(mapProm: Promise<MidiMap>) {
+  const map = await mapProm
   console.log('setLatestMap', map)
   mem().latestMap = map
   // mem().song["track-ids"] = mem().tracks.map((track) => track.id)
