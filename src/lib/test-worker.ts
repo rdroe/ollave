@@ -3,28 +3,28 @@ import { mapSongToMidiTicks, mapSongToMidiTicksSync } from './mapSongToTicks'
 
 // Mock data for testing
 const mockPhases = {
-  'phase1': {
+  phase1: {
     id: 1,
     name: 'phase1',
     'follows-ids': [],
-    barSizeMultiplier: 1
-  }
+    barSizeMultiplier: 1,
+  },
 }
 
 const mockNotesByBar = {
   'phase1:0': [
     {
       note: 'C4',
-      tags: ['noteId=test1', 'barDelay=0', 'quarter=1']
-    }
-  ]
+      tags: ['noteId=test1', 'barDelay=0', 'quarter=1'],
+    },
+  ],
 }
 
 // Mock the mem function for testing
 const originalMem = (global as any).mem
 ;(global as any).mem = () => ({
   phases: mockPhases,
-  notesByBar: mockNotesByBar
+  notesByBar: mockNotesByBar,
 })
 
 async function testWorkerImplementation() {
@@ -45,18 +45,21 @@ async function testWorkerImplementation() {
     const syncEndTime = performance.now()
 
     console.log('Synchronous result:', syncResult)
-    console.log('Synchronous processing time:', syncEndTime - syncStartTime, 'ms')
+    console.log(
+      'Synchronous processing time:',
+      syncEndTime - syncStartTime,
+      'ms'
+    )
 
     // Compare results
     const resultsMatch = JSON.stringify(result) === JSON.stringify(syncResult)
     console.log('Results match:', resultsMatch)
-
   } catch (error) {
     console.error('Test failed:', error)
   } finally {
     // Restore original mem function
     if (originalMem) {
-      (global as any).mem = originalMem
+      ;(global as any).mem = originalMem
     }
   }
 }

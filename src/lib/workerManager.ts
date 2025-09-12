@@ -6,7 +6,7 @@ import {
   deserializeMidiMap,
   SerializablePhases,
   SerializableNotesByBar,
-  SerializableMidiMap
+  SerializableMidiMap,
 } from './worker-serialization'
 
 // Worker message types
@@ -32,10 +32,13 @@ type WorkerMessageUnion = WorkerResponse | WorkerError
 
 class WorkerManager {
   private worker: Worker | null = null
-  private pendingRequests: Map<string, {
-    resolve: (value: MidiMap) => void
-    reject: (error: Error) => void
-  }> = new Map()
+  private pendingRequests: Map<
+    string,
+    {
+      resolve: (value: MidiMap) => void
+      reject: (error: Error) => void
+    }
+  > = new Map()
 
   constructor() {
     this.initializeWorker()
@@ -258,7 +261,11 @@ class WorkerManager {
           const deserializedResult = deserializeMidiMap(message.data)
           firstPending.resolve(deserializedResult)
         } catch (error) {
-          firstPending.reject(new Error(`Deserialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`))
+          firstPending.reject(
+            new Error(
+              `Deserialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
+          )
         }
         // Clear all pending requests since we only support one at a time for now
         this.pendingRequests.clear()
@@ -298,14 +305,18 @@ class WorkerManager {
           type: 'MAP_SONG_TO_MIDI_TICKS',
           data: {
             phases: serializedPhases,
-            notesByBar: serializedNotesByBar
-          }
+            notesByBar: serializedNotesByBar,
+          },
         }
 
         this.worker!.postMessage(message)
       } catch (error) {
         this.pendingRequests.delete(requestId)
-        reject(new Error(`Serialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`))
+        reject(
+          new Error(
+            `Serialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
+        )
         return
       }
 

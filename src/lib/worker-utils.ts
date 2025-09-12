@@ -17,13 +17,13 @@ export const ZERO = 'zero' as const
 export const tickCounts = {
   [ZERO]: 0,
   [BAR]: ppq * 4, // 128 ppq * 4
-  [HALF]: ppq * 4 / 2, // 128 * 2
-  [QUARTER]: ppq * 4 / 4, // 128
-  [EIGHTH]: ppq * 4 / 8, // 64
-  [SIXTEENTH]: ppq * 4 / 16, // 32
-  [THIRTY_SECOND]: ppq * 4 / 32, // 16
-  [SIXTY_FOURTH]: ppq * 4 / 64, // 8
-  [ONE_TWENTY_EIGHTH]: ppq * 4 / 128, // 4
+  [HALF]: (ppq * 4) / 2, // 128 * 2
+  [QUARTER]: (ppq * 4) / 4, // 128
+  [EIGHTH]: (ppq * 4) / 8, // 64
+  [SIXTEENTH]: (ppq * 4) / 16, // 32
+  [THIRTY_SECOND]: (ppq * 4) / 32, // 16
+  [SIXTY_FOURTH]: (ppq * 4) / 64, // 8
+  [ONE_TWENTY_EIGHTH]: (ppq * 4) / 128, // 4
 } as { [key: string]: number }
 
 // Types
@@ -39,14 +39,16 @@ export const isString = (arg: any): arg is string => {
 }
 
 export const peprnIsNum = (arg: string | number) => {
-  return typeof arg === 'number' || arg !== "" && !isNaN(Number(arg))
+  return typeof arg === 'number' || (arg !== '' && !isNaN(Number(arg)))
 }
 
 export const isCsvArg = (str: string): str is string => {
   return str.includes(',')
 }
 
-export const parseCsvArg = (str: string): (string | number | boolean | null)[] => {
+export const parseCsvArg = (
+  str: string
+): (string | number | boolean | null)[] => {
   if (!isCsvArg(str)) return [str]
 
   return str.split(',').map((splitOff) => {
@@ -59,7 +61,12 @@ export const parseCsvArg = (str: string): (string | number | boolean | null)[] =
 }
 
 export const isFraction = (name: string): boolean => {
-  return name.includes('th') || name.includes('quarter') || name.includes('half') || name.includes('whole')
+  return (
+    name.includes('th') ||
+    name.includes('quarter') ||
+    name.includes('half') ||
+    name.includes('whole')
+  )
 }
 
 /**
@@ -129,7 +136,7 @@ export const calcTickDelay = (parsedTags: TagEntries) => {
 export const quantizeNote = (parsedTags: TagEntries, rawOffset: number = 0) => {
   let thisNoteOffset = rawOffset
   thisNoteOffset += calcFractionalDelay(parsedTags) // e.g half, 4th etc
-  thisNoteOffset += calcTickDelay(parsedTags)// e.g barDelay=1
+  thisNoteOffset += calcTickDelay(parsedTags) // e.g barDelay=1
   thisNoteOffset = quantizeOffset(thisNoteOffset, parsedTags)
   return thisNoteOffset
 }

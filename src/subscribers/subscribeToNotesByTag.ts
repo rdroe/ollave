@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+
 import { createStore, useStore } from 'zustand'
 import { useShallow } from 'zustand/shallow'
 
@@ -12,7 +14,7 @@ type NoteByBarWithBarId = NoteByBar & {
   barId: string
 }
 
-export const useNotesByTag = (tagStrings: string[]) => {
+export const useNotesByTag = (tagStrings: string) => {
   const store = useNotesByTagStore(tagStrings)
   return {
     notes: store.notes,
@@ -40,6 +42,7 @@ export const subscribeToNotesByTag = (tagStrings: string[]) => {
     },
     compare: (a, b) => {
       const result = compare(a, b)
+
       return result
     },
     // clone function clones the note after the fashion of the note by id subscriber.
@@ -105,6 +108,9 @@ export const createNotesByTagStore = (tagStrings: string[]) => {
     selector: (mem: Mem) => selector(mem, targetTags),
     compare: (a, b) => {
       const result = compare(a, b)
+      if (result === true) {
+        console.log('notes compared true')
+      }
       return result
     },
     clone,
@@ -197,8 +203,11 @@ function clone(notes: NoteByBarWithBarId[]): NoteByBarWithBarId[] {
   }))
 }
 
-export const useNotesByTagStore = (tagStrings: string[]) => {
-  const store = createNotesByTagStore(tagStrings)
+export const useNotesByTagStore = (tagStrings: string) => {
+  const store = useMemo(
+    () => createNotesByTagStore(tagStrings.split('|')),
+    [tagStrings]
+  )
   return useStore(store)
 }
 

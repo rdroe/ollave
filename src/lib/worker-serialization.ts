@@ -1,8 +1,8 @@
 // Serialization utilities for web worker communication
 // Handles cloning of complex objects that can't be structured cloned
 
-import { NoteByBar } from './schemas'
 import { MidiMap } from './mapSongToTicks'
+import { NoteByBar } from './schemas'
 
 // Serializable versions of the data structures
 export type SerializableNoteByBar = {
@@ -39,12 +39,14 @@ export type SerializableMidiMap = {
 export function serializeNoteByBar(note: NoteByBar): SerializableNoteByBar {
   return {
     note: note.note,
-    tags: [...note.tags] // Create a new array to avoid proxy issues
+    tags: [...note.tags], // Create a new array to avoid proxy issues
   }
 }
 
 // Convert notesByBar to serializable format
-export function serializeNotesByBar(notesByBar: Record<string, NoteByBar[]>): SerializableNotesByBar {
+export function serializeNotesByBar(
+  notesByBar: Record<string, NoteByBar[]>
+): SerializableNotesByBar {
   const serialized: SerializableNotesByBar = {}
 
   for (const [barTag, notes] of Object.entries(notesByBar)) {
@@ -67,7 +69,7 @@ export function serializePhases(phases: any): SerializablePhases {
       scaleTonic: phaseData.scaleTonic,
       'follows-ids': [...phaseData['follows-ids']], // Create new array
       speed: phaseData.speed,
-      barSizeMultiplier: phaseData.barSizeMultiplier
+      barSizeMultiplier: phaseData.barSizeMultiplier,
     }
   }
 
@@ -79,11 +81,11 @@ export function serializeMidiMap(midiMap: MidiMap): SerializableMidiMap {
   const serialized: SerializableMidiMap = {}
 
   for (const [tick, notes] of Object.entries(midiMap)) {
-    serialized[parseInt(tick)] = notes.map(note => ({
+    serialized[parseInt(tick)] = notes.map((note) => ({
       note: note.note,
       velocity: note.velocity,
       duration: note.duration,
-      compositionTags: [...note.compositionTags] // Create new array
+      compositionTags: [...note.compositionTags], // Create new array
     }))
   }
 
@@ -95,11 +97,11 @@ export function deserializeMidiMap(serialized: SerializableMidiMap): MidiMap {
   const midiMap: MidiMap = {}
 
   for (const [tick, notes] of Object.entries(serialized)) {
-    midiMap[parseInt(tick)] = notes.map(note => ({
+    midiMap[parseInt(tick)] = notes.map((note) => ({
       note: note.note,
       velocity: note.velocity,
       duration: note.duration,
-      compositionTags: [...note.compositionTags]
+      compositionTags: [...note.compositionTags],
     }))
   }
 
@@ -107,18 +109,22 @@ export function deserializeMidiMap(serialized: SerializableMidiMap): MidiMap {
 }
 
 // Convert serializable NoteByBar back to NoteByBar (simplified version)
-export function deserializeNoteByBar(serialized: SerializableNoteByBar): NoteByBar {
+export function deserializeNoteByBar(
+  serialized: SerializableNoteByBar
+): NoteByBar {
   // Create a simple object that matches the NoteByBar interface
   // This is a simplified version - in a real implementation you might want to use the full schema
   return {
     note: serialized.note,
     tags: [...serialized.tags],
-    tagsObj: {} // This would need to be populated from the tags if needed
+    tagsObj: {}, // This would need to be populated from the tags if needed
   } as NoteByBar
 }
 
 // Convert serializable notesByBar back to notesByBar
-export function deserializeNotesByBar(serialized: SerializableNotesByBar): Record<string, NoteByBar[]> {
+export function deserializeNotesByBar(
+  serialized: SerializableNotesByBar
+): Record<string, NoteByBar[]> {
   const notesByBar: Record<string, NoteByBar[]> = {}
 
   for (const [barTag, notes] of Object.entries(serialized)) {

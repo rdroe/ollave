@@ -17,20 +17,20 @@ const ZERO = 'zero'
 const tickCounts = {
   [ZERO]: 0,
   [BAR]: ppq * 4, // 128 ppq * 4
-  [HALF]: ppq * 4 / 2, // 128 * 2
-  [QUARTER]: ppq * 4 / 4, // 128
-  [EIGHTH]: ppq * 4 / 8, // 64
-  [SIXTEENTH]: ppq * 4 / 16, // 32
-  [THIRTY_SECOND]: ppq * 4 / 32, // 16
-  [SIXTY_FOURTH]: ppq * 4 / 64, // 8
-  [ONE_TWENTY_EIGHTH]: ppq * 4 / 128, // 4
+  [HALF]: (ppq * 4) / 2, // 128 * 2
+  [QUARTER]: (ppq * 4) / 4, // 128
+  [EIGHTH]: (ppq * 4) / 8, // 64
+  [SIXTEENTH]: (ppq * 4) / 16, // 32
+  [THIRTY_SECOND]: (ppq * 4) / 32, // 16
+  [SIXTY_FOURTH]: (ppq * 4) / 64, // 8
+  [ONE_TWENTY_EIGHTH]: (ppq * 4) / 128, // 4
 }
 
 // Utility functions
 const strjson = (arg) => JSON.stringify(arg, null, 2)
 
 const peprnIsNum = (arg) => {
-  return typeof arg === 'number' || arg !== "" && !isNaN(Number(arg))
+  return typeof arg === 'number' || (arg !== '' && !isNaN(Number(arg)))
 }
 
 const isCsvArg = (str) => {
@@ -50,7 +50,12 @@ const parseCsvArg = (str) => {
 }
 
 const isFraction = (name) => {
-  return name.includes('th') || name.includes('quarter') || name.includes('half') || name.includes('whole')
+  return (
+    name.includes('th') ||
+    name.includes('quarter') ||
+    name.includes('half') ||
+    name.includes('whole')
+  )
 }
 
 const parseNoteTags = (tags) => {
@@ -115,7 +120,7 @@ const calcTickDelay = (parsedTags) => {
 const quantizeNote = (parsedTags, rawOffset = 0) => {
   let thisNoteOffset = rawOffset
   thisNoteOffset += calcFractionalDelay(parsedTags) // e.g half, 4th etc
-  thisNoteOffset += calcTickDelay(parsedTags)// e.g barDelay=1
+  thisNoteOffset += calcTickDelay(parsedTags) // e.g barDelay=1
   thisNoteOffset = quantizeOffset(thisNoteOffset, parsedTags)
   return thisNoteOffset
 }
@@ -135,9 +140,13 @@ const getAllPhaseBarNotesWorker = (phase, notesByBar) => {
 
   const getAllPhaseBars = (phase) => {
     if (typeof phase !== 'string') {
-      throw new Error(`String arg is required in getAllPhaseBars; instead ${JSON.stringify(phase)}`)
+      throw new Error(
+        `String arg is required in getAllPhaseBars; instead ${JSON.stringify(phase)}`
+      )
     }
-    const lookedUp = Object.keys(notesByBar).filter((barTag) => barTag.startsWith(`${phase}:`)).sort(sortByNumberAfterColon)
+    const lookedUp = Object.keys(notesByBar)
+      .filter((barTag) => barTag.startsWith(`${phase}:`))
+      .sort(sortByNumberAfterColon)
     return lookedUp
   }
 
@@ -148,9 +157,11 @@ const getAllPhaseBarNotesWorker = (phase, notesByBar) => {
 
 const getFollowingPhasesWorker = (phaseName, phases) => {
   const phase = phases[phaseName]
-  const followsPhases = Object.entries(phases).filter((
-    [, { "follows-ids": followsIds }]
-  ) => phase.id !== null && followsIds.includes(phase.id) || phase.id !== null && followsIds.includes(phase["id"]))
+  const followsPhases = Object.entries(phases).filter(
+    ([, { 'follows-ids': followsIds }]) =>
+      (phase.id !== null && followsIds.includes(phase.id)) ||
+      (phase.id !== null && followsIds.includes(phase['id']))
+  )
 
   return followsPhases
 }
@@ -237,7 +248,7 @@ function mapSongToMidiTicksWorker(phases, notesByBar) {
 }
 
 // Worker message handler
-self.onmessage = function(e) {
+self.onmessage = function (e) {
   const { type, data } = e.data
 
   if (type === 'MAP_SONG_TO_MIDI_TICKS') {
@@ -246,14 +257,15 @@ self.onmessage = function(e) {
 
       const response = {
         type: 'MAP_SONG_TO_MIDI_TICKS_RESULT',
-        data: result
+        data: result,
       }
 
       self.postMessage(response)
     } catch (error) {
       self.postMessage({
         type: 'ERROR',
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
       })
     }
   }

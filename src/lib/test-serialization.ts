@@ -4,27 +4,35 @@ import { makeNoteByBar } from './schemas'
 
 // Create test data with proxy objects (like the real NoteByBar objects)
 const mockPhases = {
-  'phase1': {
+  phase1: {
     id: 1,
     name: 'phase1',
     'follows-ids': [],
-    barSizeMultiplier: 1
-  }
+    barSizeMultiplier: 1,
+  },
 }
 
 // Create NoteByBar objects that will have proxy objects
-const mockNote1 = makeNoteByBar('C4', ['noteId=test1', 'barDelay=0', 'quarter=1'])
-const mockNote2 = makeNoteByBar('D4', ['noteId=test2', 'barDelay=0', 'eighth=1'])
+const mockNote1 = makeNoteByBar('C4', [
+  'noteId=test1',
+  'barDelay=0',
+  'quarter=1',
+])
+const mockNote2 = makeNoteByBar('D4', [
+  'noteId=test2',
+  'barDelay=0',
+  'eighth=1',
+])
 
 const mockNotesByBar = {
-  'phase1:0': [mockNote1, mockNote2]
+  'phase1:0': [mockNote1, mockNote2],
 }
 
 // Mock the mem function for testing
 const originalMem = (global as any).mem
 ;(global as any).mem = () => ({
   phases: mockPhases,
-  notesByBar: mockNotesByBar
+  notesByBar: mockNotesByBar,
 })
 
 async function testSerializationFix() {
@@ -51,17 +59,21 @@ async function testSerializationFix() {
       if (tickCount > 0) {
         console.log('✅ Processing completed successfully with data')
       } else {
-        console.log('⚠️  No tick data found (this might be expected for the test data)')
+        console.log(
+          '⚠️  No tick data found (this might be expected for the test data)'
+        )
       }
     } else {
       console.log('❌ Result is not a valid object')
     }
-
   } catch (error) {
     console.error('❌ Test failed:', error)
 
     // Check if it's the specific proxy cloning error
-    if (error instanceof Error && error.message.includes('Proxy object could not be cloned')) {
+    if (
+      error instanceof Error &&
+      error.message.includes('Proxy object could not be cloned')
+    ) {
       console.error('❌ Still getting proxy cloning error - fix not working')
     } else {
       console.error('❌ Different error occurred:', error.message)
@@ -69,7 +81,7 @@ async function testSerializationFix() {
   } finally {
     // Restore original mem function
     if (originalMem) {
-      (global as any).mem = originalMem
+      ;(global as any).mem = originalMem
     }
   }
 }
