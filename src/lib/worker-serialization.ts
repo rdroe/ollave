@@ -51,7 +51,6 @@ export function serializeNoteByBar(note: NoteByBar): SerializableNoteByBar {
   return {
     note: note.note,
     tags: [...note.tags], // Create a new array to avoid proxy issues
-    tagsObj: note.tagsObj ? { ...note.tagsObj } : undefined, // Create plain object copy
   }
 }
 
@@ -129,7 +128,7 @@ export function deserializeNoteByBar(
   return {
     note: serialized.note,
     tags: [...serialized.tags],
-    tagsObj: serialized.tagsObj ? { ...serialized.tagsObj } : {},
+    tagsObj: {}, // This would need to be populated from the tags if needed
   } as NoteByBar
 }
 

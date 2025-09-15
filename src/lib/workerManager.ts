@@ -277,6 +277,7 @@ class WorkerManager {
         if (type === 'MAP_SONG_TO_MIDI_TICKS') {
           try {
             const result = mapSongToMidiTicksWorker(data.phases, data.notesByBar)
+            console.log('result in worker inline', result)
             self.postMessage({
               type: 'MAP_SONG_TO_MIDI_TICKS_RESULT',
               data: result
