@@ -41,14 +41,12 @@ function mapSongToMidiTicksWorker(
     getFollowingPhasesWorker(phaseName, phases)
 
   // Use the shared core logic
-  const result = mapSongToMidiTicksCore(
+  return mapSongToMidiTicksCore(
     phases,
     notesByBar,
     getAllPhaseBarNotes,
     getFollowingPhases
   )
-  console.log('worker result', result)
-  return result
 }
 
 // Worker message handler

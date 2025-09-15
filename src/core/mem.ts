@@ -2,7 +2,6 @@ import { NoteByBar } from '../lib/schemas'
 
 import { Mem } from './types'
 
-// Re-export Mem type for backward compatibility
 export type { Mem }
 
 const mem_: Mem = {
@@ -14,6 +13,10 @@ const mem_: Mem = {
   tracks: [],
   phases: {},
   notesByBar: {} as Record<string, NoteByBar[]>,
+  latestPhaseAndBarStartAndEndTicks: {
+    phases: {},
+    bars: {},
+  },
   songNames: [],
   latestMap: {},
   playedMap: {},
