@@ -8,6 +8,7 @@ import { MidiMappingResult, MidiMap } from './shared/midiMappingCore'
 export type SerializableNoteByBar = {
   note: string
   tags: string[]
+  tagsObj?: { [key: string]: any } // Include parsed tags object
 }
 
 export type SerializablePhases = {
@@ -50,6 +51,7 @@ export function serializeNoteByBar(note: NoteByBar): SerializableNoteByBar {
   return {
     note: note.note,
     tags: [...note.tags], // Create a new array to avoid proxy issues
+    tagsObj: note.tagsObj ? { ...note.tagsObj } : undefined, // Create plain object copy
   }
 }
 
@@ -127,7 +129,7 @@ export function deserializeNoteByBar(
   return {
     note: serialized.note,
     tags: [...serialized.tags],
-    tagsObj: {}, // This would need to be populated from the tags if needed
+    tagsObj: serialized.tagsObj ? { ...serialized.tagsObj } : {},
   } as NoteByBar
 }
 

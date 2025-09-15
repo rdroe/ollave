@@ -261,7 +261,14 @@ class WorkerManager {
           return acc
         }, {})
 
-        return { map: midiMap, phaseAndBarStartAndEndTicks }
+        // Return serialized result (plain JS objects)
+        return {
+          map: midiMap,
+          phaseAndBarStartAndEndTicks: {
+            phases: { ...phaseAndBarStartAndEndTicks.phases },
+            bars: { ...phaseAndBarStartAndEndTicks.bars }
+          }
+        }
       }
 
       // Worker message handler
@@ -292,8 +299,11 @@ class WorkerManager {
       const firstPending = this.pendingRequests.values().next().value
       if (firstPending) {
         try {
-          // The inline worker returns data directly, no need for deserialization
-          firstPending.resolve(message.data as MidiMappingResult)
+          // Deserialize the result back to MidiMappingResult
+          const deserializedResult = deserializeMidiMappingResult(
+            message.data as any
+          )
+          firstPending.resolve(deserializedResult)
         } catch (error) {
           firstPending.reject(
             new Error(
@@ -334,12 +344,15 @@ class WorkerManager {
       this.pendingRequests.set(requestId, { resolve, reject })
 
       try {
-        // Send data directly to inline worker (no serialization needed)
+        // Serialize the data to avoid proxy cloning issues
+        const serializedPhases = serializePhases(phases as any)
+        const serializedNotesByBar = serializeNotesByBar(notesByBar as any)
+
         const message: WorkerMessage = {
           type: 'MAP_SONG_TO_MIDI_TICKS',
           data: {
-            phases: phases as any,
-            notesByBar: notesByBar as any,
+            phases: serializedPhases,
+            notesByBar: serializedNotesByBar,
           },
         }
 
@@ -348,7 +361,7 @@ class WorkerManager {
         this.pendingRequests.delete(requestId)
         reject(
           new Error(
-            `Worker message failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            `Serialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
           )
         )
         return
