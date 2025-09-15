@@ -1,5 +1,12 @@
 import { mem, Mem } from '../core/mem'
 
+import {
+  mapSongToMidiTicksCore,
+  MidiMappingResult,
+  GenericPhase,
+  GenericNotesByBar,
+  GenericNoteByBar,
+} from './shared/midiMappingCore'
 import { BAR, tickCounts } from './util/constantsUtil'
 import { getAllPhaseBarNotes } from './util/phaseNotesUtil'
 import { getFollowingPhases } from './util/phaseRelationsUtil'
@@ -38,7 +45,7 @@ export type PhaseMap = {
 
 export type BarTagPercent = [tagName: string | null, percent: number]
 
-export const mapSongToMidiTicks = async (): Promise<MidiMap> => {
+export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
   const memData = mem()
   const workerManager = getWorkerManager()
 
@@ -58,30 +65,17 @@ export const mapSongToMidiTicks = async (): Promise<MidiMap> => {
   }
 }
 
-// Synchronous fallback implementation
-export const mapSongToMidiTicksSync = (): MidiMap => {
-  const firstPhases = Object.entries(mem().phases).filter(([_, phase]) => {
-    return phase['follows-ids'].length === 0
-  })
+// Synchronous fallback implementation using shared core
+export const mapSongToMidiTicksSync = (): MidiMappingResult => {
+  const memData = mem()
 
-  const collector: MidiMap[] = []
-  firstPhases.forEach(([phaseName, phase]) => {
-    mapPhaseTicks(phaseName, phase, 0, collector)
-  })
-
-  // phase-level massaging here.
-  const midiMap: MidiMap = collector.reduce((acc, curr) => {
-    Object.entries(curr).forEach(([tickRaw, notes]) => {
-      const tick = parseInt(tickRaw)
-      if (!acc[tick]) {
-        acc[tick] = []
-      }
-      acc[tick].push(...notes)
-    })
-    return acc
-  }, {} as MidiMap)
-
-  return midiMap
+  // Use the shared core logic with main thread utility functions
+  return mapSongToMidiTicksCore(
+    memData.phases,
+    memData.notesByBar,
+    getAllPhaseBarNotes,
+    getFollowingPhases
+  )
 }
 
 export const barsAtMidi = (songTick: number): BarTagPercent[] => {
@@ -193,56 +187,6 @@ export const midiAtBarUtil = (mem: Mem) => {
 export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
   return midiAtBarUtil(mem())(soughtTagName, percent)
 } //
-
-function mapPhaseTicks(
-  phaseName: string,
-  phase: Mem['phases'][string],
-  startTick: number,
-  collector: MidiMap[] = []
-) {
-  const barTickFactor = tickCounts.bar
-
-  // get the bar-sorted bar notes
-  const phaseBars = getAllPhaseBarNotes(phaseName)
-  // initialize the midi map where we will put each note on a numeric midi property
-  const phaseMidi: MidiMap = {}
-  // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick.
-  phaseBars.forEach((barNotes, barIndex) => {
-    // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
-    const thisBarOffset =
-      barIndex *
-      barTickFactor *
-      (typeof phase?.barSizeMultiplier === 'number'
-        ? phase.barSizeMultiplier
-        : 1)
-    // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
-    barNotes.forEach((note) => {
-      const parsedTags = parseNoteTags(note.tags)
-      const thisNoteTick = quantizeNote(parsedTags) + startTick + thisBarOffset
-      if (!phaseMidi[thisNoteTick]) {
-        phaseMidi[thisNoteTick] = []
-      }
-
-      phaseMidi[thisNoteTick].push({
-        note: note.note,
-        compositionTags: note.tags,
-      })
-    })
-  })
-  collector.push(phaseMidi)
-  const followsPhases = getFollowingPhases(phaseName)
-
-  followsPhases.forEach(([followsPhaseName, followsPhase]) => {
-    mapPhaseTicks(
-      followsPhaseName,
-      followsPhase,
-      phaseBars.length * barTickFactor,
-      collector
-    )
-  })
-
-  return collector
-}
 
 export const extractPhaseAndBarStartAndEndTicks = (): {
   phases: {

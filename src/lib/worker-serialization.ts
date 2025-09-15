@@ -1,8 +1,8 @@
 // Serialization utilities for web worker communication
 // Handles cloning of complex objects that can't be structured cloned
 
-import { MidiMap } from './mapSongToTicks'
 import { NoteByBar } from './schemas'
+import { MidiMappingResult, MidiMap } from './shared/midiMappingCore'
 
 // Serializable versions of the data structures
 export type SerializableNoteByBar = {
@@ -33,6 +33,16 @@ export type SerializableMidiMap = {
     duration?: number
     compositionTags: string[]
   }[]
+}
+
+export type SerializablePhaseAndBarStartAndEndTicks = {
+  phases: { [phaseName: string]: [startTick: number, endTick: number] }
+  bars: { [barName: string]: [startTick: number, endTick: number] }
+}
+
+export type SerializableMidiMappingResult = {
+  map: SerializableMidiMap
+  phaseAndBarStartAndEndTicks: SerializablePhaseAndBarStartAndEndTicks
 }
 
 // Convert NoteByBar objects to serializable format
@@ -132,4 +142,30 @@ export function deserializeNotesByBar(
   }
 
   return notesByBar
+}
+
+// Convert MidiMappingResult to serializable format
+export function serializeMidiMappingResult(
+  result: MidiMappingResult
+): SerializableMidiMappingResult {
+  return {
+    map: serializeMidiMap(result.map),
+    phaseAndBarStartAndEndTicks: {
+      phases: { ...result.phaseAndBarStartAndEndTicks.phases },
+      bars: { ...result.phaseAndBarStartAndEndTicks.bars },
+    },
+  }
+}
+
+// Convert serializable MidiMappingResult back to MidiMappingResult
+export function deserializeMidiMappingResult(
+  serialized: SerializableMidiMappingResult
+): MidiMappingResult {
+  return {
+    map: deserializeMidiMap(serialized.map),
+    phaseAndBarStartAndEndTicks: {
+      phases: { ...serialized.phaseAndBarStartAndEndTicks.phases },
+      bars: { ...serialized.phaseAndBarStartAndEndTicks.bars },
+    },
+  }
 }

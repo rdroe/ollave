@@ -1,0 +1,185 @@
+// Shared core logic for MIDI mapping - used by both main thread and worker
+// This eliminates code duplication between mapSongToTicks.ts and mapSongToTicks.worker.ts
+
+import { tickCounts } from '../util/constantsUtil'
+import { quantizeNote } from '../util/quantizeUtil'
+import { parseNoteTags } from '../util/tagsUtil'
+
+// Types
+export type MidiMap = {
+  [tick: number]: {
+    note: string
+    velocity?: number
+    duration?: number
+    compositionTags: string[]
+  }[]
+}
+
+export type PhaseAndBarStartAndEndTicks = {
+  phases: { [phaseName: string]: [startTick: number, endTick: number] }
+  bars: { [barName: string]: [startTick: number, endTick: number] }
+}
+
+export type MidiMappingResult = {
+  map: MidiMap
+  phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks
+}
+
+// Generic phase type that works for both main thread and worker
+export type GenericPhase = {
+  id: number
+  name: string
+  scaleName?: string | null
+  scaleTonic?: string | null
+  'follows-ids': number[]
+  speed?: number | null
+  barSizeMultiplier?: number | null
+}
+
+export type GenericNoteByBar = {
+  note: string
+  tags: string[]
+}
+
+export type GenericNotesByBar = {
+  [barTag: string]: GenericNoteByBar[]
+}
+
+export type GenericPhases = {
+  [phaseName: string]: GenericPhase
+}
+
+// Core mapping function that works with generic types
+export function mapPhaseTicksCore(
+  phaseName: string,
+  phase: GenericPhase,
+  startTick: number,
+  collector: MidiMap[] = [],
+  phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks = {
+    phases: {},
+    bars: {},
+  },
+  getAllPhaseBarNotes: (phaseName: string) => GenericNoteByBar[][],
+  getFollowingPhases: (phaseName: string) => [string, GenericPhase][]
+): {
+  map: MidiMap[]
+  phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks
+} {
+  // add phase start tick
+  phaseAndBarStartAndEndTicks.phases[phaseName] = [startTick, -1]
+  const barTickFactor = tickCounts.bar
+
+  // get the bar-sorted bar notes
+  const phaseBars = getAllPhaseBarNotes(phaseName)
+  // initialize the midi map where we will put each note on a numeric midi property
+  const phaseMidi: MidiMap = {}
+
+  // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick.
+  phaseBars.forEach((barNotes, barIndex) => {
+    // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
+    const thisBarOffset =
+      barIndex *
+      barTickFactor *
+      (typeof phase?.barSizeMultiplier === 'number'
+        ? phase.barSizeMultiplier
+        : 1)
+
+    phaseAndBarStartAndEndTicks.bars[`${barIndex}`] = [
+      startTick + thisBarOffset,
+      startTick +
+        thisBarOffset +
+        barTickFactor *
+          (typeof phase?.barSizeMultiplier === 'number'
+            ? phase.barSizeMultiplier
+            : 1),
+    ]
+
+    // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
+    barNotes.forEach((note) => {
+      const parsedTags = parseNoteTags(note.tags)
+      const thisNoteTick = quantizeNote(parsedTags) + startTick + thisBarOffset
+      if (!phaseMidi[thisNoteTick]) {
+        phaseMidi[thisNoteTick] = []
+      }
+
+      phaseMidi[thisNoteTick].push({
+        note: note.note,
+        compositionTags: note.tags,
+      })
+    })
+
+    // if last bar, add phase end tick
+    if (barIndex === phaseBars.length - 1) {
+      phaseAndBarStartAndEndTicks.phases[phaseName] = [
+        startTick + thisBarOffset,
+        startTick +
+          thisBarOffset +
+          barTickFactor *
+            (typeof phase?.barSizeMultiplier === 'number'
+              ? phase.barSizeMultiplier
+              : 1),
+      ]
+    }
+  })
+
+  collector.push(phaseMidi)
+  const followsPhases = getFollowingPhases(phaseName)
+
+  followsPhases.forEach(([followsPhaseName, followsPhase]) => {
+    mapPhaseTicksCore(
+      followsPhaseName,
+      followsPhase,
+      phaseBars.length * barTickFactor,
+      collector,
+      phaseAndBarStartAndEndTicks,
+      getAllPhaseBarNotes,
+      getFollowingPhases
+    )
+  })
+
+  return { map: collector, phaseAndBarStartAndEndTicks }
+}
+
+// Main mapping function that works with generic types
+export function mapSongToMidiTicksCore(
+  phases: GenericPhases,
+  notesByBar: GenericNotesByBar,
+  getAllPhaseBarNotes: (phaseName: string) => GenericNoteByBar[][],
+  getFollowingPhases: (phaseName: string) => [string, GenericPhase][]
+): MidiMappingResult {
+  const firstPhases = Object.entries(phases).filter(([_, phase]) => {
+    return phase['follows-ids'].length === 0
+  })
+
+  const collector: MidiMap[] = []
+  const phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks = {
+    phases: {},
+    bars: {},
+  }
+
+  firstPhases.forEach(([phaseName, phase]) => {
+    mapPhaseTicksCore(
+      phaseName,
+      phase,
+      0,
+      collector,
+      phaseAndBarStartAndEndTicks,
+      getAllPhaseBarNotes,
+      getFollowingPhases
+    )
+  })
+
+  // phase-level massaging here.
+  const midiMap: MidiMap = collector.reduce((acc, curr) => {
+    Object.entries(curr).forEach(([tickRaw, notes]) => {
+      const tick = parseInt(tickRaw)
+      if (!acc[tick]) {
+        acc[tick] = []
+      }
+      acc[tick].push(...notes)
+    })
+    return acc
+  }, {} as MidiMap)
+
+  return { map: midiMap, phaseAndBarStartAndEndTicks }
+}
