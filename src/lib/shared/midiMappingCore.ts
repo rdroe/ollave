@@ -70,14 +70,17 @@ export function mapPhaseTicksCore(
     bars: {},
   },
   getAllPhaseBarNotes: (phaseName: string) => GenericNoteByBar[][],
-  getFollowingPhases: (phaseName: string) => [string, GenericPhase][]
+  getFollowingPhases: (phaseName: string) => [string, GenericPhase][],
+  tickCountsObj: any = tickCounts,
+  parseNoteTagsFn: any = parseNoteTags,
+  quantizeNoteFn: any = quantizeNote
 ): {
   map: MidiMap[]
   phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks
 } {
   // add phase start tick
   phaseAndBarStartAndEndTicks.phases[phaseName] = [startTick, -1]
-  const barTickFactor = tickCounts.bar
+  const barTickFactor = tickCountsObj.bar
 
   // get the bar-sorted bar notes
   const phaseBars = getAllPhaseBarNotes(phaseName)
@@ -106,8 +109,9 @@ export function mapPhaseTicksCore(
 
     // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
     barNotes.forEach((note) => {
-      const parsedTags = parseNoteTags(note.tags)
-      const thisNoteTick = quantizeNote(parsedTags) + startTick + thisBarOffset
+      const parsedTags = parseNoteTagsFn(note.tags)
+      const thisNoteTick =
+        quantizeNoteFn(parsedTags) + startTick + thisBarOffset
       if (!phaseMidi[thisNoteTick]) {
         phaseMidi[thisNoteTick] = []
       }
@@ -143,7 +147,10 @@ export function mapPhaseTicksCore(
       collector,
       phaseAndBarStartAndEndTicks,
       getAllPhaseBarNotes,
-      getFollowingPhases
+      getFollowingPhases,
+      tickCountsObj,
+      parseNoteTagsFn,
+      quantizeNoteFn
     )
   })
 
@@ -155,10 +162,15 @@ export function mapSongToMidiTicksCore(
   phases: GenericPhases,
   notesByBar: GenericNotesByBar,
   getAllPhaseBarNotes: (phaseName: string) => GenericNoteByBar[][],
-  getFollowingPhases: (phaseName: string) => [string, GenericPhase][]
+  getFollowingPhases: (phaseName: string) => [string, GenericPhase][],
+  tickCountsObj: any = tickCounts,
+  parseNoteTagsFn: any = parseNoteTags,
+  quantizeNoteFn: any = quantizeNote
 ): MidiMappingResult {
   const firstPhases = Object.entries(phases).filter(([_, phase]) => {
-    return phase['follows-ids'].length === 0
+    // Handle cases where follows-ids might be undefined or missing
+    const followsIds = phase['follows-ids']
+    return !followsIds || followsIds.length === 0
   })
 
   const collector: MidiMap[] = []
@@ -175,7 +187,10 @@ export function mapSongToMidiTicksCore(
       collector,
       phaseAndBarStartAndEndTicks,
       getAllPhaseBarNotes,
-      getFollowingPhases
+      getFollowingPhases,
+      tickCountsObj,
+      parseNoteTagsFn,
+      quantizeNoteFn
     )
   })
 
@@ -198,9 +213,11 @@ export function mapSongToMidiTicksCore(
 export function getFirstPhases(
   phases: Record<string, GenericPhase>
 ): Array<[string, GenericPhase]> {
-  return Object.entries(phases).filter(
-    ([_, phase]) => phase['follows-ids'].length === 0
-  )
+  return Object.entries(phases).filter(([_, phase]) => {
+    // Handle cases where follows-ids might be undefined or missing
+    const followsIds = phase['follows-ids']
+    return !followsIds || followsIds.length === 0
+  })
 }
 
 // Utility function to reduce collector array to a single midiMap

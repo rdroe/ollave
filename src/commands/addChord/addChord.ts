@@ -38,7 +38,6 @@ export default {
     scaleName,
     addSlider = false,
   }) => {
-    console.log('arp', arp)
     const [chordName] = positionalNonCommands
     if (typeof chordName !== 'string' || !isChordCsvArg(chordName)) {
       throw new Error(

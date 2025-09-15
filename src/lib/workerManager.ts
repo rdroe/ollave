@@ -49,6 +49,7 @@ class WorkerManager {
     try {
       // Create inline worker since ollave is a library and worker files won't be served by parent apps
       const workerCode = this.getInlineWorkerCode()
+
       const blob = new Blob([workerCode], { type: 'application/javascript' })
       this.worker = new Worker(URL.createObjectURL(blob))
 
@@ -57,7 +58,14 @@ class WorkerManager {
       }
 
       this.worker.onerror = (error) => {
-        console.error('Worker error:', error)
+        console.error(
+          'Worker error:',
+          error.message,
+          'at',
+          error.filename,
+          ':',
+          error.lineno
+        )
         this.rejectAllPending('Worker error occurred')
       }
     } catch (error) {
@@ -111,7 +119,15 @@ class WorkerManager {
         this.pendingRequests.clear()
       }
     } else if (message.type === 'ERROR') {
-      this.rejectAllPending(message.error)
+      // Handle cases where message.error might be undefined or not a string
+      console.error('Worker error received:', message)
+      const errorMessage =
+        typeof message.error === 'string'
+          ? message.error
+          : message.error
+            ? String(message.error)
+            : 'Unknown worker error occurred'
+      this.rejectAllPending(errorMessage)
     }
   }
 
@@ -120,8 +136,16 @@ class WorkerManager {
   }
 
   private rejectAllPending(error: string) {
+    // Handle cases where error might be undefined or not a string
+    const errorMessage =
+      typeof error === 'string'
+        ? error
+        : error
+          ? String(error)
+          : 'Unknown worker error occurred'
+
     this.pendingRequests.forEach(({ reject }) => {
-      reject(new Error(error))
+      reject(new Error(errorMessage))
     })
     this.pendingRequests.clear()
   }
@@ -140,6 +164,16 @@ class WorkerManager {
       this.pendingRequests.set(requestId, { resolve, reject })
 
       try {
+        // Validate input data
+        if (!phases || typeof phases !== 'object') {
+          throw new Error('Invalid phases data: phases must be an object')
+        }
+        if (!notesByBar || typeof notesByBar !== 'object') {
+          throw new Error(
+            'Invalid notesByBar data: notesByBar must be an object'
+          )
+        }
+
         // Serialize the data to avoid proxy cloning issues
         const serializedPhases = serializePhases(phases as any)
         const serializedNotesByBar = serializeNotesByBar(notesByBar as any)

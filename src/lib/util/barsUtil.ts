@@ -254,11 +254,7 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
     ? allSourceNotes.filter((note) => {
         const parsedTags = parseNoteTags(note.tags)
         const compare = tagEntriesCompare(tags, parsedTags)
-        console.log('source; tags and parsed filterable tags', {
-          tags,
-          parsedTags,
-          compare,
-        })
+
         return compare
       })
     : allSourceNotes

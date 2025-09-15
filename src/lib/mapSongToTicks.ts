@@ -51,10 +51,12 @@ export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
 
   try {
     // Use web worker for processing
-    return await workerManager.mapSongToMidiTicks(
+    const workerResult = await workerManager.mapSongToMidiTicks(
       memData.phases,
       memData.notesByBar
     )
+    console.log('worker; workerResult', workerResult)
+    return workerResult
   } catch (error) {
     console.warn(
       'Web worker failed, falling back to synchronous processing:',
@@ -229,11 +231,7 @@ export const extractPhaseAndBarStartAndEndTicks = (): {
       ? parseInt(firstBarStartEvent)
       : 0
     const lastBarEndTick = lastBarEndEvent ? parseInt(lastBarEndEvent) : 0
-    console.log('start end ticks', {
-      phaseName,
-      firstBarStartTick,
-      lastBarEndTick,
-    })
+
     phaseStartEnds[phaseName] = [firstBarStartTick, lastBarEndTick]
     Object.entries(phaseData).forEach(([tick, bar]) => {
       const barStartTick = parseInt(tick)
@@ -241,9 +239,7 @@ export const extractPhaseAndBarStartAndEndTicks = (): {
       barsStartEnds[`${bar[0].data1[0]}`] = [barStartTick, barEndTick]
     })
   })
-  console.log('phaseStartEnds', {
-    phases: phaseStartEnds,
-  })
+
   return {
     phases: phaseStartEnds,
     bars: barsStartEnds,

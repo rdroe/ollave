@@ -58,9 +58,16 @@ export function serializeNoteByBar(note: NoteByBar): SerializableNoteByBar {
 export function serializeNotesByBar(
   notesByBar: Record<string, NoteByBar[]>
 ): SerializableNotesByBar {
+  if (!notesByBar || typeof notesByBar !== 'object') {
+    return {}
+  }
+
   const serialized: SerializableNotesByBar = {}
 
   for (const [barTag, notes] of Object.entries(notesByBar)) {
+    if (!Array.isArray(notes)) {
+      continue
+    }
     serialized[barTag] = notes.map(serializeNoteByBar)
   }
 
@@ -69,18 +76,31 @@ export function serializeNotesByBar(
 
 // Convert phases to serializable format
 export function serializePhases(phases: any): SerializablePhases {
+  if (!phases || typeof phases !== 'object') {
+    return {}
+  }
+
   const serialized: SerializablePhases = {}
 
   for (const [phaseName, phase] of Object.entries(phases)) {
+    if (!phase || typeof phase !== 'object') {
+      continue
+    }
+
     const phaseData = phase as any
+
+    // Ensure follows-ids is always an array, even if undefined
+    const followsIds = phaseData['follows-ids']
+    const safeFollowsIds = Array.isArray(followsIds) ? [...followsIds] : []
+
     serialized[phaseName] = {
-      id: phaseData.id,
-      name: phaseData.name,
-      scaleName: phaseData.scaleName,
-      scaleTonic: phaseData.scaleTonic,
-      'follows-ids': [...phaseData['follows-ids']], // Create new array
-      speed: phaseData.speed,
-      barSizeMultiplier: phaseData.barSizeMultiplier,
+      id: phaseData.id || 0,
+      name: phaseData.name || phaseName,
+      scaleName: phaseData.scaleName || null,
+      scaleTonic: phaseData.scaleTonic || null,
+      'follows-ids': safeFollowsIds,
+      speed: phaseData.speed || null,
+      barSizeMultiplier: phaseData.barSizeMultiplier || null,
     }
   }
 

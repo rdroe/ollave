@@ -47,9 +47,6 @@ export const createNotesByTagStore = (tagStrings: string[]) => {
     selector: (mem: Mem) => selector(mem, targetTags),
     compare: (a, b) => {
       const result = compare(a, b)
-      if (result === true) {
-        console.log('notes compared true')
-      }
       return result
     },
     clone,

@@ -34,7 +34,7 @@ export const fetchSongAndTracksBySongId = async (songId: number) => {
   const song = await (
     await browser.userTables.where('song', { id: songId })
   ).first()
-  console.log('song', song)
+
   if (!song) {
     console.error('no song found')
     return null
@@ -44,7 +44,6 @@ export const fetchSongAndTracksBySongId = async (songId: number) => {
 
 export async function loadAndInitSongAndTracks(songId: number) {
   const latestSong = await fetchSongAndTracksBySongId(songId)
-  console.log('latestSong', latestSong)
   if (latestSong) {
     const parsedSong = songRecordSchema.parse(latestSong.song)
     mem().song = {

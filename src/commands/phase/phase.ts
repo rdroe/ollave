@@ -98,10 +98,7 @@ const module: Module = {
         const [barCnt] = args.positionalNonCommands
         // find this phase id, then the track id.
         const alreadyExists = phaseExists(phaseName)
-        const phaseId = alreadyExists ? mem().phases[phaseName].id : null
         const trackId = alreadyExists ? mem().tracks?.[0]?.id : undefined
-        console.log('phaseId', phaseId)
-        console.log('trackId', trackId)
         if (isString(phaseName) && isNum(barCnt)) {
           phaseCount(phaseName, barCnt, true, trackId)
           return getAllPhaseBarNotes(phaseName)
@@ -129,7 +126,6 @@ const module: Module = {
         },
         scale: {
           fn: async ({ $: $, positionalNonCommands }) => {
-            console.log('scale', positionalNonCommands)
             const [userTonic = '', userScale = ''] = positionalNonCommands
             const [phaseName1] = $
 
@@ -148,8 +144,6 @@ const module: Module = {
         const [barId1, barId2] = z
           .array(z.string())
           .parse(positionalNonCommands)
-        console.log('barId1', barId1)
-        console.log('barId2', barId2)
         copyBarNotesWithNoteIdsAndGroupIds(barId1, barId2)
       },
     },

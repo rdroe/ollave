@@ -51,7 +51,6 @@ export function addChord(
   commonTags: string[]
   notes: NoteByBar[]
 } {
-  console.log('addChord lib; arp', arp)
   if (!isChordCsvArg(chordCsvArg)) {
     throw new Error(
       'Chord must be a valid chord name with comma-separated octave'

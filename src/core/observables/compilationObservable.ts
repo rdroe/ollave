@@ -1,8 +1,7 @@
 import { Observable } from 'rxjs'
 
-import { MidiMappingResult } from 'src/lib/shared/midiMappingCore'
-
 import { MidiMap } from '../../lib/mapSongToTicks'
+import { MidiMappingResult } from '../../lib/shared/midiMappingCore'
 import {
   compileNotesByBarToTracks,
   compilePhasesToTracks,
@@ -26,7 +25,6 @@ export const compilationObservable = (window as any)
 export async function setLatestMap(mapProm: Promise<MidiMappingResult>) {
   const { map, phaseAndBarStartAndEndTicks } = await mapProm
   mem().latestPhaseAndBarStartAndEndTicks = phaseAndBarStartAndEndTicks
-  console.log('setLatestMap', map)
   mem().latestMap = map
   // mem().song["track-ids"] = mem().tracks.map((track) => track.id)
   mem().song['track-ids'] = mem().tracks.map((track) => [track.id, 0])

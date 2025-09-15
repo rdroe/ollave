@@ -1,10 +1,9 @@
 import { Observable } from 'rxjs'
 
-import { PhaseRecord } from 'src/lib/util/phaseTypes'
-
 import { ProgressionOptions } from '../lib'
 import { NoteByBar } from '../lib/schemas'
 import { SongRecord } from '../lib/types'
+import { PhaseRecord } from '../lib/util/phaseTypes'
 
 // Forward declarations to avoid circular imports
 export type BarTagPercent = any

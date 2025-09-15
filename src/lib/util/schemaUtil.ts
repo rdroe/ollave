@@ -28,7 +28,7 @@ export function compileNotesByBarToTracks() {
   songRecordSchema.parse(mem().song)
   const { tracks } = mem()
   const notesByBar = notesByBarSchema.parse(mem().notesByBar)
-  console.log('notesByBar before save', notesByBar)
+
   Object.keys(notesByBar).forEach((barId) => {
     const phaseIdForBar = barId.split(':')[0]
     const owningTrack = tracks.find((track) =>
@@ -141,7 +141,6 @@ export function saveSongAndTracks() {
     )
   })
   mem().tracks.forEach((track) => {
-    console.log('track', track)
     browser.userTables.update('track', { id: track.id, data: track }, {})
   })
 }
