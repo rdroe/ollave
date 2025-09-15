@@ -51,3 +51,27 @@ export const getFollowingPhasesWorker = (
 
   return followsPhases
 }
+
+// Utility function to create a worker message handler
+export function createWorkerMessageHandler(
+  workerFunction: (phases: any, notesByBar: any) => any
+): (e: MessageEvent) => void {
+  return function (e: MessageEvent) {
+    const { type, data } = e.data
+    if (type === 'MAP_SONG_TO_MIDI_TICKS') {
+      try {
+        const result = workerFunction(data.phases, data.notesByBar)
+        self.postMessage({
+          type: 'MAP_SONG_TO_MIDI_TICKS_RESULT',
+          data: result,
+        })
+      } catch (error) {
+        self.postMessage({
+          type: 'ERROR',
+          error:
+            error instanceof Error ? error.message : 'Unknown error occurred',
+        })
+      }
+    }
+  }
+}

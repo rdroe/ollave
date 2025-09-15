@@ -5,6 +5,16 @@ import { tickCounts } from '../util/constantsUtil'
 import { quantizeNote } from '../util/quantizeUtil'
 import { parseNoteTags } from '../util/tagsUtil'
 
+// Import PhaseMap type from mapSongToTicks.ts
+export type PhaseMap = {
+  [tick: number]: {
+    note: string
+    velocity?: number
+    duration?: number
+    compositionTags: string[]
+  }[]
+}
+
 // Types
 export type MidiMap = {
   [tick: number]: {
@@ -182,4 +192,39 @@ export function mapSongToMidiTicksCore(
   }, {} as MidiMap)
 
   return { map: midiMap, phaseAndBarStartAndEndTicks }
+}
+
+// Utility function to find first phases (phases with no follows-ids)
+export function getFirstPhases(
+  phases: Record<string, GenericPhase>
+): Array<[string, GenericPhase]> {
+  return Object.entries(phases).filter(
+    ([_, phase]) => phase['follows-ids'].length === 0
+  )
+}
+
+// Utility function to reduce collector array to a single midiMap
+export function reduceCollectorToMidiMap(collector: PhaseMap[]): MidiMap {
+  return collector.reduce((acc, curr) => {
+    Object.entries(curr).forEach(([tickRaw, notes]) => {
+      const tick = parseInt(tickRaw)
+      if (!acc[tick]) acc[tick] = []
+      acc[tick].push(...notes)
+    })
+    return acc
+  }, {} as MidiMap)
+}
+
+// Utility function to create the worker result structure
+export function createWorkerResult(
+  midiMap: MidiMap,
+  phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks
+): MidiMappingResult {
+  return {
+    map: midiMap,
+    phaseAndBarStartAndEndTicks: {
+      phases: { ...phaseAndBarStartAndEndTicks.phases },
+      bars: { ...phaseAndBarStartAndEndTicks.bars },
+    },
+  }
 }
