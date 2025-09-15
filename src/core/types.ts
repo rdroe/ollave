@@ -53,6 +53,14 @@ export type Mem = {
     [barTag: string]: NoteByBar[]
   }
   latestMap: MidiMap
+  latestPhaseAndBarStartAndEndTicks: {
+    phases: {
+      [phaseName: string]: [startTick: number, endTick: number]
+    }
+    bars: {
+      [barName: string]: [startTick: number, endTick: number]
+    }
+  }
   playedMap: MidiMap
   graphs: {
     [userScaleWithTonic: string]: { [chordName: string]: ProgressionOptions }[]

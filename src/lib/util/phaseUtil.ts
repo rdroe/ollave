@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { mem } from '../../core/mem'
 import { setLatestMap } from '../../core/observables'
 import { mapSongToMidiTicks } from '../mapSongToTicks'
-import { NoteByBar, phaseRecordSchema } from '../schemas'
+import { cloneNoteByBar, NoteByBar, phaseRecordSchema } from '../schemas'
 
 import { randId } from './common'
 import { getAllPhaseBars } from './phaseNotesUtil'
@@ -169,11 +169,11 @@ export async function phaseCount(
       notesByBar[newBarTag] = skipCopy
         ? []
         : notesByBar[barToCopy].map((note) => {
-            return {
-              ...note,
-              barTag: newBarTag,
-              tags: [...note.tags, copyGroup],
-            }
+            const clonedNote = cloneNoteByBar(note)
+            clonedNote.tagsObj.barId = [newBarTag]
+            clonedNote.tagsObj.copyGroup = [copyGroup]
+            clonedNote.tagsObj.noteId = [randId('', 6)]
+            return clonedNote
           })
     }
   }

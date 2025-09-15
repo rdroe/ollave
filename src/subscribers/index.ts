@@ -17,11 +17,10 @@ export {
   useBarNoteIdsCsvStore,
 } from './subscribeToNoteIdsByBar'
 export {
-  subscribeToNotesByTag,
   createNotesByTagStore,
   useNoteIdsByTagStore,
   useNotesByTagStore,
-} from './subscribeToNotesByTag'
+} from './useNotesByTag'
 export {
   subscribeToBarNoteIdsCsvs,
   createAllNoteIdsByBarStore,

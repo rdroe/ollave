@@ -14,67 +14,6 @@ type NoteByBarWithBarId = NoteByBar & {
   barId: string
 }
 
-export const useNotesByTag = (tagStrings: string) => {
-  const store = useNotesByTagStore(tagStrings)
-  return {
-    notes: store.notes,
-    didUnsubscribe: store.didUnsubscribe,
-    unsubscribe: store.unsubscribe,
-  }
-}
-
-export const subscribeToNotesByTag = (tagStrings: string[]) => {
-  if (!tagStrings || tagStrings.length === 0) {
-    throw new Error('tagStrings array is required and cannot be empty')
-  }
-
-  let noteObjs: NoteByBarWithBarId[] = []
-  let didUnsubscribe = false
-
-  // select the notes by tag and data. review ALL notes in the mem.notesByBar.
-  const selector = makeSelector(tagStrings)
-  // if the note ids or bar ids have changed, this returns false (so that subscribers can be updated)
-  const compare = makeCompare()
-  // subscribe using selector, compare, and clone.
-  const unsubscribe = makeCompilationSubscribe({
-    selector: (mem: Mem) => {
-      return selector(mem)
-    },
-    compare: (a, b) => {
-      const result = compare(a, b)
-
-      return result
-    },
-    // clone function clones the note after the fashion of the note by id subscriber.
-    // but afterwards, it adds the barId to the note.
-    clone,
-    name: 'subscribeToNotesByTag',
-  })({
-    next: (notes) => {
-      noteObjs = notes
-    },
-    complete: () => {
-      didUnsubscribe = true
-      if (!didUnsubscribe) {
-        unsubscribe()
-      }
-    },
-    error: (err: { message: string }) => {
-      console.error('error', err)
-    },
-  })
-  return {
-    notes: noteObjs,
-    didUnsubscribe,
-    unsubscribe: () => {
-      didUnsubscribe = true
-      if (!didUnsubscribe) {
-        unsubscribe()
-      }
-    },
-  }
-}
-
 type NotesByTagStore = {
   notes: NoteByBarWithBarId[]
   setNotes: (notes: NoteByBarWithBarId[]) => void
@@ -159,13 +98,6 @@ function selector(mem: Mem, targetTags: TagEntries): NoteByBarWithBarId[] {
   })
 
   return matchingNotes
-}
-// make the selector function that selects the notes by tag and data.
-function makeSelector(tagStrings: string[]) {
-  const targetTags = parseNoteTags(tagStrings)
-  return function (mem: Mem): NoteByBarWithBarId[] {
-    return selector(mem, targetTags)
-  }
 }
 // make the compare function that sees whether the note ids and barIds have changed.
 // if so, return false. never automatically unsubscribe. only return true or false.

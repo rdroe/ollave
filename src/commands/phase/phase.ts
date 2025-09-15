@@ -9,6 +9,7 @@ import { copyBarNotesWithNoteIdsAndGroupIds } from '../../lib/util/barsUtil'
 import {
   getAllPhaseBarNotes,
   phaseCount,
+  phaseExists,
   phaseFollowsPhase,
   phaseUnfollows,
 } from '../../lib/util/phaseUtil'
@@ -95,9 +96,14 @@ const module: Module = {
       fn: async (args) => {
         const [phaseName] = args['$']
         const [barCnt] = args.positionalNonCommands
-
+        // find this phase id, then the track id.
+        const alreadyExists = phaseExists(phaseName)
+        const phaseId = alreadyExists ? mem().phases[phaseName].id : null
+        const trackId = alreadyExists ? mem().tracks?.[0]?.id : undefined
+        console.log('phaseId', phaseId)
+        console.log('trackId', trackId)
         if (isString(phaseName) && isNum(barCnt)) {
-          phaseCount(phaseName, barCnt)
+          phaseCount(phaseName, barCnt, true, trackId)
           return getAllPhaseBarNotes(phaseName)
         }
         return phaseName

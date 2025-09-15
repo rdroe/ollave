@@ -7,7 +7,7 @@
 import { fakeCli } from "peprn/browser"
 import { Module } from "peprn/util"
 import { mem } from "../../core/mem"
-import { createNotesByTagStore } from "../../subscribers/subscribeToNotesByTag"
+import { createNotesByTagStore } from "../../subscribers/useNotesByTag"
 import { setLatestMap } from "../../core/observables"
 import { mapSongToMidiTicks } from "../../lib"
 const intervalsByTag: Record<string, ReturnType<typeof setInterval>> = {}

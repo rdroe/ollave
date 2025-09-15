@@ -39,6 +39,9 @@ type NoteAndGroupIds = {
   groupsByBarCsv: {
     [barId: string]: string
   }
+  barsByPhaseCsv: {
+    [phaseId: string]: string
+  }
 }
 
 const buildGroupsByBar = (mem: Mem) => {
@@ -110,8 +113,9 @@ const buildNoteAndGroupIdsStore = (mem: Mem): NoteAndGroupIds => {
   const groupsByBar = buildGroupsByBar(mem)
   const notesByBarObj = notesByBar(mem)
   const notesByGroupId = buildNotesByGroupId(mem)
+  const barsByPhase = getPhaseBarIds(Object.keys(mem.notesByBar))
   return {
-    barsByPhase: getPhaseBarIds(Object.keys(mem.notesByBar)),
+    barsByPhase,
     notesByBar: notesByBarObj,
     groupsByBar,
     barByNoteId: hashLookup(notesByBarObj),
@@ -143,6 +147,15 @@ const buildNoteAndGroupIdsStore = (mem: Mem): NoteAndGroupIds => {
           return acc
         },
         {} as { [barId: string]: string }
+      ),
+    },
+    barsByPhaseCsv: {
+      ...Object.keys(barsByPhase).reduce(
+        (acc, phaseId) => {
+          acc[phaseId] = barsByPhase[phaseId].join(',')
+          return acc
+        },
+        {} as { [phaseId: string]: string }
       ),
     },
   }
@@ -261,6 +274,10 @@ export const useSubscribeToIds = () => {
     store,
     useShallow((state) => state.groupsByBarCsv)
   )
+  const shallowBarsByPhaseCsv = useStore(
+    store,
+    useShallow((state) => state.barsByPhaseCsv)
+  )
   return {
     notesByBar: shallowNotesByBar,
     groupsByBar: shallowGroupsByBar,
@@ -272,5 +289,6 @@ export const useSubscribeToIds = () => {
     notesByGroupIdCsv: shallowNotesByGroupIdCsv,
     notesByBarCsv: shallowNotesByBarCsv,
     groupsByBarCsv: shallowGroupsByBarCsv,
+    barsByPhaseCsv: shallowBarsByPhaseCsv,
   }
 }

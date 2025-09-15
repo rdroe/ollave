@@ -243,6 +243,69 @@ function mapPhaseTicks(
 
   return collector
 }
+
+export const extractPhaseAndBarStartAndEndTicks = (): {
+  phases: {
+    [phaseName: string]: [startTick: number, endTick: number]
+  }
+  bars: {
+    [barName: string]: [startTick: number, endTick: number]
+  }
+} => {
+  const collector: PhaseMap[] = []
+  const firstPhases = Object.entries(mem().phases).filter(([, phase]) => {
+    return phase['follows-ids'].length === 0
+  })
+  const phaseStartEnds: {
+    [phaseName: string]: [startTick: number, endTick: number]
+  } = {}
+  const barsStartEnds: {
+    [barName: string]: [startTick: number, endTick: number]
+  } = {}
+
+  firstPhases.forEach(([phaseName, phase]) => {
+    mapPhaseData(phaseName, phase, 0, collector)
+  })
+  const phaseNames = [
+    ...new Set(collector.map((phase) => phase[0][0].data1[0].split(':')[0])),
+  ]
+
+  phaseNames.forEach((phaseName) => {
+    const phaseData = collector.find(
+      (phase) => phase[0][0].data1[0].split(':')[0] === phaseName
+    )
+    const mappedTicks = Object.keys(phaseData)
+    const firstBarStartEvent = mappedTicks.find(
+      (tick) => phaseData[parseInt(tick)][0].occassion === 'BAR_START'
+    )
+    const lastBarEndEvent = mappedTicks
+      .reverse()
+      .find((tick) => phaseData[parseInt(tick)][0].occassion === 'BAR_END')
+    const firstBarStartTick = firstBarStartEvent
+      ? parseInt(firstBarStartEvent)
+      : 0
+    const lastBarEndTick = lastBarEndEvent ? parseInt(lastBarEndEvent) : 0
+    console.log('start end ticks', {
+      phaseName,
+      firstBarStartTick,
+      lastBarEndTick,
+    })
+    phaseStartEnds[phaseName] = [firstBarStartTick, lastBarEndTick]
+    Object.entries(phaseData).forEach(([tick, bar]) => {
+      const barStartTick = parseInt(tick)
+      const barEndTick = bar[0].data2[0]
+      barsStartEnds[`${bar[0].data1[0]}`] = [barStartTick, barEndTick]
+    })
+  })
+  console.log('phaseStartEnds', {
+    phases: phaseStartEnds,
+  })
+  return {
+    phases: phaseStartEnds,
+    bars: barsStartEnds,
+  }
+}
+
 // One use of this function is in code that gets or places the places cursor within a song, as when stopping or restarting at a certain point.
 export function mapPhaseData(
   phaseName: string,
