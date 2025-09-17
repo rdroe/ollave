@@ -20,7 +20,7 @@ type IncomingEvent =
 
 const downloadEvents = async (
   notes: RelativeNote[],
-  tempo: number | null = startTempo
+  tempo: number = startTempo
 ) => {
   const file = new Midi.File()
   const track = new Midi.Track()
@@ -126,7 +126,10 @@ const songToEvents = async (mappedTicks: MidiMap) => {
   return relativized
 }
 
-export const downloadSong = async (tempo: number | null, midiMap: MidiMap) => {
+export const downloadSong = async (
+  tempo: number = startTempo,
+  midiMap: MidiMap
+) => {
   const mappedTicks = midiMap
   const events = await songToEvents(mappedTicks)
   return downloadEvents(events, tempo)

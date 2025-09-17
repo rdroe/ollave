@@ -28,3 +28,4 @@ export {
 } from './subscribeToBarNoteIdsCsvs'
 
 export { useSubscribeToIds } from './subscribeToIds'
+export { subscribeForTickCount } from './subscribeForTickCount'

@@ -10,6 +10,9 @@ import { makeTickSubscribe } from '../subjects/masterTicksSubject'
 import {
   exportableTick,
   msPerTick,
+  realtimeMode,
+  realtimeTick,
+  startRealtimeTick,
   updateExportableTick,
 } from './masterTicksObservable'
 
@@ -36,6 +39,8 @@ export const getSongCursor = (tick: number) => {
 }
 
 export const startCueObservable = (startAt?: number) => {
+  startRealtimeTick()
+  mem().isRunning = true
   // make a new observable that subscribes to master ticks
   // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
   const song = mem()?.song?.name
@@ -50,6 +55,8 @@ export const startCueObservable = (startAt?: number) => {
   observables['tick'] = songObservable.subscribe({
     next: ({ tick }) => {
       const expTick = exportableTick()
+      const rtTick = realtimeTick()
+      const rtMode = realtimeMode()
       // get the midi tick relative to the start of the song
       const adjustedCursor = getSongCursor(tick)
       mem().adjustedCursor = adjustedCursor
@@ -73,8 +80,9 @@ export const startCueObservable = (startAt?: number) => {
           note: note.note,
           tags: note.compositionTags,
         })
-        mem().playedMap[expTick] = mem().playedMap[expTick] || []
-        mem().playedMap[expTick].push({
+        mem().playedMap[rtMode ? rtTick : expTick] =
+          mem().playedMap[rtMode ? rtTick : expTick] || []
+        mem().playedMap[rtMode ? rtTick : expTick].push({
           note: note.note,
           compositionTags: note.compositionTags,
           velocity,
@@ -99,7 +107,7 @@ export const startCueObservable = (startAt?: number) => {
 export const stopCueObservable = () => {
   const songName = mem().song.name
   const publishedCursro = mem().adjustedCursor
-
+  mem().isRunning = false
   const observable = mem().observables[songName]
 
   if (observable) {

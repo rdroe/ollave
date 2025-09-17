@@ -1,5 +1,5 @@
 import { mem } from '../../core/mem'
-import { setLatestMap } from '../../core/observables'
+import { setLatestMap, stopRealtimeTick } from '../../core/observables'
 import {
   startCueObservable,
   stopCueObservable,
@@ -180,4 +180,5 @@ export async function init() {
   setLatestMap(mapSongToMidiTicks())
   startCueObservable()
   stopCueObservable()
+  stopRealtimeTick()
 }

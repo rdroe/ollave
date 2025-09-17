@@ -4,7 +4,11 @@ import { browser } from 'user-tables'
 import { z } from 'zod'
 
 import { Mem, mem } from '../../core/mem'
-import { setLatestMap } from '../../core/observables'
+import {
+  setLatestMap,
+  startRealtimeTick,
+  stopRealtimeTick,
+} from '../../core/observables'
 import {
   startCueObservable,
   stopCueObservable,
@@ -94,6 +98,16 @@ song start
         const result = await initLoadedSong()
         afterLoadSong(mem().song)
         return result
+      },
+    },
+    realtimePause: {
+      fn: async () => {
+        stopRealtimeTick()
+      },
+    },
+    realtimeResume: {
+      fn: async () => {
+        startRealtimeTick()
       },
     },
     init: {
@@ -250,7 +264,7 @@ song start
         if (!played) {
           downloadSong(trackTempo, mem().latestMap)
         } else {
-          downloadSong(null, mem().playedMap)
+          downloadSong(trackTempo, mem().playedMap)
         }
       },
     },

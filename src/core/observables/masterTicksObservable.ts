@@ -59,17 +59,76 @@ export const airSpeedArgFromTempo = (tempo: number) => {
 }
 
 type TempoChange = [tickCount: number, tempo: number]
+// refactored window as any to be global types
+declare global {
+  interface Window {
+    realtimeTickRef: {
+      tick: number
+      running: boolean
+      mode: boolean
+    }
+    expTick: number
+    airSpeedRef: {
+      air: number
+    }
+    curr: TimeMarker
+  }
+}
+window.realtimeTickRef = {
+  tick: 0,
+  running: false,
+  mode: false,
+}
 
-const expTick_ = 0
-;(window as any).expTick = expTick_
+export const updateRealtimeTick = () => {
+  if (
+    !window.realtimeTickRef.running ||
+    typeof window.realtimeTickRef.tick !== 'number'
+  ) {
+    return
+  }
+  // ;(window as any).realtimeTick += 1
+  window.realtimeTickRef.tick += 1
+}
+export const startRealtimeTick = () => {
+  window.realtimeTickRef.running = true
+  if (window.realtimeTickRef.tick < window.expTick) {
+    window.realtimeTickRef.tick = window.expTick
+  }
+}
+export const stopRealtimeTick = () => {
+  window.realtimeTickRef.running = false
+  // set the exportable tick to the realtime tick so that notes don't overlap when the user resumes the song
+  if (window.expTick < window.realtimeTickRef.tick) {
+    window.expTick = window.realtimeTickRef.tick
+  }
+}
+export const setRealtimeMode = (mode: boolean) => {
+  window.realtimeTickRef.mode = mode
+  if (mode) {
+    if (window.realtimeTickRef.tick < window.expTick) {
+      window.realtimeTickRef.tick = window.expTick
+    }
+  } else {
+    stopRealtimeTick()
+  }
+}
+export const realtimeTick = () => {
+  return window.realtimeTickRef.tick
+}
+export const realtimeMode = () => {
+  return window.realtimeTickRef.mode
+}
+
+window.expTick = 0
 export const updateExportableTick = () => {
-  ;(window as any).expTick += 1
+  window.expTick += 1
 }
 export const setExportableTick = (tick: number) => {
-  ;(window as any).expTick = tick
+  window.expTick = tick
 }
 export const exportableTick = () => {
-  return (window as any).expTick
+  return window.expTick
 }
 
 // should be changeable in the future.
@@ -78,14 +137,14 @@ export const trackTempo = 120
 const airSpeedRef_ = {
   air: START_SPEED,
 }
-;(window as any).airSpeedRef = airSpeedRef_
+window.airSpeedRef = airSpeedRef_
 
 export const setAirSpeed = (speedFloat: number) => {
-  ;(window as any).airSpeedRef.air = roundToTenths(speedFloat)
+  window.airSpeedRef.air = roundToTenths(speedFloat)
 }
 
 export const airSpeed = () => {
-  return roundToTenths((window as any).airSpeedRef.air)
+  return roundToTenths(window.airSpeedRef.air)
 }
 
 const MODE: 'air' | 'paper' = 'air'
@@ -148,7 +207,7 @@ type TimeMarker = [time: number, quotient: number]
 
 const midiTicksQueue: number[] = [0]
 export let curr: TimeMarker = [0, midiTicksQueue[midiTicksQueue.length - 1]]
-;(window as any).curr = curr
+window.curr = curr
 
 // pop ticks from theq queue. fire the ticks to the subscribers (which should be multi-casting subjects, btw)
 export const masterTicksObservable = new Observable(function subscribe(
@@ -165,10 +224,14 @@ export const masterTicksObservable = new Observable(function subscribe(
     for (let i = 0; i < newTicksCnt; i++) {
       const nextTick = lastTick + i
       new Promise((res) => {
+        if (window.realtimeTickRef.running && window.realtimeTickRef.mode) {
+          updateRealtimeTick()
+        }
         res(subscriber.next(lastTick + i))
       })
       lastPushTime = Date.now()
       lastTick = nextTick
+
       curr = [lastPushTime, lastTick]
     }
   }, 1)
