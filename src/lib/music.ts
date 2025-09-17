@@ -2,7 +2,12 @@ import * as tone from 'tone'
 
 const port = window?.location?.port ?? '8080'
 const host = window?.location?.hostname ?? 'localhost'
-export type Triad = [note: string, dur: number, timing?: number] // e.g. C5, 0.125 , 29.0078125
+export type Triad = [
+  note: string,
+  dur: number,
+  timing?: number,
+  velocity?: number,
+] // e.g. C5, 0.125 , 29.0078125
 export type BPM = number
 export type RelativeNote =
   | [note: string, rel: number, onOrOff: 'on' | 'off']
@@ -59,10 +64,16 @@ const playMusic = async (json: Triad[]) => {
 
   prom.then(() => {
     json.forEach((triad) => {
-      const [note, t1, t2] = triad
+      /** note, dur, timing, velocity */
+      const [note, t1, t2, midiVelocity = 60] = triad
+      const velocity = midiVelocity / 127
       const start = `+${t2}`
       const stop = `+${t2 + t1}`
-      piano.keyDown({ note: note, time: start })
+      console.log('notes in playTriads', {
+        stop,
+        velocity,
+      })
+      piano.keyDown({ note: note, time: start, velocity })
       piano.keyUp({ note: note, time: stop })
     })
   })

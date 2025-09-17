@@ -6,11 +6,16 @@ import {
 } from '../../core/observables/songObservables'
 import { initLatestOrNewSong } from '../fetch'
 import { mapSongToMidiTicks } from '../mapSongToTicks'
+import { SongRecord } from '../types'
 
 import { strjson } from './common'
 import { tickCounts } from './constantsUtil'
 import { namesPromise, namesResolver } from './songNamesUtil'
 import { lastTick } from './startEndUtil'
+export const onLoadSongCallbacks: ((song: SongRecord) => void)[] = []
+export const addSongLoadCallback = (callback: (song: SongRecord) => void) => {
+  onLoadSongCallbacks.push(callback)
+}
 ;(() => {
   console.log('importing words')
   import('../words.js').then((w) => {
@@ -65,6 +70,9 @@ export async function init() {
   }
 
   await initLatestOrNewSong()
+  onLoadSongCallbacks.forEach((callback) => {
+    callback(mem().song)
+  })
 
   let tagsRoot: HTMLDivElement | null = null
   let logItr = 0

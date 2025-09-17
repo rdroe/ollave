@@ -1,17 +1,18 @@
 import Midi, { MidiChannel } from 'jsmidgen'
 
 import { BPM } from './music'
+import { playTriads, RelativeNote, Triad } from './music'
+
 type ChanneledTriad = [
   channel: MidiChannel,
   note: string,
   dur: number,
   timing?: number,
+  velocity?: number,
 ]
 type ChanneledEvent =
   | [channel: MidiChannel, bpm: string, rel: number, onOrOff: 'on' | 'off']
   | [channel: MidiChannel, note: BPM, rel: number, onOrOff: 'tempo']
-
-import { playTriads, RelativeNote, Triad } from './music'
 
 export function saveRaw(bytes: any, name = 'sample-2.midi') {
   const b64 = btoa(bytes)
@@ -25,8 +26,8 @@ export function saveRaw(bytes: any, name = 'sample-2.midi') {
 
 const makeChanneledTriadFn = (ch: number) => {
   if (!isMidiChannel(ch)) throw new Error(`Invalid midi channel: ${ch}`)
-  return (tr: Triad): ChanneledTriad => {
-    return [ch, ...tr]
+  return ([note, dur, timing, velocity]: Triad): ChanneledTriad => {
+    return [ch, note, dur, timing, velocity]
   }
 }
 
@@ -44,9 +45,7 @@ const isMidiChannel = (arg: number): arg is MidiChannel => {
 export const addEvents = (track: Midi.Track, events: RelativeNote[]) => {
   const channeledTriads = events.map(makeChanneledEventFn(0))
 
-  let cntr = 0
   channeledTriads.forEach((chTr: ChanneledEvent) => {
-    cntr += chTr[2]
     if (chTr[3] === 'on') {
       track.noteOn(chTr[0], chTr[1], chTr[2])
     } else if (chTr[3] === 'off') {

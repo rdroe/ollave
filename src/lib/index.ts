@@ -79,5 +79,6 @@ export type { Subcommand, SubcommandPatterns } from './subcommands'
 
 // mapSongToTicks exports
 export { mapSongToMidiTicks } from './mapSongToTicks'
-
+export { abbrev, tickCounts, Abbreviation, ppq } from './util/constantsUtil'
 export * as util from './util'
+export { addSongLoadCallback, onLoadSongCallbacks } from './util/songUtil'

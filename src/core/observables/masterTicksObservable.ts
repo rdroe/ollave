@@ -55,7 +55,7 @@ export const tempoFromAirSpeed = (speed: number) => {
 }
 
 export const airSpeedArgFromTempo = (tempo: number) => {
-  return tempo / 120
+  return tempo / 113.75
 }
 
 type TempoChange = [tickCount: number, tempo: number]

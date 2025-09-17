@@ -34,7 +34,13 @@ const tagsSchema = z.array(z.string()).refine(
 )
 
 export const noteByBarSchema = z.object({
-  note: z.string().refine((str) => isNoteNameWithOctave(str) ?? false),
+  note: z.string().refine((str) => {
+    const isValid = isNoteNameWithOctave(str) ?? false
+    if (!isValid) {
+      console.error(`Invalid note name: ${str}`)
+    }
+    return isValid
+  }),
   tags: tagsSchema,
   tagsObj: z.record(
     z.string(),

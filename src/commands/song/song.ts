@@ -5,7 +5,6 @@ import { z } from 'zod'
 
 import { Mem, mem } from '../../core/mem'
 import { setLatestMap } from '../../core/observables'
-import { trackTempo } from '../../core/observables/masterTicksObservable'
 import {
   startCueObservable,
   stopCueObservable,
@@ -22,6 +21,7 @@ const { userTables } = browser
 import { SongRecord, TrackRecord } from '../../lib/types'
 import { getLastChordLayerName } from '../../lib/util/barsUtil'
 import {
+  onLoadSongCallbacks,
   setTrackReceptacleSelector,
   startPrintingNotes,
   stopPrintingNotes,
@@ -37,6 +37,11 @@ const { songNames } = mem()
 // Re-export types for backward compatibility
 export type { SongRecord, TrackRecord }
 
+const afterLoadSong = (song: SongRecord) => {
+  onLoadSongCallbacks.forEach((callback) => {
+    callback(song)
+  })
+}
 export default {
   fn: async () => {
     return null
@@ -79,13 +84,16 @@ song start
         }
         stopCueObservable()
         await loadAndInitSongAndTracks(songId)
+        afterLoadSong(mem().song)
         return initLoadedSong()
       },
     },
     new: {
       fn: async () => {
         await initNewSong()
-        return initLoadedSong()
+        const result = await initLoadedSong()
+        afterLoadSong(mem().song)
+        return result
       },
     },
     init: {
@@ -112,6 +120,8 @@ song start
         }
 
         await fakeCli(`song track init`, 'cli')
+        afterLoadSong(mem().song)
+        return mem().song
       },
     },
     track: {
@@ -168,6 +178,7 @@ song start
                   notesByBar: {},
                 },
               ]
+              afterLoadSong(mem().song)
             } else {
               console.error('no tracks for song', mem().song.id)
             }
@@ -235,10 +246,11 @@ song start
         },
       },
       fn: async ({ played = false }) => {
+        const trackTempo = mem().song.tempo
         if (!played) {
           downloadSong(trackTempo, mem().latestMap)
         } else {
-          downloadSong(trackTempo, mem().playedMap)
+          downloadSong(null, mem().playedMap)
         }
       },
     },

@@ -51,3 +51,7 @@ export {
 export type { TagData, TagEntries, TagEntry } from './tagsUtil'
 
 export { chordGraphCreate, lookUpGraph, getPhaseChordNames } from './graphUtil'
+
+export { abbrev, tickCounts, Abbreviation, ppq } from './constantsUtil'
+
+export { addSongLoadCallback, onLoadSongCallbacks } from './songUtil'

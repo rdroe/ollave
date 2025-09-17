@@ -36,6 +36,8 @@ function getConstantsString(): string {
     const ppq = 128
     const BAR = 'bar'
     const tickCounts = ${JSON.stringify(tickCounts, null, 6)}
+    const DEFAULT_DURATION = 128
+    const DEFAULT_VELOCITY = 60
   `
 }
 

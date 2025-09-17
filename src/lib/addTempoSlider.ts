@@ -1,6 +1,7 @@
 import { mem } from '../core/mem'
 import {
   airSpeed,
+  airSpeedArgFromTempo,
   exportableTick,
   parseAirSpeed,
   setAirSpeed,
@@ -33,19 +34,22 @@ export function addTempoSlider(selector: string = '.controls-1') {
 export function handleTempoChangeString() {
   let setTimeoutId: NodeJS.Timeout | null = null
   return (stringNumber: string) => {
-    const newAirSpeed = parseAirSpeed(stringNumber)
+    const newAirSpeed = airSpeedArgFromTempo(parseFloat(stringNumber))
+    const newTempo = parseFloat(stringNumber)
     if (setTimeoutId) {
       clearTimeout(setTimeoutId)
     }
     setTimeoutId = setTimeout(() => {
       const currTick = exportableTick()
-      const newTempo = tempoFromAirSpeed(newAirSpeed)
+      // const newTempo = tempoFromAirSpeed(newAirSpeed)
+      console.log('new tempo', newTempo)
       setAirSpeed(newAirSpeed)
+      mem().song.tempo = newTempo
       mem().playedMap[currTick] = mem().playedMap[currTick] || []
       mem().playedMap[currTick].push({
         note: `tempo: ${newTempo}`,
         compositionTags: [],
       })
-    }, 50)
+    }, 10)
   }
 }

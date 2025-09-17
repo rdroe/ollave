@@ -1,3 +1,4 @@
+import { DEFAULT_DURATION } from 'jsmidgen'
 import { Observable, Subscription } from 'rxjs'
 
 import { barsAtMidi, BarTagPercent } from '../../lib/mapSongToTicks'
@@ -6,7 +7,11 @@ import { lastTick } from '../../lib/util/startEndUtil'
 import { Mem, mem } from '../mem'
 import { makeTickSubscribe } from '../subjects/masterTicksSubject'
 
-import { exportableTick, updateExportableTick } from './masterTicksObservable'
+import {
+  exportableTick,
+  msPerTick,
+  updateExportableTick,
+} from './masterTicksObservable'
 
 export const getSongName = () => {
   const song = mem()?.song?.name || ''
@@ -52,7 +57,16 @@ export const startCueObservable = (startAt?: number) => {
         mem().adjustedCursor.toString()
 
       mem().latestMap[adjustedCursor]?.forEach((note: any) => {
-        playTriads([[note.note, 0.5, 0.1]])
+        const velocity = note.velocity ?? 60
+        const rasterDuration = note.duration
+          ? (msPerTick() * note.duration) / 1000
+          : 0.5
+        console.log('note in songObservables', {
+          note,
+          velocity,
+          rasterDuration,
+        })
+        playTriads([[note.note, rasterDuration, 0.01, velocity]])
         mem().played.unshift({
           time: Date.now(),
           songTick: adjustedCursor,
@@ -63,6 +77,8 @@ export const startCueObservable = (startAt?: number) => {
         mem().playedMap[expTick].push({
           note: note.note,
           compositionTags: note.compositionTags,
+          velocity,
+          duration: note.duration ?? DEFAULT_DURATION,
         })
       })
       updateExportableTick()

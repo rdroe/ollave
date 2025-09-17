@@ -1,19 +1,35 @@
 import fakeCli from 'peprn/fakeCli'
 import { Chord, Note, Mode, Scale, Progression, Collection } from 'tonal'
 
-export const sharpNoteNames = ['C#', 'D#', 'F#', 'G#', 'A#']
+export const sharpNoteNames = [
+  'C#',
+  'C##',
+  'D#',
+  'D##',
+  'F#',
+  'F##',
+  'G#',
+  'G##',
+  'A#',
+  'A##',
+]
 export const noteNames = [
   'C',
   'Db',
+  'Dbb',
   'D',
   'Eb',
+  'Ebb',
   'E',
   'F',
   'Gb',
+  'Gbb',
   'G',
   'Ab',
+  'Abb',
   'A',
   'Bb',
+  'Bbb',
   'B',
 ].concat(sharpNoteNames)
 

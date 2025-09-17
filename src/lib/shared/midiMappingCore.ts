@@ -58,7 +58,8 @@ export type GenericNotesByBar = {
 export type GenericPhases = {
   [phaseName: string]: GenericPhase
 }
-
+const DEFAULT_DURATION = 128
+const DEFAULT_VELOCITY = 60
 // Core mapping function that works with generic types
 export function mapPhaseTicksCore(
   phaseName: string,
@@ -115,10 +116,21 @@ export function mapPhaseTicksCore(
       if (!phaseMidi[thisNoteTick]) {
         phaseMidi[thisNoteTick] = []
       }
-
+      const durationRaw = note.tags
+        .find((tag) => tag.startsWith('duration='))
+        ?.split('=')?.[1]
+        ?.split(',')?.[0]
+      const parsedDuration = parseInt(durationRaw)
+      const velocityRaw = note.tags
+        .find((tag) => tag.startsWith('velocity='))
+        ?.split('=')?.[1]
+        ?.split(',')?.[0]
+      const parsedVelocity = parseInt(velocityRaw)
       phaseMidi[thisNoteTick].push({
         note: note.note,
         compositionTags: note.tags,
+        velocity: !isNaN(parsedVelocity) ? parsedVelocity : DEFAULT_VELOCITY,
+        duration: !isNaN(parsedDuration) ? parsedDuration : DEFAULT_DURATION,
       })
     })
 
