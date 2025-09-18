@@ -264,7 +264,7 @@ song start
         if (!played) {
           downloadSong(trackTempo, mem().latestMap)
         } else {
-          downloadSong(trackTempo, mem().playedMap)
+          downloadSong(null, mem().playedMap)
         }
       },
     },

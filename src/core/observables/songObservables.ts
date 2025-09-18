@@ -25,6 +25,8 @@ export const getSongName = () => {
   return song
 }
 
+let isFirstCueStart = true
+
 export const subscribeToSongTicks = (
   song: string,
   name: string,
@@ -41,6 +43,7 @@ export const getSongCursor = (tick: number) => {
 export const startCueObservable = (startAt?: number) => {
   startRealtimeTick()
   mem().isRunning = true
+
   // make a new observable that subscribes to master ticks
   // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
   const song = mem()?.song?.name
@@ -62,7 +65,15 @@ export const startCueObservable = (startAt?: number) => {
       mem().adjustedCursor = adjustedCursor
       document.querySelector('.ollave-ticks').innerHTML =
         mem().adjustedCursor.toString()
-
+      if (isFirstCueStart) {
+        isFirstCueStart = false
+        mem().playedMap[tick] = mem().playedMap[tick] || []
+        mem().playedMap[tick].push({
+          note: `tempo: ${mem().song.tempo}`,
+          compositionTags: [],
+        })
+        return
+      }
       mem().latestMap[adjustedCursor]?.forEach(
         (note: {
           note: string
