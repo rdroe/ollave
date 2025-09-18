@@ -4,9 +4,11 @@ import { z } from 'zod'
 import { createStore, useStore } from 'zustand'
 import { useShallow } from 'zustand/shallow'
 
+import { setLatestMap } from 'src/core/observables/compilationObservable'
+
 import { mem, Mem } from '../core/mem'
 import { makeCompilationSubscribe } from '../core/subjects/compilationSubject'
-import { parseNoteTags } from '../lib'
+import { mapSongToMidiTicks, parseNoteTags } from '../lib'
 import { updateNotePitch, updateTagsObj } from '../lib/addSlider'
 import { deleteNoteById } from '../lib/deleteNoteById'
 import { cloneNoteByBar, NoteByBar, tagsObjSchema } from '../lib/schemas'
@@ -43,6 +45,7 @@ type NoteStore = {
     }
   }
   setNote: (noteId: string, note: NoteByBar) => void
+  isStale: boolean
 }
 
 const notesStore = createStore<NoteStore>((set, get) => ({
@@ -65,13 +68,20 @@ const notesStore = createStore<NoteStore>((set, get) => ({
             },
           },
     }),
+  isStale: false,
 }))
-
+setInterval(() => {
+  if (notesStore.getState().isStale) {
+    notesStore.setState({ isStale: false })
+    setLatestMap(mapSongToMidiTicks())
+  }
+}, 50)
 export const updateNoteSilently = (
   noteId: string,
   tagName: string,
   tagValue: TagData
 ) => {
+  notesStore.setState({ isStale: true })
   const memNote = getNoteByBar(mem, noteId)
   memNote.tagsObj[tagName] = tagValue
   notesStore.getState().setNote(noteId, memNote)
