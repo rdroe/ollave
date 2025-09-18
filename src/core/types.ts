@@ -73,4 +73,5 @@ export type Mem = {
   adjustedCursor: number
   doLog: boolean
   isRunning?: boolean
+  exclusivePlayMode?: boolean
 }

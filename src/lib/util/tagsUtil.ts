@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { NoteByBar } from '../schemas'
+import { NoteByBar, tagsObjSchema } from '../schemas'
 import { TagData, TagEntry, TagEntries } from '../schemaTypes'
 
 export type { TagEntry } from '../schemaTypes'
@@ -201,6 +201,33 @@ export const scale = function parseNoteScale(
   ]
 }
 
+export const noteHasMatchingTagEntries = (a: NoteByBar, b: TagEntries) => {
+  if (!a || !b) {
+    return false
+  }
+  if (b.length === 0) {
+    return true
+  }
+  let matched = true
+  b.forEach(([tagName, data]) => {
+    if (!matched) {
+      return
+    }
+    const aData = a.tagsObj[tagName]
+    if (aData === undefined || !Array.isArray(aData)) {
+      matched = false
+      return
+    }
+    data.forEach((tagDatum, index2) => {
+      const aDatum = aData[index2]
+      if (tagDatum !== aDatum) {
+        matched = false
+        return
+      }
+    })
+  })
+  return matched
+}
 // updateNoteTag moved to tagUpdateUtil.ts to break circular dependency
 
 export const tagEntriesCompare = (a: TagEntries, bAll: TagEntries) => {

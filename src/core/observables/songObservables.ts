@@ -63,32 +63,48 @@ export const startCueObservable = (startAt?: number) => {
       document.querySelector('.ollave-ticks').innerHTML =
         mem().adjustedCursor.toString()
 
-      mem().latestMap[adjustedCursor]?.forEach((note: any) => {
-        const velocity = note.velocity ?? 60
-        const rasterDuration = note.duration
-          ? (msPerTick() * note.duration) / 1000
-          : 0.5
-        console.log('note in songObservables', {
-          note,
-          velocity,
-          rasterDuration,
-        })
-        playTriads([[note.note, rasterDuration, 0.01, velocity]])
-        mem().played.unshift({
-          time: Date.now(),
-          songTick: adjustedCursor,
-          note: note.note,
-          tags: note.compositionTags,
-        })
-        mem().playedMap[rtMode ? rtTick : expTick] =
-          mem().playedMap[rtMode ? rtTick : expTick] || []
-        mem().playedMap[rtMode ? rtTick : expTick].push({
-          note: note.note,
-          compositionTags: note.compositionTags,
-          velocity,
-          duration: note.duration ?? DEFAULT_DURATION,
-        })
-      })
+      mem().latestMap[adjustedCursor]?.forEach(
+        (note: {
+          note: string
+          velocity?: number
+          duration?: number
+          compositionTags: string[]
+        }) => {
+          let doPlay = true
+          if (note.compositionTags.includes('muted=true')) {
+            doPlay = false
+          }
+          if (
+            mem().exclusivePlayMode &&
+            !note.compositionTags.includes('playExclusively=true')
+          ) {
+            doPlay = false
+          }
+          if (!doPlay) {
+            return
+          }
+          const velocity = note.velocity ?? 60
+          const rasterDuration = note.duration
+            ? (msPerTick() * note.duration) / 1000
+            : 0.5
+
+          playTriads([[note.note, rasterDuration, 0.01, velocity]])
+          mem().played.unshift({
+            time: Date.now(),
+            songTick: adjustedCursor,
+            note: note.note,
+            tags: note.compositionTags,
+          })
+          mem().playedMap[rtMode ? rtTick : expTick] =
+            mem().playedMap[rtMode ? rtTick : expTick] || []
+          mem().playedMap[rtMode ? rtTick : expTick].push({
+            note: note.note,
+            compositionTags: note.compositionTags,
+            velocity,
+            duration: note.duration ?? DEFAULT_DURATION,
+          })
+        }
+      )
       updateExportableTick()
     },
   })

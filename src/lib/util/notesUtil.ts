@@ -14,7 +14,13 @@ import {
 import { isCsvArg } from './barsUtil'
 import { abbrev } from './constantsUtil'
 import { getAllPhaseBarNotes } from './phaseUtil'
-import { parseNoteTags, TagData, TagEntries } from './tagsUtil'
+import {
+  noteHasMatchingTagEntries,
+  parseNoteTags,
+  TagData,
+  TagEntries,
+  tagEntriesCompare,
+} from './tagsUtil'
 import { isFraction, tickCounts } from './tickUtil'
 
 const isNoteCnt = (str: string | number) => {
@@ -317,6 +323,95 @@ export const deleteNotesById = (noteIds: string[]) => {
 export const deleteNotesByIdAndUpdateMap = (noteIds: string[]) => {
   deleteNotesById(noteIds)
   setLatestMap(mapSongToTicks.mapSongToMidiTicks())
+}
+
+export const muteNotesById = (noteIds: string[], unmute: boolean = false) => {
+  const notesByBar = mem().notesByBar
+  Object.entries(notesByBar).forEach(([_, notes]) => {
+    // set muted = [true] in tagsObj
+    notes.forEach((note) => {
+      if (noteIds.includes(z.string().parse(note.tagsObj.noteId[0]))) {
+        note.tagsObj.muted = [unmute ? false : true]
+      }
+    })
+  })
+  setLatestMap(mapSongToTicks.mapSongToMidiTicks())
+}
+
+export const unmuteNotesById = (noteIds: string[]) => {
+  muteNotesById(noteIds, true)
+}
+
+export const muteNotesWithTagEntries = (
+  tagEntries: TagEntries,
+  unmute: boolean = false
+) => {
+  const matchingNoteIds = Object.values(mem().notesByBar)
+    .flat()
+    .filter((note) => {
+      return noteHasMatchingTagEntries(note, tagEntries)
+    })
+    .map((note) => {
+      return z.string().parse(note.tagsObj.noteId[0])
+    })
+  muteNotesById(matchingNoteIds, unmute)
+}
+
+export const unmuteNotesWithTagEntries = (tagEntries: TagEntries) => {
+  muteNotesWithTagEntries(tagEntries, true)
+}
+
+export const muteNotesByBarId = (barId: string, unmute: boolean = false) => {
+  const noteIds = mem().notesByBar[barId].map((note) => {
+    return z.string().parse(note.tagsObj.noteId[0])
+  })
+  muteNotesById(noteIds, unmute)
+}
+
+export const unmuteNotesByBarId = (barId: string) => {
+  muteNotesByBarId(barId, true)
+}
+
+export const muteAllNotes = (unmute: boolean = false) => {
+  const noteIds = Object.values(mem().notesByBar)
+    .flat()
+    .map((note) => {
+      return z.string().parse(note.tagsObj.noteId[0])
+    })
+  muteNotesById(noteIds, unmute)
+}
+
+const setTagDataByMatchingEntries = (
+  tagEntriesToMatch: TagEntries,
+  tagEntriesToSet: TagEntries
+) => {
+  const allNotes = Object.values(mem().notesByBar).flat()
+  // find matching notes a la muteNotesWithTagEntries
+  const matchingNotes = allNotes.filter((note) => {
+    return noteHasMatchingTagEntries(note, tagEntriesToMatch)
+  })
+  matchingNotes.forEach((note) => {
+    tagEntriesToSet.forEach(([tagName, data]) => {
+      note.tagsObj[tagName] = data
+    })
+  })
+  setLatestMap(mapSongToTicks.mapSongToMidiTicks())
+}
+
+export const unmuteAllNotes = () => {
+  setTagDataByMatchingEntries([['muted', [true]]], [['muted', [false]]])
+}
+
+export const setPlayExclusivelyByMatchingEntries = (
+  tagEntriesToMatch: TagEntries
+) => {
+  setTagDataByMatchingEntries(tagEntriesToMatch, [['playExclusively', [true]]])
+}
+
+export const unsetPlayExclusivelyByMatchingEntries = (
+  tagEntriesToMatch: TagEntries
+) => {
+  setTagDataByMatchingEntries(tagEntriesToMatch, [['playExclusively', [false]]])
 }
 
 // Additional re-exports
