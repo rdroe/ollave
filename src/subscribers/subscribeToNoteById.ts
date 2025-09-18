@@ -96,12 +96,9 @@ export const useNote = (noteId: string) => {
       notesStore.getState().setNote(noteId, getNoteByBar(mem, noteId))
     }
   }, [noteId])
-  return useStore(
-    notesStore,
-    useShallow(({ notes }) => {
-      return notes[noteId] || getNoteByBar(mem, noteId)
-    })
-  )
+  return useStore(notesStore, ({ notes }) => {
+    return notes[noteId] || getNoteByBar(mem, noteId)
+  })
 }
 
 export const useNotes = (noteIds: string[]) => {
@@ -112,12 +109,9 @@ export const useNotes = (noteIds: string[]) => {
       }
     })
   }, [noteIds])
-  return useStore(
-    notesStore,
-    useShallow(({ notes }) => {
-      return noteIds.map((noteId) => notes[noteId] || getNoteByBar(mem, noteId))
-    })
-  )
+  return useStore(notesStore, ({ notes }) => {
+    return noteIds.map((noteId) => notes[noteId] || getNoteByBar(mem, noteId))
+  })
 }
 
 export const subscribeToNoteById = (noteId?: string, barName?: string) => {
