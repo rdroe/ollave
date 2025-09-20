@@ -2,6 +2,7 @@ import fakeCli from 'peprn/fakeCli'
 import { Module } from 'peprn/util'
 import { browser } from 'user-tables'
 import { z } from 'zod'
+import { createStore } from 'zustand'
 
 import { Mem, mem } from '../../core/mem'
 import {
@@ -46,6 +47,16 @@ const afterLoadSong = (song: SongRecord) => {
     callback(song)
   })
 }
+
+type SongInvocation = {
+  ready: boolean
+  setReady: (ready: boolean) => void
+}
+export const songInvocation = createStore<SongInvocation>((set) => ({
+  ready: false,
+  setReady: (ready: boolean) => set({ ready }),
+}))
+
 export default {
   fn: async () => {
     return null
@@ -78,6 +89,7 @@ song start
     },
     load: {
       fn: async ({ positionalNonCommands }) => {
+        songInvocation.getState().setReady(false)
         const [songId] = positionalNonCommands
         if (!z.number().safeParse(songId).success) {
           return {
@@ -89,14 +101,19 @@ song start
         stopCueObservable()
         await loadAndInitSongAndTracks(songId)
         afterLoadSong(mem().song)
-        return initLoadedSong()
+
+        const result = await initLoadedSong()
+        songInvocation.getState().setReady(true)
+        return result
       },
     },
     new: {
       fn: async () => {
+        songInvocation.getState().setReady(false)
         await initNewSong()
         const result = await initLoadedSong()
         afterLoadSong(mem().song)
+        songInvocation.getState().setReady(true)
         return result
       },
     },
@@ -112,6 +129,7 @@ song start
     },
     init: {
       fn: async () => {
+        songInvocation.getState().setReady(false)
         const shiftedOff = songNames.shift()
 
         const data: Omit<SongRecord, 'id'> = {
@@ -135,6 +153,7 @@ song start
 
         await fakeCli(`song track init`, 'cli')
         afterLoadSong(mem().song)
+        songInvocation.getState().setReady(true)
         return mem().song
       },
     },

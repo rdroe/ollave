@@ -1,5 +1,5 @@
 export { default as phase, parseColonTag } from './phase/phase'
-export { default as song, init } from './song/song'
+export { default as song, init, songInvocation } from './song/song'
 export { default as debug } from './debug/debug'
 export { default as addChord } from './addChord/addChord'
 export { default as addNote } from './addNote/addNote'
