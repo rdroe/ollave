@@ -30,7 +30,6 @@ export {
 
 export {
   filterDelayTags,
-  filterBarDelayTag,
   groupNotesByFirstTagDatum,
   parseNoteTags,
   updateNoteTag,

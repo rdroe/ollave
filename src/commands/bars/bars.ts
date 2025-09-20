@@ -571,8 +571,6 @@ function fractionalStuff(
     })
 
     barRanges = barRanges.slice(lastFilled + 1)
-    if (barRanges.length) {
-    }
     packIterations += 1
   }
 

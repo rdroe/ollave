@@ -4,7 +4,6 @@ import { mem } from '../core/mem'
 import { addSlider } from './addSlider'
 import { makeNoteByBar, NoteByBar } from './schemas'
 import { randId } from './util/common'
-import { createNoteStoreById } from './util/noteStoreUtil'
 import { phaseCount } from './util/phaseUtil'
 import {
   calcFractionalDelay,
@@ -56,24 +55,6 @@ export const addNoteToBar = async (
   if (doAddSlider) {
     // test slider sync via the noteStoreById
     addSlider(barName, noteId)
-    const { store, updateTagsObj, updateNotePitch, unsubscribe } =
-      createNoteStoreById(noteId)
-
-    // to test slider sync and note pitch update etc
-    // let interval2 = setInterval(() => {
-    //     updateTagsObj({ barDelay: [102] }, true)
-    //     const randomNumber = Math.floor(Math.random() * 3) + 2
-    //     const note = noteNames[
-    //         Math.floor(Math.random() * noteNames.length)
-    //     ]
-    //     updateNotePitch(`${note}${randomNumber}`, true)
-
-    // }, 10000)
-
-    // test unsubscribing
-    // let interval = setInterval(() => {
-    //     unsubscribe()
-    // }, 10000)
   }
   return noteObj
 }
