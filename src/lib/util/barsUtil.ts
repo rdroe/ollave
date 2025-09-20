@@ -6,12 +6,7 @@ import { parseColonTag } from '../../commands/phase/phase'
 import { mem } from '../../core/mem'
 import { setLatestMap } from '../../core/observables'
 import { chordNameWithNotes, DynamicChordNames } from '../graphh'
-import {
-  cloneNoteByBar,
-  makeNoteByBar,
-  NoteByBar,
-  tagsObjSchema,
-} from '../schemas'
+import { cloneNoteByBar, makeNoteByBar, NoteByBar } from '../schemas'
 
 import { isString, isCsvArg, parseCsvArg } from './common'
 import { randId } from './common'
