@@ -26,7 +26,6 @@ export const isRestArg = (arg: unknown) => {
   )
 }
 
-// Re-export functions from their new locations
 export {
   isNoteNameWithoutOctave,
   isNoteNameWithOctave,
@@ -38,7 +37,6 @@ const isNoteNameArray = (arr: unknown[]): arr is string[] => {
   return arr.every((arg) => isNoteNameWithOctave(arg) || isRestArg(arg))
 }
 
-// Re-export functions from their new locations
 export { isCsvArg, parseCsvArg } from './common'
 
 const hasOctaveFilter = (noteStrs: string[]) => {
