@@ -140,7 +140,7 @@ export const stopCueObservable = () => {
   if (observable) {
     mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
     Object.entries(mem().observables[songName] || {}).forEach(
-      ([fnName, observable]) => {
+      ([_, observable]) => {
         observable.unsubscribe()
       }
     )
