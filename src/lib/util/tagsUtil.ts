@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { NoteByBar, tagsObjSchema } from '../schemas'
+import { NoteByBar } from '../schemas'
 import { TagData, TagEntry, TagEntries } from '../schemaTypes'
 
 export type { TagEntry } from '../schemaTypes'

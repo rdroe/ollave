@@ -1,6 +1,6 @@
 import { Observer, Subject, Subscriber, Subscription } from 'rxjs'
 
-import { getDebugLgger } from '../../lib/log'
+// getDebugLgger removed - not used by web app
 import { mem, Mem } from '../mem'
 import { compilationObservable } from '../observables'
 
@@ -13,7 +13,7 @@ declare global {
 }
 
 window.compilationSubject = new Subject<any>()
-const log = getDebugLgger()
+// log functionality removed - not used by web app
 function makeCompilationSubscribe_<RetType>(obj: {
   name: string
   selector: (mem: Mem) => RetType
@@ -25,7 +25,7 @@ function makeCompilationSubscribe_<RetType>(obj: {
   const subscribe = (subscriber: Observer<RetType>) => {
     const subjectUnsubscribe = window.compilationSubject.subscribe({
       next: (_: number) => {
-        log('makeCompilationSubscribe', obj.name, 'next')
+        // log removed - not used by web app
         const newVal = obj.selector(mem())
         const compared = obj.compare(newVal, prev)
         if (!compared || !isInitialized) {

@@ -8,7 +8,6 @@ import {
   stopCueObservable,
 } from '../core/observables/songObservables'
 
-import { addSlider } from './addSlider'
 import { mapSongToMidiTicks } from './mapSongToTicks'
 import {
   phaseRecordSchema,
@@ -169,11 +168,7 @@ export async function initLoadedSong() {
   })
   compileTracksToNotesByBar()
   setLatestMap(mapSongToMidiTicks())
-  Object.entries(mem().notesByBar).forEach(([barId, notes]) => {
-    notes.forEach((note) => {
-      addSlider(barId, note.tagsObj.noteId[0].toString())
-    })
-  })
+  // addSlider functionality removed - not used by web app
 
   startCueObservable()
   stopCueObservable()

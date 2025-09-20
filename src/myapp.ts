@@ -1,12 +1,12 @@
-import { createApp } from 'peprn/browser'
+// createApp removed - cli not used by web app
 import { playTriads } from './lib/music'
 
-import { app } from './cli'
+// cli removed - not used by web app
 
 document.body.onload = () => {
     document.body.onclick = () => {
         playTriads([['c3', .05, 0]])
         document.body.onclick = null
     }
-    createApp(app)
+    // createApp removed - cli not used by web app
 }

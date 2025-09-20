@@ -1,7 +1,6 @@
 import { parseColonTag } from '../commands/phase/phase'
 import { mem } from '../core/mem'
 
-import { addSlider } from './addSlider'
 import { makeNoteByBar, NoteByBar } from './schemas'
 import { randId } from './util/common'
 import { phaseCount } from './util/phaseUtil'
@@ -16,7 +15,7 @@ export const addNoteToBar = async (
   note: string,
   barName: string,
   tagsIn: TagEntries,
-  doAddSlider: boolean = false
+  _doAddSlider: boolean = false
 ): Promise<NoteByBar> => {
   let barObj = mem().notesByBar[barName]
   const [phaseName, barNumber] = parseColonTag(barName)
@@ -52,9 +51,6 @@ export const addNoteToBar = async (
   const noteObj = makeNoteByBar(note, tags)
   barObj.push(noteObj)
 
-  if (doAddSlider) {
-    // test slider sync via the noteStoreById
-    addSlider(barName, noteId)
-  }
+  // addSlider functionality removed - not used by web app
   return noteObj
 }

@@ -1,12 +1,8 @@
-import z from 'zod'
-
-import { mem, Mem } from '../core/mem'
+import { mem } from '../core/mem'
 import { setLatestMap } from '../core/observables'
 import { isAbbreviation } from '../core/observables/masterTicksObservable'
-import { makeCompilationSubscribe } from '../core/subjects/compilationSubject'
 
 import { addNoteToBar } from './addNote'
-import { addSlider } from './addSlider'
 import { phaseScale } from './helpers'
 import { mapSongToMidiTicks } from './mapSongToTicks'
 import { NoteByBar } from './schemas'
@@ -44,7 +40,7 @@ export function addChord(
   tags: string[],
   userScaleTonic: string = 'A',
   userScaleName: string = 'minor',
-  doAddSlider: boolean = false
+  _doAddSlider: boolean = false
 ): {
   noteIds: string[]
   barName: string
@@ -132,31 +128,7 @@ export function addChord(
     const noteObj = await addNoteToBar(note, barTag, parseNoteTags(allTags))
     allNotes.push(noteObj)
 
-    if (doAddSlider) {
-      addSlider(barTag, noteId)
-      makeCompilationSubscribe({
-        selector: (memArg: Mem) => {
-          return memArg.notesByBar[barTag].reduce((acc, note) => {
-            if (typeof note.tagsObj.barDelay[0] === 'number') {
-              return acc + note.tagsObj.barDelay[0]
-            }
-            return acc
-          }, 0 as number)
-        },
-        compare: (a, b) => {
-          return a === b
-        },
-        name: 'addChord',
-      })({
-        next: (num) => {
-          return num
-        },
-        complete: () => {},
-        error: (err: { message: string }) => {
-          console.error('error in addChord makeCompilationSubscribe', err)
-        },
-      })
-    }
+    // addSlider functionality removed - not used by web app
   })
   setLatestMap(mapSongToMidiTicks())
   return {
@@ -183,7 +155,7 @@ function calculateNormalNoteDelay(arp: string[] | 0 | 1 | 2 | 3, idx: number) {
   const delayTagsObj = (arpArg ?? DEFAULT_ARP[idx]).split(',').reduce(
     (acc, delay) => {
       if (isAbbreviation(delay)) {
-        const x = delay
+        const _x = delay
         acc[abbrev[delay]] = acc[abbrev[delay]] ? acc[abbrev[delay]] + 1 : 1
         return acc
       }

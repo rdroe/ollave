@@ -6,9 +6,6 @@ export * as graphh from './graphh'
 export * as helpers from './helpers'
 export * as music from './music'
 export * as midi from './midi'
-export * as subcommands from './subcommands'
-export * as addSlider from './addSlider'
-export { words } from './words.js'
 export * as mapSongToTicks from './mapSongToTicks'
 export * as mem from './schemas'
 export * as phaseUtil from './util/phaseUtil'
@@ -16,8 +13,6 @@ export * as phaseUtil from './util/phaseUtil'
 // Removed cli export to break circular dependency
 export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
-export * as romanize from './romanize'
-export * as deleteNoteById from './deleteNoteById'
 
 // Individual function exports for direct access
 // mem-db exports
@@ -73,9 +68,6 @@ export { getSampler, playTriads } from './music'
 // midi exports
 export { saveRaw, addEvents, addNoteEvents, playNotes } from './midi'
 
-// subcommands exports
-export { runSubcommandsOrNull, romanChordNameToRealModule } from './subcommands'
-export type { Subcommand, SubcommandPatterns } from './subcommands'
 
 // mapSongToTicks exports
 export { mapSongToMidiTicks } from './mapSongToTicks'

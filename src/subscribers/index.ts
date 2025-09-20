@@ -5,12 +5,6 @@ export {
   usePhaseBarIdsStore,
 } from './subscribeToPhaseBarIds'
 export {
-  subscribeToNoteById,
-  createNoteStoreById,
-  useNoteStoreById,
-  useNoteBarId,
-} from './subscribeToNoteById'
-export {
   subscribeToNoteIdsByBar,
   createBarNoteIdsStore,
   useBarNoteIdsStore,
