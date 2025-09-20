@@ -185,7 +185,7 @@ class WorkerManager {
             notesByBar: serializedNotesByBar,
           },
         }
-
+        console.log('worker; message', message)
         this.worker!.postMessage(message)
       } catch (error) {
         this.pendingRequests.delete(requestId)
