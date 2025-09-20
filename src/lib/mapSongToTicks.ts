@@ -12,7 +12,7 @@ import { getAllPhaseBarNotes } from './util/phaseNotesUtil'
 import { getFollowingPhases } from './util/phaseRelationsUtil'
 import { quantizeNote } from './util/quantizeUtil'
 import { parseNoteTags } from './util/tagsUtil'
-// workerManager removed - not used by web app
+import { getWorkerManager } from './workerManager'
 
 const startSpeedRef_ = {
   START_SPEED: 1,
@@ -46,8 +46,25 @@ export type PhaseMap = {
 export type BarTagPercent = [tagName: string | null, percent: number]
 
 export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
-  // Use synchronous processing directly - worker functionality removed
-  return mapSongToMidiTicksSync()
+  const memData = mem()
+  const workerManager = getWorkerManager()
+
+  try {
+    // Use web worker for processing
+    const workerResult = await workerManager.mapSongToMidiTicks(
+      memData.phases,
+      memData.notesByBar
+    )
+    console.log('worker; workerResult', workerResult)
+    return workerResult
+  } catch (error) {
+    console.warn(
+      'Web worker failed, falling back to synchronous processing:',
+      error
+    )
+    // Fallback to synchronous processing
+    return mapSongToMidiTicksSync()
+  }
 }
 
 // Synchronous fallback implementation using shared core
