@@ -25,18 +25,13 @@ import { songRecordSchema } from '../../lib/schemas'
 const { userTables } = browser
 import { SongRecord, TrackRecord } from '../../lib/types'
 import { getLastChordLayerName } from '../../lib/util/barsUtil'
-import {
-  onLoadSongCallbacks,
-  setTrackReceptacleSelector,
-  startPrintingNotes,
-  stopPrintingNotes,
-} from '../../lib/util/songUtil'
+import { onLoadSongCallbacks } from '../../lib/util/songUtil'
 import {
   groupNotesByFirstTagDatum,
   parseNoteTags,
 } from '../../lib/util/tagsUtil'
 
-export { init, setTrackReceptacleSelector } from '../../lib/util/songUtil'
+export { init } from '../../lib/util/songUtil'
 const { songNames } = mem()
 
 // Re-export types for backward compatibility
@@ -162,21 +157,6 @@ song start
         return null
       },
       submodules: {
-        printNotes: {
-          fn: async ({ stop = false, selector = '.tags-app-root' }) => {
-            if (stop) {
-              stopPrintingNotes()
-              return
-            }
-            startPrintingNotes()
-            if (selector) {
-              setTrackReceptacleSelector(selector)
-            } else {
-              console.warn('no selector provided for printing notes')
-            }
-          },
-        },
-
         init: {
           fn: async () => {
             const trackRecord: Omit<TrackRecord, 'id'> = {
