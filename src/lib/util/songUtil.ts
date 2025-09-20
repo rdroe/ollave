@@ -10,12 +10,24 @@ import { SongRecord } from '../types'
 
 import { strjson } from './common'
 import { tickCounts } from './constantsUtil'
+import { namesResolver } from './songNamesUtil'
 import { lastTick } from './startEndUtil'
 export const onLoadSongCallbacks: ((song: SongRecord) => void)[] = []
 export const addSongLoadCallback = (callback: (song: SongRecord) => void) => {
   onLoadSongCallbacks.push(callback)
 }
-// words.js functionality removed - not used by web app
+;(() => {
+  console.log('importing words')
+  import('../words.js').then((w) => {
+    const { songNames } = mem()
+    const wordList = w.words.split('\n')
+    for (let i = 0; i < 100; i++) {
+      const rand = Math.floor(Math.random() * wordList.length)
+      songNames.push(wordList[rand])
+    }
+    namesResolver(songNames)
+  })
+})()
 
 function createElementFromHTML(htmlString: string) {
   const div = document.createElement('div')

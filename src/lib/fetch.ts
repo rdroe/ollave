@@ -76,6 +76,7 @@ export async function fetchSongAndTracks(songId: number) {
   const coll = await browser.userTables.where('song', { id: songId })
   const fetched = await coll.first()
   // get the track ids  //
+  console.log('fetched', fetched)
   const validSong = songRecordSchema.parse(fetched.data)
   const trackIds = validSong['track-ids']
     .map(([trackId]) => {
