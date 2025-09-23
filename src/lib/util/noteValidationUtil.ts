@@ -15,12 +15,10 @@ export const isNoteNameWithoutOctave = (nm: unknown): nm is string => {
 export const isNoteNameWithOctave = (nm: unknown): nm is string => {
   if (typeof nm !== 'string') return false
   const allButLastChar = nm.slice(0, -1)
-  console.log('allButLastChar', allButLastChar)
+
   if (!isNoteNameWithoutOctave(allButLastChar)) {
-    console.log('allButLastChar is invalid', allButLastChar)
     return false
   }
-  console.log('allButLastChar is valid')
   const lastChar = nm[nm.length - 1]
   if (!peprnIsNum(lastChar)) return false
   return true

@@ -1,12 +1,9 @@
-import { useRef } from 'react'
-
+import { mem } from '../core/mem'
 import {
   startCueObservable,
   stopCueObservable,
-} from 'src/core/observables/songObservables'
-import { masterTicksSubject } from 'src/core/subjects/masterTicksSubject'
-
-import { mem } from '../core/mem'
+} from '../core/observables/songObservables'
+import { masterTicksSubject } from '../core/subjects/masterTicksSubject'
 
 export const subscribeForTickCount = (startAt: number, tickCount: number) => {
   const wasRunning = mem().isRunning === true

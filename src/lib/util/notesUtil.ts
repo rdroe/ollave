@@ -2,7 +2,7 @@ import { ParsedCli } from 'peprn/util'
 import { z } from 'zod'
 
 import { mapSongToTicks } from '..'
-import { mem } from '../../core/mem'
+import { Mem, mem } from '../../core/mem'
 import { isAbbreviation, setLatestMap } from '../../core/observables'
 import { zeroIndexedArr } from '../graphh'
 import { NoteByBar, noteByBarSchema } from '../schemas'
@@ -412,6 +412,11 @@ export const unsetPlayExclusivelyByMatchingEntries = (
   tagEntriesToMatch: TagEntries
 ) => {
   setTagDataByMatchingEntries(tagEntriesToMatch, [['playExclusively', [false]]])
+}
+export const getNoteByBar = (mem: () => Mem, noteId: string) => {
+  return Object.values(mem().notesByBar)
+    .flat()
+    .find((note) => note.tagsObj.noteId[0] === noteId)
 }
 
 // Additional re-exports

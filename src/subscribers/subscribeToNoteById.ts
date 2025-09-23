@@ -2,17 +2,12 @@ import { useEffect } from 'react'
 
 import { createStore, useStore } from 'zustand'
 
-import { mem, Mem } from '../core/mem'
+import { mem } from '../core/mem'
 import { setLatestMap } from '../core/observables/compilationObservable'
 import { mapSongToMidiTicks } from '../lib'
 import { NoteByBar } from '../lib/schemas'
+import { getNoteByBar } from '../lib/util/notesUtil'
 import { TagData } from '../lib/util/tagsUtil'
-
-const getNoteByBar = (mem: () => Mem, noteId: string) => {
-  return Object.values(mem().notesByBar)
-    .flat()
-    .find((note) => note.tagsObj.noteId[0] === noteId)
-}
 
 type NoteStore = {
   notes: {
@@ -91,4 +86,8 @@ export const useNotes = (noteIds: string[]) => {
   return useStore(notesStore, ({ notes }) => {
     return noteIds.map((noteId) => notes[noteId] || getNoteByBar(mem, noteId))
   })
+}
+
+export const setIsStale = () => {
+  notesStore.setState({ isStale: true })
 }

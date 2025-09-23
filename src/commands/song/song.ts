@@ -2,7 +2,8 @@ import fakeCli from 'peprn/fakeCli'
 import { Module } from 'peprn/util'
 import { browser } from 'user-tables'
 import { z } from 'zod'
-import { createStore } from 'zustand'
+import { createStore, useStore } from 'zustand'
+import { useShallow } from 'zustand/shallow'
 
 import { Mem, mem } from '../../core/mem'
 import {
@@ -46,6 +47,14 @@ const afterLoadSong = (song: SongRecord) => {
 type SongInvocation = {
   ready: boolean
   setReady: (ready: boolean) => void
+}
+export const useSongReady = () => {
+  return useStore(
+    songInvocation,
+    useShallow((store) => {
+      return store.ready
+    })
+  )
 }
 export const songInvocation = createStore<SongInvocation>((set) => ({
   ready: false,

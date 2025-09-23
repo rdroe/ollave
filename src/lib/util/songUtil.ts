@@ -1,3 +1,4 @@
+import { songInvocation } from '../../commands/song/song'
 import { mem } from '../../core/mem'
 import { setLatestMap, stopRealtimeTick } from '../../core/observables'
 import {
@@ -42,4 +43,5 @@ export async function init() {
   startCueObservable()
   stopCueObservable()
   stopRealtimeTick()
+  songInvocation.setState({ ready: true })
 }
