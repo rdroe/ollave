@@ -1,5 +1,6 @@
 import { DEFAULT_DURATION } from 'jsmidgen'
 import { Observable, Subscription } from 'rxjs'
+import { loopStore } from 'web/src/components/ollave-subcomponents/loopStore'
 
 import { barsAtMidi, BarTagPercent } from '../../lib/mapSongToTicks'
 import { playTriads } from '../../lib/music'
@@ -40,7 +41,18 @@ export const getSongCursor = (tick: number) => {
   return tick % lastTick()
 }
 
-export const startCueObservable = (startAt?: number) => {
+export const startCueObservable = (
+  startAt?: number,
+  ignoreNote: (
+    tick: number,
+    note: {
+      note: string
+      velocity?: number
+      duration?: number
+      compositionTags: string[]
+    }
+  ) => boolean = () => false
+) => {
   startRealtimeTick()
   mem().isRunning = true
 
@@ -94,6 +106,10 @@ export const startCueObservable = (startAt?: number) => {
           if (!doPlay) {
             return
           }
+          if (ignoreNote(adjustedCursor, note)) {
+            return
+          }
+
           const velocity = note.velocity ?? 60
           const rasterDuration = note.duration
             ? (msPerTick() * note.duration) / 1000
