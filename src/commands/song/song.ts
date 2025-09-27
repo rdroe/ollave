@@ -17,6 +17,7 @@ import {
 } from '../../core/observables/songObservables'
 import { downloadSong } from '../../lib/download'
 import {
+  duplicateCurrentSong,
   initLoadedSong,
   initNewSong,
   loadAndInitSongAndTracks,
@@ -93,6 +94,7 @@ song start
     },
     load: {
       fn: async ({ positionalNonCommands }) => {
+        console.log('load song', positionalNonCommands)
         songInvocation.getState().setReady(false)
         const [songId] = positionalNonCommands
         if (!z.number().safeParse(songId).success) {
@@ -105,9 +107,10 @@ song start
         stopCueObservable()
         await loadAndInitSongAndTracks(songId)
         afterLoadSong(mem().song)
-
+        console.log('after load song', positionalNonCommands)
         const result = await initLoadedSong()
         songInvocation.getState().setReady(true)
+        console.log('after init loaded song', positionalNonCommands)
         return result
       },
     },
@@ -119,6 +122,14 @@ song start
         afterLoadSong(mem().song)
         songInvocation.getState().setReady(true)
         return result
+      },
+    },
+    duplicate: {
+      fn: async () => {
+        songInvocation.getState().setReady(false)
+        await duplicateCurrentSong()
+        afterLoadSong(mem().song)
+        songInvocation.getState().setReady(true)
       },
     },
     realtimePause: {

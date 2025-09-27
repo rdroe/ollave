@@ -55,7 +55,7 @@ export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
       memData.phases,
       memData.notesByBar
     )
-    console.log('worker; workerResult', workerResult)
+
     return workerResult
   } catch (error) {
     console.warn(

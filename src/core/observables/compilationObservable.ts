@@ -33,4 +33,3 @@ export async function setLatestMap(mapProm: Promise<MidiMappingResult>) {
   saveSongAndTracks()
   compileEventTarget.dispatchEvent(new CustomEvent('compiled'))
 }
-//

@@ -10,9 +10,10 @@ import { randId } from './common'
 import { getAllPhaseBars } from './phaseNotesUtil'
 import { PhaseRecord } from './phaseTypes'
 
-// temp-id is for in-memory only. id is for the database.
-// phase <new-phase> follows <existing-phase>
-export async function phaseFollowsPhase(subject: string, objects: string[]) {
+export async function phaseFollowsPhaseInner(
+  subject: string,
+  objects: string[]
+) {
   const { phases } = mem()
   objects.forEach((obj) => {
     if (!phases[obj]) {
@@ -48,6 +49,11 @@ export async function phaseFollowsPhase(subject: string, objects: string[]) {
       scaleTonic: 'C',
     }
   }
+}
+// temp-id is for in-memory only. id is for the database.
+// phase <new-phase> follows <existing-phase>
+export async function phaseFollowsPhase(subject: string, objects: string[]) {
+  await phaseFollowsPhaseInner(subject, objects)
   setLatestMap(mapSongToMidiTicks())
 }
 
@@ -97,13 +103,14 @@ export const phaseExists = (phase: string) => {
 }
 
 // update phase to have n bars.
-export async function phaseCount(
+export async function phaseCountInner(
   phase: string,
   size: number,
   skipCopy: boolean = false,
   rawTrackId: number | null = null
 ) {
   const { phases, notesByBar } = mem()
+  let newPhaseId: number | null = null
   if (!phases[phase]) {
     const phaseData: Omit<PhaseRecord, 'id'> = {
       'follows-ids': [],
@@ -115,6 +122,7 @@ export async function phaseCount(
     }
 
     const phaseId = await browser.userTables.add('phase', { data: phaseData })
+    newPhaseId = z.number().parse(phaseId)
     const songPhase = phaseRecordSchema.parse({
       ...phaseData,
       id: z.number().parse(phaseId),
@@ -177,5 +185,16 @@ export async function phaseCount(
           })
     }
   }
+  return newPhaseId
+}
+
+// update phase to have n bars.
+export async function phaseCount(
+  phase: string,
+  size: number,
+  skipCopy: boolean = false,
+  rawTrackId: number | null = null
+) {
+  await phaseCountInner(phase, size, skipCopy, rawTrackId)
   setLatestMap(mapSongToMidiTicks())
 }

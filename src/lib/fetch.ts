@@ -10,12 +10,14 @@ import {
 
 import { mapSongToMidiTicks } from './mapSongToTicks'
 import {
+  makeNoteByBar,
   phaseRecordSchema,
   songRecordSchema,
   trackRecordSchema,
 } from './schemas'
 import { SongRecord, TrackRecord } from './types'
 import { PhaseRecord } from './util/phaseTypes'
+import { phaseCountInner, phaseFollowsPhaseInner } from './util/phaseUtil'
 import { compileTracksToNotesByBar } from './util/schemaUtil'
 
 export const fetchLatestSongAndTracks = async () => {
@@ -204,6 +206,7 @@ export async function initNewSong() {
   ).first()
   mem().song = songRecordSchema.parse(refetched.data)
   await initNewTrack()
+  return createdId
 }
 
 // set up a brand new track.
@@ -258,4 +261,53 @@ export async function initLatestOrNewSong() {
   }
   await initNewSong()
   return initLoadedSong()
+}
+
+export async function duplicateCurrentSong() {
+  const origMem = {
+    ...mem(),
+  }
+  const origName = mem().song.name
+  const notesByBar = Object.fromEntries(
+    Object.entries(mem().notesByBar).map(([barId, notes]) => [
+      barId,
+      notes.map((note) => {
+        return makeNoteByBar(note.note, note.tags)
+      }),
+    ])
+  )
+  const newSongId = await initNewSong()
+  const {
+    song: { name: newName },
+  } = await loadAndInitSongAndTracks(newSongId)
+
+  // init phases for each current phase.
+  const newPhaseToNameHash: Record<number, string> = {}
+  const oldPhaseToNameHash: Record<number, string> = {}
+  await Promise.all(
+    Object.entries(origMem.phases).map(async ([phaseName, phase]) => {
+      oldPhaseToNameHash[phase.id] = phaseName
+      // get phase count by looking at notesByBar; increment for every bar starting with phaseNane:
+      const phaseCount = Object.keys(notesByBar).filter((barId) => {
+        return barId.startsWith(phaseName)
+      }).length
+      const newPhaseId = await phaseCountInner(phaseName, phaseCount, true)
+      mem().phases[phaseName].scaleName = phase.scaleName
+      mem().phases[phaseName].scaleTonic = phase.scaleTonic
+      mem().phases[phaseName].speed = phase.speed
+      mem().phases[phaseName].barSizeMultiplier = phase.barSizeMultiplier
+      newPhaseToNameHash[newPhaseId] = phaseName
+    })
+  )
+  Object.entries(oldPhaseToNameHash).forEach(async ([_, oldPhaseName]) => {
+    const phase = origMem.phases[oldPhaseName]
+    const followsIds = phase['follows-ids'] || []
+    const subjectNames = followsIds.map((followId) => {
+      return oldPhaseToNameHash[followId]
+    })
+    await phaseFollowsPhaseInner(oldPhaseName, subjectNames)
+  })
+  mem().song.name = `${newName} <- ${origName}`
+  mem().notesByBar = notesByBar
+  setLatestMap(mapSongToMidiTicks())
 }

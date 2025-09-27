@@ -15,7 +15,6 @@ export const addSongLoadCallback = (callback: (song: SongRecord) => void) => {
   onLoadSongCallbacks.push(callback)
 }
 ;(() => {
-  console.log('importing words')
   import('../words.js').then((w) => {
     const { songNames } = mem()
     const wordList = w.words.split('\n')

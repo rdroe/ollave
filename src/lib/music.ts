@@ -69,10 +69,6 @@ const playMusic = async (json: Triad[]) => {
       const velocity = midiVelocity / 127
       const start = `+${t2}`
       const stop = `+${t2 + t1}`
-      console.log('notes in playTriads', {
-        stop,
-        velocity,
-      })
       piano.keyDown({ note: note, time: start, velocity })
       piano.keyUp({ note: note, time: stop })
     })

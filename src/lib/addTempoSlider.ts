@@ -42,7 +42,6 @@ export function handleTempoChangeString() {
     setTimeoutId = setTimeout(() => {
       const currTick = exportableTick()
       // const newTempo = tempoFromAirSpeed(newAirSpeed)
-      console.log('new tempo', newTempo)
       setAirSpeed(newAirSpeed)
       mem().song.tempo = newTempo
       mem().playedMap[currTick] = mem().playedMap[currTick] || []

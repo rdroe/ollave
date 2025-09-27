@@ -83,7 +83,6 @@ const songToEvents = async (mappedTicks: MidiMap) => {
         const tempo = parseInt(r)
         addNoteEvent(noteEvents, parseInt(tickRaw), 'tempo', tempo)
       } else {
-        console.log('note in songToEvents', n)
         addNoteEvent(noteEvents, parseInt(tickRaw), 'on', n.note)
         addNoteEvent(
           noteEvents,
@@ -96,7 +95,7 @@ const songToEvents = async (mappedTicks: MidiMap) => {
   })
 
   let max = 0
-  Object.entries(noteEvents).forEach(([tickRaw, initNotes]) => {
+  Object.entries(noteEvents).forEach(([_, initNotes]) => {
     const notes = [...initNotes]
     const first = notes.shift()
 

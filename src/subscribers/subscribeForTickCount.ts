@@ -12,12 +12,7 @@ export const subscribeForTickCount = (startAt: number, tickCount: number) => {
   const unsubscribe = masterTicksSubject.subscribe({
     next: () => {
       const tick = mem().adjustedCursor
-      console.log('tick', {
-        tick,
-        startAt,
-        tickCount,
-        diff: tick - startAt,
-      })
+
       if (tick - startAt >= tickCount) {
         unsubscribe.unsubscribe()
         if (!wasRunning) {
