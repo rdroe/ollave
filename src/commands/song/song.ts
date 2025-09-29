@@ -127,9 +127,12 @@ song start
     duplicate: {
       fn: async () => {
         songInvocation.getState().setReady(false)
-        await duplicateCurrentSong()
+        stopCueObservable()
+        const newSongId = await duplicateCurrentSong()
+        await loadAndInitSongAndTracks(newSongId)
         afterLoadSong(mem().song)
         songInvocation.getState().setReady(true)
+        return mem().song
       },
     },
     realtimePause: {

@@ -277,6 +277,7 @@ export async function duplicateCurrentSong() {
     ])
   )
   const newSongId = await initNewSong()
+  await initLoadedSong()
   const {
     song: { name: newName },
   } = await loadAndInitSongAndTracks(newSongId)
@@ -299,15 +300,19 @@ export async function duplicateCurrentSong() {
       newPhaseToNameHash[newPhaseId] = phaseName
     })
   )
-  Object.entries(oldPhaseToNameHash).forEach(async ([_, oldPhaseName]) => {
-    const phase = origMem.phases[oldPhaseName]
-    const followsIds = phase['follows-ids'] || []
-    const subjectNames = followsIds.map((followId) => {
-      return oldPhaseToNameHash[followId]
+  await Promise.all(
+    Object.entries(oldPhaseToNameHash).map(async ([_, oldPhaseName]) => {
+      const phase = origMem.phases[oldPhaseName]
+      const followsIds = phase['follows-ids'] || []
+      const subjectNames = followsIds.map((followId) => {
+        return oldPhaseToNameHash[followId]
+      })
+      await phaseFollowsPhaseInner(oldPhaseName, subjectNames)
     })
-    await phaseFollowsPhaseInner(oldPhaseName, subjectNames)
-  })
+  )
   mem().song.name = `${newName} <- ${origName}`
   mem().notesByBar = notesByBar
-  setLatestMap(mapSongToMidiTicks())
+  console.log('mem().phases', mem().phases)
+  await setLatestMap(mapSongToMidiTicks())
+  return newSongId
 }
