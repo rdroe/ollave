@@ -22,7 +22,7 @@ const compilationObservable_ = new Observable<MidiMap>((subscriber) => {
 export const compilationObservable = (window as any)
   .compilationObservable_ as Observable<MidiMap>
 
-export async function setLatestMap(mapProm: Promise<MidiMappingResult>) {
+async function setLatestMap_(mapProm: Promise<MidiMappingResult>) {
   const { map, phaseAndBarStartAndEndTicks } = await mapProm
   mem().latestPhaseAndBarStartAndEndTicks = phaseAndBarStartAndEndTicks
   mem().latestMap = map
@@ -32,4 +32,15 @@ export async function setLatestMap(mapProm: Promise<MidiMappingResult>) {
   compileNotesByBarToTracks()
   saveSongAndTracks()
   compileEventTarget.dispatchEvent(new CustomEvent('compiled'))
+
+  return map
 }
+
+declare global {
+  interface Window {
+    setLatestMap: (mapProm: Promise<MidiMappingResult>) => Promise<MidiMap>
+  }
+}
+window.setLatestMap = setLatestMap_
+
+export const setLatestMap = window.setLatestMap

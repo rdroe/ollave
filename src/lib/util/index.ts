@@ -10,6 +10,8 @@ export {
   isNoteNameWithoutOctave,
   isCsvArg,
   parseCsvArg,
+  copyBarNotesToEndOfPhase,
+  copyBarNotesWithNoteIdsAndGroupIds,
 } from './barsUtil'
 
 // export all from phaseUtil
@@ -26,6 +28,7 @@ export {
   getNotesByEntity,
   quantizeValueToAbbreviation,
   quantizeNote,
+  addAllScaleNotesToBar,
 } from './notesUtil'
 
 export {
@@ -51,6 +54,7 @@ export type { TagData, TagEntries, TagEntry } from './tagsUtil'
 
 export { chordGraphCreate, lookUpGraph, getPhaseChordNames } from './graphUtil'
 
-export { abbrev, tickCounts, Abbreviation, ppq } from './constantsUtil'
+export { abbrev, tickCounts, ppq } from './constantsUtil'
+export type { Abbreviation } from './constantsUtil'
 
 export { addSongLoadCallback, onLoadSongCallbacks } from './songUtil'

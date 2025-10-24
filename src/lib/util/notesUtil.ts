@@ -1,11 +1,12 @@
 import { ParsedCli } from 'peprn/util'
+import { Scale } from 'tonal'
 import { z } from 'zod'
 
-import { mapSongToTicks } from '..'
+import { mapSongToMidiTicks, mapSongToTicks, randId } from '..'
 import { Mem, mem } from '../../core/mem'
 import { isAbbreviation, setLatestMap } from '../../core/observables'
 import { zeroIndexedArr } from '../graphh'
-import { NoteByBar, noteByBarSchema } from '../schemas'
+import { makeNoteByBar, NoteByBar, noteByBarSchema } from '../schemas'
 
 import {
   parseAbbreviationCsv,
@@ -419,8 +420,52 @@ export const getNoteByBar = (mem: () => Mem, noteId: string) => {
     .find((note) => note.tagsObj.noteId[0] === noteId)
 }
 
+export const addAllScaleNotesToBar = (
+  barId: string,
+  scaleTonic: string,
+  scaleName: string,
+  oct: number = 3
+) => {
+  const notes = mem().notesByBar[barId]
+  if (!notes) {
+    throw new Error('barId not found')
+  }
+  const allScaleNotes = Scale.get(`${scaleTonic} ${scaleName}`).notes.map(
+    (note) => {
+      return `${note}${oct}`
+    }
+  )
+
+  const groupId = randId('', 6)
+  const eigthNoteTicksCount = tickCounts['eighth']
+  const noteObjs = allScaleNotes.map((note, idx) => {
+    return makeNoteByBar(note, [
+      `groupId=${groupId}`,
+      `barId=${barId}`,
+      `scaleTonic=${scaleTonic}`,
+      `scaleName=${scaleName}`,
+      `oct=${oct}`,
+      `barDelay=${eigthNoteTicksCount * idx}`,
+    ])
+  })
+  notes.push(...noteObjs)
+  console.log('scale notes', noteObjs)
+  setLatestMap(mapSongToMidiTicks())
+  return noteObjs
+}
+
 // Additional re-exports
 export { getAllPhaseBarNotes } from './phaseNotesUtil'
 export { parseNoteTags } from './noteParsingUtil'
 export type { TagData, TagEntries } from './noteParsingUtil'
 export { isCsvArg, parseCsvArg } from './common'
+// @ts-ignore this is fine
+window.testScaleNotes = (tonicAndScale: string = 'C Minor') => {
+  const allScaleNotes = Scale.get(tonicAndScale).notes.map((note) => {
+    return `${note}`
+  })
+  console.log('all scale notes', {
+    tonicAndScale,
+    allScaleNotes,
+  })
+}

@@ -15,10 +15,43 @@ import { calcFractionalDelay, parseNoteTags } from './util/tagsUtil'
 
 export const DEFAULT_GLISS = [
   '0th',
+  'eighth',
   'quarter',
   'quarter,eighth',
   'half',
   'half,eighth',
+  'half,quater',
+  'half,16th',
+]
+export const DEFAULT_GLISS_32nd = [
+  '0th',
+  '32nd',
+  '16th',
+  '16th,32nd',
+  '8th',
+  '8th,32nd',
+  '8th,16th',
+  '8th,16th,32nd',
+  'quarter',
+]
+export const DEFAULT_GLISS_16th = [
+  '0th',
+  '16th',
+  '8th',
+  '8th,16th',
+  'quarter',
+  'quarter,16th',
+  '2nd',
+  '2nd,16th',
+]
+export const DEFAULT_GLISS_8th = [
+  '0th',
+  '8th',
+  'quarter',
+  'quarter,8th',
+  '2nd',
+  '2nd,8th',
+  '2nd,quarter',
 ]
 export const DEFAULT_ARP = ['0th', '0th', '0th', '0th', '0th', '0th', '0th']
 const DEFAULT_ARP_ZERO = DEFAULT_ARP
@@ -95,16 +128,13 @@ export function addChord(
     .concat(tags)
     .concat([groupIdTag, `barId=${barTag}`])
 
-  if (!isChordCsvArg(chordCsvArg)) {
-    throw new Error(`Error; ${chordCsvArg} is not a valid chord`)
-  }
-
   const [notes, chordTags] = parseChordCsvArg(
     chordCsvArg,
     currentScale.scaleTonic && currentScale.scaleName
       ? `${currentScale.scaleTonic} ${currentScale.scaleName}`
       : undefined
   )
+  console.log('notes', notes)
   const allNotes: NoteByBar[] = []
   commonTags = commonTags.concat(chordTags)
   if (notes.length === 0) {

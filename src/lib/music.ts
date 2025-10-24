@@ -7,16 +7,49 @@ export type Triad = [
   dur: number,
   timing?: number,
   velocity?: number,
-] // e.g. C5, 0.125 , 29.0078125
+  trackIdx?: number,
+] // e.g. C5, 0.125 , 29.0078125, 127, 0
 export type BPM = number
-export type RelativeNote =
-  | [note: string, rel: number, onOrOff: 'on' | 'off']
-  | [note: BPM, rel: number, onOrOff: 'tempo']
+export type RelativeTempoNote = [
+  note: BPM,
+  rel: number,
+  onOrOff: 'tempo',
+  ignored?: number,
+  trackIdx?: number,
+]
+export type RelativeMusicNote = [
+  note: string,
+  rel: number,
+  onOrOff: 'on' | 'off',
+  velocity?: number,
+  trackIdx?: number,
+]
+export type RelativeNote = RelativeMusicNote | RelativeTempoNote
+
+export const isRelativeMusicNote = (
+  note: unknown[]
+): note is RelativeMusicNote => {
+  return note[2] === 'on' || note[2] === 'off'
+}
+export const isRelativeTempoNote = (
+  note: unknown[]
+): note is RelativeTempoNote => {
+  return note[2] === 'tempo'
+}
+
 // import { Piano } from '@tonejs/piano'
+export const NOTE_LOOKUP_IDX = 0
+export const REL_TIMING_LOOKUP_IDX = 1
+export const ON_OR_OFF_LOOKUP_IDX = 2
+export const VELOCITY_LOOKUP_IDX = 3
+export const TRACK_IDX_IDX = 4
+export const DEFAULT_TRACK_IDX = 0
 
 // see both https://github.com/tambien/Piano/issues/48#issuecomment-1214324134
 // and https://github.com/tambien/Piano/issues/48#issuecomment-1289622804
 import { Piano } from '@tonejs/piano/build/piano/Piano'
+
+import { DEFAULT_VELOCITY } from '../lib/shared/midiMappingCore'
 
 const piano = new Piano({
   velocities: 2,
@@ -65,7 +98,12 @@ const playMusic = async (json: Triad[]) => {
   prom.then(() => {
     json.forEach((triad) => {
       /** note, dur, timing, velocity */
-      const [note, t1, t2, midiVelocity = 60] = triad
+      // const [note, t1, t2, midiVelocity = DEFAULT_VELOCITY] = triad
+      const note = triad[NOTE_LOOKUP_IDX]
+      const t1 = triad[REL_TIMING_LOOKUP_IDX]
+      const t2 = triad[REL_TIMING_LOOKUP_IDX]
+      const midiVelocity = triad[VELOCITY_LOOKUP_IDX] ?? DEFAULT_VELOCITY
+
       const velocity = midiVelocity / 127
       const start = `+${t2}`
       const stop = `+${t2 + t1}`

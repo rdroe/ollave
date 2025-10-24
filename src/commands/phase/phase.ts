@@ -3,9 +3,13 @@ import { z } from 'zod'
 
 import { mem } from '../../core/mem'
 import { setLatestMap } from '../../core/observables'
+import { DEFAULT_VELOCITY } from '../../lib'
 import { isNum, isString } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
-import { copyBarNotesWithNoteIdsAndGroupIds } from '../../lib/util/barsUtil'
+import {
+  copyBarNotesToEndOfPhase,
+  copyBarNotesWithNoteIdsAndGroupIds,
+} from '../../lib/util/barsUtil'
 import {
   getAllPhaseBarNotes,
   phaseCount,
@@ -136,6 +140,24 @@ const module: Module = {
             setLatestMap(mapSongToMidiTicks())
           },
         },
+        velocityPirate: {
+          fn: async ({ $: $ }) => {
+            const [phaseName1] = $
+
+            Object.keys(mem().notesByBar).forEach((barId) => {
+              if (!barId.includes(phaseName1)) {
+                return
+              }
+              mem().notesByBar[barId].forEach((note) => {
+                if (note.tagsObj.velocity?.[0] !== 60) {
+                  return
+                }
+                note.tagsObj.velocity = [DEFAULT_VELOCITY]
+              })
+            })
+            setLatestMap(mapSongToMidiTicks())
+          },
+        },
         push: {},
       },
     },
@@ -145,6 +167,25 @@ const module: Module = {
           .array(z.string())
           .parse(positionalNonCommands)
         copyBarNotesWithNoteIdsAndGroupIds(barId1, barId2)
+      },
+    },
+    duplicateBars: {
+      yargs: {
+        barIds: {
+          array: true,
+          type: 'string',
+          alias: 'b',
+        },
+      },
+      fn: async ({ barIds: barIdsRaw }) => {
+        const { barIds } = z
+          .object({
+            barIds: z.array(z.string()),
+          })
+          .parse({
+            barIds: barIdsRaw,
+          })
+        copyBarNotesToEndOfPhase(barIds)
       },
     },
   },

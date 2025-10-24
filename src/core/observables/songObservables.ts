@@ -1,7 +1,7 @@
 import { DEFAULT_DURATION } from 'jsmidgen'
 import { Observable, Subscription } from 'rxjs'
-import { loopStore } from 'web/src/components/ollave-subcomponents/loopStore'
 
+import { DEFAULT_VELOCITY } from '../../lib'
 import { barsAtMidi, BarTagPercent } from '../../lib/mapSongToTicks'
 import { playTriads } from '../../lib/music'
 import { lastTick } from '../../lib/util/startEndUtil'
@@ -110,7 +110,7 @@ export const startCueObservable = (
             return
           }
 
-          const velocity = note.velocity ?? 60
+          const velocity = note.velocity ?? DEFAULT_VELOCITY
           const rasterDuration = note.duration
             ? (msPerTick() * note.duration) / 1000
             : 0.5

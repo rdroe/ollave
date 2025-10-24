@@ -59,7 +59,7 @@ export type GenericPhases = {
   [phaseName: string]: GenericPhase
 }
 const DEFAULT_DURATION = 128
-const DEFAULT_VELOCITY = 60
+export const DEFAULT_VELOCITY = 90
 // Core mapping function that works with generic types
 export function mapPhaseTicksCore(
   phaseName: string,

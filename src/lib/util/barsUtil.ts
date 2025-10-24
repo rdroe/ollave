@@ -16,6 +16,7 @@ import {
   isNoteNameWithoutOctave,
   isNoteNameWithOctave,
 } from './noteValidationUtil'
+import { getAllPhaseBars } from './phaseNotesUtil'
 import { tagEntriesCompare } from './tagsUtil'
 
 const allChordTypes = ChordType.all()
@@ -48,7 +49,15 @@ const hasOctaveFilter = (noteStrs: string[]) => {
       return numOrNull !== null
     })
 }
-
+export const isDyna = (nm: string) => {
+  console.log('isDyna', {
+    nm,
+    DynamicChordNames,
+  })
+  return Object.keys(DynamicChordNames)
+    .map((name) => name.toLowerCase())
+    .includes(nm.toLowerCase())
+}
 export const isNoteCsvArg = (str: string): str is string => {
   if (!isCsvArg(str)) return false
 
@@ -60,6 +69,9 @@ export const isNoteCsvArg = (str: string): str is string => {
 
 const isChordName = (nm: string): boolean => {
   const tokenized = Chord.tokenize(nm)
+  if (isDyna(nm)) {
+    return true
+  }
 
   if (tokenized.length === 2) {
     if (!isNoteNameWithoutOctave(tokenized[0])) {
@@ -79,11 +91,7 @@ const isChordName = (nm: string): boolean => {
       )
     })
     if (isNormalChord) return true
-    const isDyna = Object.keys(DynamicChordNames)
-      .map((name) => name.toLowerCase())
-      .includes(nm.toLowerCase())
-
-    return isDyna
+    return isDyna(nm)
   }
 
   return false
@@ -123,19 +131,19 @@ export const parseChordCsvArg = (
   if (typeof csv[0] !== 'string' || csv[0] === '')
     throw new Error(`${csv} is not a non-empty string`)
 
-  if (typeof csv[1] !== 'number')
+  if (typeof csv[1] !== 'number') {
     throw new Error(
       `${str} is not a chord csv arg; second part is not an octave (number)`
     )
-  // const
-  //   if (!notes) throw new Error(`${str} is not a chord csv arg; could not get notes`)
+  }
 
   const [userTonic, userScale] = userScaleAndTonic
     ? userScaleAndTonic.split(' ')
     : []
   const graph =
     userTonic && userScale ? lookUpGraph(userTonic, userScale) : undefined
-  const cnwn = chordNameWithNotes(csv[0], csv[1])
+  const cnwn = chordNameWithNotes(csv[0], csv[1], userTonic, userScale)
+  console.log('cnwn', cnwn)
   let notes: string[] | undefined
   const tags: string[] = []
 
@@ -146,6 +154,7 @@ export const parseChordCsvArg = (
         notes = graphChordData.translatedSource.notes
         tags.push(`roman=${graphChordData.roman}`)
         tags.push(`chord=${graphChordData.translatedSource.name}`)
+
         if (
           graphChordData.translatedSource.octMap &&
           hasOctaveFilter(notes).length === 0
@@ -263,8 +272,8 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
     )
   )
   const uniqueLayerIds = [
-    ...new Set(sourceBarNotes.map((note) => note.tagsObj.layer[0])),
-  ]
+    ...new Set(sourceBarNotes.map((note) => note.tagsObj?.layer?.[0])),
+  ].filter((layerId) => !!layerId)
   const replacmentLayerIds = z.record(z.string(), z.string()).parse(
     Object.fromEntries(
       uniqueLayerIds.map((layerId) => {
@@ -276,10 +285,15 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
   const clonedNotes = sourceBarNotes.map((note) => {
     const clonedNote = cloneNoteByBar(note)
     const noteGroupId = z.string().parse(note.tagsObj.groupId[0])
-    const noteLayerId = z.string().parse(note.tagsObj.layer[0])
+    const noteLayerId = z
+      .string()
+      .or(z.undefined())
+      .parse(note.tagsObj?.layer?.[0])
 
     clonedNote.tagsObj.groupId = [replacmentNoteGroupIds[noteGroupId]]
-    clonedNote.tagsObj.layer = [replacmentLayerIds[noteLayerId]]
+    if (noteLayerId) {
+      clonedNote.tagsObj.layer = [replacmentLayerIds[noteLayerId]]
+    }
     clonedNote.tagsObj.noteId = [randId('', 6)]
     clonedNote.tagsObj.barId = [targetBarTag]
     return clonedNote
@@ -296,3 +310,65 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
   }
   setLatestMap(mapSongToMidiTicks())
 }
+
+/**
+ * Copy all notes to the first available empty bar. Create new bars as necessary. Do not copy onto occupied bars; we are duplicating and creating new bar ids.
+ * Unique IDs should be re-generated so uniqueness is maintained.
+ **/
+export const copyBarNotesToEndOfPhase_ = (
+  barIds: string[],
+  cb?: (barIds: string[]) => void
+) => {
+  for (const barId of barIds) {
+    console.log('barids; -2')
+    const [phaseName, _barIndex] = parseColonTag(barId)
+
+    if (!phaseExists(phaseName)) {
+      throw new Error(`Phase ${phaseName} does not exist`)
+    }
+    console.log('barids; -1.5')
+    // Get all bars in the phase
+    const allPhaseBars = getAllPhaseBars(phaseName)
+
+    // Find the first empty bar or create a new one
+    let targetBarId: string
+    let emptyBarFound = false
+
+    // Check existing bars for empty ones
+    for (const existingBarId of allPhaseBars) {
+      const barNotes = mem().notesByBar[existingBarId]
+      if (!barNotes || barNotes.length === 0) {
+        targetBarId = existingBarId
+        emptyBarFound = true
+        break
+      }
+    }
+    console.log('barids; -1.3')
+    // If no empty bar found, create a new one at the end
+    if (!emptyBarFound) {
+      const lastBarIndex =
+        allPhaseBars.length > 0
+          ? parseInt(allPhaseBars[allPhaseBars.length - 1].split(':')[1])
+          : -1
+      const newBarIndex = lastBarIndex + 1
+      targetBarId = `${phaseName}:${newBarIndex}`
+
+      // Ensure the new bar exists in memory
+      mem().notesByBar[targetBarId] = []
+    }
+
+    // Copy the notes from source bar to target bar
+    copyBarNotesWithNoteIdsAndGroupIds(barId, targetBarId)
+  }
+}
+
+declare global {
+  interface Window {
+    copyBarNotesToEndOfPhase: (
+      barIds: string[],
+      cb?: (arg: string[]) => void
+    ) => void
+  }
+}
+window.copyBarNotesToEndOfPhase = copyBarNotesToEndOfPhase_
+export const copyBarNotesToEndOfPhase = window.copyBarNotesToEndOfPhase

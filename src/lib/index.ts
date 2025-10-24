@@ -66,7 +66,7 @@ export type { ProgressionOptions, ProgressionOptionsEntry } from './graphh'
 export { getSampler, playTriads } from './music'
 
 // midi exports
-export { saveRaw, addEvents, addNoteEvents, playNotes } from './midi'
+export { saveRaw, addEvents, playNotes } from './midi'
 
 // mapSongToTicks exports
 export { mapSongToMidiTicks } from './mapSongToTicks'
@@ -74,3 +74,4 @@ export { abbrev, tickCounts, ppq } from './util/constantsUtil'
 export type { Abbreviation } from './util/constantsUtil'
 export * as util from './util'
 export { addSongLoadCallback, onLoadSongCallbacks } from './util/songUtil'
+export { DEFAULT_VELOCITY } from './shared/midiMappingCore'

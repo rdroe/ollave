@@ -744,8 +744,21 @@ export const fnChordNameWithNotes = (
 
 export const chordNameWithNotes = (
   chordName: string,
-  oct: number = 3
+  oct: number = 3,
+  tonic?: string,
+  scaleName?: string
 ): ChordNameWithNotes | null => {
+  if (Object.keys(DynamicChordNames).includes(chordName.toLowerCase())) {
+    if (!scaleName || !tonic) {
+      throw new Error(
+        `Cannot get dynamic chord ${chordName} without tonic and scale name`
+      )
+    }
+
+    const fnsResult = fns[chordName as keyof typeof fns](tonic, scaleName)[0]
+    console.log('fnsResult', fnsResult)
+    return fnsResult
+  }
   const simpleChord = Chord.get(chordName)
   const tonicParsed = Note.get(simpleChord.notes[0])
   const noteWithOct = `${tonicParsed.name}${oct}`

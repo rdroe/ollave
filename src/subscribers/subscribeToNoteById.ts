@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { Scale, tokenizeNote } from 'tonal'
 import { createStore, useStore } from 'zustand'
 
 import { mem } from '../core/mem'
@@ -46,6 +47,7 @@ const notesStore = createStore<NoteStore>((set, get) => ({
 }))
 setInterval(() => {
   if (notesStore.getState().isStale) {
+    console.log('isStale', notesStore.getState().isStale)
     notesStore.setState({ isStale: false })
     setLatestMap(mapSongToMidiTicks())
   }
@@ -58,6 +60,35 @@ export const updateNoteSilently = (
   notesStore.setState({ isStale: true })
   const memNote = getNoteByBar(mem, noteId)
   memNote.tagsObj[tagName] = tagValue
+  notesStore.getState().setNote(noteId, memNote)
+}
+export const updateOctaveSilently = (noteId: string, change: number) => {
+  notesStore.setState({ isStale: true })
+  const memNote = getNoteByBar(mem, noteId)
+  const [letter, accidental, currOctaveRaw] = tokenizeNote(memNote.note)
+  const currOctave = parseInt(currOctaveRaw)
+  const newOctave = currOctave + change
+  memNote.note = `${letter}${accidental}${newOctave}`
+  notesStore.getState().setNote(noteId, memNote)
+}
+export const updateNoteDegreeSilently = (
+  noteId: string,
+  changeInDegree: number,
+  scaleTonic: string,
+  scaleName: string
+) => {
+  const memNote = getNoteByBar(mem, noteId)
+  const note = memNote.note
+  const notesInScale = Scale.get(`${scaleTonic} ${scaleName}`).notes
+
+  const [letter, accidental, currOctaveRaw] = tokenizeNote(note)
+  const noteIndex = notesInScale.indexOf(`${letter}${accidental}`)
+  const newLetterWithAccidental =
+    notesInScale[
+      (noteIndex + changeInDegree + notesInScale.length) % notesInScale.length
+    ]
+  const newNote = `${newLetterWithAccidental}${currOctaveRaw}`
+  memNote.note = newNote
   notesStore.getState().setNote(noteId, memNote)
 }
 
