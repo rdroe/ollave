@@ -1,17 +1,10 @@
 import { mem, Mem } from '../core/mem'
 
-import {
-  mapSongToMidiTicksCore,
-  MidiMappingResult,
-  GenericPhase,
-  GenericNotesByBar,
-  GenericNoteByBar,
-} from './shared/midiMappingCore'
+import { MidiMappingResult } from './shared/midiMappingCore'
 import { BAR, tickCounts } from './util/constantsUtil'
 import { getAllPhaseBarNotes } from './util/phaseNotesUtil'
 import { getFollowingPhases } from './util/phaseRelationsUtil'
-import { quantizeNote } from './util/quantizeUtil'
-import { parseNoteTags } from './util/tagsUtil'
+import { mapSongToMidiTicksCore } from './worker-utils'
 import { getWorkerManager } from './workerManager'
 
 const startSpeedRef_ = {

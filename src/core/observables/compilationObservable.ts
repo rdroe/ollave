@@ -10,6 +10,13 @@ import {
 import { mem } from '../mem'
 
 const compileEventTarget = new window.EventTarget()
+const onCompileCallbacks: ((
+  map: MidiMap,
+  phaseAndBarStartAndEndTicks: {
+    phases: { [phaseName: string]: [startTick: number, endTick: number] }
+    bars: { [barName: string]: [startTick: number, endTick: number] }
+  }
+) => void | Promise<void>)[] = []
 
 const compilationObservable_ = new Observable<MidiMap>((subscriber) => {
   compileEventTarget.addEventListener('compiled', () => {
@@ -32,7 +39,8 @@ async function setLatestMap_(mapProm: Promise<MidiMappingResult>) {
   compileNotesByBarToTracks()
   saveSongAndTracks()
   compileEventTarget.dispatchEvent(new CustomEvent('compiled'))
-
+  onCompileCallbacks.forEach((fn) => fn(map, phaseAndBarStartAndEndTicks))
+  console.log('compilationObservable', map)
   return map
 }
 
@@ -44,3 +52,18 @@ declare global {
 window.setLatestMap = setLatestMap_
 
 export const setLatestMap = window.setLatestMap
+
+export const runOnCompilation = (
+  fn: (
+    map: MidiMap,
+    phaseAndBarStartAndEndTicks: {
+      phases: { [phaseName: string]: [startTick: number, endTick: number] }
+      bars: { [barName: string]: [startTick: number, endTick: number] }
+    }
+  ) => void
+) => {
+  onCompileCallbacks.push(fn)
+}
+export const runOnCompilationAsync = (fn: () => Promise<void>) => {
+  onCompileCallbacks.push(fn)
+}

@@ -8,6 +8,7 @@ import {
   SerializableNotesByBar,
   SerializableMidiMappingResult,
 } from './worker-serialization'
+import { workerBall } from './worker-utils'
 import { generateInlineWorkerCode } from './workerCodeGenerator'
 
 // Worker message types
@@ -48,12 +49,20 @@ class WorkerManager {
   private initializeWorker() {
     try {
       // Create inline worker since ollave is a library and worker files won't be served by parent apps
-      const workerCode = this.getInlineWorkerCode()
+      const raw = this.getInlineWorkerCode()
+      const workerCode = Object.keys(workerBall)
+        .concat(['workerBall', 'DEFAULT_VELOCITY'])
+        .reduce((acc, key) => {
+          const regexx = new RegExp(`${key}[0-9]+`, 'g')
+          return acc.replace(regexx, key)
+        }, raw)
 
+      console.log('workerCode', workerCode)
       const blob = new Blob([workerCode], { type: 'application/javascript' })
       this.worker = new Worker(URL.createObjectURL(blob))
 
       this.worker.onmessage = (e: MessageEvent<WorkerMessageUnion>) => {
+        console.log('worker message', e.data)
         this.handleWorkerMessage(e.data)
       }
 
@@ -83,6 +92,7 @@ class WorkerManager {
       const currentScript = document.currentScript as HTMLScriptElement
       if (currentScript) {
         const baseUrl = currentScript.src.replace(/\/[^\/]*$/, '/')
+        console.log('baseUrl', baseUrl)
         return `${baseUrl}mapSongToTicksWorker.js`
       }
     } catch (error) {

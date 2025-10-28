@@ -1,6 +1,8 @@
+import { debounce } from 'rxjs/internal/operators/debounce'
 import { z } from 'zod'
 
 import { TagData } from './schemaTypes'
+import { addStartEnd } from './ui/note/startEnd'
 import { randId } from './util/common'
 import { parseNoteTags } from './util/noteParsingUtil'
 import { isNoteNameWithOctave } from './util/noteValidationUtil'
@@ -63,7 +65,22 @@ export const cloneNoteByBar = (note: NoteByBar | null): NoteByBar | null => {
 }
 const wrapWithGetters = (
   note: z.infer<typeof noteByBarSchema>
-): NoteByBarInner => {
+): NoteByBarInner & {
+  afterChangeFunctions: {
+    [key: string]: (
+      updatedTagName: string,
+      updatedTagValue: TagData,
+      tagsObjCopy: z.infer<typeof tagsObjSchema>
+    ) => void
+  }
+} => {
+  const afterChangeFunctions: {
+    [key: string]: (
+      updatedTagName: string,
+      updatedTagValue: TagData,
+      tagsObjCopy: z.infer<typeof tagsObjSchema>
+    ) => void
+  } = {}
   const _tags = note.tags.concat()
   const settableObj: z.infer<typeof tagsObjSchema> = {}
   const handler = {
@@ -104,11 +121,29 @@ const wrapWithGetters = (
       Object.keys(newTagsObj).forEach((key) => {
         proxy[key] = newTagsObj[key]
       })
+      Object.keys(afterChangeFunctions).forEach((key) => {
+        afterChangeFunctions[key](key, newTagsObj[key], newTagsObj)
+      })
     },
+    afterChangeFunctions,
   }
 }
-
-export const makeNoteByBar = (note: string, tags: string[]): NoteByBar => {
+let testMode = false
+export const updateTestMode = (testModeArg: boolean) => {
+  testMode = testModeArg
+}
+export const makeNoteByBar = (
+  note: string,
+  tags: string[]
+): NoteByBar & {
+  afterChangeFunctions: {
+    [key: string]: (
+      updatedTagName: string,
+      updatedTagValue: TagData,
+      tagsObjCopy: z.infer<typeof tagsObjSchema>
+    ) => void
+  }
+} => {
   if (!tagsSchema.safeParse({ tags }).success) {
     if (!tags.find((tag) => tag.startsWith('noteId='))) {
       tags.push(`noteId=${randId('', 6)}`)
@@ -131,7 +166,23 @@ export const makeNoteByBar = (note: string, tags: string[]): NoteByBar => {
     tags: latestTagsWithValue,
     tagsObj,
   })
-  return wrapWithGetters(noteByBarSansSetters)
+  const retObj = wrapWithGetters(noteByBarSansSetters)
+  const noteId = z.string().parse(noteByBarSansSetters.tagsObj.noteId?.[0])
+  const idSelector = `.note.noteId-${noteId}`
+  if (testMode) {
+    const noteElem = document.querySelector(idSelector)
+    const controls1 = document.querySelector('#controls-1')
+    if (!noteElem && controls1) {
+      controls1.innerHTML += `<div style="color: black;" class="note noteId-${noteId}" id="note-${noteId}">${retObj.note}</div>`
+    }
+    addStartEnd(noteId, retObj)
+    document
+      .querySelector(`.note-timing-start-${noteId}`)
+      ?.addEventListener('change', function oninput(e) {
+        console.log('startSlider 010 input', e)
+      })
+  }
+  return retObj
 }
 
 const songRecordSchema_ = z.object({

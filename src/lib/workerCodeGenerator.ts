@@ -2,35 +2,50 @@
 // This eliminates the maintenance nightmare of duplicating logic in string literals
 
 // Import the actual functions to stringify them
-import {
-  mapSongToMidiTicksCore,
-  mapPhaseTicksCore,
-} from './shared/midiMappingCore'
+
 import {
   getAllPhaseBarNotesWorker,
   getFollowingPhasesWorker,
   createWorkerMessageHandler,
 } from './shared/workerUtils'
 import { tickCounts } from './util/constantsUtil'
-import {
+import { workerBall } from './worker-utils'
+const {
   parseNoteTags,
   quantizeNote,
-  peprnIsNum,
-  isCsvArg,
   parseCsvArg,
   calcFractionalDelay,
   isFraction,
   calcTickDelay,
   quantizeOffset,
-} from './worker-utils'
-
+} = workerBall
 // Helper function to stringify a function
 function stringifyFunction(fn: (...args: unknown[]) => unknown): string {
-  return fn.toString()
+  return fn.toString().replace(/\\n/g, '\n')
 }
-
+function replacer(_: string, value: unknown): unknown {
+  // Filtering out properties
+  if (typeof value === 'function') {
+    const raw = value.toString()
+    const fnsCleaned = Object.keys(workerBall)
+      .concat(['workerBall', 'DEFAULT_VELOCITY'])
+      .reduce((acc, key) => {
+        const regexx = new RegExp(`${key}[0-9]+`, 'g')
+        return acc.replace(regexx, key)
+      }, raw)
+    return fnsCleaned
+  }
+  return value
+}
 // Helper function to get constants as a string
 function getConstantsString(): string {
+  const stringifiedWorkerBall = JSON.stringify(workerBall, replacer, 6)
+    .replace(/\"function/g, 'function')
+    .replace(/\}\"/g, '}')
+    .replace(/\\n/g, '\n')
+    // replace  all escaped quotes \" with "
+    .replace(/\\"/g, '"')
+
   return `
     // Constants (stringified from util/constantsUtil)
     const ppq = 128
@@ -38,6 +53,7 @@ function getConstantsString(): string {
     const tickCounts = ${JSON.stringify(tickCounts, null, 6)}
     const DEFAULT_DURATION = 128
     const DEFAULT_VELOCITY = 90
+    const workerBall = ${stringifiedWorkerBall}
   `
 }
 
@@ -47,8 +63,14 @@ export function generateInlineWorkerCode(): string {
     // Stringify the actual functions to avoid duplication
     const parseNoteTagsStr = stringifyFunction(parseNoteTags)
     const quantizeNoteStr = stringifyFunction(quantizeNote)
-    const peprnIsNumStr = stringifyFunction(peprnIsNum)
-    const isCsvArgStr = stringifyFunction(isCsvArg)
+    const peprnIsNumStr = stringifyFunction((arg: string | number) => {
+      return typeof arg === 'number' || (arg !== '' && !isNaN(Number(arg)))
+    })
+    const mapSongToMidiTicksCoreStr = stringifyFunction(
+      workerBall.mapSongToMidiTicksCore
+    )
+
+    const isCsvArgStr = stringifyFunction(workerBall.isCsvArg)
     const parseCsvArgStr = stringifyFunction(parseCsvArg)
     const calcFractionalDelayStr = stringifyFunction(calcFractionalDelay)
     const isFractionStr = stringifyFunction(isFraction)
@@ -60,8 +82,7 @@ export function generateInlineWorkerCode(): string {
     const getFollowingPhasesWorkerStr = stringifyFunction(
       getFollowingPhasesWorker
     )
-    const mapSongToMidiTicksCoreStr = stringifyFunction(mapSongToMidiTicksCore)
-    const mapPhaseTicksCoreStr = stringifyFunction(mapPhaseTicksCore)
+
     const createWorkerMessageHandlerStr = stringifyFunction(
       createWorkerMessageHandler
     )
@@ -91,7 +112,6 @@ export function generateInlineWorkerCode(): string {
     const getFollowingPhasesWorker = ${getFollowingPhasesWorkerStr}
 
     // Core mapping functions (stringified from shared/midiMappingCore.ts)
-    const mapPhaseTicksCore = ${mapPhaseTicksCoreStr}
     const mapSongToMidiTicksCore = ${mapSongToMidiTicksCoreStr}
 
     // Worker message handler utility (stringified from shared/workerUtils.ts)
@@ -130,7 +150,7 @@ export function generateInlineWorkerCode(): string {
     )
   }
 }
-
+console.log('generateInlineWorkerCode', generateInlineWorkerCode())
 // Export a function that can be used to validate the generated code
 export function validateWorkerCode(): boolean {
   try {
@@ -140,7 +160,6 @@ export function validateWorkerCode(): boolean {
     return (
       code.includes('mapSongToMidiTicksWorker') &&
       code.includes('mapSongToMidiTicksCore') &&
-      code.includes('mapPhaseTicksCore') &&
       code.includes('parseNoteTags') &&
       code.includes('quantizeNote') &&
       code.includes('getAllPhaseBarNotesWorker') &&
@@ -161,8 +180,6 @@ export function getWorkerCodeSource(): string {
     // - quantizeNote: ${quantizeNote.toString().substring(0, 100)}...
     // - getAllPhaseBarNotesWorker: ${getAllPhaseBarNotesWorker.toString().substring(0, 100)}...
     // - getFollowingPhasesWorker: ${getFollowingPhasesWorker.toString().substring(0, 100)}...
-    // - mapPhaseTicksCore: ${mapPhaseTicksCore.toString().substring(0, 100)}...
-    // - mapSongToMidiTicksCore: ${mapSongToMidiTicksCore.toString().substring(0, 100)}...
     // - createWorkerMessageHandler: ${createWorkerMessageHandler.toString().substring(0, 100)}...
     // - tickCounts: ${JSON.stringify(tickCounts)}
   `

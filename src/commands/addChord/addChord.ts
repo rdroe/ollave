@@ -1,12 +1,13 @@
 import { Module } from 'peprn/util'
 import { z } from 'zod'
 
+import { peprnIsNum } from 'src/lib/util/common'
+
 import {
   addChord,
   DEFAULT_ARP,
   DEFAULT_CHORD_PLACEMENTS,
 } from '../../lib/addChord'
-import { peprnIsNum } from '../../lib/helpers'
 import { isStringArray } from '../../lib/util/barsUtil'
 import { isChordCsvArg } from '../../lib/util/barsUtil'
 import { phaseCount, phaseExists } from '../../lib/util/phaseUtil'

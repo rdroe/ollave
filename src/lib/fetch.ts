@@ -21,23 +21,33 @@ import { phaseCountInner, phaseFollowsPhaseInner } from './util/phaseUtil'
 import { compileTracksToNotesByBar } from './util/schemaUtil'
 
 export const fetchLatestSongAndTracks = async () => {
-  const song = (
+  const songs = (
     await (await browser.userTables.where('song', {})).sortBy('updatedAt')
-  ).reverse()[0]
-  if (!song) {
-    console.error('no song found')
+  ).reverse()
+  console.log('songs', songs)
+
+  if (!songs.length) {
+    console.error('no songs found')
     return null
   }
-  return fetchSongAndTracks(song.id)
+  return fetchSongAndTracks(songs[0].id)
 }
 
 export const fetchSongAndTracksBySongId = async (songId: number) => {
-  const song = await (
-    await browser.userTables.where('song', { id: songId })
-  ).first()
+  const songs = (
+    await (await browser.userTables.where('song', {})).sortBy('updatedAt')
+  ).reverse()
 
+  if (!songs.length) {
+    console.error('no songs found')
+    return null
+  }
+  const song = songs.find((song1) => {
+    console.log('song id', song1.id)
+    return song1.id === songId
+  })
   if (!song) {
-    console.error('no song found')
+    console.error('song not found')
     return null
   }
   return fetchSongAndTracks(song.id)

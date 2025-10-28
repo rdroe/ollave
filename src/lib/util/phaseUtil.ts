@@ -138,7 +138,9 @@ export async function phaseCountInner(
         throw new Error(`Track ${trackId} not found`)
       }
     } else {
-      throw new Error(`Track id is not a number`)
+      throw new Error(
+        `Track id is not a number ${JSON.stringify(mem().tracks, null, 2)}`
+      )
     }
   }
   // get all the phase bars.

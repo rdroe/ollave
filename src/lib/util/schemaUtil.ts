@@ -54,7 +54,7 @@ export function compilePhasesToTracks() {
     return barTag.split(':')[0]
   })
   const activePhaseTempIds = activePhaseNames.map((phaseName) => {
-    return mem().phases[phaseName].id
+    return mem().phases[phaseName]?.id
   })
   const deleteablePhaseTempIds = [
     ...new Set(mem().tracks.flatMap((track) => track['phase-ids'])),

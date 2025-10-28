@@ -29,7 +29,7 @@ export default {
     barName = 'default:1',
     updatePhaseScale,
     tags,
-    doAddSlider = false,
+    doAddSlider = true,
   }) => {
     const [note] = positionalNonCommands
     if (!isNoteNameWithOctave(note)) {

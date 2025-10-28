@@ -30,7 +30,13 @@ export function addTempoSlider(selector: string = '.controls-1') {
   }
   controls.appendChild(slider)
 }
+function createElementFromHTML(tag: string, htmlString: string) {
+  const div = document.createElement(tag)
+  div.outerHTML = htmlString.trim()
 
+  // Change this to div.childNodes to support multiple top-level nodes.
+  return div.firstChild
+}
 export function handleTempoChangeString() {
   let setTimeoutId: NodeJS.Timeout | null = null
   return (stringNumber: string) => {
