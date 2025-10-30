@@ -1,5 +1,6 @@
 import { mem, Mem } from '../core/mem'
 
+import { NoteByBar } from './schemas'
 import { MidiMappingResult } from './shared/midiMappingCore'
 import { BAR, tickCounts } from './util/constantsUtil'
 import { getAllPhaseBarNotes } from './util/phaseNotesUtil'
@@ -37,7 +38,7 @@ export type PhaseMap = {
 }
 
 export type BarTagPercent = [tagName: string | null, percent: number]
-
+let previousNotesByBar: Record<string, NoteByBar[]> = {}
 export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
   const memData = mem()
   const workerManager = getWorkerManager()
@@ -49,6 +50,12 @@ export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
       memData.notesByBar
     )
 
+    console.log(
+      'getNoteDiff',
+      getNoteDiff(memData.notesByBar, memData.notesByBar)
+    )
+    previousNotesByBar = memData.notesByBar
+
     return workerResult
   } catch (error) {
     console.warn(
@@ -56,7 +63,80 @@ export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
       error
     )
     // Fallback to synchronous processing
-    return mapSongToMidiTicksSync()
+    const result = mapSongToMidiTicksSync()
+    console.log(
+      'getNoteDiff sync',
+      getNoteDiff(previousNotesByBar, memData.notesByBar)
+    )
+    previousNotesByBar = memData.notesByBar
+    return result
+  }
+}
+
+const getNoteDiff = (
+  previousNotesByBar: Record<string, NoteByBar[]>,
+  newNotesByBar: Record<string, NoteByBar[]>
+): {
+  changedNotes: NoteByBar[]
+  removedNotes: string[]
+  newNotes: string[]
+} => {
+  const previousNotes = Object.values(previousNotesByBar)
+    .flat()
+    .reduce(
+      (acc, note) => {
+        acc[note.note] = note
+        return acc
+      },
+      {} as Record<string, NoteByBar>
+    )
+  const newNotesById = Object.values(newNotesByBar)
+    .flat()
+    .reduce(
+      (acc, note) => {
+        acc[note.note] = note
+        return acc
+      },
+      {} as Record<string, NoteByBar>
+    )
+  // These are NoteByBar objects.
+  // We need to compare the tags for notes present in both arguments.
+  //  while also tracking for removed notes and new notes.
+  const changedNotes: NoteByBar[] = []
+  const removedNotes: string[] = []
+  const newNotes: string[] = []
+  Object.entries(previousNotes).forEach(([previousNoteId, previousNote]) => {
+    if (newNotesById[previousNoteId]) {
+      // not removed or new, so it may be a changed note if the barDelay or duration has changed, or the octave or velocity or pitch has changed on the tags object.
+      if (
+        previousNote.tagsObj.barDelay?.[0] !==
+          newNotesById[previousNoteId].tagsObj.barDelay?.[0] ||
+        previousNote.tagsObj.duration?.[0] !==
+          newNotesById[previousNoteId].tagsObj.duration?.[0] ||
+        previousNote.tagsObj.octave?.[0] !==
+          newNotesById[previousNoteId].tagsObj.octave?.[0] ||
+        previousNote.tagsObj.velocity?.[0] !==
+          newNotesById[previousNoteId].tagsObj.velocity?.[0] ||
+        previousNote.tagsObj.pitch?.[0] !==
+          newNotesById[previousNoteId].tagsObj.pitch?.[0]
+      ) {
+        changedNotes.push(newNotesById[previousNoteId])
+      }
+    } else {
+      removedNotes.push(previousNoteId)
+    }
+
+    newNotes.forEach((newNoteId) => {
+      if (!previousNotes[newNoteId]) {
+        newNotes.push(newNoteId)
+      }
+    })
+  })
+
+  return {
+    changedNotes,
+    removedNotes,
+    newNotes,
   }
 }
 
