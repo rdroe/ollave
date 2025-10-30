@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { createStore, useStore } from 'zustand'
 import { useShallow } from 'zustand/shallow'
 
+import { updateBarDelays } from 'src/lib/util/notesUtil'
+
 import { Mem, mem } from '../../core/mem'
 import {
   setLatestMap,
@@ -220,6 +222,20 @@ song start
             }
           },
         },
+      },
+    },
+    updateBarDelays: {
+      fn: async ({ positionalNonCommands }) => {
+        const [note, barDelay] = positionalNonCommands
+        const updatedNotes = updateBarDelays(
+          z.string().parse(note),
+          z.number().parse(barDelay)
+        )
+        return {
+          formatted: {
+            notes: updatedNotes,
+          },
+        }
       },
     },
     out: {
