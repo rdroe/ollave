@@ -20,7 +20,6 @@ import {
   parseNoteTags,
   TagData,
   TagEntries,
-  tagEntriesCompare,
 } from './tagsUtil'
 import { isFraction, tickCounts } from './tickUtil'
 
@@ -275,6 +274,25 @@ export const updateBarDelay = (
   note.tagsObj.barDelay = [newBarDelay]
 
   return noteData
+}
+
+/**
+ * Updates the bar delay for a note and triggers a map update
+ */
+export const updateBarDelays = (
+  note: string,
+  newBarDelay: number
+): NoteByBar[] => {
+  const notes = Object.values(mem().notesByBar).flat()
+  const matchingNotes = notes.filter((noteObj) => noteObj.note === note)
+  if (!note) {
+    throw new Error('note not found')
+  }
+  matchingNotes.forEach((noteObj) => {
+    noteObj.tagsObj.barDelay = [newBarDelay]
+  })
+  setLatestMap(mapSongToMidiTicks())
+  return matchingNotes
 }
 
 export const moveNotesToBarById = (noteIds: string[], targetBarId: string) => {
