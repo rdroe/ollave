@@ -77,10 +77,11 @@
         "ts-dev": "tsc -w",
         "ts-build": "tsc",
         "js-build": "node build.js",
-        "css-build": "esbuild --bundle css/main.css --outfile=public/css/style.css",
+        "css-build": "esbuild --keep-names --bundle css/main.css --outfile=public/css/style.css",
         "mon-sub": "yarn nodemon --exec \"yarn ts-build && yarn css-build && yarn js-build\" --watch ../../dist-browser --watch ./src --watch ./css --ext js,ts,mjs,ts,css  --ignore public",
         "start": "yarn http-server --mimetypes mime.types --cors",
-        "mon": "yarn concurrently \"yarn http-server -p 8080\" \"yarn mon-sub\""
+        "mon": "yarn concurrently \"yarn http-server -p 8080\" \"yarn mon-sub\"",
+        "mon8910": "yarn concurrently \"yarn http-server -p 8910\" \"yarn mon-sub\""
     },
     "packageManager": "yarn@4.0.2"
 }
