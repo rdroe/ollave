@@ -9,6 +9,7 @@ const emitters: {
     nextLeftRange: EventTarget
     nextRightRange: EventTarget
     loading: EventTarget
+    loadingRefCount: number
     cleanup: (() => void)[]
   }
 } = {}
@@ -21,9 +22,15 @@ const store: {
     nextRightRange: [start: number, end: number]
     loading: boolean
     fns: {
-      getViewableRange: (input: NumericInput) => [start: number, end: number]
-      getNextLeftRange: (input: NumericInput) => [start: number, end: number]
-      getNextRightRange: (input: NumericInput) => [start: number, end: number]
+      getViewableRange: (
+        input: NumericInput
+      ) => Promise<[start: number, end: number]>
+      getNextLeftRange: (
+        input: NumericInput
+      ) => Promise<[start: number, end: number]>
+      getNextRightRange: (
+        input: NumericInput
+      ) => Promise<[start: number, end: number]>
     }
   }
 } = {}
@@ -74,6 +81,17 @@ function inputAfterChangedListener(
     })
   )
   const newInput = store[rangeId].input
+  if (accessConversionStore(rangeId).convertedLoading === false) {
+    console.log(
+      'setting converted loading to true in convertUpdatedNextRightRangeLoadingHandler'
+    )
+    accessConversionStore(rangeId).convertedLoading = true
+    conversionEmitters[rangeId].convertedLoading.dispatchEvent(
+      new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
+        detail: { rangeId: rangeId, loading: true },
+      })
+    )
+  }
   conversionEmitters[rangeId].convertedViewableRangeLoading.dispatchEvent(
     new CustomEvent(
       getConversionEventNames(rangeId).convertedViewableRangeLoading,
@@ -82,12 +100,28 @@ function inputAfterChangedListener(
       }
     )
   )
-  store[rangeId].viewableRange = store[rangeId].fns.getViewableRange(newInput)
-  emitters[rangeId].viewableRange.dispatchEvent(
-    new CustomEvent(getEventNames2(rangeId).viewableRange, {
-      detail: { rangeId: rangeId, viewableRange: store[rangeId].viewableRange },
-    })
-  )
+  emitters[rangeId].loadingRefCount++
+  store[rangeId].fns.getViewableRange(newInput).then((viewableRange) => {
+    store[rangeId].viewableRange = viewableRange
+    emitters[rangeId].loadingRefCount--
+    if (emitters[rangeId].loadingRefCount === 0) {
+      store[rangeId].loading = false
+      emitters[rangeId].loading.dispatchEvent(
+        new CustomEvent(getEventNames2(rangeId).loading, {
+          detail: { rangeId: rangeId, loading: false },
+        })
+      )
+    }
+    emitters[rangeId].viewableRange.dispatchEvent(
+      new CustomEvent(getEventNames2(rangeId).viewableRange, {
+        detail: {
+          rangeId: rangeId,
+          viewableRange: store[rangeId].viewableRange,
+        },
+      })
+    )
+  })
+  emitters[rangeId].loadingRefCount++
   conversionEmitters[rangeId].convertedNextLeftRangeLoading.dispatchEvent(
     new CustomEvent(
       getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
@@ -96,12 +130,26 @@ function inputAfterChangedListener(
       }
     )
   )
-  store[rangeId].nextLeftRange = store[rangeId].fns.getNextLeftRange(newInput)
-  emitters[rangeId].nextLeftRange.dispatchEvent(
-    new CustomEvent(getEventNames2(rangeId).nextLeftRange, {
-      detail: { rangeId: rangeId, nextLeftRange: store[rangeId].nextLeftRange },
-    })
-  )
+  store[rangeId].fns.getNextLeftRange(newInput).then((nextLeftRange) => {
+    emitters[rangeId].loadingRefCount--
+    if (emitters[rangeId].loadingRefCount === 0) {
+      store[rangeId].loading = false
+      emitters[rangeId].loading.dispatchEvent(
+        new CustomEvent(getEventNames2(rangeId).loading, {
+          detail: { rangeId: rangeId, loading: false },
+        })
+      )
+    }
+    store[rangeId].nextLeftRange = nextLeftRange
+    emitters[rangeId].nextLeftRange.dispatchEvent(
+      new CustomEvent(getEventNames2(rangeId).nextLeftRange, {
+        detail: {
+          rangeId: rangeId,
+          nextLeftRange: store[rangeId].nextLeftRange,
+        },
+      })
+    )
+  })
   conversionEmitters[rangeId].convertedNextRightRangeLoading.dispatchEvent(
     new CustomEvent(
       getConversionEventNames(rangeId).convertedNextRightRangeLoading,
@@ -110,21 +158,27 @@ function inputAfterChangedListener(
       }
     )
   )
-  store[rangeId].nextRightRange = store[rangeId].fns.getNextRightRange(newInput)
-  emitters[rangeId].nextRightRange.dispatchEvent(
-    new CustomEvent(getEventNames2(rangeId).nextRightRange, {
-      detail: {
-        rangeId: rangeId,
-        nextRightRange: store[rangeId].nextRightRange,
-      },
-    })
-  )
-  store[rangeId].loading = false
-  emitters[rangeId].loading.dispatchEvent(
-    new CustomEvent(getEventNames2(rangeId).loading, {
-      detail: { rangeId: rangeId, loading: false },
-    })
-  )
+  emitters[rangeId].loadingRefCount++
+  store[rangeId].fns.getNextRightRange(newInput).then((nextRightRange) => {
+    emitters[rangeId].loadingRefCount--
+    if (emitters[rangeId].loadingRefCount === 0) {
+      store[rangeId].loading = false
+      emitters[rangeId].loading.dispatchEvent(
+        new CustomEvent(getEventNames2(rangeId).loading, {
+          detail: { rangeId: rangeId, loading: false },
+        })
+      )
+    }
+    store[rangeId].nextRightRange = nextRightRange
+    emitters[rangeId].nextRightRange.dispatchEvent(
+      new CustomEvent(getEventNames2(rangeId).nextRightRange, {
+        detail: {
+          rangeId: rangeId,
+          nextRightRange: store[rangeId].nextRightRange,
+        },
+      })
+    )
+  })
 }
 
 export const registerRange = <InputType extends NumericInput>(
@@ -135,9 +189,15 @@ export const registerRange = <InputType extends NumericInput>(
     getNextLeftRange,
     getNextRightRange,
   }: {
-    getViewableRange: (input: InputType) => [start: number, end: number]
-    getNextLeftRange: (input: InputType) => [start: number, end: number]
-    getNextRightRange: (input: InputType) => [start: number, end: number]
+    getViewableRange: (
+      input: InputType
+    ) => Promise<[start: number, end: number]>
+    getNextLeftRange: (
+      input: InputType
+    ) => Promise<[start: number, end: number]>
+    getNextRightRange: (
+      input: InputType
+    ) => Promise<[start: number, end: number]>
   },
   isReregistration: boolean = false
 ) => {
@@ -169,6 +229,7 @@ export const registerRange = <InputType extends NumericInput>(
       nextLeftRange: new EventTarget(),
       nextRightRange: new EventTarget(),
       loading: new EventTarget(),
+      loadingRefCount: 0,
       cleanup: [],
     }
     store[rangeId] = {
@@ -465,30 +526,154 @@ function convertUpdatedInputHandler<InputType extends StringOrNumberOrDate>(
   )
 }
 
-const accessConversionStore = <InputType extends StringOrNumberOrDate>(
+// const accessConversionStore = <InputType extends StringOrNumberOrDate>(
+//   rangeId: string
+// ) => {
+//   return {
+//     input: conversionStore[rangeId].input as InputType,
+//     viewableRange: conversionStore[rangeId].viewableRange as [
+//       start: InputType,
+//       end: InputType,
+//     ],
+//     nextLeftRange: conversionStore[rangeId].nextLeftRange as [
+//       start: InputType,
+//       end: InputType,
+//     ],
+//     nextRightRange: conversionStore[rangeId].nextRightRange as [
+//       start: InputType,
+//       end: InputType,
+//     ],
+//     convertedLoading: conversionStore[rangeId].convertedLoading,
+//     convertedViewableRangeLoading:
+//       conversionStore[rangeId].convertedViewableRangeLoading,
+//     convertedNextLeftRangeLoading:
+//       conversionStore[rangeId].convertedNextLeftRangeLoading,
+//     convertedNextRightRangeLoading:
+//       conversionStore[rangeId].convertedNextRightRangeLoading,
+//   }
+// }
+const isMatchingInputType = <InputType extends StringOrNumberOrDate>(
+  toReplace: any,
+  value: StringOrNumberOrDate
+): value is InputType => {
+  if (
+    typeof toReplace === typeof value &&
+    toReplace instanceof Date === value instanceof Date
+  ) {
+    return true
+  }
+  return false
+}
+const requireMatchingInputType = <InputType extends StringOrNumberOrDate>(
+  toReplace: any,
+  value: StringOrNumberOrDate
+): InputType => {
+  if (!isMatchingInputType<InputType>(toReplace, value)) {
+    throw new Error('Input type mismatch')
+  }
+  return value
+}
+const accessConversionStore = <
+  InputType extends StringOrNumberOrDate = StringOrNumberOrDate,
+>(
   rangeId: string
 ) => {
   return {
-    input: conversionStore[rangeId].input as InputType,
-    viewableRange: conversionStore[rangeId].viewableRange as [
-      start: InputType,
-      end: InputType,
-    ],
-    nextLeftRange: conversionStore[rangeId].nextLeftRange as [
-      start: InputType,
-      end: InputType,
-    ],
-    nextRightRange: conversionStore[rangeId].nextRightRange as [
-      start: InputType,
-      end: InputType,
-    ],
-    convertedLoading: conversionStore[rangeId].convertedLoading,
-    convertedViewableRangeLoading:
-      conversionStore[rangeId].convertedViewableRangeLoading,
-    convertedNextLeftRangeLoading:
-      conversionStore[rangeId].convertedNextLeftRangeLoading,
-    convertedNextRightRangeLoading:
-      conversionStore[rangeId].convertedNextRightRangeLoading,
+    get input() {
+      return conversionStore[rangeId].input as InputType
+    },
+    set input(value: InputType) {
+      // @ts-expect-error - we know that the input is a proper type
+      conversionStore[rangeId].input = requireMatchingInputType<InputType>(
+        conversionStore[rangeId].input,
+        value
+      )
+    },
+    get viewableRange() {
+      return conversionStore[rangeId].viewableRange as [
+        start: InputType,
+        end: InputType,
+      ]
+    },
+    set viewableRange(value: [start: InputType, end: InputType]) {
+      conversionStore[rangeId].viewableRange = [
+        // @ts-expect-error - we know that the viewable range is a proper type
+        requireMatchingInputType<InputType>(
+          conversionStore[rangeId].viewableRange[0],
+          value[0]
+        ),
+        // @ts-expect-error - we know that the viewable range is a proper type
+        requireMatchingInputType<InputType>(
+          conversionStore[rangeId].viewableRange[1],
+          value[1]
+        ),
+      ]
+    },
+    get nextLeftRange() {
+      return conversionStore[rangeId].nextLeftRange as [
+        start: InputType,
+        end: InputType,
+      ]
+    },
+    set nextLeftRange(value: [start: InputType, end: InputType]) {
+      conversionStore[rangeId].nextLeftRange = [
+        // @ts-expect-error - we know that the next left range is a proper type
+        requireMatchingInputType<InputType>(
+          conversionStore[rangeId].nextLeftRange[0],
+          value[0]
+        ),
+        // @ts-expect-error - we know that the next left range is a proper type
+        requireMatchingInputType<InputType>(
+          conversionStore[rangeId].nextLeftRange[1],
+          value[1]
+        ),
+      ]
+    },
+    get nextRightRange() {
+      return conversionStore[rangeId].nextRightRange as [
+        start: InputType,
+        end: InputType,
+      ]
+    },
+    set nextRightRange(value: [start: InputType, end: InputType]) {
+      conversionStore[rangeId].nextRightRange = [
+        // @ts-expect-error - we know that the next right range is a proper type
+        requireMatchingInputType<InputType>(
+          conversionStore[rangeId].nextRightRange[0],
+          value[0]
+        ),
+        // @ts-expect-error - we know that the next right range is a proper type
+        requireMatchingInputType<InputType>(
+          conversionStore[rangeId].nextRightRange[1],
+          value[1]
+        ),
+      ]
+    },
+
+    get convertedLoading() {
+      return conversionStore[rangeId].convertedLoading
+    },
+    set convertedLoading(value: boolean) {
+      conversionStore[rangeId].convertedLoading = value
+    },
+    get convertedViewableRangeLoading() {
+      return conversionStore[rangeId].convertedViewableRangeLoading
+    },
+    set convertedViewableRangeLoading(value: boolean) {
+      conversionStore[rangeId].convertedViewableRangeLoading = value
+    },
+    get convertedNextLeftRangeLoading() {
+      return conversionStore[rangeId].convertedNextLeftRangeLoading
+    },
+    set convertedNextLeftRangeLoading(value: boolean) {
+      conversionStore[rangeId].convertedNextLeftRangeLoading = value
+    },
+    get convertedNextRightRangeLoading() {
+      return conversionStore[rangeId].convertedNextRightRangeLoading
+    },
+    set convertedNextRightRangeLoading(value: boolean) {
+      conversionStore[rangeId].convertedNextRightRangeLoading = value
+    },
   }
 }
 
@@ -608,21 +793,35 @@ function convertUpdatedViewableRangeLoadingHandler<
     throw new Error('Invalid event detail')
   }
   if (viewableRangeLoading) {
-    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-      accessConversionStore<InputType>(rangeId).convertedLoading = true
-      conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-        new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-          detail: { rangeId: rangeId, loading: true },
-        })
-      )
-    }
+    // if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
+    //   console.log(
+    //     'setting converted loading to true in convertUpdatedViewableRangeLoadingHandler'
+    //   )
+    //   accessConversionStore<InputType>(rangeId).convertedLoading = true
+    //   conversionEmitters[rangeId].convertedLoading.dispatchEvent(
+    //     new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
+    //       detail: { rangeId: rangeId, loading: true },
+    //     })
+    //   )
+    // }
+    accessConversionStore<InputType>(rangeId).convertedViewableRangeLoading =
+      true
   } else {
+    accessConversionStore<InputType>(rangeId).convertedViewableRangeLoading =
+      false
     // viewableRange laoding is done
     // we can set loading to false ONLY IF the other ranges are also note loading
+    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
+      return
+    }
     const otherRangesLoading =
       accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading ||
       accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading
+
     if (!otherRangesLoading) {
+      console.log(
+        'setting converted loading to false in convertUpdatedViewableRangeLoadingHandler'
+      )
       accessConversionStore<InputType>(rangeId).convertedLoading = false
       conversionEmitters[rangeId].convertedLoading.dispatchEvent(
         new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
@@ -647,24 +846,38 @@ function convertUpdatedNextLeftRangeLoadingHandler<
   if (!rangeId || nextLeftRangeLoading === undefined) {
     throw new Error('Invalid event detail')
   }
-  accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading =
-    nextLeftRangeLoading
+
   if (nextLeftRangeLoading) {
-    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-      accessConversionStore<InputType>(rangeId).convertedLoading = true
-      conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-        new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-          detail: { rangeId: rangeId, loading: true },
-        })
-      )
-    }
+    // if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
+    //   console.log(
+    //     'setting converted loading to true in convertUpdatedNextLeftRangeLoadingHandler'
+    //   )
+    //   accessConversionStore<InputType>(rangeId).convertedLoading = true
+    //   conversionEmitters[rangeId].convertedLoading.dispatchEvent(
+    //     new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
+    //       detail: { rangeId: rangeId, loading: true },
+    //     })
+    //   )
+
+    // }
+    accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading =
+      true
   } else {
+    accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading =
+      false
     // nextLeftRange loading is done
     // we can set loading to false ONLY IF the other ranges are also note loading
+    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
+      return
+    }
     const otherRangesLoading =
       accessConversionStore<InputType>(rangeId).convertedViewableRangeLoading ||
       accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading
+
     if (!otherRangesLoading) {
+      console.log(
+        'setting converted loading to false in convertUpdatedNextLeftRangeLoadingHandler'
+      )
       accessConversionStore<InputType>(rangeId).convertedLoading = false
       conversionEmitters[rangeId].convertedLoading.dispatchEvent(
         new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
@@ -689,24 +902,37 @@ function convertUpdatedNextRightRangeLoadingHandler<
   if (!rangeId || nextRightRangeLoading === undefined) {
     throw new Error('Invalid event detail')
   }
-  accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading =
-    nextRightRangeLoading
+
   if (nextRightRangeLoading) {
-    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-      accessConversionStore<InputType>(rangeId).convertedLoading = true
-      conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-        new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-          detail: { rangeId: rangeId, loading: true },
-        })
-      )
-    }
+    // if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
+    //   console.log(
+    //     'setting converted loading to true in convertUpdatedNextRightRangeLoadingHandler'
+    //   )
+    //   accessConversionStore<InputType>(rangeId).convertedLoading = true
+    //   conversionEmitters[rangeId].convertedLoading.dispatchEvent(
+    //     new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
+    //       detail: { rangeId: rangeId, loading: true },
+    //     })
+    //   )
+    // }
+    accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading =
+      true
   } else {
+    accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading =
+      false
     // nextRightRange loading is done
     // we can set loading to false ONLY IF the other ranges are also note loading
+    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
+      return
+    }
     const otherRangesLoading =
       accessConversionStore<InputType>(rangeId).convertedViewableRangeLoading ||
       accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading
+
     if (!otherRangesLoading) {
+      console.log(
+        'setting converted loading to false in convertUpdatedNextRightRangeLoadingHandler'
+      )
       accessConversionStore<InputType>(rangeId).convertedLoading = false
       conversionEmitters[rangeId].convertedLoading.dispatchEvent(
         new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
@@ -717,7 +943,9 @@ function convertUpdatedNextRightRangeLoadingHandler<
   }
 }
 
-export const registerReadableRange = <InputType extends StringOrNumberOrDate>(
+export const registerReadableRange = async <
+  InputType extends StringOrNumberOrDate,
+>(
   rangeId: string,
   initialInput: InputType | null,
   {
@@ -727,9 +955,9 @@ export const registerReadableRange = <InputType extends StringOrNumberOrDate>(
     inputToNumber,
     numberToInput,
   }: {
-    getViewableRange: (input: number) => [start: number, end: number]
-    getNextLeftRange: (input: number) => [start: number, end: number]
-    getNextRightRange: (input: number) => [start: number, end: number]
+    getViewableRange: (input: number) => Promise<[start: number, end: number]>
+    getNextLeftRange: (input: number) => Promise<[start: number, end: number]>
+    getNextRightRange: (input: number) => Promise<[start: number, end: number]>
     inputToNumber: (input: InputType) => number
     numberToInput: (number: number) => InputType
     isReregistration: boolean
@@ -799,9 +1027,9 @@ export const registerReadableRange = <InputType extends StringOrNumberOrDate>(
   }
   conversionStore[rangeId] = {
     input: inputToNumber(initialInput),
-    viewableRange: getViewableRange(inputToNumber(initialInput)),
-    nextLeftRange: getNextLeftRange(inputToNumber(initialInput)),
-    nextRightRange: getNextRightRange(inputToNumber(initialInput)),
+    viewableRange: await getViewableRange(inputToNumber(initialInput)),
+    nextLeftRange: await getNextLeftRange(inputToNumber(initialInput)),
+    nextRightRange: await getNextRightRange(inputToNumber(initialInput)),
     convertedLoading: false,
     convertedViewableRangeLoading: false,
     convertedNextLeftRangeLoading: false,
@@ -1274,9 +1502,9 @@ export const testRangeInner: Module = {
       })
     }
     registerRange('testRange', 0, {
-      getViewableRange: (input: number) => [input, input + 10],
-      getNextLeftRange: (input: number) => [input - 10, input],
-      getNextRightRange: (input: number) => [input + 10, input + 20],
+      getViewableRange: async (input: number) => [input, input + 10],
+      getNextLeftRange: async (input: number) => [input - 10, input],
+      getNextRightRange: async (input: number) => [input + 10, input + 20],
     })
     testRangeStore.cleanups = [
       ...testRangeStore.cleanups,
@@ -1303,6 +1531,7 @@ export const testRangeInner: Module = {
       }
     )
     subscribeToRangeStartLoading('testRange', () => {
+      // todo: this is not working as expected
       console.log('start loading')
     })
     subscribeToRangeEndLoading('testRange', () => {
@@ -1352,9 +1581,12 @@ export const testReadableRange: Module = {
       })
     }
     registerReadableRange<string>('testReadableRange', '0', {
-      getViewableRange: (input: number) => [input, input + 10],
-      getNextLeftRange: (input: number) => [input - 10, input],
-      getNextRightRange: (input: number) => [input + 10, input + 20],
+      getViewableRange: async (input: number) => {
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        return [input, input + 10]
+      },
+      getNextLeftRange: async (input: number) => [input - 10, input],
+      getNextRightRange: async (input: number) => [input + 10, input + 20],
       inputToNumber: (input: string) => parseInt(input),
       numberToInput: (number: number) => number.toString(),
       isReregistration: false,
@@ -1417,7 +1649,7 @@ export const testReadableRange: Module = {
     subscribeToRangeConvertedNextLeftRangeEndLoading(
       'testReadableRange',
       () => {
-        console.log('end loading viewable range')
+        console.log('end loading next left range')
       }
     )
     subscribeToRangeConvertedNextRightRangeStartLoading(
