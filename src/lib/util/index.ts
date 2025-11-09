@@ -58,3 +58,5 @@ export { abbrev, tickCounts, ppq } from './constantsUtil'
 export type { Abbreviation } from './constantsUtil'
 
 export { addSongLoadCallback, onLoadSongCallbacks } from './songUtil'
+
+export * from './rangeUtil'

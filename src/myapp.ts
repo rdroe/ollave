@@ -7,6 +7,7 @@ import {
   listSongs,
 } from './commands/song/list'
 import { updateTestMode } from './lib/schemas'
+import { testRangeInner, testReadableRange } from './lib/util'
 import { init as songInit } from './lib/util/songUtil'
 
 // import { playTriads } from './lib/music'
@@ -37,6 +38,8 @@ document.body.onload = async () => {
         deleteAllSongsAndTracks,
         deleteSongById: deleteSongAndRelatedTracksAndPhasesBySongId,
         tempo,
+        testRange: testRangeInner,
+        testReadableRange: testReadableRange,
       },
     })
   }

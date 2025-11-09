@@ -32,3 +32,13 @@ declare global {
 }
 window.mem__ = mem_
 export const mem: () => Mem = () => window.mem__
+
+export const getNoteById = (noteId: string) => {
+  const note = Object.values(mem().notesByBar)
+    .flat()
+    .find((note) => note.tagsObj.noteId?.[0] === noteId)
+  if (!note) {
+    return null
+  }
+  return note
+}

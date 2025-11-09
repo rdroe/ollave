@@ -1,11 +1,15 @@
 import { mem, Mem } from '../core/mem'
 
-import { NoteByBar } from './schemas'
 import { MidiMappingResult } from './shared/midiMappingCore'
 import { BAR, tickCounts } from './util/constantsUtil'
 import { getAllPhaseBarNotes } from './util/phaseNotesUtil'
 import { getFollowingPhases } from './util/phaseRelationsUtil'
-import { mapSongToMidiTicksCore } from './worker-utils'
+import { tagEntriesCompare } from './util/tagsUtil'
+import {
+  mapSongToMidiTicksCore,
+  parseNoteTags,
+  TagEntries,
+} from './worker-utils'
 import { getWorkerManager } from './workerManager'
 
 const startSpeedRef_ = {
@@ -18,7 +22,6 @@ export const START_SPEED = (
   window as unknown as { startSpeedRef: typeof startSpeedRef_ }
 ).startSpeedRef.START_SPEED
 
-// Detailed structure of a phase (possibly a phase part)
 export type MidiMap = {
   [tick: number]: {
     note: string
@@ -28,7 +31,6 @@ export type MidiMap = {
   }[]
 }
 
-// High-level structure of a phase
 export type PhaseMap = {
   [tick: number]: {
     occassion: 'BAR_START' | 'BAR_END' | 'NOTE_START'
@@ -38,23 +40,25 @@ export type PhaseMap = {
 }
 
 export type BarTagPercent = [tagName: string | null, percent: number]
-let previousNotesByBar: Record<string, NoteByBar[]> = {}
+let prevMapGlobal: MidiMap = {}
 export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
   const memData = mem()
   const workerManager = getWorkerManager()
-
+  prevMapGlobal = mem().latestMap
   try {
-    // Use web worker for processing
     const workerResult = await workerManager.mapSongToMidiTicks(
       memData.phases,
       memData.notesByBar
     )
-
     console.log(
-      'getNoteDiff',
-      getNoteDiff(memData.notesByBar, memData.notesByBar)
+      'comparing prevMapGlobal with worker result',
+      prevMapGlobal,
+      workerResult.map
     )
-    previousNotesByBar = memData.notesByBar
+    console.log(
+      'comparing got result:',
+      getNoteDiff(prevMapGlobal, workerResult.map)
+    )
 
     return workerResult
   } catch (error) {
@@ -65,67 +69,81 @@ export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
     // Fallback to synchronous processing
     const result = mapSongToMidiTicksSync()
     console.log(
-      'getNoteDiff sync',
-      getNoteDiff(previousNotesByBar, memData.notesByBar)
+      'comparing got result sync:',
+      getNoteDiff(prevMapGlobal, result.map)
     )
-    previousNotesByBar = memData.notesByBar
     return result
   }
 }
 
 const getNoteDiff = (
-  previousNotesByBar: Record<string, NoteByBar[]>,
-  newNotesByBar: Record<string, NoteByBar[]>
+  prevMap: MidiMap,
+  newMap: MidiMap
 ): {
-  changedNotes: NoteByBar[]
+  changedNotes: string[]
   removedNotes: string[]
   newNotes: string[]
 } => {
-  const previousNotes = Object.values(previousNotesByBar)
+  const previousNotes = Object.values(prevMap)
     .flat()
     .reduce(
       (acc, note) => {
-        acc[note.note] = note
+        const noteIdTag = note.compositionTags.find((tag) =>
+          tag.startsWith('noteId=')
+        )
+        const noteId = noteIdTag ? noteIdTag.split('=')[1] : null
+        if (!noteId) {
+          return acc
+        }
+        acc[noteId] = parseNoteTags(note.compositionTags).filter(
+          ([name]) =>
+            name === 'barDelay' ||
+            name === 'duration' ||
+            name === 'octave' ||
+            name === 'velocity' ||
+            name === 'pitch'
+        )
+        acc[noteId].push(['note', [note.note]])
         return acc
       },
-      {} as Record<string, NoteByBar>
+      {} as Record<string, TagEntries>
     )
-  const newNotesById = Object.values(newNotesByBar)
+  const newNotesById = Object.values(newMap)
     .flat()
     .reduce(
       (acc, note) => {
-        acc[note.note] = note
+        const noteIdTag = note.compositionTags.find((tag) =>
+          tag.startsWith('noteId=')
+        )
+        const noteId = noteIdTag ? noteIdTag.split('=')[1] : null
+        if (!noteId) {
+          return acc
+        }
+        acc[noteId] = parseNoteTags(note.compositionTags).filter(
+          ([name]) =>
+            name === 'barDelay' ||
+            name === 'duration' ||
+            name === 'octave' ||
+            name === 'velocity' ||
+            name === 'pitch'
+        )
+        acc[noteId].push(['note', [note.note]])
         return acc
       },
-      {} as Record<string, NoteByBar>
+      {} as Record<string, TagEntries>
     )
-  // These are NoteByBar objects.
-  // We need to compare the tags for notes present in both arguments.
-  //  while also tracking for removed notes and new notes.
-  const changedNotes: NoteByBar[] = []
+  const changedNotes: string[] = []
   const removedNotes: string[] = []
   const newNotes: string[] = []
-  Object.entries(previousNotes).forEach(([previousNoteId, previousNote]) => {
+  Object.entries(previousNotes).forEach(([previousNoteId, prevTagEntries]) => {
     if (newNotesById[previousNoteId]) {
-      // not removed or new, so it may be a changed note if the barDelay or duration has changed, or the octave or velocity or pitch has changed on the tags object.
-      if (
-        previousNote.tagsObj.barDelay?.[0] !==
-          newNotesById[previousNoteId].tagsObj.barDelay?.[0] ||
-        previousNote.tagsObj.duration?.[0] !==
-          newNotesById[previousNoteId].tagsObj.duration?.[0] ||
-        previousNote.tagsObj.octave?.[0] !==
-          newNotesById[previousNoteId].tagsObj.octave?.[0] ||
-        previousNote.tagsObj.velocity?.[0] !==
-          newNotesById[previousNoteId].tagsObj.velocity?.[0] ||
-        previousNote.tagsObj.pitch?.[0] !==
-          newNotesById[previousNoteId].tagsObj.pitch?.[0]
-      ) {
-        changedNotes.push(newNotesById[previousNoteId])
+      const newTagEntries = newNotesById[previousNoteId]
+      if (!tagEntriesCompare(prevTagEntries, newTagEntries)) {
+        changedNotes.push(previousNoteId)
       }
     } else {
       removedNotes.push(previousNoteId)
     }
-
     newNotes.forEach((newNoteId) => {
       if (!previousNotes[newNoteId]) {
         newNotes.push(newNoteId)
@@ -140,11 +158,8 @@ const getNoteDiff = (
   }
 }
 
-// Synchronous fallback implementation using shared core
 export const mapSongToMidiTicksSync = (): MidiMappingResult => {
   const memData = mem()
-
-  // Use the shared core logic with main thread utility functions
   return mapSongToMidiTicksCore(
     memData.phases,
     memData.notesByBar,
@@ -174,7 +189,6 @@ export const barsAtMidi = (songTick: number): BarTagPercent[] => {
         acc[tick] = []
       }
       acc[tick].push(...dat)
-
       dat.forEach(
         (phaseMapSubelement: {
           occassion: 'BAR_START' | 'BAR_END' | 'NOTE_START'
@@ -193,7 +207,6 @@ export const barsAtMidi = (songTick: number): BarTagPercent[] => {
                 'We should have numeric data for the end of the bar'
               )
 
-            // if  the bar starts before the sought tick
             if (barStart < songTick && barEnd > songTick) {
               const len = barEnd - barStart
               const barCutoff = songTick - barStart
@@ -210,7 +223,6 @@ export const barsAtMidi = (songTick: number): BarTagPercent[] => {
   if (ret.length === 0) {
     ret.push([null, 0])
   }
-
   return ret as BarTagPercent[]
 }
 
@@ -261,7 +273,7 @@ export const midiAtBarUtil = (mem: Mem) => {
 
 export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
   return midiAtBarUtil(mem())(soughtTagName, percent)
-} //
+}
 
 export const extractPhaseAndBarStartAndEndTicks = (): {
   phases: {
@@ -319,7 +331,6 @@ export const extractPhaseAndBarStartAndEndTicks = (): {
   }
 }
 
-// One use of this function is in code that gets or places the places cursor within a song, as when stopping or restarting at a certain point.
 export function mapPhaseData(
   phaseName: string,
   phase: Mem['phases'][string],
@@ -328,16 +339,12 @@ export function mapPhaseData(
 ) {
   const barTickFactor = tickCounts[BAR]
 
-  // get the bar-sorted bar notes
   const phaseBars = getAllPhaseBarNotes(phaseName)
-  // initialize the midi map where we will put each note on a numeric midi property
 
   const phaseData: PhaseMap = {}
   let barEndTick = startTick
 
-  // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick.
   phaseBars.forEach((barNotes, barIndex) => {
-    // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
     const thisBarOffset =
       barIndex *
       (barTickFactor *
@@ -371,8 +378,6 @@ export function mapPhaseData(
     }
     barNotes.forEach((_note, _idx) => {
       const thisNoteOffset = 0
-      // any need for per-note delays?
-      // todo: for now, assuming not.
       const thisNoteTick = startTick + thisBarOffset + thisNoteOffset
       if (!phaseData[thisNoteTick]) {
         phaseData[thisNoteTick] = []

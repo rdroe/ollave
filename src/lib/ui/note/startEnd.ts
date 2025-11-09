@@ -1,6 +1,6 @@
-import { setLatestMap } from 'src/core'
-import { mapSongToMidiTicks } from 'src/lib/mapSongToTicks'
+import { getNoteById, isAbbreviation, mem } from 'src/core'
 import { NoteByBar } from 'src/lib/schemas'
+import { quantizeValueToAbbreviation } from 'src/lib/util/abbreviationUtil'
 
 import { mouseDownNote } from './mousedown'
 
@@ -9,20 +9,46 @@ export const selectStartSlider = (noteId: string) => {
     `.note-timing-start-${noteId}`
   ) as HTMLInputElement
 }
-export const selectDurationSlider = (noteId: string) => {
+const selectDurationSlider = (noteId: string) => {
   return document.querySelector(
     `.note-timing-duration-${noteId}`
   ) as HTMLInputElement
 }
 let uiTimeout: NodeJS.Timeout | null = null
+
 const debounce = (fn: () => void) => {
   if (uiTimeout) {
     clearTimeout(uiTimeout)
   }
   uiTimeout = setTimeout(fn, 100)
 }
+const requireAbbreviation = (quant: unknown) => {
+  if (!isAbbreviation(quant)) {
+    throw new Error('quant is not an abbreviation: ' + quant)
+  }
+  return quant
+}
+const requireNumericValueFromEventTarget = (target: EventTarget) => {
+  const value = (target as HTMLInputElement).value
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value)
+    if (isNaN(parsed)) {
+      throw new Error('value is not a number: ' + value)
+    }
+    return parsed
+  }
+  throw new Error('value is not a number: ' + value)
+}
 
-export const addStartEnd = async (noteId: string, noteByBar: NoteByBar) => {
+const lookUpQuantizedTagValue = (
+  tagsObj: Record<string, (string | number | boolean)[]>
+) => {
+  return requireAbbreviation(tagsObj.quantize?.[0])
+}
+export const addStartEnd = async (noteId: string) => {
   await new Promise((resolve) => setTimeout(resolve, 1000))
   const note = document.querySelector(`#note-${noteId}`)
   if (!note) {
@@ -48,11 +74,61 @@ export const addStartEnd = async (noteId: string, noteByBar: NoteByBar) => {
   startSlider1.min = '0'
   startSlider1.max = '1024'
   startSlider1.value = '0'
+  startSlider1.addEventListener('input', function (e) {
+    const { tagsObj } = getNoteById(noteId)
+    console.log('startSlider 000 input', {
+      tagsObj,
+      new: (e.target as HTMLInputElement).value,
+    })
+
+    const value = requireNumericValueFromEventTarget(e.target)
+    const quant = lookUpQuantizedTagValue(tagsObj)
+    const newQuantizedValue = quantizeValueToAbbreviation(value, quant)
+    console.log('startSlider 000 quantized value', {
+      value,
+      quant,
+      newQuantizedValue,
+    })
+    startSlider1.value = newQuantizedValue.toString()
+    // console.log('startSlider 000 input', {
+    //   tagsObj: tagsObj.quantize?.[0],
+    //   new: (e.target as HTMLInputElement).value,
+    //   newQuantizedValue,
+    // })
+    if (newQuantizedValue !== value) {
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
+      return
+    }
+  })
+
+  startSlider1.addEventListener('change', function (e) {
+    console.log('startSlider 000 change', e)
+    const { tagsObj } = getNoteById(noteId)
+    const value = requireNumericValueFromEventTarget(e.target)
+    const quant = lookUpQuantizedTagValue(tagsObj)
+    const newQuantizedValue = quantizeValueToAbbreviation(value, quant)
+    startSlider1.value = newQuantizedValue.toString()
+    console.log('startSlider 000 quantized value', {
+      value,
+      quant,
+      newQuantizedValue,
+    })
+    // console.log('startSlider 000 input', {
+    //   tagsObj: tagsObj.quantize?.[0],
+    //   new: (e.target as HTMLInputElement).value,
+    //   newQuantizedValue,
+    // })
+    if (newQuantizedValue !== value) {
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
+      return
+    }
+  })
 
   controls.appendChild(startSlider1)
-  startSlider1.addEventListener('input', function (e) {
-    console.log('startSlider 000b input', e)
-  })
 
   const durationSlider1 = document.createElement('input')
   durationSlider1.type = 'range'

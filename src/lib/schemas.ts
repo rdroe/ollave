@@ -2,6 +2,7 @@ import { debounce } from 'rxjs/internal/operators/debounce'
 import { z } from 'zod'
 
 import { TagData } from './schemaTypes'
+import { elementsById } from './ui/elements'
 import { addStartEnd } from './ui/note/startEnd'
 import { randId } from './util/common'
 import { parseNoteTags } from './util/noteParsingUtil'
@@ -168,23 +169,28 @@ export const makeNoteByBar = (
   })
   const retObj = wrapWithGetters(noteByBarSansSetters)
   const noteId = z.string().parse(noteByBarSansSetters.tagsObj.noteId?.[0])
-  const idSelector = `.note.noteId-${noteId}`
   if (testMode) {
-    const noteElem = document.querySelector(idSelector)
     const controls1 = document.querySelector('#controls-1')
-    if (!noteElem && controls1) {
-      controls1.innerHTML += `<div style="color: black;" class="note noteId-${noteId}" id="note-${noteId}">${retObj.note}</div>`
+    if (!controls1) {
+      return retObj
     }
-    addStartEnd(noteId, retObj)
-    document
-      .querySelector(`.note-timing-start-${noteId}`)
-      ?.addEventListener('change', function oninput(e) {
-        console.log('startSlider 010 input', e)
-      })
+    const existentNoteElement = elementsById.note[noteId]
+    if (!existentNoteElement) {
+      const noteElem = createDomElementFromHtml(
+        `<div style="color: black;" class="note noteId-${noteId}" id="note-${noteId}">${retObj.note}</div>`
+      )
+      elementsById.note[noteId] = noteElem
+      controls1.appendChild(noteElem)
+    }
+    addStartEnd(noteId)
   }
   return retObj
 }
-
+export function createDomElementFromHtml(html: string) {
+  const div = document.createElement('div')
+  div.innerHTML = html
+  return div
+}
 const songRecordSchema_ = z.object({
   id: z
     .number()
