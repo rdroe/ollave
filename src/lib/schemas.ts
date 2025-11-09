@@ -1,12 +1,11 @@
-import { debounce } from 'rxjs/internal/operators/debounce'
 import { z } from 'zod'
 
 import { TagData } from './schemaTypes'
 import { elementsById } from './ui/elements'
 import { addStartEnd } from './ui/note/startEnd'
 import { randId } from './util/common'
+import { noteByBarSchema, tagsSchema } from './util/noteByBarSchema'
 import { parseNoteTags } from './util/noteParsingUtil'
-import { isNoteNameWithOctave } from './util/noteValidationUtil'
 
 export type NoteByBarInner = {
   note: string
@@ -22,35 +21,8 @@ export type NoteByBar = Omit<NoteByBarInner, '_tags' | 'clone'> & {
   tags: string[]
 }
 
-const requiredTags = ['noteId', 'barDelay']
 export const tagsObjSchema = z.array(z.string()).transform((tags) => {
   return Object.fromEntries(parseNoteTags(tags))
-})
-const tagsSchema = z.array(z.string()).refine(
-  (tags) => {
-    const tagNames = tags.map((tag) => tag.split('=')[0])
-    return requiredTags.every((tag) => tagNames.includes(tag))
-  },
-  {
-    message: 'Tags must include both noteId and barDelay',
-  }
-)
-
-export const noteByBarSchema = z.object({
-  note: z.string().refine((str) => {
-    const isValid = isNoteNameWithOctave(str) ?? false
-    if (!isValid) {
-      console.error(`Invalid note name: ${str}`)
-    }
-    return isValid
-  }),
-  tags: tagsSchema,
-  tagsObj: z.record(
-    z.string(),
-    /* tag data */ z.array(
-      z.string().or(z.number()).or(z.boolean()).or(z.null())
-    )
-  ),
 })
 
 export const cloneNoteByBar = (note: NoteByBar | null): NoteByBar | null => {

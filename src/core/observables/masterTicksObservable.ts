@@ -184,10 +184,6 @@ const currSpeed = (tickCnt: number) => {
 
 const plannedSpeedChanges: TempoChange[] = [[0, 1]]
 
-export const isAbbreviation = (unk: unknown): unk is Abbreviation => {
-  return (Object.keys(abbrev) as string[]).includes(unk as string)
-}
-
 export const isFraction = (unk: unknown): unk is keyof typeof tickCounts => {
   return !!tickCounts[unk as keyof typeof tickCounts]
 }

@@ -5,8 +5,6 @@ import { z } from 'zod'
 import { createStore, useStore } from 'zustand'
 import { useShallow } from 'zustand/shallow'
 
-import { updateBarDelays } from 'src/lib/util/notesUtil'
-
 import { Mem, mem } from '../../core/mem'
 import {
   setLatestMap,
@@ -29,6 +27,7 @@ import { songRecordSchema } from '../../lib/schemas'
 const { userTables } = browser
 import { SongRecord, TrackRecord } from '../../lib/types'
 import { getLastChordLayerName } from '../../lib/util/barsUtil'
+import { updateBarDelays } from '../../lib/util/notesUtil'
 import { onLoadSongCallbacks } from '../../lib/util/songUtil'
 import {
   groupNotesByFirstTagDatum,

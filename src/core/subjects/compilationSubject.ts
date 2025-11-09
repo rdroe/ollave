@@ -50,6 +50,8 @@ function makeCompilationSubscribe_<RetType>(obj: {
   return subscribe
 }
 window.makeCompilationSubscribe_ = makeCompilationSubscribe_
-compilationObservable.subscribe(window.compilationSubject)
+setTimeout(() => {
+  compilationObservable.subscribe(window.compilationSubject)
+}, 1000)
 
 export const makeCompilationSubscribe = window.makeCompilationSubscribe_

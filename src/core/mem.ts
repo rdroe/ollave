@@ -1,8 +1,22 @@
-import { NoteByBar } from '../lib/schemas'
-
 import { Mem } from './types'
 
 export type { Mem }
+
+type NoteByBarInner = {
+  // clone
+  note: string
+  _tags: string[]
+  tagsObj: {
+    [key: string]: (string | number | boolean)[] // clone of TagData
+  }
+  set tags(tags: string[])
+  get tags(): string[]
+}
+
+type NoteByBar = Omit<NoteByBarInner, '_tags' | 'clone'> & {
+  // clone of NoteByBar
+  tags: string[]
+}
 
 const mem_: Mem = {
   subscriptions: {},

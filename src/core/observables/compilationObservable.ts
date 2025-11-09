@@ -26,8 +26,7 @@ const compilationObservable_ = new Observable<MidiMap>((subscriber) => {
 ;(window as any).compilationObservable_ =
   compilationObservable_ as Observable<MidiMap>
 
-export const compilationObservable = (window as any)
-  .compilationObservable_ as Observable<MidiMap>
+export const compilationObservable = compilationObservable_
 
 async function setLatestMap_(mapProm: Promise<MidiMappingResult>) {
   const { map, phaseAndBarStartAndEndTicks } = await mapProm

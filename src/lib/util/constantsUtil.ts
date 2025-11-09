@@ -70,3 +70,7 @@ export const abbrev = {
   oneTwentyEighth: ONE_TWENTY_EIGHTH,
   zero: ZERO,
 } as const
+
+export const isAbbreviation = (unk: unknown): unk is Abbreviation => {
+  return (Object.keys(abbrev) as string[]).includes(unk as string)
+}

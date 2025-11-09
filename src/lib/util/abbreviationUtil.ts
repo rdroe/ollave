@@ -1,8 +1,11 @@
-import { isAbbreviation } from '../../core/observables/masterTicksObservable'
-
 import { parseCsvArg } from './barsUtil'
 import { strjson } from './common'
-import { abbrev, Abbreviation, tickCounts } from './constantsUtil'
+import {
+  abbrev,
+  Abbreviation,
+  tickCounts,
+  isAbbreviation,
+} from './constantsUtil'
 // Forward declarations to avoid circular imports
 
 export const isAbbreviationCsv = (csvOrSingleFract: unknown) => {

@@ -1,6 +1,6 @@
-import { getNoteById, isAbbreviation, mem } from 'src/core'
-import { NoteByBar } from 'src/lib/schemas'
-import { quantizeValueToAbbreviation } from 'src/lib/util/abbreviationUtil'
+import { getNoteById } from '../../../core'
+import { quantizeValueToAbbreviation } from '../../../lib/util/abbreviationUtil'
+import { isAbbreviation } from '../../../lib/util/constantsUtil'
 
 import { mouseDownNote } from './mousedown'
 

@@ -4,16 +4,17 @@ import { z } from 'zod'
 
 import { mapSongToMidiTicks, mapSongToTicks, randId } from '..'
 import { Mem, mem } from '../../core/mem'
-import { isAbbreviation, setLatestMap } from '../../core/observables'
+import { setLatestMap } from '../../core/observables'
 import { zeroIndexedArr } from '../graphh'
-import { makeNoteByBar, NoteByBar, noteByBarSchema } from '../schemas'
+import { makeNoteByBar, NoteByBar } from '../schemas'
 
 import {
   parseAbbreviationCsv,
   quantizeValueToAbbreviation,
 } from './abbreviationUtil'
 import { isCsvArg } from './barsUtil'
-import { abbrev } from './constantsUtil'
+import { abbrev, isAbbreviation } from './constantsUtil'
+import { noteByBarSchema } from './noteByBarSchema'
 import { getAllPhaseBarNotes } from './phaseUtil'
 import {
   noteHasMatchingTagEntries,

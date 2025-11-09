@@ -1,15 +1,13 @@
 import { Module } from 'peprn/util'
 import { z } from 'zod'
 
-import { peprnIsNum } from 'src/lib/util/common'
-
 import {
   addChord,
   DEFAULT_ARP,
   DEFAULT_CHORD_PLACEMENTS,
 } from '../../lib/addChord'
-import { isStringArray } from '../../lib/util/barsUtil'
-import { isChordCsvArg } from '../../lib/util/barsUtil'
+import { isStringArray, isChordCsvArg } from '../../lib/util/barsUtil'
+import { peprnIsNum } from '../../lib/util/common'
 import { phaseCount, phaseExists } from '../../lib/util/phaseUtil'
 
 const isChordPlacement = (arp: unknown): arp is 0 | 1 | 2 | 3 => {
