@@ -53,7 +53,7 @@ import { DEFAULT_VELOCITY } from '../lib/shared/midiMappingCore'
 
 const piano = new Piano({
   velocities: 2,
-  url: `http://${host}:${port}/audio`,
+  url: `//${host}:${port}/audio`,
 })
 
 export const samplerState: {
