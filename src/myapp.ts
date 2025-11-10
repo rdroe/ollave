@@ -6,17 +6,20 @@ import {
   deleteSongAndRelatedTracksAndPhasesBySongId,
   listSongs,
 } from './commands/song/list'
+import { music } from './lib'
 import { updateTestMode } from './lib/schemas'
 import { testRangeInner, testReadableRange } from './lib/util'
 import { init as songInit } from './lib/util/songUtil'
-
 // import { playTriads } from './lib/music'
 document.body.onload = async () => {
-  const music = await import('./lib/music')
   const { playTriads } = music
   document.body.onclick = () => {
-    playTriads([['c3', 0.05, 0]])
-    document.body.onclick = null
+    if (music.isReady()) {
+      playTriads([['c3', 0.05, 0]])
+      document.body.onclick = null
+    } else {
+      console.log('music is not ready')
+    }
   }
   if (document.querySelector('meta[name="demo-app"]')) {
     updateTestMode(true)

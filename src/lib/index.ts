@@ -61,7 +61,7 @@ export {
 export { minor, allScales } from './graphh'
 
 // music exports
-export type { Triad, RelativeNote } from './music'
+export type { Triad, RelativeNote, isReady } from './music'
 export type { ProgressionOptions, ProgressionOptionsEntry } from './graphh'
 export { playTriads } from './music'
 

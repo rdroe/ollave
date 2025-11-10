@@ -51,98 +51,81 @@ import { Piano } from '@tonejs/piano/build/piano/Piano'
 
 import { DEFAULT_VELOCITY } from '../lib/shared/midiMappingCore'
 
+// First trigger loading of the piano samples
+// When the instance is initialized the "loaded" property will be set to true
+// BUT . . . then we need to wait for the samples to be actually loaded.
 const piano = new Piano({
   velocities: 2,
   url: `//${host}:${port}/audio`,
 })
+piano.load()
 
-let allLoaded: () => void | null = null
-
-const allLoadedPromise = new Promise<void>((resolve) => {
-  allLoaded = () => {
-    console.log('allLoaded; resolving')
+// The samples loaded promise will resolve when the piano really is ready (all samples are loaded)
+let resolveAllSamplesLoadedPromise: () => void | null = null
+let allSamplesLoadedResolved = false
+const allSamplesLoadedPromise = new Promise<void>((resolve) => {
+  resolveAllSamplesLoadedPromise = () => {
+    allSamplesLoadedResolved = true
     resolve()
   }
 })
 let allLoadedTimeout: NodeJS.Timeout | null = null
 if (allLoadedTimeout === null) {
-  allLoadedTimeout = setTimeout(() => {
+  allLoadedTimeout = setInterval(() => {
     if (piano.loaded) {
-      clearTimeout(allLoadedTimeout)
-      allLoaded()
+      clearInterval(allLoadedTimeout)
+      resolveAllSamplesLoadedPromise()
     }
   }, 1000)
 }
 
-export const samplerState: {
-  loaded: boolean
-  sampler: Promise<{}> | {} | null
-  firstLoad: boolean
-} = {
-  loaded: false,
-  sampler: null,
-  firstLoad: false,
+const playMusic = async (json: Triad[]) => {
+  json.forEach((triad) => {
+    /** note, dur, timing, velocity */
+    // const [note, t1, t2, midiVelocity = DEFAULT_VELOCITY] = triad
+    const note = triad[NOTE_LOOKUP_IDX]
+    const t1 = triad[REL_TIMING_LOOKUP_IDX]
+    const t2 = triad[REL_TIMING_LOOKUP_IDX]
+    const midiVelocity = triad[VELOCITY_LOOKUP_IDX] ?? DEFAULT_VELOCITY
+
+    const velocity = midiVelocity / 127
+    const start = `+${t2}`
+    const stop = `+${t2 + t1}`
+    piano.keyDown({ note: note, time: start, velocity })
+    piano.keyUp({ note: note, time: stop })
+  })
+
+  return json
 }
-const startTime = Date.now()
-const getSampler = async () => {
-  if (samplerState.loaded === true) return Promise.resolve({})
-  samplerState.loaded = false
-  await piano.load()
-  console.log('piano loaded', (Date.now() - startTime) / 1000)
-  await allLoadedPromise
-  console.log('allLoadedPromise resolved', (Date.now() - startTime) / 1000)
+
+// the sampler can only be initialized by a user action. (the
+// browser will disallow sound unless the user has interacted with the page)
+let didRunInit = false
+const initOnUserAction = async () => {
+  if (didRunInit) return Promise.resolve({})
   piano.toDestination()
   await tone.start().catch((err) => {
     console.error('error starting tone.js sampler', err)
   })
-  console.log('started tone.js sampler')
-  samplerState.loaded = true
+
+  didRunInit = true
   return Promise.resolve({})
 }
 
-samplerState.sampler = getSampler()
-
-const isPromise = (arg: any): arg is Promise<any> => {
-  if (arg.then) return true
-  return false
-}
-
-const playMusic = async (json: Triad[]) => {
-  if (isPromise(samplerState.sampler)) await samplerState.sampler
-  // await allLoadedPromise
-  if (samplerState.sampler === null)
-    throw new Error(`Piano was not initialized.`)
-
-  const prom = isPromise(samplerState.sampler)
-    ? samplerState.sampler
-    : Promise.resolve({})
-
-  prom.then(() => {
-    json.forEach((triad) => {
-      /** note, dur, timing, velocity */
-      // const [note, t1, t2, midiVelocity = DEFAULT_VELOCITY] = triad
-      const note = triad[NOTE_LOOKUP_IDX]
-      const t1 = triad[REL_TIMING_LOOKUP_IDX]
-      const t2 = triad[REL_TIMING_LOOKUP_IDX]
-      const midiVelocity = triad[VELOCITY_LOOKUP_IDX] ?? DEFAULT_VELOCITY
-
-      const velocity = midiVelocity / 127
-      const start = `+${t2}`
-      const stop = `+${t2 + t1}`
-      piano.keyDown({ note: note, time: start, velocity })
-      piano.keyUp({ note: note, time: stop })
-    })
-  })
-  return json
-}
-
-////////////// api for outside world
 const initAndPlay = async (json: Triad[] /*, setLink*/) => {
-  samplerState.sampler = await getSampler()
-  // await allLoadedPromise
+  if (!didRunInit) {
+    await initOnUserAction()
+  }
+  if (!allSamplesLoadedResolved) {
+    return
+  }
   return playMusic(json)
 }
 
 export const playTriads = (notes: Triad[]) => {
   return initAndPlay(notes)
+}
+
+export const isReady = () => {
+  return allSamplesLoadedResolved
 }
