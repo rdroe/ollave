@@ -25,8 +25,7 @@ document.body.onload = async () => {
     createApp({
       id: 'cli',
       init: async () => {
-        const result = await songInit()
-        console.log('songInit done', result)
+        await songInit()
         return Promise.resolve(null)
       },
       modules: {

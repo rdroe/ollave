@@ -45,9 +45,9 @@ const notesStore = createStore<NoteStore>((set, get) => ({
     }),
   isStale: false,
 }))
+
 setInterval(() => {
   if (notesStore.getState().isStale) {
-    console.log('isStale', notesStore.getState().isStale)
     notesStore.setState({ isStale: false })
     setLatestMap(mapSongToMidiTicks())
   }

@@ -50,10 +50,6 @@ const hasOctaveFilter = (noteStrs: string[]) => {
     })
 }
 export const isDyna = (nm: string) => {
-  console.log('isDyna', {
-    nm,
-    DynamicChordNames,
-  })
   return Object.keys(DynamicChordNames)
     .map((name) => name.toLowerCase())
     .includes(nm.toLowerCase())
@@ -143,7 +139,6 @@ export const parseChordCsvArg = (
   const graph =
     userTonic && userScale ? lookUpGraph(userTonic, userScale) : undefined
   const cnwn = chordNameWithNotes(csv[0], csv[1], userTonic, userScale)
-  console.log('cnwn', cnwn)
   let notes: string[] | undefined
   const tags: string[] = []
 
@@ -320,13 +315,11 @@ export const copyBarNotesToEndOfPhase_ = (
   cb?: (barIds: string[]) => void
 ) => {
   for (const barId of barIds) {
-    console.log('barids; -2')
     const [phaseName, _barIndex] = parseColonTag(barId)
 
     if (!phaseExists(phaseName)) {
       throw new Error(`Phase ${phaseName} does not exist`)
     }
-    console.log('barids; -1.5')
     // Get all bars in the phase
     const allPhaseBars = getAllPhaseBars(phaseName)
 
@@ -343,7 +336,6 @@ export const copyBarNotesToEndOfPhase_ = (
         break
       }
     }
-    console.log('barids; -1.3')
     // If no empty bar found, create a new one at the end
     if (!emptyBarFound) {
       const lastBarIndex =

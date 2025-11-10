@@ -50,15 +50,6 @@ export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
       memData.phases,
       memData.notesByBar
     )
-    console.log(
-      'comparing prevMapGlobal with worker result',
-      prevMapGlobal,
-      workerResult.map
-    )
-    console.log(
-      'comparing got result:',
-      getNoteDiff(prevMapGlobal, workerResult.map)
-    )
 
     return workerResult
   } catch (error) {
@@ -68,10 +59,7 @@ export const mapSongToMidiTicks = async (): Promise<MidiMappingResult> => {
     )
     // Fallback to synchronous processing
     const result = mapSongToMidiTicksSync()
-    console.log(
-      'comparing got result sync:',
-      getNoteDiff(prevMapGlobal, result.map)
-    )
+
     return result
   }
 }

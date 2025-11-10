@@ -756,7 +756,6 @@ export const chordNameWithNotes = (
     }
 
     const fnsResult = fns[chordName as keyof typeof fns](tonic, scaleName)[0]
-    console.log('fnsResult', fnsResult)
     return fnsResult
   }
   const simpleChord = Chord.get(chordName)

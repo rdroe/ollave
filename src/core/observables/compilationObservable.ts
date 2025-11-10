@@ -39,7 +39,6 @@ async function setLatestMap_(mapProm: Promise<MidiMappingResult>) {
   saveSongAndTracks()
   compileEventTarget.dispatchEvent(new CustomEvent('compiled'))
   onCompileCallbacks.forEach((fn) => fn(map, phaseAndBarStartAndEndTicks))
-  console.log('compilationObservable', map)
   return map
 }
 

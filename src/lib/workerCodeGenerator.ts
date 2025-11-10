@@ -150,7 +150,6 @@ export function generateInlineWorkerCode(): string {
     )
   }
 }
-console.log('generateInlineWorkerCode', generateInlineWorkerCode())
 // Export a function that can be used to validate the generated code
 export function validateWorkerCode(): boolean {
   try {

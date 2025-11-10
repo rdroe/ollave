@@ -61,9 +61,9 @@ export {
 export { minor, allScales } from './graphh'
 
 // music exports
-export type { Triad, RelativeNote, samplerState } from './music'
+export type { Triad, RelativeNote } from './music'
 export type { ProgressionOptions, ProgressionOptionsEntry } from './graphh'
-export { getSampler, playTriads } from './music'
+export { playTriads } from './music'
 
 // midi exports
 export { saveRaw, addEvents, playNotes } from './midi'

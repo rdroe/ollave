@@ -1495,7 +1495,6 @@ export const testRangeInner: Module = {
   }: ParsedCli & {
     'peprn:ancestralDepth': number
   }) => {
-    console.log('ancestralDepth', ancestralDepth)
     if (ancestralDepth > 0) {
       return Promise.resolve({
         formatted: store['testRange'],

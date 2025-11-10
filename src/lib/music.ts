@@ -56,6 +56,24 @@ const piano = new Piano({
   url: `//${host}:${port}/audio`,
 })
 
+let allLoaded: () => void | null = null
+
+const allLoadedPromise = new Promise<void>((resolve) => {
+  allLoaded = () => {
+    console.log('allLoaded; resolving')
+    resolve()
+  }
+})
+let allLoadedTimeout: NodeJS.Timeout | null = null
+if (allLoadedTimeout === null) {
+  allLoadedTimeout = setTimeout(() => {
+    if (piano.loaded) {
+      clearTimeout(allLoadedTimeout)
+      allLoaded()
+    }
+  }, 1000)
+}
+
 export const samplerState: {
   loaded: boolean
   sampler: Promise<{}> | {} | null
@@ -65,15 +83,18 @@ export const samplerState: {
   sampler: null,
   firstLoad: false,
 }
-
-export const getSampler = async () => {
+const startTime = Date.now()
+const getSampler = async () => {
   if (samplerState.loaded === true) return Promise.resolve({})
   samplerState.loaded = false
+  await piano.load()
+  console.log('piano loaded', (Date.now() - startTime) / 1000)
+  await allLoadedPromise
+  console.log('allLoadedPromise resolved', (Date.now() - startTime) / 1000)
   piano.toDestination()
-  await piano.load().then(() => {
-    console.log('loaded default voice')
+  await tone.start().catch((err) => {
+    console.error('error starting tone.js sampler', err)
   })
-  await tone.start()
   console.log('started tone.js sampler')
   samplerState.loaded = true
   return Promise.resolve({})
@@ -88,6 +109,7 @@ const isPromise = (arg: any): arg is Promise<any> => {
 
 const playMusic = async (json: Triad[]) => {
   if (isPromise(samplerState.sampler)) await samplerState.sampler
+  // await allLoadedPromise
   if (samplerState.sampler === null)
     throw new Error(`Piano was not initialized.`)
 
@@ -117,6 +139,7 @@ const playMusic = async (json: Triad[]) => {
 ////////////// api for outside world
 const initAndPlay = async (json: Triad[] /*, setLink*/) => {
   samplerState.sampler = await getSampler()
+  // await allLoadedPromise
   return playMusic(json)
 }
 

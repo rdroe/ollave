@@ -57,12 +57,10 @@ class WorkerManager {
           return acc.replace(regexx, key)
         }, raw)
 
-      console.log('workerCode', workerCode)
       const blob = new Blob([workerCode], { type: 'application/javascript' })
       this.worker = new Worker(URL.createObjectURL(blob))
 
       this.worker.onmessage = (e: MessageEvent<WorkerMessageUnion>) => {
-        console.log('worker message', e.data)
         this.handleWorkerMessage(e.data)
       }
 
@@ -92,7 +90,6 @@ class WorkerManager {
       const currentScript = document.currentScript as HTMLScriptElement
       if (currentScript) {
         const baseUrl = currentScript.src.replace(/\/[^\/]*$/, '/')
-        console.log('baseUrl', baseUrl)
         return `${baseUrl}mapSongToTicksWorker.js`
       }
     } catch (error) {

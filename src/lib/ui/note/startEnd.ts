@@ -64,8 +64,6 @@ export const addStartEnd = async (noteId: string) => {
     return
   }
 
-  console.log('controls; adding start and duration sliders', noteId)
-
   const startSlider1 = document.createElement('input')
   startSlider1.type = 'range'
   startSlider1.id = `note-timing-start-${noteId}`
@@ -76,25 +74,13 @@ export const addStartEnd = async (noteId: string) => {
   startSlider1.value = '0'
   startSlider1.addEventListener('input', function (e) {
     const { tagsObj } = getNoteById(noteId)
-    console.log('startSlider 000 input', {
-      tagsObj,
-      new: (e.target as HTMLInputElement).value,
-    })
 
     const value = requireNumericValueFromEventTarget(e.target)
     const quant = lookUpQuantizedTagValue(tagsObj)
     const newQuantizedValue = quantizeValueToAbbreviation(value, quant)
-    console.log('startSlider 000 quantized value', {
-      value,
-      quant,
-      newQuantizedValue,
-    })
+
     startSlider1.value = newQuantizedValue.toString()
-    // console.log('startSlider 000 input', {
-    //   tagsObj: tagsObj.quantize?.[0],
-    //   new: (e.target as HTMLInputElement).value,
-    //   newQuantizedValue,
-    // })
+
     if (newQuantizedValue !== value) {
       event.preventDefault()
       event.stopPropagation()
@@ -102,24 +88,14 @@ export const addStartEnd = async (noteId: string) => {
       return
     }
   })
-
+  // are both listeners needed?
   startSlider1.addEventListener('change', function (e) {
-    console.log('startSlider 000 change', e)
     const { tagsObj } = getNoteById(noteId)
     const value = requireNumericValueFromEventTarget(e.target)
     const quant = lookUpQuantizedTagValue(tagsObj)
     const newQuantizedValue = quantizeValueToAbbreviation(value, quant)
     startSlider1.value = newQuantizedValue.toString()
-    console.log('startSlider 000 quantized value', {
-      value,
-      quant,
-      newQuantizedValue,
-    })
-    // console.log('startSlider 000 input', {
-    //   tagsObj: tagsObj.quantize?.[0],
-    //   new: (e.target as HTMLInputElement).value,
-    //   newQuantizedValue,
-    // })
+
     if (newQuantizedValue !== value) {
       event.preventDefault()
       event.stopPropagation()
@@ -140,13 +116,8 @@ export const addStartEnd = async (noteId: string) => {
   durationSlider1.value = '128'
   controls.appendChild(durationSlider1)
   durationSlider1.addEventListener('input', function (e) {
-    console.log('durationSlider 000 input', e)
+    //    console.log('durationSlider 000 input', e)
   })
-  durationSlider1.addEventListener('change', function (e) {
-    console.log('durationSlider 000 change', e)
-  })
-  console.log('startSlider1 added', startSlider1)
-  console.log('durationSlider1 added', durationSlider1)
 }
 
 export const sync = {

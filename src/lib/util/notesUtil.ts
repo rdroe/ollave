@@ -468,7 +468,6 @@ export const addAllScaleNotesToBar = (
     ])
   })
   notes.push(...noteObjs)
-  console.log('scale notes', noteObjs)
   setLatestMap(mapSongToMidiTicks())
   return noteObjs
 }
@@ -478,13 +477,3 @@ export { getAllPhaseBarNotes } from './phaseNotesUtil'
 export { parseNoteTags } from './noteParsingUtil'
 export type { TagData, TagEntries } from './noteParsingUtil'
 export { isCsvArg, parseCsvArg } from './common'
-// @ts-ignore this is fine
-window.testScaleNotes = (tonicAndScale: string = 'C Minor') => {
-  const allScaleNotes = Scale.get(tonicAndScale).notes.map((note) => {
-    return `${note}`
-  })
-  console.log('all scale notes', {
-    tonicAndScale,
-    allScaleNotes,
-  })
-}

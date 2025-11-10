@@ -24,7 +24,6 @@ export const fetchLatestSongAndTracks = async () => {
   const songs = (
     await (await browser.userTables.where('song', {})).sortBy('updatedAt')
   ).reverse()
-  console.log('songs', songs)
 
   if (!songs.length) {
     console.error('no songs found')
@@ -43,7 +42,6 @@ export const fetchSongAndTracksBySongId = async (songId: number) => {
     return null
   }
   const song = songs.find((song1) => {
-    console.log('song id', song1.id)
     return song1.id === songId
   })
   if (!song) {
@@ -88,7 +86,6 @@ export async function fetchSongAndTracks(songId: number) {
   const coll = await browser.userTables.where('song', { id: songId })
   const fetched = await coll.first()
   // get the track ids  //
-  console.log('fetched', fetched)
   const validSong = songRecordSchema.parse(fetched.data)
   const trackIds = validSong['track-ids']
     .map(([trackId]) => {
@@ -322,7 +319,7 @@ export async function duplicateCurrentSong() {
   )
   mem().song.name = `${newName} <- ${origName}`
   mem().notesByBar = notesByBar
-  console.log('mem().phases', mem().phases)
+
   await setLatestMap(mapSongToMidiTicks())
   return newSongId
 }

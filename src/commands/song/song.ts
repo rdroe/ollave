@@ -95,7 +95,6 @@ song start
     },
     load: {
       fn: async ({ positionalNonCommands }) => {
-        console.log('load song', positionalNonCommands)
         songInvocation.getState().setReady(false)
         const [songId] = positionalNonCommands
         if (!z.number().safeParse(songId).success) {
@@ -108,10 +107,9 @@ song start
         stopCueObservable()
         await loadAndInitSongAndTracks(songId)
         afterLoadSong(mem().song)
-        console.log('after load song', positionalNonCommands)
         const result = await initLoadedSong()
         songInvocation.getState().setReady(true)
-        console.log('after init loaded song', positionalNonCommands)
+
         return result
       },
     },

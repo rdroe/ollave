@@ -67,7 +67,6 @@ export const addEvents = (
     const track = tracks[noteTrackIdx]
     //
     if (isNewMidiTrack) {
-      console.log('would have set tempo', tempo)
       track.setTempo(tempo)
       file.addTrack(track)
     }
