@@ -9,6 +9,7 @@ import {
 } from '../schemas'
 
 import { PhaseRecord } from './phaseTypes'
+import { SongRecord, TrackRecord } from '../types'
 
 export function initNotesByBar() {
   songRecordSchema.parse(mem().song)
@@ -143,4 +144,35 @@ export function saveSongAndTracks() {
   mem().tracks.forEach((track) => {
     browser.userTables.update('track', { id: track.id, data: track }, {})
   })
+}
+export function exportSongAndTracks(): {
+  song: Omit<SongRecord, 'id'>,
+  tracks: (Omit<TrackRecord, 'id'>)[],
+  phases: Omit<PhaseRecord, 'id'>[]
+} {
+
+
+  return {
+    song: {
+      name: mem().song.name,
+      tempo: mem().song.tempo,
+      'track-ids': [],
+
+    },
+    tracks: mem().tracks.map((track) => ({
+      id: track.id,
+      'phase-ids': track['phase-ids'],
+      'phase-names': track['phase-names'],
+      notesByBar: track.notesByBar,
+    })),
+    phases: Object.values(mem().phases).map((phase) => ({
+      id: phase.id,
+      name: phase.name,
+      'follows-ids': phase['follows-ids'],
+      speed: phase.speed,
+      barSizeMultiplier: phase.barSizeMultiplier,
+      scaleName: phase.scaleName,
+      scaleTonic: phase.scaleTonic,
+    })),
+  }
 }

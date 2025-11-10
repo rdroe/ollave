@@ -17,6 +17,9 @@ import {
 } from '../../core/observables/songObservables'
 import { downloadSong } from '../../lib/download'
 import {
+  addFileInputIfNotExists,
+  clickFileInput,
+  downloadJson,
   duplicateCurrentSong,
   initLoadedSong,
   initNewSong,
@@ -33,6 +36,8 @@ import {
   groupNotesByFirstTagDatum,
   parseNoteTags,
 } from '../../lib/util/tagsUtil'
+
+import { exportSongAndTracks } from 'src/lib/util/schemaUtil'
 
 export { init } from '../../lib/util/songUtil'
 const { songNames } = mem()
@@ -303,7 +308,30 @@ song start
         }
       },
     },
+    export: {
+      fn: async () => {
+          const exported = exportSongAndTracks()
+          downloadJson([JSON.stringify(exported, null, 2)], `${exported.song.name.replace(/\ \<\-\ /g, '-from-')}.json`)
+          return {
+              formatted: {
+                  exported: {
+                      song: exported.song,
+                      tracks: exported.tracks,
+                      phases: exported.phases,
 
+                  }
+              }
+          }
+      }
+  },
+
+  import: {
+      fn: async () => {
+          addFileInputIfNotExists()
+          clickFileInput()
+          return Promise.resolve()
+      }
+  },
     chord: {
       submodules: {
         last: {
@@ -352,17 +380,23 @@ function formatNotesByBar(n: Mem['notesByBar']) {
     ),
     abbreviated: {
       notesByBar: Object.keys(n).map((barId) => {
+
         return {
           barId,
           notes: Object.fromEntries(
-            n[barId].map((note, idx) => [
-              `${idx} in ${note.tagsObj.chord[0]} (${idx})`,
+            n[barId].map((note, idx) => {
+              const groupId = note.tagsObj?.groupId?.[0]
+              const noteId = note.tagsObj?.noteId?.[0]
+              const groupOrNoteIdLabel = groupId ? `group ${groupId}` : noteId ? `note ${noteId}` : `index ${idx}`
+              return [
+              `${idx} in ${note.tagsObj?.chord?.[0] ?? `${groupOrNoteIdLabel}`}`,
               note.tagsObj.barDelay[0],
-            ])
+            ]
+          })
           ),
           size: n[barId].length,
           // unique chords
-          chords: [...new Set(n[barId].map((note) => note.tagsObj.chord[0]))],
+          chords: [...new Set(n[barId].map((note) => note.tagsObj?.chord?.[0] ?? '-'))],
         }
       }),
     },

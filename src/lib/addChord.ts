@@ -133,7 +133,7 @@ export function addChord(
       ? `${currentScale.scaleTonic} ${currentScale.scaleName}`
       : undefined
   )
-  console.log('notes', notes)
+
   const allNotes: NoteByBar[] = []
   commonTags = commonTags.concat(chordTags)
   if (notes.length === 0) {

@@ -73,6 +73,7 @@ export const addStartEnd = async (noteId: string) => {
   startSlider1.max = '1024'
   startSlider1.value = '0'
   startSlider1.addEventListener('input', function (e) {
+
     const { tagsObj } = getNoteById(noteId)
 
     const value = requireNumericValueFromEventTarget(e.target)
@@ -90,6 +91,7 @@ export const addStartEnd = async (noteId: string) => {
   })
   // are both listeners needed?
   startSlider1.addEventListener('change', function (e) {
+
     const { tagsObj } = getNoteById(noteId)
     const value = requireNumericValueFromEventTarget(e.target)
     const quant = lookUpQuantizedTagValue(tagsObj)
@@ -116,7 +118,7 @@ export const addStartEnd = async (noteId: string) => {
   durationSlider1.value = '128'
   controls.appendChild(durationSlider1)
   durationSlider1.addEventListener('input', function (e) {
-    //    console.log('durationSlider 000 input', e)
+
   })
 }
 

@@ -11,6 +11,7 @@ import {
 import { mapSongToMidiTicks } from './mapSongToTicks'
 import {
   makeNoteByBar,
+  NoteByBar,
   phaseRecordSchema,
   songRecordSchema,
   trackRecordSchema,
@@ -322,4 +323,108 @@ export async function duplicateCurrentSong() {
 
   await setLatestMap(mapSongToMidiTicks())
   return newSongId
+}
+
+export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord, 'id'>, tracks: (Omit<TrackRecord, 'id'>)[], phases: Omit<PhaseRecord, 'id'>[] }) {
+
+  const { song, tracks, phases } = songAndTracks
+  const memPhases = phases.reduce((acc, phase, idx) => {
+      acc[idx] = phase
+      return acc
+    }, {} as { [phaseName: string]: Omit<PhaseRecord, 'id'> })
+
+  const notesByBar: Record<string, NoteByBar[]> = {} 
+  tracks.forEach((track) => {
+      const barIds = Object.keys(track.notesByBar) 
+      barIds.forEach((barId) => {
+          notesByBar[barId] = track.notesByBar[barId].map((note) => {
+              return makeNoteByBar(note.note, note.tags)
+          })
+      })
+  })
+  const newSongId = await initNewSong()
+  await initLoadedSong()
+  const {
+      song: { name: newName },
+    } = await loadAndInitSongAndTracks(newSongId)
+  const origName = song.name
+  // init phases for each current phase.
+  const newPhaseToNameHash: Record<number, string> = {}
+  const oldPhaseToNameHash: Record<number, string> = {}
+  await Promise.all(
+    Object.entries(memPhases).map(async ([_, phase], idx) => {
+      const phaseName = phase.name
+      oldPhaseToNameHash[idx] = phaseName
+      // get phase count by looking at notesByBar; increment for every bar starting with phaseNane:
+      const phaseCount = Object.keys(notesByBar).filter((barId) => {
+        return barId.startsWith(phaseName)
+      }).length
+      const newPhaseId = await phaseCountInner(phaseName, phaseCount, true)
+      mem().phases[phaseName].scaleName = phase.scaleName
+      mem().phases[phaseName].scaleTonic = phase.scaleTonic
+      mem().phases[phaseName].speed = phase.speed
+      mem().phases[phaseName].barSizeMultiplier = phase.barSizeMultiplier
+      newPhaseToNameHash[newPhaseId] = phaseName
+    })
+  )
+
+  await Promise.all(
+    Object.entries(oldPhaseToNameHash).map(async ([_, oldPhaseName]) => {
+
+      const phase = memPhases[oldPhaseName]
+      const followsIds = phase?.['follows-ids'] || []
+      const subjectNames = followsIds.map((followId) => {
+        return oldPhaseToNameHash[followId]
+      })
+      await phaseFollowsPhaseInner(oldPhaseName, subjectNames)
+    })
+  )
+
+  mem().song.name = `${newName} <- imported <- ${origName}`
+  mem().notesByBar = notesByBar
+
+  await setLatestMap(mapSongToMidiTicks())
+  return newSongId
+}
+
+// import utils for file input and download
+
+export const addFileInputIfNotExists = () => {
+  if (document.getElementById('file-input')) {
+      return
+  }
+  const fileInput = document.createElement('input')
+  // assign an id to the file input
+  fileInput.id = 'file-input'
+  fileInput.type = 'file'
+  fileInput.accept = 'application/json' 
+  fileInput.style.visibility = 'hidden'
+  fileInput.onchange = (event) => {
+    const file = (event.target as HTMLInputElement).files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        const json = JSON.parse(event.target?.result as string)
+        await importSongAndTracks(json)
+      }
+      reader.readAsText(file)
+    }
+  }
+  document.body.appendChild(fileInput)
+}
+
+export const clickFileInput = () => {
+  const fileInput = document.getElementById('file-input') as HTMLInputElement
+  if (fileInput) {
+      fileInput.click()
+  }
+}
+
+export function downloadJson(json: BlobPart[], name = 'song.json') {
+  const blob = new Blob(json, { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
 }

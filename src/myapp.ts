@@ -1,6 +1,6 @@
 import { createApp } from 'peprn/browser'
 
-import { addChord, addNote, phase, song, tempo } from './commands'
+import { addChord, addNote, debug, phase, song, tempo } from './commands'
 import {
   deleteAllSongsAndTracks,
   deleteSongAndRelatedTracksAndPhasesBySongId,
@@ -37,6 +37,7 @@ document.body.onload = async () => {
         song,
         phase,
         listSongs,
+        debug,
         deleteAllSongsAndTracks,
         deleteSongById: deleteSongAndRelatedTracksAndPhasesBySongId,
         tempo,

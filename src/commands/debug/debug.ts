@@ -4,6 +4,7 @@ import { mem } from '../../core/mem'
 export default {
     fn: () => Promise.resolve(),
     submodules: {
+
         loggle: {
             fn: () => {
                 if (mem().doLog) {

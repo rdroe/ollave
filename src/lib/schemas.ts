@@ -117,6 +117,7 @@ export const makeNoteByBar = (
     ) => void
   }
 } => {
+
   if (!tagsSchema.safeParse({ tags }).success) {
     if (!tags.find((tag) => tag.startsWith('noteId='))) {
       tags.push(`noteId=${randId('', 6)}`)
@@ -154,6 +155,7 @@ export const makeNoteByBar = (
       elementsById.note[noteId] = noteElem
       controls1.appendChild(noteElem)
     }
+
     addStartEnd(noteId)
   }
   return retObj
