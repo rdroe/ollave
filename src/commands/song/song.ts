@@ -37,7 +37,7 @@ import {
   parseNoteTags,
 } from '../../lib/util/tagsUtil'
 
-import { exportSongAndTracks } from 'src/lib/util/schemaUtil'
+import { exportSongAndTracks } from '../../lib/util/schemaUtil'
 
 export { init } from '../../lib/util/songUtil'
 const { songNames } = mem()
