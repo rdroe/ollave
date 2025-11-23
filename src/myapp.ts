@@ -8,7 +8,7 @@ import {
 } from './commands/song/list'
 import { music } from './lib'
 import { updateTestMode } from './lib/schemas'
-import { testRangeInner, testReadableRange } from './lib/util'
+import { testRangeInner, testReadableRange, testRangeUtil } from './lib/util'
 import { init as songInit } from './lib/util/songUtil'
 // import { playTriads } from './lib/music'
 document.body.onload = async () => {
@@ -43,6 +43,7 @@ document.body.onload = async () => {
         tempo,
         testRange: testRangeInner,
         testReadableRange: testReadableRange,
+        testRangeUtil: testRangeUtil,
       },
     })
   }

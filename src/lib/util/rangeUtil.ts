@@ -1679,3 +1679,919 @@ export const testReadableRange: Module = {
     },
   },
 }
+
+// Comprehensive test module for rangeUtil
+const testRangeUtilStore: {
+  cleanups: (() => void)[]
+  testResults: {
+    [testName: string]: any
+  }
+} = {
+  cleanups: [],
+  testResults: {},
+}
+
+// Helper function to create or get test results container
+function getOrCreateTestResultsContainer(): HTMLElement {
+  let container = document.getElementById('test-range-util-results')
+  if (!container) {
+    container = document.createElement('div')
+    container.id = 'test-range-util-results'
+    container.style.cssText = `
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      z-index: 10000;
+      border-left: 2px solid #333;
+      box-shadow: -2px 0 10px rgba(0,0,0,0.5);
+    `
+    
+    // Add close button
+    const closeButton = document.createElement('button')
+    closeButton.textContent = '×'
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #444;
+      color: #fff;
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `
+    closeButton.onmouseover = () => {
+      closeButton.style.background = '#666'
+    }
+    closeButton.onmouseout = () => {
+      closeButton.style.background = '#444'
+    }
+    closeButton.onclick = () => {
+      container.style.display = 'none'
+    }
+    container.appendChild(closeButton)
+    
+    document.body.appendChild(container)
+  } else {
+    // Show container if it was hidden
+    container.style.display = 'block'
+  }
+  return container
+}
+
+// Helper function to format and display test results
+function displayTestResults(results: any) {
+  const container = getOrCreateTestResultsContainer()
+  
+  // Calculate summary - flatten nested results
+  let passCount = 0
+  let failCount = 0
+  const testNames: string[] = []
+  const flattenedResults: any = {}
+  
+  for (const [testName, result] of Object.entries(results)) {
+    if (testName === 'errors' && result && typeof result === 'object') {
+      // Handle nested error results
+      for (const [errorTestName, errorResult] of Object.entries(result as any)) {
+        const fullName = `errors.${errorTestName}`
+        testNames.push(fullName)
+        flattenedResults[fullName] = errorResult
+        if (errorResult && typeof errorResult === 'object' && 'success' in errorResult) {
+          if (errorResult.success) {
+            passCount++
+          } else {
+            failCount++
+          }
+        }
+      }
+    } else {
+      testNames.push(testName)
+      flattenedResults[testName] = result
+      if (result && typeof result === 'object' && 'success' in result) {
+        if (result.success) {
+          passCount++
+        } else {
+          failCount++
+        }
+      }
+    }
+  }
+  
+  // Create summary HTML
+  const summaryHtml = `
+    <div style="margin-bottom: 15px; padding-bottom: 10px; padding-right: 30px; border-bottom: 2px solid #444; position: relative;">
+      <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 16px;">Test Results Summary</h3>
+      <div style="display: flex; gap: 20px;">
+        <span style="color: #4caf50; font-weight: bold;">✓ Passed: ${passCount}</span>
+        <span style="color: ${failCount > 0 ? '#f44336' : '#4caf50'}; font-weight: bold;">✗ Failed: ${failCount}</span>
+        <span style="color: #888;">Total: ${testNames.length}</span>
+      </div>
+    </div>
+  `
+  
+  // Create detailed results HTML
+  let detailsHtml = '<div style="line-height: 1.6;">'
+  
+  for (const testName of testNames) {
+    const result = flattenedResults[testName]
+    if (!result || typeof result !== 'object') continue
+    
+    const isSuccess = result.success === true
+    const statusColor = isSuccess ? '#4caf50' : '#f44336'
+    const statusIcon = isSuccess ? '✓' : '✗'
+    const statusText = isSuccess ? 'PASS' : 'FAIL'
+    
+    detailsHtml += `
+      <div style="margin-bottom: 12px; padding: 8px; background-color: ${isSuccess ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)'}; border-left: 3px solid ${statusColor};">
+        <div style="font-weight: bold; color: ${statusColor}; margin-bottom: 4px;">
+          ${statusIcon} ${testName}: <span style="color: ${statusColor};">${statusText}</span>
+        </div>
+    `
+    
+    if (result.message) {
+      detailsHtml += `<div style="color: #bbb; margin-left: 20px; margin-top: 4px;">${escapeHtml(String(result.message))}</div>`
+    }
+    
+    if (result.error) {
+      detailsHtml += `<div style="color: #f44336; margin-left: 20px; margin-top: 4px; font-style: italic;">Error: ${escapeHtml(String(result.error))}</div>`
+    }
+    
+    // Show additional details if available (but limit size)
+    if (result.store || result.results || result.ticks || result.initialInput || result.updatedInput) {
+      const detailsObj = result.store || result.results || result.ticks || 
+        (result.initialInput !== undefined ? { initialInput: result.initialInput, updatedInput: result.updatedInput } : null) ||
+        (result.initialReadableInput !== undefined ? { initialReadableInput: result.initialReadableInput, updatedReadableInput: result.updatedReadableInput } : null)
+      if (detailsObj) {
+        const details = JSON.stringify(detailsObj, null, 2)
+        if (details.length < 500) {
+          detailsHtml += `<pre style="margin: 4px 0 0 20px; padding: 4px; background-color: rgba(0,0,0,0.3); font-size: 10px; overflow-x: auto; color: #aaa;">${escapeHtml(details)}</pre>`
+        } else {
+          detailsHtml += `<div style="margin-left: 20px; color: #888; font-size: 10px;">[Large data object - ${details.length} chars]</div>`
+        }
+      }
+    }
+    
+    detailsHtml += '</div>'
+  }
+  
+  detailsHtml += '</div>'
+  
+  // Update container
+  container.innerHTML = summaryHtml + detailsHtml
+  
+  // Scroll to top
+  container.scrollTop = 0
+}
+
+// Helper function to escape HTML
+function escapeHtml(text: string): string {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+export const testRangeUtil: Module = {
+  help: {
+    description: 'Comprehensive unit tests for rangeUtil.ts',
+    examples: {
+      '': 'Run all tests',
+      'registerRange': 'Test registerRange function',
+      'registerReadableRange': 'Test registerReadableRange function',
+      'registerTicks': 'Test registerTicks function',
+      'subscriptions': 'Test all subscription functions',
+      'updateRange': 'Test updateRange and updateRangeInputInner',
+      'reregistration': 'Test reregistration scenarios',
+      'errors': 'Test error handling',
+    },
+  },
+  fn: async ({
+    positionalNonCommands: [testName],
+    'peprn:ancestralDepth': ancestralDepth,
+  }: ParsedCli & {
+    positionalNonCommands: [string | undefined]
+    'peprn:ancestralDepth': number
+  }) => {
+    if (ancestralDepth > 0) {
+      return Promise.resolve({
+        formatted: testRangeUtilStore.testResults,
+      })
+    }
+
+    const results: any = {}
+
+    // Test registerRange
+    if (!testName || testName === 'registerRange' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-basic'
+        registerRange(
+          rangeId,
+          100,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+          },
+          false
+        )
+        results.registerRange = {
+          success: true,
+          message: 'registerRange basic test passed',
+          store: store[rangeId],
+        }
+      } catch (error: any) {
+        results.registerRange = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test registerRange with initialInput null (should error)
+    if (!testName || testName === 'errors' || testName === '') {
+      try {
+        registerRange(
+          'testRangeUtil-null-input',
+          null as any,
+          {
+            getViewableRange: async (input: number) => [input, input + 10],
+            getNextLeftRange: async (input: number) => [input - 10, input],
+            getNextRightRange: async (input: number) => [input + 10, input + 20],
+          },
+          false
+        )
+        results.registerRangeNullInput = {
+          success: false,
+          message: 'Should have thrown error for null initialInput',
+        }
+      } catch (error: any) {
+        results.registerRangeNullInput = {
+          success: true,
+          message: 'Correctly threw error for null initialInput',
+          error: error.message,
+        }
+      }
+    }
+
+    // Test registerReadableRange with string
+    if (!testName || testName === 'registerReadableRange' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-readable-string'
+        await registerReadableRange<string>(
+          rangeId,
+          '50',
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: string) => parseInt(input),
+            numberToInput: (number: number) => number.toString(),
+            isReregistration: false,
+          },
+          false
+        )
+        results.registerReadableRangeString = {
+          success: true,
+          message: 'registerReadableRange with string passed',
+          store: conversionStore[rangeId],
+        }
+      } catch (error: any) {
+        results.registerReadableRangeString = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test registerReadableRange with number
+    if (!testName || testName === 'registerReadableRange' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-readable-number'
+        await registerReadableRange<number>(
+          rangeId,
+          75,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: number) => input,
+            numberToInput: (number: number) => number,
+            isReregistration: false,
+          },
+          false
+        )
+        results.registerReadableRangeNumber = {
+          success: true,
+          message: 'registerReadableRange with number passed',
+          store: conversionStore[rangeId],
+        }
+      } catch (error: any) {
+        results.registerReadableRangeNumber = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test registerReadableRange with Date
+    if (!testName || testName === 'registerReadableRange' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-readable-date'
+        const initialDate = new Date('2024-01-01')
+        await registerReadableRange<Date>(
+          rangeId,
+          initialDate,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: Date) => input.getTime(),
+            numberToInput: (number: number) => new Date(number),
+            isReregistration: false,
+          },
+          false
+        )
+        results.registerReadableRangeDate = {
+          success: true,
+          message: 'registerReadableRange with Date passed',
+          store: conversionStore[rangeId],
+        }
+      } catch (error: any) {
+        results.registerReadableRangeDate = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test registerTicks
+    if (!testName || testName === 'registerTicks' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-ticks'
+        // First register a readable range
+        await registerReadableRange<number>(
+          rangeId,
+          100,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: number) => input,
+            numberToInput: (number: number) => number,
+            isReregistration: false,
+          },
+          false
+        )
+        // Then register ticks
+        registerTicks<number>(
+          rangeId,
+          ([start, end]: [start: number, end: number]) => {
+            const ticks: TicksArray<number> = []
+            for (let i = start; i <= end; i += 1) {
+              ticks.push({ value: i, label: i.toString() })
+            }
+            return ticks
+          },
+          false
+        )
+        results.registerTicks = {
+          success: true,
+          message: 'registerTicks passed',
+          ticks: accessTicksStore<number>(rangeId).ticks,
+        }
+      } catch (error: any) {
+        results.registerTicks = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test subscriptions
+    if (!testName || testName === 'subscriptions' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-subscriptions'
+        const subscriptionResults: any = {
+          inputChanged: false,
+          viewableRange: false,
+          nextLeftRange: false,
+          nextRightRange: false,
+          startLoading: false,
+          endLoading: false,
+        }
+
+        registerRange(
+          rangeId,
+          200,
+          {
+            getViewableRange: async (input: number) => {
+              await new Promise((resolve) => setTimeout(resolve, 10))
+              return [input - 5, input + 5]
+            },
+            getNextLeftRange: async (input: number) => {
+              await new Promise((resolve) => setTimeout(resolve, 10))
+              return [input - 20, input - 5]
+            },
+            getNextRightRange: async (input: number) => {
+              await new Promise((resolve) => setTimeout(resolve, 10))
+              return [input + 5, input + 20]
+            },
+          },
+          false
+        )
+
+        const unsubInput = subscribeToRangeInputChanged(rangeId, (input) => {
+          subscriptionResults.inputChanged = true
+          subscriptionResults.inputValue = input
+        })
+
+        const unsubViewable = subscribeToRangeViewableRange(
+          rangeId,
+          (viewableRange) => {
+            subscriptionResults.viewableRange = true
+            subscriptionResults.viewableRangeValue = viewableRange
+          }
+        )
+
+        const unsubNextLeft = subscribeToRangeNextLeftRange(
+          rangeId,
+          (nextLeftRange) => {
+            subscriptionResults.nextLeftRange = true
+            subscriptionResults.nextLeftRangeValue = nextLeftRange
+          }
+        )
+
+        const unsubNextRight = subscribeToRangeNextRightRange(
+          rangeId,
+          (nextRightRange) => {
+            subscriptionResults.nextRightRange = true
+            subscriptionResults.nextRightRangeValue = nextRightRange
+          }
+        )
+
+        const unsubStartLoading = subscribeToRangeStartLoading(rangeId, () => {
+          subscriptionResults.startLoading = true
+        })
+
+        const unsubEndLoading = subscribeToRangeEndLoading(rangeId, () => {
+          subscriptionResults.endLoading = true
+        })
+
+        // Trigger an update
+        updateRangeInputInner(rangeId, 250)
+
+        // Wait for async operations
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        // Test unsubscribe
+        unsubInput()
+        unsubViewable()
+        unsubNextLeft()
+        unsubNextRight()
+        unsubStartLoading()
+        unsubEndLoading()
+
+        results.subscriptions = {
+          success: true,
+          message: 'Subscription tests passed',
+          results: subscriptionResults,
+        }
+      } catch (error: any) {
+        results.subscriptions = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test converted range subscriptions
+    if (!testName || testName === 'subscriptions' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-converted-subscriptions'
+        const subscriptionResults: any = {
+          convertedStartLoading: false,
+          convertedEndLoading: false,
+          viewableRangeStartLoading: false,
+          viewableRangeEndLoading: false,
+          nextLeftRangeStartLoading: false,
+          nextLeftRangeEndLoading: false,
+          nextRightRangeStartLoading: false,
+          nextRightRangeEndLoading: false,
+        }
+
+        await registerReadableRange<string>(
+          rangeId,
+          '300',
+          {
+            getViewableRange: async (input: number) => {
+              await new Promise((resolve) => setTimeout(resolve, 10))
+              return [input - 5, input + 5]
+            },
+            getNextLeftRange: async (input: number) => {
+              await new Promise((resolve) => setTimeout(resolve, 10))
+              return [input - 20, input - 5]
+            },
+            getNextRightRange: async (input: number) => {
+              await new Promise((resolve) => setTimeout(resolve, 10))
+              return [input + 5, input + 20]
+            },
+            inputToNumber: (input: string) => parseInt(input),
+            numberToInput: (number: number) => number.toString(),
+            isReregistration: false,
+          },
+          false
+        )
+
+        const unsubConvertedStart = subscribeToRangeConvertedStartLoading(
+          rangeId,
+          () => {
+            subscriptionResults.convertedStartLoading = true
+          }
+        )
+
+        const unsubConvertedEnd = subscribeToRangeConvertedEndLoading(
+          rangeId,
+          () => {
+            subscriptionResults.convertedEndLoading = true
+          }
+        )
+
+        const unsubViewableStart =
+          subscribeToRangeConvertedViewableRangeStartLoading(rangeId, () => {
+            subscriptionResults.viewableRangeStartLoading = true
+          })
+
+        const unsubViewableEnd =
+          subscribeToRangeConvertedViewableRangeEndLoading(rangeId, () => {
+            subscriptionResults.viewableRangeEndLoading = true
+          })
+
+        const unsubNextLeftStart =
+          subscribeToRangeConvertedNextLeftRangeStartLoading(rangeId, () => {
+            subscriptionResults.nextLeftRangeStartLoading = true
+          })
+
+        const unsubNextLeftEnd =
+          subscribeToRangeConvertedNextLeftRangeEndLoading(rangeId, () => {
+            subscriptionResults.nextLeftRangeEndLoading = true
+          })
+
+        const unsubNextRightStart =
+          subscribeToRangeConvertedNextRightRangeStartLoading(rangeId, () => {
+            subscriptionResults.nextRightRangeStartLoading = true
+          })
+
+        const unsubNextRightEnd =
+          subscribeToRangeConvertedNextRightRangeEndLoading(rangeId, () => {
+            subscriptionResults.nextRightRangeEndLoading = true
+          })
+
+        // Trigger an update
+        updateRange(rangeId, '350')
+
+        // Wait for async operations
+        await new Promise((resolve) => setTimeout(resolve, 150))
+
+        // Cleanup
+        unsubConvertedStart()
+        unsubConvertedEnd()
+        unsubViewableStart()
+        unsubViewableEnd()
+        unsubNextLeftStart()
+        unsubNextLeftEnd()
+        unsubNextRightStart()
+        unsubNextRightEnd()
+
+        results.convertedSubscriptions = {
+          success: true,
+          message: 'Converted subscription tests passed',
+          results: subscriptionResults,
+        }
+      } catch (error: any) {
+        results.convertedSubscriptions = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test updateRange and updateRangeInputInner
+    if (!testName || testName === 'updateRange' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-update'
+        registerRange(
+          rangeId,
+          400,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+          },
+          false
+        )
+
+        console.log('store 0', store, {
+          rangeId
+        })
+        const initialInput = store[rangeId].input
+        updateRangeInputInner(rangeId, 450)
+        console.log('store 1', store, {
+          rangeId
+        })
+        const updatedInput = store[rangeId].input
+
+        results.updateRangeInputInner = {
+          success: true,
+          message: 'updateRangeInputInner test passed',
+          initialInput,
+          updatedInput,
+        }
+
+        // Test updateRange with readable range
+        const readableRangeId = 'testRangeUtil-update-readable'
+        await registerReadableRange<string>(
+          readableRangeId,
+          '500',
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: string) => parseInt(input),
+            numberToInput: (number: number) => number.toString(),
+            isReregistration: false,
+          },
+          false
+        )
+
+        const initialReadableInput = conversionStore[readableRangeId].input
+        updateRange(readableRangeId, '550')
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        const updatedReadableInput = conversionStore[readableRangeId].input
+
+        results.updateRange = {
+          success: true,
+          message: 'updateRange test passed',
+          initialReadableInput,
+          updatedReadableInput,
+        }
+      } catch (error: any) {
+        results.updateRange = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test reregistration
+    if (!testName || testName === 'reregistration' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-reregister'
+        // Initial registration
+        registerRange(
+          rangeId,
+          600,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+          },
+          false
+        )
+
+        const initialStore = { ...store[rangeId] }
+
+        // Reregister with new functions
+        registerRange(
+          rangeId,
+          null as any,
+          {
+            getViewableRange: async (input: number) => [input - 10, input + 10],
+            getNextLeftRange: async (input: number) => [input - 30, input - 10],
+            getNextRightRange: async (input: number) => [input + 10, input + 30],
+          },
+          true
+        )
+
+        results.reregistration = {
+          success: true,
+          message: 'Reregistration test passed',
+          initialStore,
+          afterReregister: store[rangeId],
+        }
+
+        // Test readable range reregistration
+        const readableRangeId = 'testRangeUtil-reregister-readable'
+        await registerReadableRange<string>(
+          readableRangeId,
+          '700',
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: string) => parseInt(input),
+            numberToInput: (number: number) => number.toString(),
+            isReregistration: false,
+          },
+          false
+        )
+
+        const initialReadableStore = { ...conversionStore[readableRangeId] }
+
+        await registerReadableRange<string>(
+          readableRangeId,
+          null,
+          {
+            getViewableRange: async (input: number) => [input - 10, input + 10],
+            getNextLeftRange: async (input: number) => [input - 30, input - 10],
+            getNextRightRange: async (input: number) => [input + 10, input + 30],
+            inputToNumber: (input: string) => parseInt(input),
+            numberToInput: (number: number) => number.toString(),
+            isReregistration: true,
+          },
+          true
+        )
+
+        results.reregistrationReadable = {
+          success: true,
+          message: 'Readable range reregistration test passed',
+          initialStore: initialReadableStore,
+          afterReregister: conversionStore[readableRangeId],
+        }
+      } catch (error: any) {
+        results.reregistration = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    // Test error cases
+    if (!testName || testName === 'errors' || testName === '') {
+      const errorResults: any = {}
+
+      // Test reregistration with initialInput (should error)
+      try {
+        registerRange(
+          'testRangeUtil-error-reregister-with-input',
+          800,
+          {
+            getViewableRange: async (input: number) => [input, input + 10],
+            getNextLeftRange: async (input: number) => [input - 10, input],
+            getNextRightRange: async (input: number) => [input + 10, input + 20],
+          },
+          false
+        )
+        registerRange(
+          'testRangeUtil-error-reregister-with-input',
+          850,
+          {
+            getViewableRange: async (input: number) => [input, input + 10],
+            getNextLeftRange: async (input: number) => [input - 10, input],
+            getNextRightRange: async (input: number) => [input + 10, input + 20],
+          },
+          true
+        )
+        errorResults.reregisterWithInput = {
+          success: false,
+          message: 'Should have thrown error for initialInput in reregistration',
+        }
+      } catch (error: any) {
+        errorResults.reregisterWithInput = {
+          success: true,
+          message: 'Correctly threw error for initialInput in reregistration',
+          error: error.message,
+        }
+      }
+
+      // Test readable range reregistration with initialInput (should error)
+      try {
+        await registerReadableRange<string>(
+          'testRangeUtil-error-readable-reregister',
+          '900',
+          {
+            getViewableRange: async (input: number) => [input, input + 10],
+            getNextLeftRange: async (input: number) => [input - 10, input],
+            getNextRightRange: async (input: number) => [input + 10, input + 20],
+            inputToNumber: (input: string) => parseInt(input),
+            numberToInput: (number: number) => number.toString(),
+            isReregistration: false,
+          },
+          false
+        )
+        await registerReadableRange<string>(
+          'testRangeUtil-error-readable-reregister',
+          '950',
+          {
+            getViewableRange: async (input: number) => [input, input + 10],
+            getNextLeftRange: async (input: number) => [input - 10, input],
+            getNextRightRange: async (input: number) => [input + 10, input + 20],
+            inputToNumber: (input: string) => parseInt(input),
+            numberToInput: (number: number) => number.toString(),
+            isReregistration: true,
+          },
+          true
+        )
+        errorResults.readableReregisterWithInput = {
+          success: false,
+          message:
+            'Should have thrown error for initialInput in readable reregistration',
+        }
+      } catch (error: any) {
+        errorResults.readableReregisterWithInput = {
+          success: true,
+          message:
+            'Correctly threw error for initialInput in readable reregistration',
+          error: error.message,
+        }
+      }
+
+      results.errors = errorResults
+    }
+
+    // Test accessConversionStore type safety
+    if (!testName || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-type-safety'
+        await registerReadableRange<string>(
+          rangeId,
+          '1000',
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: string) => parseInt(input),
+            numberToInput: (number: number) => number.toString(),
+            isReregistration: false,
+          },
+          false
+        )
+
+        const store = accessConversionStore<string>(rangeId)
+        const input = store.input
+        store.input = '1100'
+        const viewableRange = store.viewableRange
+        store.viewableRange = ['1095', '1105']
+
+        // Test type mismatch error
+        let typeMismatchError = false
+        try {
+          store.input = 1234 as any // Should fail type check
+        } catch (error: any) {
+          typeMismatchError = true
+        }
+
+        results.typeSafety = {
+          success: true,
+          message: 'Type safety tests passed',
+          input,
+          viewableRange,
+          typeMismatchError,
+        }
+      } catch (error: any) {
+        results.typeSafety = {
+          success: false,
+          error: error.message,
+        }
+      }
+    }
+
+    testRangeUtilStore.testResults = results
+    
+    // Display results in DOM
+    displayTestResults(results)
+    
+    return Promise.resolve({
+      formatted: results,
+    })
+  },
+  submodules: {
+    cleanup: {
+      fn: async () => {
+        const countBefore = testRangeUtilStore.cleanups.length
+        ;[...testRangeUtilStore.cleanups].forEach((cleanup) => {
+          cleanup()
+        })
+        testRangeUtilStore.cleanups = []
+        return Promise.resolve({
+          countBefore,
+          countAfter: testRangeUtilStore.cleanups.length,
+          message: 'Cleanup completed',
+        })
+      },
+    },
+  },
+}
