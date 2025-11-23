@@ -142,7 +142,7 @@ export const testReadableRange: Module = {
       getNextRightRange: async (input: number) => [input + 10, input + 20],
       inputToNumber: (input: string) => parseInt(input),
       numberToInput: (number: number) => number.toString(),
-      isReregistration: false,
+      
     })
 
     testRangeStore.cleanups = [
@@ -620,7 +620,7 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 5, input + 20],
             inputToNumber: (input: string) => parseInt(input),
             numberToInput: (number: number) => number.toString(),
-            isReregistration: false,
+            
           },
           false
         )
@@ -660,7 +660,7 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 5, input + 20],
             inputToNumber: (input: number) => input,
             numberToInput: (number: number) => number,
-            isReregistration: false,
+            
           },
       false
         )
@@ -700,7 +700,7 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 5, input + 20],
             inputToNumber: (input: Date) => input.getTime(),
             numberToInput: (number: number) => new Date(number),
-            isReregistration: false,
+            
           },
       false
         )
@@ -741,7 +741,7 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 5, input + 20],
             inputToNumber: (input: number) => input,
             numberToInput: (number: number) => number,
-            isReregistration: false,
+            
           },
           false
         )
@@ -922,7 +922,7 @@ export const testRangeUtil: Module = {
             },
             inputToNumber: (input: string) => parseInt(input),
             numberToInput: (number: number) => number.toString(),
-            isReregistration: false,
+            
           },
           false
         )
@@ -1067,7 +1067,7 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 5, input + 20],
             inputToNumber: (input: string) => parseInt(input),
             numberToInput: (number: number) => number.toString(),
-            isReregistration: false,
+            
           },
           false
         )
@@ -1166,7 +1166,7 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 5, input + 20],
             inputToNumber: (input: string) => parseInt(input),
             numberToInput: (number: number) => number.toString(),
-            isReregistration: false,
+            
           },
           false
         )
@@ -1182,7 +1182,6 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 10, input + 30],
             inputToNumber: (input: string) => parseInt(input),
             numberToInput: (number: number) => number.toString(),
-            isReregistration: true,
           },
           true
         )
@@ -1277,7 +1276,7 @@ export const testRangeUtil: Module = {
       getNextRightRange: async (input: number) => [input + 10, input + 20],
       inputToNumber: (input: string) => parseInt(input),
       numberToInput: (number: number) => number.toString(),
-      isReregistration: false,
+      
           },
           false
         )
@@ -1290,7 +1289,7 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 10, input + 20],
             inputToNumber: (input: string) => parseInt(input),
             numberToInput: (number: number) => number.toString(),
-            isReregistration: true,
+
           },
           true
         )
@@ -1337,7 +1336,7 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 5, input + 20],
             inputToNumber: (input: string) => parseInt(input),
             numberToInput: (number: number) => number.toString(),
-            isReregistration: false,
+            
           },
           false
         )

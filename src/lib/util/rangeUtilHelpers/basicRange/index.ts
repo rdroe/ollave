@@ -257,7 +257,10 @@ export const registerRange = <InputType extends NumericInput>(
   }
 
   if (isReregistration) {
+
     if (initialInput !== null) {
+      console.log('reregistration basic range 0', rangeId)
+      console.log('initial input 0', initialInput)
       throw new Error('Initial input disallowed for reregistration')
     }
     emitters[rangeId].inputChanged.removeEventListener(
@@ -270,6 +273,7 @@ export const registerRange = <InputType extends NumericInput>(
     )
     emitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
   } else {
+
     if (initialInput === null) {
       throw new Error('Initial input required for new registration')
     }

@@ -455,13 +455,17 @@ export const registerReadableRange = async <
     getNextRightRange: (input: number) => Promise<[start: number, end: number]>
     inputToNumber: (input: InputType) => number
     numberToInput: (number: number) => InputType
-    isReregistration: boolean
   },
   isReregistration = false
 ) => {
+  const numericInitialInput = inputToNumber(initialInput) 
+  if (!isReregistration && typeof numericInitialInput !== 'number') {
+    throw new Error('Initial input must be a  number')
+  }
+
   registerRange(
     rangeId,
-    inputToNumber(initialInput),
+    isReregistration && initialInput === null ? null : numericInitialInput,
     {
       getViewableRange,
       getNextLeftRange,
@@ -476,6 +480,8 @@ export const registerReadableRange = async <
 
   if (isReregistration) {
     if (initialInput !== null) {
+      console.log('reregistration readable range 1', rangeId)
+      console.log('initial input 1', initialInput)
       throw new Error('Initial input disallowed for reregistration')
     }
 
@@ -505,7 +511,10 @@ export const registerReadableRange = async <
     conversionEmitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
     conversionEmitters[rangeId].cleanup = []
   } else {
+
     if (initialInput === null) {
+      console.log('new registration readable range 3', rangeId)
+      console.log('initial input 3', initialInput)
       throw new Error('Initial input required for new registration')
     }
     conversionEmitters[rangeId] = {
