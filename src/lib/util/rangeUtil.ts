@@ -1,1494 +1,48 @@
+// Re-export everything from the modularized rangeUtil helpers
+export * from './rangeUtilHelpers/basicRange'
+export * from './rangeUtilHelpers/readableRange'
+export * from './rangeUtilHelpers/ticks'
+
+// Re-export types
+export type { NumericInput } from './rangeUtilHelpers/basicRange'
+export type { StringOrNumberOrDate } from './rangeUtilHelpers/readableRange'
+export type { TicksArray } from './rangeUtilHelpers/ticks'
+
+// Import test modules from the original location (will be moved later)
 import { Module, ParsedCli } from 'peprn/util'
+import {
+  registerRange,
+  updateRangeInputInner,
+  store,
+  subscribeToRangeInputChanged,
+  subscribeToRangeViewableRange,
+  subscribeToRangeNextLeftRange,
+  subscribeToRangeNextRightRange,
+  subscribeToRangeStartLoading,
+  subscribeToRangeEndLoading,
+} from './rangeUtilHelpers/basicRange'
+import {
+  registerReadableRange,
+  updateRange,
+  conversionStore,
+  subscribeToRangeConvertedStartLoading,
+  subscribeToRangeConvertedEndLoading,
+  subscribeToRangeConvertedViewableRangeStartLoading,
+  subscribeToRangeConvertedViewableRangeEndLoading,
+  subscribeToRangeConvertedNextLeftRangeStartLoading,
+  subscribeToRangeConvertedNextLeftRangeEndLoading,
+  subscribeToRangeConvertedNextRightRangeStartLoading,
+  subscribeToRangeConvertedNextRightRangeEndLoading,
+} from './rangeUtilHelpers/readableRange'
+import { accessTicksStore } from './rangeUtilHelpers/ticks'
 
-type NumericInput = number
-
-const emitters: {
-  [rangeId: string]: {
-    inputChanged: EventTarget
-    viewableRange: EventTarget
-    nextLeftRange: EventTarget
-    nextRightRange: EventTarget
-    loading: EventTarget
-    loadingRefCount: number
-    cleanup: (() => void)[]
-  }
-} = {}
-
-const store: {
-  [rangeId: string]: {
-    input: NumericInput
-    viewableRange: [start: number, end: number]
-    nextLeftRange: [start: number, end: number]
-    nextRightRange: [start: number, end: number]
-    loading: boolean
-    fns: {
-      getViewableRange: (
-        input: NumericInput
-      ) => Promise<[start: number, end: number]>
-      getNextLeftRange: (
-        input: NumericInput
-      ) => Promise<[start: number, end: number]>
-      getNextRightRange: (
-        input: NumericInput
-      ) => Promise<[start: number, end: number]>
-    }
-  }
-} = {}
-
-const INPUT_CHANGED_EVENT = 'INPUT_CHANGED'
-const INPUT_AFTER_CHANGED_EVENT = 'INPUT_AFTER_CHANGED'
-const VIEWABLE_RANGE_EVENT = 'VIEWABLE_RANGE'
-const NEXT_LEFT_RANGE_EVENT = 'NEXT_LEFT_RANGE'
-const NEXT_RIGHT_RANGE_EVENT = 'NEXT_RIGHT_RANGE'
-const LOADING_EVENT = 'LOADING'
-const getEventNames2 = (rangeId: string) => {
-  return {
-    inputChanged: `${rangeId}-${INPUT_CHANGED_EVENT}`,
-    inputAfterChanged: `${rangeId}-${INPUT_AFTER_CHANGED_EVENT}`,
-    viewableRange: `${rangeId}-${VIEWABLE_RANGE_EVENT}`,
-    nextLeftRange: `${rangeId}-${NEXT_LEFT_RANGE_EVENT}`,
-    nextRightRange: `${rangeId}-${NEXT_RIGHT_RANGE_EVENT}`,
-    loading: `${rangeId}-${LOADING_EVENT}`,
-  }
-}
-
-function internalInputChangedListener(
-  event: Event & { detail: { rangeId: string; input: NumericInput } }
-) {
-  const { rangeId, input } = event.detail
-  if (!rangeId || input === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  store[rangeId].input = event.detail.input
-  emitters[rangeId].inputChanged.dispatchEvent(
-    new CustomEvent(getEventNames2(rangeId).inputAfterChanged, {
-      detail: { rangeId: rangeId },
-    })
-  )
-}
-
-function inputAfterChangedListener(
-  event: Event & { detail: { rangeId: string } }
-) {
-  const { rangeId } = event.detail
-  if (!rangeId) {
-    throw new Error('Invalid event detail')
-  }
-  store[rangeId].loading = true
-  emitters[rangeId].loading.dispatchEvent(
-    new CustomEvent(getEventNames2(rangeId).loading, {
-      detail: { rangeId: rangeId, loading: true },
-    })
-  )
-  const newInput = store[rangeId].input
-  if (accessConversionStore(rangeId).convertedLoading === false) {
-    console.log(
-      'setting converted loading to true in convertUpdatedNextRightRangeLoadingHandler'
-    )
-    accessConversionStore(rangeId).convertedLoading = true
-    conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-      new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-        detail: { rangeId: rangeId, loading: true },
-      })
-    )
-  }
-  conversionEmitters[rangeId].convertedViewableRangeLoading.dispatchEvent(
-    new CustomEvent(
-      getConversionEventNames(rangeId).convertedViewableRangeLoading,
-      {
-        detail: { rangeId: rangeId, viewableRangeLoading: true },
-      }
-    )
-  )
-  emitters[rangeId].loadingRefCount++
-  store[rangeId].fns.getViewableRange(newInput).then((viewableRange) => {
-    store[rangeId].viewableRange = viewableRange
-    emitters[rangeId].loadingRefCount--
-    if (emitters[rangeId].loadingRefCount === 0) {
-      store[rangeId].loading = false
-      emitters[rangeId].loading.dispatchEvent(
-        new CustomEvent(getEventNames2(rangeId).loading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
-    emitters[rangeId].viewableRange.dispatchEvent(
-      new CustomEvent(getEventNames2(rangeId).viewableRange, {
-        detail: {
-          rangeId: rangeId,
-          viewableRange: store[rangeId].viewableRange,
-        },
-      })
-    )
-  })
-  emitters[rangeId].loadingRefCount++
-  conversionEmitters[rangeId].convertedNextLeftRangeLoading.dispatchEvent(
-    new CustomEvent(
-      getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
-      {
-        detail: { rangeId: rangeId, nextLeftRangeLoading: true },
-      }
-    )
-  )
-  store[rangeId].fns.getNextLeftRange(newInput).then((nextLeftRange) => {
-    emitters[rangeId].loadingRefCount--
-    if (emitters[rangeId].loadingRefCount === 0) {
-      store[rangeId].loading = false
-      emitters[rangeId].loading.dispatchEvent(
-        new CustomEvent(getEventNames2(rangeId).loading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
-    store[rangeId].nextLeftRange = nextLeftRange
-    emitters[rangeId].nextLeftRange.dispatchEvent(
-      new CustomEvent(getEventNames2(rangeId).nextLeftRange, {
-        detail: {
-          rangeId: rangeId,
-          nextLeftRange: store[rangeId].nextLeftRange,
-        },
-      })
-    )
-  })
-  conversionEmitters[rangeId].convertedNextRightRangeLoading.dispatchEvent(
-    new CustomEvent(
-      getConversionEventNames(rangeId).convertedNextRightRangeLoading,
-      {
-        detail: { rangeId: rangeId, nextRightRangeLoading: true },
-      }
-    )
-  )
-  emitters[rangeId].loadingRefCount++
-  store[rangeId].fns.getNextRightRange(newInput).then((nextRightRange) => {
-    emitters[rangeId].loadingRefCount--
-    if (emitters[rangeId].loadingRefCount === 0) {
-      store[rangeId].loading = false
-      emitters[rangeId].loading.dispatchEvent(
-        new CustomEvent(getEventNames2(rangeId).loading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
-    store[rangeId].nextRightRange = nextRightRange
-    emitters[rangeId].nextRightRange.dispatchEvent(
-      new CustomEvent(getEventNames2(rangeId).nextRightRange, {
-        detail: {
-          rangeId: rangeId,
-          nextRightRange: store[rangeId].nextRightRange,
-        },
-      })
-    )
-  })
-}
-
-export const registerRange = <InputType extends NumericInput>(
-  rangeId: string,
-  initialInput: number,
-  {
-    getViewableRange,
-    getNextLeftRange,
-    getNextRightRange,
-  }: {
-    getViewableRange: (
-      input: InputType
-    ) => Promise<[start: number, end: number]>
-    getNextLeftRange: (
-      input: InputType
-    ) => Promise<[start: number, end: number]>
-    getNextRightRange: (
-      input: InputType
-    ) => Promise<[start: number, end: number]>
-  },
-  isReregistration: boolean = false
-) => {
-  const { inputChanged: inputChangedEventName } = getEventNames2(rangeId)
-  if (emitters[rangeId] && !isReregistration) {
-    return
-  }
-
-  if (isReregistration) {
-    if (initialInput !== null) {
-      throw new Error('Initial input disallowed for reregistration')
-    }
-    emitters[rangeId].inputChanged.removeEventListener(
-      inputChangedEventName,
-      internalInputChangedListener
-    )
-    emitters[rangeId].inputChanged.removeEventListener(
-      getEventNames2(rangeId).inputAfterChanged,
-      inputAfterChangedListener
-    )
-    emitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
-  } else {
-    if (initialInput === null) {
-      throw new Error('Initial input required for new registration')
-    }
-    emitters[rangeId] = {
-      inputChanged: new EventTarget(),
-      viewableRange: new EventTarget(),
-      nextLeftRange: new EventTarget(),
-      nextRightRange: new EventTarget(),
-      loading: new EventTarget(),
-      loadingRefCount: 0,
-      cleanup: [],
-    }
-    store[rangeId] = {
-      input: initialInput,
-      viewableRange: [0, 0],
-      nextLeftRange: [0, 0],
-      nextRightRange: [0, 0],
-      loading: false,
-      fns: {
-        getViewableRange: getViewableRange,
-        getNextLeftRange: getNextLeftRange,
-        getNextRightRange: getNextRightRange,
-      },
-    }
-  }
-  store[rangeId].fns = {
-    getViewableRange: getViewableRange,
-    getNextLeftRange: getNextLeftRange,
-    getNextRightRange: getNextRightRange,
-  }
-  emitters[rangeId].inputChanged.addEventListener(
-    inputChangedEventName,
-    internalInputChangedListener
-  )
-  emitters[rangeId].inputChanged.addEventListener(
-    getEventNames2(rangeId).inputAfterChanged,
-    inputAfterChangedListener
-  )
-}
-
-export const subscribeToRangeInputChanged = (
-  rangeId: string,
-  callback: (input: NumericInput) => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; input: NumericInput }
-    }
-  ) {
-    callback(event.detail.input)
-  }
-  emitters[rangeId].inputChanged.addEventListener(
-    getEventNames2(rangeId).inputChanged,
-    thisCallback
-  )
-  emitters[rangeId].cleanup.push(() => {
-    emitters[rangeId].inputChanged.removeEventListener(
-      getEventNames2(rangeId).inputChanged,
-      thisCallback
-    )
-  })
-  return function unsubscribe() {
-    emitters[rangeId].inputChanged.removeEventListener(
-      getEventNames2(rangeId).inputChanged,
-      thisCallback
-    )
-  }
-}
-
-export const subscribeToRangeViewableRange = (
-  rangeId: string,
-  callback: (viewableRange: [start: number, end: number]) => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; viewableRange: [start: number, end: number] }
-    }
-  ) {
-    callback(event.detail.viewableRange)
-  }
-  emitters[rangeId].viewableRange.addEventListener(
-    getEventNames2(rangeId).viewableRange,
-    thisCallback
-  )
-  emitters[rangeId].cleanup.push(() => {
-    emitters[rangeId].viewableRange.removeEventListener(
-      getEventNames2(rangeId).viewableRange,
-      thisCallback
-    )
-  })
-  return function unsubscribe() {
-    emitters[rangeId].viewableRange.removeEventListener(
-      getEventNames2(rangeId).viewableRange,
-      thisCallback
-    )
-  }
-}
-
-export const subscribeToRangeNextLeftRange = (
-  rangeId: string,
-  callback: (nextLeftRange: [start: number, end: number]) => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; nextLeftRange: [start: number, end: number] }
-    }
-  ) {
-    callback(event.detail.nextLeftRange)
-  }
-  emitters[rangeId].nextLeftRange.addEventListener(
-    getEventNames2(rangeId).nextLeftRange,
-    thisCallback
-  )
-  emitters[rangeId].cleanup.push(() => {
-    emitters[rangeId].nextLeftRange.removeEventListener(
-      getEventNames2(rangeId).nextLeftRange,
-      thisCallback
-    )
-  })
-  return function unsubscribe() {
-    emitters[rangeId].nextLeftRange.removeEventListener(
-      getEventNames2(rangeId).nextLeftRange,
-      thisCallback
-    )
-  }
-}
-
-export const subscribeToRangeNextRightRange = (
-  rangeId: string,
-  callback: (nextRightRange: [start: number, end: number]) => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; nextRightRange: [start: number, end: number] }
-    }
-  ) {
-    callback(event.detail.nextRightRange)
-  }
-  emitters[rangeId].nextRightRange.addEventListener(
-    getEventNames2(rangeId).nextRightRange,
-    thisCallback
-  )
-  emitters[rangeId].cleanup.push(() => {
-    emitters[rangeId].nextRightRange.removeEventListener(
-      getEventNames2(rangeId).nextRightRange,
-      thisCallback
-    )
-  })
-  return function unsubscribe() {
-    emitters[rangeId].nextRightRange.removeEventListener(
-      getEventNames2(rangeId).nextRightRange,
-      thisCallback
-    )
-  }
-}
-
-export const subscribeToRangeStartLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(event: Event & { detail: { rangeId: string } }) {
-    const { rangeId } = event.detail
-    if (!rangeId) {
-      throw new Error('Invalid event detail')
-    }
-    if (store[rangeId].loading) {
-      callback()
-    }
-  }
-  emitters[rangeId].loading.addEventListener(
-    getEventNames2(rangeId).loading,
-    thisCallback
-  )
-  emitters[rangeId].cleanup.push(() => {
-    emitters[rangeId].loading.removeEventListener(
-      getEventNames2(rangeId).loading,
-      thisCallback
-    )
-  })
-  return function unsubscribe() {
-    emitters[rangeId].loading.removeEventListener(
-      getEventNames2(rangeId).loading,
-      thisCallback
-    )
-  }
-}
-
-export const subscribeToRangeEndLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(event: Event & { detail: { rangeId: string } }) {
-    const { rangeId } = event.detail
-    if (!rangeId) {
-      throw new Error('Invalid event detail')
-    }
-    if (!store[rangeId].loading) {
-      callback()
-    }
-  }
-  emitters[rangeId].loading.addEventListener(
-    getEventNames2(rangeId).loading,
-    thisCallback
-  )
-  emitters[rangeId].cleanup.push(() => {
-    emitters[rangeId].loading.removeEventListener(
-      getEventNames2(rangeId).loading,
-      thisCallback
-    )
-  })
-  return function unsubscribe() {
-    emitters[rangeId].loading.removeEventListener(
-      getEventNames2(rangeId).loading,
-      thisCallback
-    )
-  }
-}
-
-export const updateRangeInputInner = (rangeId: string, input: NumericInput) => {
-  store[rangeId].input = input
-  emitters[rangeId].inputChanged.dispatchEvent(
-    new CustomEvent(getEventNames2(rangeId).inputChanged, {
-      detail: { rangeId: rangeId, input: input },
-    })
-  )
-}
-
-/// human readable range
-
-const conversionStore: {
-  [rangeId: string]: {
-    input: NumericInput
-    viewableRange: [start: number, end: number]
-    nextLeftRange: [start: number, end: number]
-    nextRightRange: [start: number, end: number]
-    convertedLoading: boolean
-    convertedViewableRangeLoading: boolean
-    convertedNextLeftRangeLoading: boolean
-    convertedNextRightRangeLoading: boolean
-    fns: {
-      numberToInput: (number: number) => StringOrNumberOrDate
-      inputToNumber: (input: StringOrNumberOrDate) => number
-    }
-  }
-} = {}
-
-const conversionEmitters: {
-  [rangeId: string]: {
-    inputConverted: EventTarget
-    viewableRangeConverted: EventTarget
-    nextLeftRangeConverted: EventTarget
-    nextRightRangeConverted: EventTarget
-    convertedLoading: EventTarget
-    convertedViewableRangeLoading: EventTarget
-    convertedNextLeftRangeLoading: EventTarget
-    convertedNextRightRangeLoading: EventTarget
-    cleanup: (() => void)[]
-  }
-} = {}
-
-const INPUT_CONVERTED_EVENT = 'INPUT_CONVERTED'
-const INPUT_AFTER_CONVERTED_EVENT = 'INPUT_AFTER_CONVERTED'
-const VIEWABLE_RANGE_CONVERTED_EVENT = 'VIEWABLE_RANGE_CONVERTED'
-const NEXT_LEFT_RANGE_CONVERTED_EVENT = 'NEXT_LEFT_RANGE_CONVERTED'
-const NEXT_RIGHT_RANGE_CONVERTED_EVENT = 'NEXT_RIGHT_RANGE_CONVERTED'
-const CONVERTED_VIEWABLE_RANGE_LOADING_EVENT =
-  'CONVERTED_VIEWABLE_RANGE_LOADING'
-const CONVERTED_NEXT_LEFT_RANGE_LOADING_EVENT =
-  'CONVERTED_NEXT_LEFT_RANGE_LOADING'
-const CONVERTED_NEXT_RIGHT_RANGE_LOADING_EVENT =
-  'CONVERTED_NEXT_RIGHT_RANGE_LOADING'
-const CONVERTED_LOADING_EVENT = 'CONVERTED_LOADING'
-const getConversionEventNames = (rangeId: string) => {
-  return {
-    inputConverted: `${rangeId}-${INPUT_CONVERTED_EVENT}`,
-    inputAfterConverted: `${rangeId}-${INPUT_AFTER_CONVERTED_EVENT}`,
-    viewableRangeConverted: `${rangeId}-${VIEWABLE_RANGE_CONVERTED_EVENT}`,
-    nextLeftRangeConverted: `${rangeId}-${NEXT_LEFT_RANGE_CONVERTED_EVENT}`,
-    nextRightRangeConverted: `${rangeId}-${NEXT_RIGHT_RANGE_CONVERTED_EVENT}`,
-    convertedLoading: `${rangeId}-${CONVERTED_LOADING_EVENT}`,
-    convertedViewableRangeLoading: `${rangeId}-${CONVERTED_VIEWABLE_RANGE_LOADING_EVENT}`,
-    convertedNextLeftRangeLoading: `${rangeId}-${CONVERTED_NEXT_LEFT_RANGE_LOADING_EVENT}`,
-    convertedNextRightRangeLoading: `${rangeId}-${CONVERTED_NEXT_RIGHT_RANGE_LOADING_EVENT}`,
-  }
-}
-
-type StringOrNumberOrDate = string | number | Date
-
-function convertUpdatedInputHandler<InputType extends StringOrNumberOrDate>(
-  event: Event & { detail: { rangeId: string; input: NumericInput } }
-) {
-  const { rangeId, input } = event.detail
-  if (!rangeId || input === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  // @ts-expect-error - we know that the input is a proper type
-  conversionStore[rangeId].input = conversionStore[rangeId].fns.numberToInput(
-    input
-  ) as InputType
-  conversionEmitters[rangeId].inputConverted.dispatchEvent(
-    new CustomEvent(getConversionEventNames(rangeId).inputConverted, {
-      detail: { rangeId, input: conversionStore[rangeId].input },
-    })
-  )
-}
-
-// const accessConversionStore = <InputType extends StringOrNumberOrDate>(
-//   rangeId: string
-// ) => {
-//   return {
-//     input: conversionStore[rangeId].input as InputType,
-//     viewableRange: conversionStore[rangeId].viewableRange as [
-//       start: InputType,
-//       end: InputType,
-//     ],
-//     nextLeftRange: conversionStore[rangeId].nextLeftRange as [
-//       start: InputType,
-//       end: InputType,
-//     ],
-//     nextRightRange: conversionStore[rangeId].nextRightRange as [
-//       start: InputType,
-//       end: InputType,
-//     ],
-//     convertedLoading: conversionStore[rangeId].convertedLoading,
-//     convertedViewableRangeLoading:
-//       conversionStore[rangeId].convertedViewableRangeLoading,
-//     convertedNextLeftRangeLoading:
-//       conversionStore[rangeId].convertedNextLeftRangeLoading,
-//     convertedNextRightRangeLoading:
-//       conversionStore[rangeId].convertedNextRightRangeLoading,
-//   }
-// }
-const isMatchingInputType = <InputType extends StringOrNumberOrDate>(
-  toReplace: any,
-  value: StringOrNumberOrDate
-): value is InputType => {
-  if (
-    typeof toReplace === typeof value &&
-    toReplace instanceof Date === value instanceof Date
-  ) {
-    return true
-  }
-  return false
-}
-const requireMatchingInputType = <InputType extends StringOrNumberOrDate>(
-  toReplace: any,
-  value: StringOrNumberOrDate
-): InputType => {
-  if (!isMatchingInputType<InputType>(toReplace, value)) {
-    throw new Error('Input type mismatch')
-  }
-  return value
-}
-const accessConversionStore = <
-  InputType extends StringOrNumberOrDate = StringOrNumberOrDate,
->(
-  rangeId: string
-) => {
-  return {
-    get input() {
-      return conversionStore[rangeId].input as InputType
-    },
-    set input(value: InputType) {
-      // @ts-expect-error - we know that the input is a proper type
-      conversionStore[rangeId].input = requireMatchingInputType<InputType>(
-        conversionStore[rangeId].input,
-        value
-      )
-    },
-    get viewableRange() {
-      return conversionStore[rangeId].viewableRange as [
-        start: InputType,
-        end: InputType,
-      ]
-    },
-    set viewableRange(value: [start: InputType, end: InputType]) {
-      conversionStore[rangeId].viewableRange = [
-        // @ts-expect-error - we know that the viewable range is a proper type
-        requireMatchingInputType<InputType>(
-          conversionStore[rangeId].viewableRange[0],
-          value[0]
-        ),
-        // @ts-expect-error - we know that the viewable range is a proper type
-        requireMatchingInputType<InputType>(
-          conversionStore[rangeId].viewableRange[1],
-          value[1]
-        ),
-      ]
-    },
-    get nextLeftRange() {
-      return conversionStore[rangeId].nextLeftRange as [
-        start: InputType,
-        end: InputType,
-      ]
-    },
-    set nextLeftRange(value: [start: InputType, end: InputType]) {
-      conversionStore[rangeId].nextLeftRange = [
-        // @ts-expect-error - we know that the next left range is a proper type
-        requireMatchingInputType<InputType>(
-          conversionStore[rangeId].nextLeftRange[0],
-          value[0]
-        ),
-        // @ts-expect-error - we know that the next left range is a proper type
-        requireMatchingInputType<InputType>(
-          conversionStore[rangeId].nextLeftRange[1],
-          value[1]
-        ),
-      ]
-    },
-    get nextRightRange() {
-      return conversionStore[rangeId].nextRightRange as [
-        start: InputType,
-        end: InputType,
-      ]
-    },
-    set nextRightRange(value: [start: InputType, end: InputType]) {
-      conversionStore[rangeId].nextRightRange = [
-        // @ts-expect-error - we know that the next right range is a proper type
-        requireMatchingInputType<InputType>(
-          conversionStore[rangeId].nextRightRange[0],
-          value[0]
-        ),
-        // @ts-expect-error - we know that the next right range is a proper type
-        requireMatchingInputType<InputType>(
-          conversionStore[rangeId].nextRightRange[1],
-          value[1]
-        ),
-      ]
-    },
-
-    get convertedLoading() {
-      return conversionStore[rangeId].convertedLoading
-    },
-    set convertedLoading(value: boolean) {
-      conversionStore[rangeId].convertedLoading = value
-    },
-    get convertedViewableRangeLoading() {
-      return conversionStore[rangeId].convertedViewableRangeLoading
-    },
-    set convertedViewableRangeLoading(value: boolean) {
-      conversionStore[rangeId].convertedViewableRangeLoading = value
-    },
-    get convertedNextLeftRangeLoading() {
-      return conversionStore[rangeId].convertedNextLeftRangeLoading
-    },
-    set convertedNextLeftRangeLoading(value: boolean) {
-      conversionStore[rangeId].convertedNextLeftRangeLoading = value
-    },
-    get convertedNextRightRangeLoading() {
-      return conversionStore[rangeId].convertedNextRightRangeLoading
-    },
-    set convertedNextRightRangeLoading(value: boolean) {
-      conversionStore[rangeId].convertedNextRightRangeLoading = value
-    },
-  }
-}
-
-function convertUpdatedViewableRangeHandler<
-  InputType extends StringOrNumberOrDate,
->(
-  event: Event & {
-    detail: {
-      rangeId: string
-      viewableRange: [start: InputType, end: InputType]
-    }
-  }
-) {
-  const { rangeId, viewableRange } = event.detail
-  if (!rangeId || viewableRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-
-  accessConversionStore<InputType>(rangeId).viewableRange = viewableRange
-  conversionEmitters[rangeId].viewableRangeConverted.dispatchEvent(
-    new CustomEvent(getConversionEventNames(rangeId).viewableRangeConverted, {
-      detail: {
-        rangeId: rangeId,
-        viewableRange: accessConversionStore<InputType>(rangeId).viewableRange,
-      },
-    })
-  )
-  conversionEmitters[rangeId].convertedViewableRangeLoading.dispatchEvent(
-    new CustomEvent(
-      getConversionEventNames(rangeId).convertedViewableRangeLoading,
-      {
-        detail: { rangeId: rangeId, viewableRangeLoading: false },
-      }
-    )
-  )
-}
-
-function convertUpdatedNextLeftRangeHandler<
-  InputType extends StringOrNumberOrDate,
->(
-  event: Event & {
-    detail: {
-      rangeId: string
-      nextLeftRange: [start: InputType, end: InputType]
-    }
-  }
-) {
-  const { rangeId, nextLeftRange } = event.detail
-  if (!rangeId || nextLeftRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-
-  accessConversionStore<InputType>(rangeId).nextLeftRange = nextLeftRange
-  conversionEmitters[rangeId].nextLeftRangeConverted.dispatchEvent(
-    new CustomEvent(getConversionEventNames(rangeId).nextLeftRangeConverted, {
-      detail: {
-        rangeId: rangeId,
-        nextLeftRange: accessConversionStore<InputType>(rangeId).nextLeftRange,
-      },
-    })
-  )
-  conversionEmitters[rangeId].convertedNextLeftRangeLoading.dispatchEvent(
-    new CustomEvent(
-      getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
-      {
-        detail: { rangeId: rangeId, nextLeftRangeLoading: false },
-      }
-    )
-  )
-}
-
-function convertUpdatedNextRightRangeHandler<
-  InputType extends StringOrNumberOrDate,
->(
-  event: Event & {
-    detail: {
-      rangeId: string
-      nextRightRange: [start: InputType, end: InputType]
-    }
-  }
-) {
-  const { rangeId, nextRightRange } = event.detail
-  if (!rangeId || nextRightRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  accessConversionStore<InputType>(rangeId).nextRightRange = nextRightRange
-  conversionEmitters[rangeId].nextRightRangeConverted.dispatchEvent(
-    new CustomEvent(getConversionEventNames(rangeId).nextRightRangeConverted, {
-      detail: {
-        rangeId: rangeId,
-        nextRightRange:
-          accessConversionStore<InputType>(rangeId).nextRightRange,
-      },
-    })
-  )
-  conversionEmitters[rangeId].convertedNextRightRangeLoading.dispatchEvent(
-    new CustomEvent(
-      getConversionEventNames(rangeId).convertedNextRightRangeLoading,
-      {
-        detail: { rangeId: rangeId, nextRightRangeLoading: false },
-      }
-    )
-  )
-}
-function convertUpdatedViewableRangeLoadingHandler<
-  InputType extends StringOrNumberOrDate,
->(
-  event: Event & {
-    detail: {
-      rangeId: string
-      viewableRangeLoading: boolean
-    }
-  }
-) {
-  const { rangeId, viewableRangeLoading } = event.detail
-  if (!rangeId || viewableRangeLoading === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  if (viewableRangeLoading) {
-    // if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-    //   console.log(
-    //     'setting converted loading to true in convertUpdatedViewableRangeLoadingHandler'
-    //   )
-    //   accessConversionStore<InputType>(rangeId).convertedLoading = true
-    //   conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-    //     new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-    //       detail: { rangeId: rangeId, loading: true },
-    //     })
-    //   )
-    // }
-    accessConversionStore<InputType>(rangeId).convertedViewableRangeLoading =
-      true
-  } else {
-    accessConversionStore<InputType>(rangeId).convertedViewableRangeLoading =
-      false
-    // viewableRange laoding is done
-    // we can set loading to false ONLY IF the other ranges are also note loading
-    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-      return
-    }
-    const otherRangesLoading =
-      accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading ||
-      accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading
-
-    if (!otherRangesLoading) {
-      console.log(
-        'setting converted loading to false in convertUpdatedViewableRangeLoadingHandler'
-      )
-      accessConversionStore<InputType>(rangeId).convertedLoading = false
-      conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-        new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
-  }
-}
-
-function convertUpdatedNextLeftRangeLoadingHandler<
-  InputType extends StringOrNumberOrDate,
->(
-  event: Event & {
-    detail: {
-      rangeId: string
-      nextLeftRangeLoading: boolean
-    }
-  }
-) {
-  const { rangeId, nextLeftRangeLoading } = event.detail
-  if (!rangeId || nextLeftRangeLoading === undefined) {
-    throw new Error('Invalid event detail')
-  }
-
-  if (nextLeftRangeLoading) {
-    // if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-    //   console.log(
-    //     'setting converted loading to true in convertUpdatedNextLeftRangeLoadingHandler'
-    //   )
-    //   accessConversionStore<InputType>(rangeId).convertedLoading = true
-    //   conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-    //     new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-    //       detail: { rangeId: rangeId, loading: true },
-    //     })
-    //   )
-
-    // }
-    accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading =
-      true
-  } else {
-    accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading =
-      false
-    // nextLeftRange loading is done
-    // we can set loading to false ONLY IF the other ranges are also note loading
-    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-      return
-    }
-    const otherRangesLoading =
-      accessConversionStore<InputType>(rangeId).convertedViewableRangeLoading ||
-      accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading
-
-    if (!otherRangesLoading) {
-      console.log(
-        'setting converted loading to false in convertUpdatedNextLeftRangeLoadingHandler'
-      )
-      accessConversionStore<InputType>(rangeId).convertedLoading = false
-      conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-        new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
-  }
-}
-
-function convertUpdatedNextRightRangeLoadingHandler<
-  InputType extends StringOrNumberOrDate,
->(
-  event: Event & {
-    detail: {
-      rangeId: string
-      nextRightRangeLoading: boolean
-    }
-  }
-) {
-  const { rangeId, nextRightRangeLoading } = event.detail
-  if (!rangeId || nextRightRangeLoading === undefined) {
-    throw new Error('Invalid event detail')
-  }
-
-  if (nextRightRangeLoading) {
-    // if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-    //   console.log(
-    //     'setting converted loading to true in convertUpdatedNextRightRangeLoadingHandler'
-    //   )
-    //   accessConversionStore<InputType>(rangeId).convertedLoading = true
-    //   conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-    //     new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-    //       detail: { rangeId: rangeId, loading: true },
-    //     })
-    //   )
-    // }
-    accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading =
-      true
-  } else {
-    accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading =
-      false
-    // nextRightRange loading is done
-    // we can set loading to false ONLY IF the other ranges are also note loading
-    if (accessConversionStore<InputType>(rangeId).convertedLoading === false) {
-      return
-    }
-    const otherRangesLoading =
-      accessConversionStore<InputType>(rangeId).convertedViewableRangeLoading ||
-      accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading
-
-    if (!otherRangesLoading) {
-      console.log(
-        'setting converted loading to false in convertUpdatedNextRightRangeLoadingHandler'
-      )
-      accessConversionStore<InputType>(rangeId).convertedLoading = false
-      conversionEmitters[rangeId].convertedLoading.dispatchEvent(
-        new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
-  }
-}
-
-export const registerReadableRange = async <
-  InputType extends StringOrNumberOrDate,
->(
-  rangeId: string,
-  initialInput: InputType | null,
-  {
-    getViewableRange,
-    getNextLeftRange,
-    getNextRightRange,
-    inputToNumber,
-    numberToInput,
-  }: {
-    getViewableRange: (input: number) => Promise<[start: number, end: number]>
-    getNextLeftRange: (input: number) => Promise<[start: number, end: number]>
-    getNextRightRange: (input: number) => Promise<[start: number, end: number]>
-    inputToNumber: (input: InputType) => number
-    numberToInput: (number: number) => InputType
-    isReregistration: boolean
-  },
-  isReregistration = false
-) => {
-  registerRange(
-    rangeId,
-    inputToNumber(initialInput),
-    {
-      getViewableRange,
-      getNextLeftRange,
-      getNextRightRange,
-    },
-    isReregistration
-  )
-
-  if (conversionEmitters[rangeId] && !isReregistration) {
-    return
-  }
-
-  if (isReregistration) {
-    if (initialInput !== null) {
-      throw new Error('Initial input disallowed for reregistration')
-    }
-
-    conversionEmitters[rangeId].inputConverted.removeEventListener(
-      getConversionEventNames(rangeId).inputConverted,
-      convertUpdatedInputHandler
-    )
-    conversionEmitters[rangeId].viewableRangeConverted.removeEventListener(
-      getConversionEventNames(rangeId).viewableRangeConverted,
-      convertUpdatedViewableRangeHandler
-    )
-    conversionEmitters[rangeId].nextLeftRangeConverted.removeEventListener(
-      getConversionEventNames(rangeId).nextLeftRangeConverted,
-      convertUpdatedNextLeftRangeHandler
-    )
-    conversionEmitters[rangeId].nextRightRangeConverted.removeEventListener(
-      getConversionEventNames(rangeId).nextRightRangeConverted,
-      convertUpdatedNextRightRangeHandler
-    )
-
-    conversionEmitters[
-      rangeId
-    ].convertedNextRightRangeLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedNextRightRangeLoading,
-      convertUpdatedNextRightRangeLoadingHandler
-    )
-    conversionEmitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
-    conversionEmitters[rangeId].cleanup = []
-  } else {
-    if (initialInput === null) {
-      throw new Error('Initial input required for new registration')
-    }
-    conversionEmitters[rangeId] = {
-      inputConverted: new EventTarget(),
-      viewableRangeConverted: new EventTarget(),
-      nextLeftRangeConverted: new EventTarget(),
-      nextRightRangeConverted: new EventTarget(),
-      convertedLoading: new EventTarget(),
-      convertedViewableRangeLoading: new EventTarget(),
-      convertedNextLeftRangeLoading: new EventTarget(),
-      convertedNextRightRangeLoading: new EventTarget(),
-      cleanup: [],
-    }
-  }
-  conversionStore[rangeId] = {
-    input: inputToNumber(initialInput),
-    viewableRange: await getViewableRange(inputToNumber(initialInput)),
-    nextLeftRange: await getNextLeftRange(inputToNumber(initialInput)),
-    nextRightRange: await getNextRightRange(inputToNumber(initialInput)),
-    convertedLoading: false,
-    convertedViewableRangeLoading: false,
-    convertedNextLeftRangeLoading: false,
-    convertedNextRightRangeLoading: false,
-    fns: {
-      numberToInput: numberToInput as (number: number) => InputType,
-      inputToNumber: inputToNumber as (input: InputType) => number,
-    },
-  }
-
-  // as range inner emitters fire, we need to convert the input, viewable range, next left range, and next right range to the InputType
-  emitters[rangeId].inputChanged.addEventListener(
-    getEventNames2(rangeId).inputChanged,
-    convertUpdatedInputHandler<InputType>
-  )
-  emitters[rangeId].viewableRange.addEventListener(
-    getEventNames2(rangeId).viewableRange,
-    convertUpdatedViewableRangeHandler<InputType>
-  )
-  emitters[rangeId].nextLeftRange.addEventListener(
-    getEventNames2(rangeId).nextLeftRange,
-    convertUpdatedNextLeftRangeHandler<InputType>
-  )
-  emitters[rangeId].nextRightRange.addEventListener(
-    getEventNames2(rangeId).nextRightRange,
-    convertUpdatedNextRightRangeHandler<InputType>
-  )
-  conversionEmitters[rangeId].convertedViewableRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedViewableRangeLoading,
-    convertUpdatedViewableRangeLoadingHandler<InputType>
-  )
-  conversionEmitters[rangeId].convertedNextLeftRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
-    convertUpdatedNextLeftRangeLoadingHandler<InputType>
-  )
-  conversionEmitters[rangeId].convertedNextRightRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedNextRightRangeLoading,
-    convertUpdatedNextRightRangeLoadingHandler<InputType>
-  )
-}
-export const subscribeToRangeConvertedStartLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(
-    event: Event & { detail: { rangeId: string; loading: boolean } }
-  ) {
-    const { rangeId, loading } = event.detail
-    if (!rangeId || loading === undefined) {
-      throw new Error('Invalid event detail')
-    }
-    if (loading) {
-      callback()
-    }
-  }
-  conversionEmitters[rangeId].convertedLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedLoading,
-    thisCallback
-  )
-  return function unsubscribe() {
-    conversionEmitters[rangeId].convertedLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedLoading,
-      thisCallback
-    )
-  }
-}
-export const subscribeToRangeConvertedEndLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(
-    event: Event & { detail: { rangeId: string; loading: boolean } }
-  ) {
-    const { rangeId, loading } = event.detail
-    if (!rangeId || loading === undefined) {
-      throw new Error('Invalid event detail')
-    }
-    if (!loading) {
-      callback()
-    }
-  }
-  conversionEmitters[rangeId].convertedLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedLoading,
-    thisCallback
-  )
-  return function unsubscribe() {
-    conversionEmitters[rangeId].convertedLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedLoading,
-      thisCallback
-    )
-  }
-}
-
-export const subscribeToRangeConvertedViewableRangeStartLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; viewableRangeLoading: boolean }
-    }
-  ) {
-    const { rangeId, viewableRangeLoading } = event.detail
-    if (!rangeId || viewableRangeLoading === undefined) {
-      throw new Error('Invalid event detail')
-    }
-    if (viewableRangeLoading) {
-      callback()
-    }
-  }
-  conversionEmitters[rangeId].convertedViewableRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedViewableRangeLoading,
-    thisCallback
-  )
-  return function unsubscribe() {
-    conversionEmitters[
-      rangeId
-    ].convertedViewableRangeLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedViewableRangeLoading,
-      thisCallback
-    )
-  }
-}
-export const subscribeToRangeConvertedViewableRangeEndLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; viewableRangeLoading: boolean }
-    }
-  ) {
-    const { rangeId, viewableRangeLoading } = event.detail
-    if (!rangeId || viewableRangeLoading === undefined) {
-      throw new Error('Invalid event detail')
-    }
-    if (!viewableRangeLoading) {
-      callback()
-    }
-  }
-  conversionEmitters[rangeId].convertedViewableRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedViewableRangeLoading,
-    thisCallback
-  )
-  return function unsubscribe() {
-    conversionEmitters[
-      rangeId
-    ].convertedViewableRangeLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedViewableRangeLoading,
-      thisCallback
-    )
-  }
-}
-export const subscribeToRangeConvertedNextLeftRangeStartLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; nextLeftRangeLoading: boolean }
-    }
-  ) {
-    const { rangeId, nextLeftRangeLoading } = event.detail
-    if (!rangeId || nextLeftRangeLoading === undefined) {
-      throw new Error('Invalid event detail')
-    }
-    if (nextLeftRangeLoading) {
-      callback()
-    }
-  }
-  conversionEmitters[rangeId].convertedNextLeftRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
-    thisCallback
-  )
-  return function unsubscribe() {
-    conversionEmitters[
-      rangeId
-    ].convertedNextLeftRangeLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
-      thisCallback
-    )
-  }
-}
-export const subscribeToRangeConvertedNextRightRangeStartLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; nextRightRangeLoading: boolean }
-    }
-  ) {
-    const { rangeId, nextRightRangeLoading } = event.detail
-    if (!rangeId || nextRightRangeLoading === undefined) {
-      throw new Error('Invalid event detail')
-    }
-    if (nextRightRangeLoading) {
-      callback()
-    }
-  }
-  conversionEmitters[rangeId].convertedNextRightRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedNextRightRangeLoading,
-    thisCallback
-  )
-  return function unsubscribe() {
-    conversionEmitters[
-      rangeId
-    ].convertedNextRightRangeLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedNextRightRangeLoading,
-      thisCallback
-    )
-  }
-}
-export const subscribeToRangeConvertedNextLeftRangeEndLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; nextLeftRangeLoading: boolean }
-    }
-  ) {
-    const { rangeId, nextLeftRangeLoading } = event.detail
-    if (!rangeId || nextLeftRangeLoading === undefined) {
-      throw new Error('Invalid event detail')
-    }
-    if (!nextLeftRangeLoading) {
-      callback()
-    }
-  }
-  conversionEmitters[rangeId].convertedNextLeftRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
-    thisCallback
-  )
-  return function unsubscribe() {
-    conversionEmitters[
-      rangeId
-    ].convertedNextLeftRangeLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
-      thisCallback
-    )
-  }
-}
-export const subscribeToRangeConvertedNextRightRangeEndLoading = (
-  rangeId: string,
-  callback: () => void
-) => {
-  function thisCallback(
-    event: Event & {
-      detail: { rangeId: string; nextRightRangeLoading: boolean }
-    }
-  ) {
-    const { rangeId, nextRightRangeLoading } = event.detail
-    if (!rangeId || nextRightRangeLoading === undefined) {
-      throw new Error('Invalid event detail')
-    }
-    if (!nextRightRangeLoading) {
-      callback()
-    }
-  }
-  conversionEmitters[rangeId].convertedNextRightRangeLoading.addEventListener(
-    getConversionEventNames(rangeId).convertedNextRightRangeLoading,
-    thisCallback
-  )
-  return function unsubscribe() {
-    conversionEmitters[
-      rangeId
-    ].convertedNextRightRangeLoading.removeEventListener(
-      getConversionEventNames(rangeId).convertedNextRightRangeLoading,
-      thisCallback
-    )
-  }
-}
-
-export const updateRange = <InputType extends StringOrNumberOrDate>(
-  rangeId: string,
-  input: InputType
-) => {
-  updateRangeInputInner(
-    rangeId,
-    conversionStore[rangeId].fns.inputToNumber(input)
-  )
-}
-const accessTicksStore = <InputType extends StringOrNumberOrDate>(
-  rangeId: string
-) => {
-  return {
-    ticks: ticksStore[rangeId].ticks as {
-      viewableRange: TicksArray<InputType>
-      nextLeftRange: TicksArray<InputType>
-      nextRightRange: TicksArray<InputType>
-    },
-    fns: ticksStore[rangeId].fns,
-  } as {
-    ticks: {
-      viewableRange: TicksArray<InputType>
-      nextLeftRange: TicksArray<InputType>
-      nextRightRange: TicksArray<InputType>
-    }
-    fns: {
-      createDefaultTicks: (
-        inputRange: [start: InputType, end: InputType]
-      ) => TicksArray<InputType>
-    }
-  }
-}
-
-const ticksStore: {
-  [rangeId: string]: {
-    ticks: {
-      viewableRange: TicksArray<StringOrNumberOrDate>
-      nextLeftRange: TicksArray<StringOrNumberOrDate>
-      nextRightRange: TicksArray<StringOrNumberOrDate>
-    }
-    fns: {
-      createDefaultTicks: (
-        inputRange: [start: StringOrNumberOrDate, end: StringOrNumberOrDate]
-      ) => TicksArray<StringOrNumberOrDate>
-    }
-  }
-} = {}
-
-const ticksEmitters: {
-  [rangeId: string]: {
-    ticksChanged: EventTarget
-    loading: boolean
-    cleanup: (() => void)[]
-  }
-} = {}
-
-const TICKS_CHANGED_EVENT = 'TICKS_CHANGED'
-
-const getTicksEventNames = (rangeId: string) => {
-  return {
-    ticksChanged: `${rangeId}-${TICKS_CHANGED_EVENT}`,
-  }
-}
-
-export type TicksArray<InputType extends StringOrNumberOrDate> = Array<{
-  value: InputType
-  label: string
-  dimensions?: { width: number; height: number }
-}>
-
-// listens for the readable range to be updated, and creates the ticks array for the range passed as input
-const viewableRangeTicksChangedHandler = <
-  InputType extends StringOrNumberOrDate,
->(
-  conversionEvent: Event & {
-    detail: {
-      rangeId: string
-      viewableRange: [start: InputType, end: InputType]
-    }
-  }
-): void => {
-  const { rangeId, viewableRange } = conversionEvent.detail
-  if (!rangeId || viewableRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  accessTicksStore<InputType>(rangeId).ticks.viewableRange =
-    accessTicksStore<InputType>(rangeId).fns.createDefaultTicks(viewableRange)
-}
-
-const nextLeftRangeTicksChangedHandler = <
-  InputType extends StringOrNumberOrDate,
->(
-  conversionEvent: Event & {
-    detail: {
-      rangeId: string
-      nextLeftRange: [start: InputType, end: InputType]
-    }
-  }
-): void => {
-  const { rangeId, nextLeftRange } = conversionEvent.detail
-  if (!rangeId || nextLeftRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  accessTicksStore<InputType>(rangeId).ticks.nextLeftRange =
-    accessTicksStore<InputType>(rangeId).fns.createDefaultTicks(nextLeftRange)
-}
-
-const nextRightRangeTicksChangedHandler = <
-  InputType extends StringOrNumberOrDate,
->(
-  conversionEvent: Event & {
-    detail: {
-      rangeId: string
-      nextRightRange: [start: InputType, end: InputType]
-    }
-  }
-): void => {
-  const { rangeId, nextRightRange } = conversionEvent.detail
-  if (!rangeId || nextRightRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  accessTicksStore<InputType>(rangeId).ticks.nextRightRange =
-    accessTicksStore<InputType>(rangeId).fns.createDefaultTicks(nextRightRange)
-}
-
-export const registerTicks = <InputType extends StringOrNumberOrDate>(
-  rangeId: string,
-  createDefaultTicks: ([start, end]: [
-    start: InputType,
-    end: InputType,
-  ]) => TicksArray<StringOrNumberOrDate>,
-  isReregistration: boolean = false
-) => {
-  // ticks are registered to respond to the human-readable ranges being updated, such as viewable range, next left range, next right range in the reagle range.
-  // so we need to register the ticks to respond to the readable range events.
-  // this function assumes the readable range (and at a lower level, the numeric range) with rangeId is already registered
-  // First, set up this range id in the ticks store and emitters
-  const conversionEventNames = getConversionEventNames(rangeId)
-  if (ticksEmitters[rangeId] && !isReregistration) {
-    // todo: remove the appropriate ticksStore fns and ticksEmitters, etc.
-  } else {
-    ticksEmitters[rangeId] = {
-      ticksChanged: new EventTarget(),
-      loading: false,
-      cleanup: [],
-    }
-
-    const currentViewableRange =
-      accessConversionStore<InputType>(rangeId).viewableRange
-    const currentNextLeftRange =
-      accessConversionStore<InputType>(rangeId).nextLeftRange
-    const currentNextRightRange =
-      accessConversionStore<InputType>(rangeId).nextRightRange
-
-    ticksStore[rangeId] = {
-      ticks: {
-        viewableRange: createDefaultTicks(currentViewableRange),
-        nextLeftRange: createDefaultTicks(currentNextLeftRange),
-        nextRightRange: createDefaultTicks(currentNextRightRange),
-      },
-      fns: {
-        createDefaultTicks: createDefaultTicks,
-      },
-    }
-    // listen for the conversion events
-    conversionEmitters[rangeId].viewableRangeConverted.addEventListener(
-      conversionEventNames.viewableRangeConverted,
-      viewableRangeTicksChangedHandler<InputType>
-    )
-    conversionEmitters[rangeId].nextLeftRangeConverted.addEventListener(
-      conversionEventNames.nextLeftRangeConverted,
-      nextLeftRangeTicksChangedHandler<InputType>
-    )
-    conversionEmitters[rangeId].nextRightRangeConverted.addEventListener(
-      conversionEventNames.nextRightRangeConverted,
-      nextRightRangeTicksChangedHandler<InputType>
-    )
-  }
-}
-
+// Test modules (to be moved to tests module later)
 const testRangeStore: {
   cleanups: (() => void)[]
 } = {
   cleanups: [],
 }
+
 export const testRangeInner: Module = {
   fn: ({
     'peprn:ancestralDepth': ancestralDepth,
@@ -1828,20 +382,54 @@ function displayTestResults(results: any) {
     }
     
     if (result.error) {
-      detailsHtml += `<div style="color: #f44336; margin-left: 20px; margin-top: 4px; font-style: italic;">Error: ${escapeHtml(String(result.error))}</div>`
+      detailsHtml += `<div style="color: #f44336; margin-left: 20px; margin-top: 4px; font-weight: bold;">Error: ${escapeHtml(String(result.error))}</div>`
+      if (result.errorType) {
+        detailsHtml += `<div style="color: #f44336; margin-left: 20px; margin-top: 2px; font-size: 11px;">Type: ${escapeHtml(String(result.errorType))}</div>`
+      }
+      if (result.errorLocation) {
+        detailsHtml += `<div style="color: #ff9800; margin-left: 20px; margin-top: 2px; font-size: 11px; font-weight: bold;">📍 Location: ${escapeHtml(String(result.errorLocation))}</div>`
+      }
+      if (result.stackTrace) {
+        const stackLines = result.stackTrace.split('\n').slice(0, 5).join('\n')
+        detailsHtml += `<pre style="margin: 4px 0 0 20px; padding: 4px; background-color: rgba(244, 67, 54, 0.1); font-size: 10px; overflow-x: auto; color: #f44336; max-height: 150px; overflow-y: auto;">${escapeHtml(stackLines)}</pre>`
+      }
+    }
+    
+    if (result.timestamp) {
+      detailsHtml += `<div style="color: #888; margin-left: 20px; margin-top: 4px; font-size: 10px;">⏱ ${escapeHtml(String(result.timestamp))}</div>`
     }
     
     // Show additional details if available (but limit size)
-    if (result.store || result.results || result.ticks || result.initialInput || result.updatedInput) {
-      const detailsObj = result.store || result.results || result.ticks || 
-        (result.initialInput !== undefined ? { initialInput: result.initialInput, updatedInput: result.updatedInput } : null) ||
-        (result.initialReadableInput !== undefined ? { initialReadableInput: result.initialReadableInput, updatedReadableInput: result.updatedReadableInput } : null)
-      if (detailsObj) {
-        const details = JSON.stringify(detailsObj, null, 2)
-        if (details.length < 500) {
-          detailsHtml += `<pre style="margin: 4px 0 0 20px; padding: 4px; background-color: rgba(0,0,0,0.3); font-size: 10px; overflow-x: auto; color: #aaa;">${escapeHtml(details)}</pre>`
-        } else {
-          detailsHtml += `<div style="margin-left: 20px; color: #888; font-size: 10px;">[Large data object - ${details.length} chars]</div>`
+    const detailFields = ['store', 'results', 'ticks', 'conversionStore', 'rangeId', 'inputType', 
+      'initialInput', 'updatedInput', 'initialReadableInput', 'updatedReadableInput',
+      'beforeUpdate', 'afterUpdate', 'updateSuccessful', 'subscriptionResults', 
+      'allSubscriptionsFired', 'viewableRangeTicksCount', 'nextLeftRangeTicksCount', 
+      'nextRightRangeTicksCount', 'scenario', 'expectedBehavior', 'actualBehavior',
+      'typeMismatchError', 'typeMismatchErrorDetails', 'typeSafetyWorking', 'functionsUpdated']
+    
+    const detailsObj: any = {}
+    for (const field of detailFields) {
+      if (result[field] !== undefined) {
+        detailsObj[field] = result[field]
+      }
+    }
+    
+    if (Object.keys(detailsObj).length > 0) {
+      const details = JSON.stringify(detailsObj, null, 2)
+      if (details.length < 1000) {
+        detailsHtml += `<div style="margin-top: 8px; margin-left: 20px; color: #888; font-size: 11px; font-weight: bold;">Details:</div>`
+        detailsHtml += `<pre style="margin: 4px 0 0 20px; padding: 6px; background-color: rgba(0,0,0,0.3); font-size: 10px; overflow-x: auto; color: #aaa; border-left: 2px solid #555;">${escapeHtml(details)}</pre>`
+      } else {
+        detailsHtml += `<div style="margin-left: 20px; color: #888; font-size: 10px; margin-top: 4px;">[Large data object - ${details.length} chars]</div>`
+        // Show a summary of key fields
+        const summary: any = {}
+        for (const field of ['rangeId', 'inputType', 'initialInput', 'updatedInput', 'success']) {
+          if (result[field] !== undefined) {
+            summary[field] = result[field]
+          }
+        }
+        if (Object.keys(summary).length > 0) {
+          detailsHtml += `<pre style="margin: 4px 0 0 20px; padding: 4px; background-color: rgba(0,0,0,0.2); font-size: 10px; color: #aaa;">${escapeHtml(JSON.stringify(summary, null, 2))}</pre>`
         }
       }
     }
@@ -1865,18 +453,64 @@ function escapeHtml(text: string): string {
   return div.innerHTML
 }
 
+// Helper function to get line number from error stack trace
+function getErrorLineNumber(error: Error): string | null {
+  if (!error.stack) return null
+  const stackLines = error.stack.split('\n')
+  // Look for the first stack frame that references rangeUtil.ts
+  for (const line of stackLines) {
+    const match = line.match(/rangeUtil\.ts:(\d+):(\d+)/)
+    if (match) {
+      return `Line ${match[1]}, Column ${match[2]}`
+    }
+  }
+  return null
+}
+
+// Helper function to create detailed test result
+function createTestResult(
+  success: boolean,
+  message: string,
+  error?: any,
+  additionalData?: any
+) {
+  const result: any = {
+    success,
+    message,
+    timestamp: new Date().toISOString(),
+  }
+
+  if (error) {
+    result.error = error.message || String(error)
+    result.errorType = error.name || 'Error'
+    const lineNumber = getErrorLineNumber(error)
+    if (lineNumber) {
+      result.errorLocation = lineNumber
+    }
+    if (error.stack) {
+      result.stackTrace = error.stack
+    }
+  }
+
+  if (additionalData) {
+    Object.assign(result, additionalData)
+  }
+
+  return result
+}
+
 export const testRangeUtil: Module = {
   help: {
     description: 'Comprehensive unit tests for rangeUtil.ts',
     examples: {
       '': 'Run all tests',
-      'registerRange': 'Test registerRange function',
-      'registerReadableRange': 'Test registerReadableRange function',
-      'registerTicks': 'Test registerTicks function',
-      'subscriptions': 'Test all subscription functions',
-      'updateRange': 'Test updateRange and updateRangeInputInner',
-      'reregistration': 'Test reregistration scenarios',
-      'errors': 'Test error handling',
+      'registerRange': 'Test basic numeric range registration',
+      'registerReadableRange': 'Test readable range registration (string, number, Date types)',
+      'registerTicks': 'Test ticks registration for readable ranges',
+      'subscriptions': 'Test all subscription functions (basic and converted)',
+      'updateRange': 'Test updateRange and updateRangeInputInner functions',
+      'reregistration': 'Test reregistration scenarios (numeric and readable ranges)',
+      'errors': 'Test error handling and validation',
     },
   },
   fn: async ({
@@ -1894,13 +528,18 @@ export const testRangeUtil: Module = {
 
     const results: any = {}
 
-    // Test registerRange
+    // Import test functions from modules
+    const { registerTicks } = await import('./rangeUtilHelpers/ticks')
+    const { accessConversionStore } = await import('./rangeUtilHelpers/readableRange')
+
+    // Test registerRange - basic numeric range registration
     if (!testName || testName === 'registerRange' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-basic'
+        const rangeId = 'testRangeUtil-basic-numeric-range'
+        const initialInput = 100
         registerRange(
           rangeId,
-          100,
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -1908,24 +547,33 @@ export const testRangeUtil: Module = {
           },
           false
         )
-        results.registerRange = {
-          success: true,
-          message: 'registerRange basic test passed',
-          store: store[rangeId],
-        }
+        results.registerRangeBasicNumeric = createTestResult(
+          true,
+          'Basic numeric range registration successful',
+          undefined,
+          {
+            rangeId,
+            initialInput,
+            store: store[rangeId],
+            viewableRange: store[rangeId].viewableRange,
+            nextLeftRange: store[rangeId].nextLeftRange,
+            nextRightRange: store[rangeId].nextRightRange,
+          }
+        )
       } catch (error: any) {
-        results.registerRange = {
-          success: false,
-          error: error.message,
-        }
+        results.registerRangeBasicNumeric = createTestResult(
+          false,
+          'Basic numeric range registration failed',
+          error
+        )
       }
     }
 
-    // Test registerRange with initialInput null (should error)
+    // Test registerRange error handling - null initialInput validation
     if (!testName || testName === 'errors' || testName === '') {
       try {
         registerRange(
-          'testRangeUtil-null-input',
+          'testRangeUtil-null-input-validation',
           null as any,
           {
             getViewableRange: async (input: number) => [input, input + 10],
@@ -1934,26 +582,38 @@ export const testRangeUtil: Module = {
           },
           false
         )
-        results.registerRangeNullInput = {
-          success: false,
-          message: 'Should have thrown error for null initialInput',
-        }
+        results.registerRangeNullInputValidation = createTestResult(
+          false,
+          'Should have thrown error for null initialInput in new registration',
+          undefined,
+          {
+            scenario: 'Attempting to register new range with null initialInput',
+            expectedBehavior: 'Should throw error',
+            actualBehavior: 'No error thrown',
+          }
+        )
       } catch (error: any) {
-        results.registerRangeNullInput = {
-          success: true,
-          message: 'Correctly threw error for null initialInput',
-          error: error.message,
-        }
+        results.registerRangeNullInputValidation = createTestResult(
+          true,
+          'Correctly threw error for null initialInput in new registration',
+          error,
+          {
+            scenario: 'Attempting to register new range with null initialInput',
+            expectedBehavior: 'Should throw error',
+            actualBehavior: 'Error thrown as expected',
+          }
+        )
       }
     }
 
-    // Test registerReadableRange with string
+    // Test registerReadableRange - string input type
     if (!testName || testName === 'registerReadableRange' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-readable-string'
+        const rangeId = 'testRangeUtil-readable-range-string-type'
+        const initialInput = '50'
         await registerReadableRange<string>(
           rangeId,
-          '50',
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -1964,26 +624,36 @@ export const testRangeUtil: Module = {
           },
           false
         )
-        results.registerReadableRangeString = {
-          success: true,
-          message: 'registerReadableRange with string passed',
-          store: conversionStore[rangeId],
-        }
+        results.registerReadableRangeStringType = createTestResult(
+          true,
+          'Readable range registration with string input type successful',
+          undefined,
+          {
+            rangeId,
+            inputType: 'string',
+            initialInput,
+            conversionStore: conversionStore[rangeId],
+            convertedInput: conversionStore[rangeId].input,
+            convertedViewableRange: conversionStore[rangeId].viewableRange,
+          }
+        )
       } catch (error: any) {
-        results.registerReadableRangeString = {
-          success: false,
-          error: error.message,
-        }
+        results.registerReadableRangeStringType = createTestResult(
+          false,
+          'Readable range registration with string input type failed',
+          error
+        )
       }
     }
 
-    // Test registerReadableRange with number
+    // Test registerReadableRange - number input type
     if (!testName || testName === 'registerReadableRange' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-readable-number'
+        const rangeId = 'testRangeUtil-readable-range-number-type'
+        const initialInput = 75
         await registerReadableRange<number>(
           rangeId,
-          75,
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -1992,25 +662,34 @@ export const testRangeUtil: Module = {
             numberToInput: (number: number) => number,
             isReregistration: false,
           },
-          false
+      false
         )
-        results.registerReadableRangeNumber = {
-          success: true,
-          message: 'registerReadableRange with number passed',
-          store: conversionStore[rangeId],
-        }
+        results.registerReadableRangeNumberType = createTestResult(
+          true,
+          'Readable range registration with number input type successful',
+          undefined,
+          {
+            rangeId,
+            inputType: 'number',
+            initialInput,
+            conversionStore: conversionStore[rangeId],
+            convertedInput: conversionStore[rangeId].input,
+            convertedViewableRange: conversionStore[rangeId].viewableRange,
+          }
+        )
       } catch (error: any) {
-        results.registerReadableRangeNumber = {
-          success: false,
-          error: error.message,
-        }
+        results.registerReadableRangeNumberType = createTestResult(
+          false,
+          'Readable range registration with number input type failed',
+          error
+        )
       }
     }
 
-    // Test registerReadableRange with Date
+    // Test registerReadableRange - Date input type
     if (!testName || testName === 'registerReadableRange' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-readable-date'
+        const rangeId = 'testRangeUtil-readable-range-date-type'
         const initialDate = new Date('2024-01-01')
         await registerReadableRange<Date>(
           rangeId,
@@ -2023,29 +702,39 @@ export const testRangeUtil: Module = {
             numberToInput: (number: number) => new Date(number),
             isReregistration: false,
           },
-          false
+      false
         )
-        results.registerReadableRangeDate = {
-          success: true,
-          message: 'registerReadableRange with Date passed',
-          store: conversionStore[rangeId],
-        }
+        results.registerReadableRangeDateType = createTestResult(
+          true,
+          'Readable range registration with Date input type successful',
+          undefined,
+          {
+            rangeId,
+            inputType: 'Date',
+            initialInput: initialDate.toISOString(),
+            conversionStore: conversionStore[rangeId],
+            convertedInput: conversionStore[rangeId].input,
+            convertedViewableRange: conversionStore[rangeId].viewableRange,
+          }
+        )
       } catch (error: any) {
-        results.registerReadableRangeDate = {
-          success: false,
-          error: error.message,
-        }
+        results.registerReadableRangeDateType = createTestResult(
+          false,
+          'Readable range registration with Date input type failed',
+          error
+        )
       }
     }
 
-    // Test registerTicks
+    // Test registerTicks - ticks registration for readable range
     if (!testName || testName === 'registerTicks' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-ticks'
+        const rangeId = 'testRangeUtil-ticks-registration'
+        const initialInput = 100
         // First register a readable range
         await registerReadableRange<number>(
           rangeId,
-          100,
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -2060,31 +749,43 @@ export const testRangeUtil: Module = {
         registerTicks<number>(
           rangeId,
           ([start, end]: [start: number, end: number]) => {
-            const ticks: TicksArray<number> = []
+            const ticks: any[] = []
             for (let i = start; i <= end; i += 1) {
               ticks.push({ value: i, label: i.toString() })
             }
             return ticks
           },
-          false
+      false
         )
-        results.registerTicks = {
-          success: true,
-          message: 'registerTicks passed',
-          ticks: accessTicksStore<number>(rangeId).ticks,
-        }
+        const ticksData = accessTicksStore<number>(rangeId).ticks
+        results.registerTicksForReadableRange = createTestResult(
+          true,
+          'Ticks registration for readable range successful',
+          undefined,
+          {
+            rangeId,
+            initialInput,
+            ticks: ticksData,
+            viewableRangeTicksCount: ticksData.viewableRange.length,
+            nextLeftRangeTicksCount: ticksData.nextLeftRange.length,
+            nextRightRangeTicksCount: ticksData.nextRightRange.length,
+          }
+        )
       } catch (error: any) {
-        results.registerTicks = {
-          success: false,
-          error: error.message,
-        }
+        results.registerTicksForReadableRange = createTestResult(
+          false,
+          'Ticks registration for readable range failed',
+          error
+        )
       }
     }
 
-    // Test subscriptions
+    // Test subscriptions - basic numeric range subscriptions
     if (!testName || testName === 'subscriptions' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-subscriptions'
+        const rangeId = 'testRangeUtil-basic-range-subscriptions'
+        const initialInput = 200
+        const updatedInput = 250
         const subscriptionResults: any = {
           inputChanged: false,
           viewableRange: false,
@@ -2094,9 +795,9 @@ export const testRangeUtil: Module = {
           endLoading: false,
         }
 
-        registerRange(
-          rangeId,
-          200,
+  registerRange(
+    rangeId,
+          initialInput,
           {
             getViewableRange: async (input: number) => {
               await new Promise((resolve) => setTimeout(resolve, 10))
@@ -2152,7 +853,7 @@ export const testRangeUtil: Module = {
         })
 
         // Trigger an update
-        updateRangeInputInner(rangeId, 250)
+        updateRangeInputInner(rangeId, updatedInput)
 
         // Wait for async operations
         await new Promise((resolve) => setTimeout(resolve, 100))
@@ -2165,23 +866,33 @@ export const testRangeUtil: Module = {
         unsubStartLoading()
         unsubEndLoading()
 
-        results.subscriptions = {
-          success: true,
-          message: 'Subscription tests passed',
-          results: subscriptionResults,
-        }
+        results.subscriptionsBasicNumericRange = createTestResult(
+          true,
+          'Basic numeric range subscription tests passed',
+          undefined,
+          {
+            rangeId,
+            initialInput,
+            updatedInput,
+            subscriptionResults,
+            allSubscriptionsFired: Object.values(subscriptionResults).every(v => v === true),
+          }
+        )
       } catch (error: any) {
-        results.subscriptions = {
-          success: false,
-          error: error.message,
-        }
+        results.subscriptionsBasicNumericRange = createTestResult(
+          false,
+          'Basic numeric range subscription tests failed',
+          error
+        )
       }
     }
 
-    // Test converted range subscriptions
+    // Test subscriptions - converted readable range subscriptions
     if (!testName || testName === 'subscriptions' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-converted-subscriptions'
+        const rangeId = 'testRangeUtil-readable-range-converted-subscriptions'
+        const initialInput = '300'
+        const updatedInput = '350'
         const subscriptionResults: any = {
           convertedStartLoading: false,
           convertedEndLoading: false,
@@ -2195,7 +906,7 @@ export const testRangeUtil: Module = {
 
         await registerReadableRange<string>(
           rangeId,
-          '300',
+          initialInput,
           {
             getViewableRange: async (input: number) => {
               await new Promise((resolve) => setTimeout(resolve, 10))
@@ -2261,7 +972,7 @@ export const testRangeUtil: Module = {
           })
 
         // Trigger an update
-        updateRange(rangeId, '350')
+        updateRange(rangeId, updatedInput)
 
         // Wait for async operations
         await new Promise((resolve) => setTimeout(resolve, 150))
@@ -2276,26 +987,37 @@ export const testRangeUtil: Module = {
         unsubNextRightStart()
         unsubNextRightEnd()
 
-        results.convertedSubscriptions = {
-          success: true,
-          message: 'Converted subscription tests passed',
-          results: subscriptionResults,
-        }
+        results.subscriptionsReadableRangeConverted = createTestResult(
+          true,
+          'Readable range converted subscription tests passed',
+          undefined,
+          {
+            rangeId,
+            inputType: 'string',
+            initialInput,
+            updatedInput,
+            subscriptionResults,
+            allSubscriptionsFired: Object.values(subscriptionResults).every(v => v === true),
+          }
+        )
       } catch (error: any) {
-        results.convertedSubscriptions = {
-          success: false,
-          error: error.message,
-        }
+        results.subscriptionsReadableRangeConverted = createTestResult(
+          false,
+          'Readable range converted subscription tests failed',
+          error
+        )
       }
     }
 
-    // Test updateRange and updateRangeInputInner
+    // Test updateRangeInputInner - update numeric range input
     if (!testName || testName === 'updateRange' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-update'
+        const rangeId = 'testRangeUtil-update-numeric-range-input'
+        const initialInput = 400
+        const updatedInput = 450
         registerRange(
           rangeId,
-          400,
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -2304,28 +1026,41 @@ export const testRangeUtil: Module = {
           false
         )
 
-        console.log('store 0', store, {
-          rangeId
-        })
-        const initialInput = store[rangeId].input
-        updateRangeInputInner(rangeId, 450)
-        console.log('store 1', store, {
-          rangeId
-        })
-        const updatedInput = store[rangeId].input
+        const beforeUpdate = store[rangeId].input
+        updateRangeInputInner(rangeId, updatedInput)
+        const afterUpdate = store[rangeId].input
 
-        results.updateRangeInputInner = {
-          success: true,
-          message: 'updateRangeInputInner test passed',
-          initialInput,
-          updatedInput,
-        }
+        results.updateRangeInputInnerNumeric = createTestResult(
+          true,
+          'updateRangeInputInner for numeric range test passed',
+          undefined,
+          {
+            rangeId,
+            initialInput,
+            updatedInput,
+            beforeUpdate,
+            afterUpdate,
+            updateSuccessful: afterUpdate === updatedInput,
+          }
+        )
+      } catch (error: any) {
+        results.updateRangeInputInnerNumeric = createTestResult(
+          false,
+          'updateRangeInputInner for numeric range test failed',
+          error
+        )
+      }
+    }
 
-        // Test updateRange with readable range
-        const readableRangeId = 'testRangeUtil-update-readable'
+    // Test updateRange - update readable range input
+    if (!testName || testName === 'updateRange' || testName === '') {
+      try {
+        const readableRangeId = 'testRangeUtil-update-readable-range-input'
+        const initialInput = '500'
+        const updatedInput = '550'
         await registerReadableRange<string>(
           readableRangeId,
-          '500',
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -2337,33 +1072,43 @@ export const testRangeUtil: Module = {
           false
         )
 
-        const initialReadableInput = conversionStore[readableRangeId].input
-        updateRange(readableRangeId, '550')
+        const beforeUpdate = conversionStore[readableRangeId].input
+        updateRange(readableRangeId, updatedInput)
         await new Promise((resolve) => setTimeout(resolve, 50))
-        const updatedReadableInput = conversionStore[readableRangeId].input
+        const afterUpdate = conversionStore[readableRangeId].input
 
-        results.updateRange = {
-          success: true,
-          message: 'updateRange test passed',
-          initialReadableInput,
-          updatedReadableInput,
-        }
+        results.updateRangeReadable = createTestResult(
+          true,
+          'updateRange for readable range test passed',
+          undefined,
+          {
+            rangeId: readableRangeId,
+            inputType: 'string',
+            initialInput,
+            updatedInput,
+            beforeUpdate: String(beforeUpdate),
+            afterUpdate: String(afterUpdate),
+            updateSuccessful: String(afterUpdate) === String(updatedInput),
+          }
+        )
       } catch (error: any) {
-        results.updateRange = {
-          success: false,
-          error: error.message,
-        }
+        results.updateRangeReadable = createTestResult(
+          false,
+          'updateRange for readable range test failed',
+          error
+        )
       }
     }
 
-    // Test reregistration
+    // Test reregistration - numeric range reregistration with new functions
     if (!testName || testName === 'reregistration' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-reregister'
+        const rangeId = 'testRangeUtil-reregister-numeric-range'
+        const initialInput = 600
         // Initial registration
         registerRange(
           rangeId,
-          600,
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -2386,18 +1131,35 @@ export const testRangeUtil: Module = {
           true
         )
 
-        results.reregistration = {
-          success: true,
-          message: 'Reregistration test passed',
-          initialStore,
-          afterReregister: store[rangeId],
-        }
+        results.reregistrationNumericRange = createTestResult(
+          true,
+          'Numeric range reregistration with new functions test passed',
+          undefined,
+          {
+            rangeId,
+            initialInput,
+            initialStore,
+            afterReregister: store[rangeId],
+            functionsUpdated: true,
+          }
+        )
+      } catch (error: any) {
+        results.reregistrationNumericRange = createTestResult(
+          false,
+          'Numeric range reregistration with new functions test failed',
+          error
+        )
+      }
+    }
 
-        // Test readable range reregistration
-        const readableRangeId = 'testRangeUtil-reregister-readable'
+    // Test reregistration - readable range reregistration with new functions
+    if (!testName || testName === 'reregistration' || testName === '') {
+      try {
+        const readableRangeId = 'testRangeUtil-reregister-readable-range'
+        const initialInput = '700'
         await registerReadableRange<string>(
           readableRangeId,
-          '700',
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -2425,39 +1187,49 @@ export const testRangeUtil: Module = {
           true
         )
 
-        results.reregistrationReadable = {
-          success: true,
-          message: 'Readable range reregistration test passed',
-          initialStore: initialReadableStore,
-          afterReregister: conversionStore[readableRangeId],
-        }
+        results.reregistrationReadableRange = createTestResult(
+          true,
+          'Readable range reregistration with new functions test passed',
+          undefined,
+          {
+            rangeId: readableRangeId,
+            inputType: 'string',
+            initialInput,
+            initialStore: initialReadableStore,
+            afterReregister: conversionStore[readableRangeId],
+            functionsUpdated: true,
+          }
+        )
       } catch (error: any) {
-        results.reregistration = {
-          success: false,
-          error: error.message,
-        }
+        results.reregistrationReadableRange = createTestResult(
+          false,
+          'Readable range reregistration with new functions test failed',
+          error
+        )
       }
     }
 
-    // Test error cases
+    // Test error cases - numeric range reregistration with initialInput (should error)
     if (!testName || testName === 'errors' || testName === '') {
       const errorResults: any = {}
 
-      // Test reregistration with initialInput (should error)
       try {
+        const rangeId = 'testRangeUtil-error-numeric-reregister-with-initial-input'
+        const firstInput = 800
+        const secondInput = 850
         registerRange(
-          'testRangeUtil-error-reregister-with-input',
-          800,
+          rangeId,
+          firstInput,
           {
-            getViewableRange: async (input: number) => [input, input + 10],
-            getNextLeftRange: async (input: number) => [input - 10, input],
-            getNextRightRange: async (input: number) => [input + 10, input + 20],
+      getViewableRange: async (input: number) => [input, input + 10],
+      getNextLeftRange: async (input: number) => [input - 10, input],
+      getNextRightRange: async (input: number) => [input + 10, input + 20],
           },
           false
         )
         registerRange(
-          'testRangeUtil-error-reregister-with-input',
-          850,
+          rangeId,
+          secondInput,
           {
             getViewableRange: async (input: number) => [input, input + 10],
             getNextLeftRange: async (input: number) => [input - 10, input],
@@ -2465,36 +1237,53 @@ export const testRangeUtil: Module = {
           },
           true
         )
-        errorResults.reregisterWithInput = {
-          success: false,
-          message: 'Should have thrown error for initialInput in reregistration',
-        }
+        errorResults.numericRangeReregisterWithInitialInput = createTestResult(
+          false,
+          'Should have thrown error for initialInput in numeric range reregistration',
+          undefined,
+          {
+            rangeId,
+            firstInput,
+            secondInput,
+            scenario: 'Attempting to reregister numeric range with initialInput',
+            expectedBehavior: 'Should throw error',
+            actualBehavior: 'No error thrown',
+          }
+        )
       } catch (error: any) {
-        errorResults.reregisterWithInput = {
-          success: true,
-          message: 'Correctly threw error for initialInput in reregistration',
-          error: error.message,
-        }
+        errorResults.numericRangeReregisterWithInitialInput = createTestResult(
+          true,
+          'Correctly threw error for initialInput in numeric range reregistration',
+          error,
+          {
+            scenario: 'Attempting to reregister numeric range with initialInput',
+            expectedBehavior: 'Should throw error',
+            actualBehavior: 'Error thrown as expected',
+          }
+        )
       }
 
       // Test readable range reregistration with initialInput (should error)
       try {
+        const rangeId = 'testRangeUtil-error-readable-reregister-with-initial-input'
+        const firstInput = '900'
+        const secondInput = '950'
         await registerReadableRange<string>(
-          'testRangeUtil-error-readable-reregister',
-          '900',
+          rangeId,
+          firstInput,
           {
             getViewableRange: async (input: number) => [input, input + 10],
-            getNextLeftRange: async (input: number) => [input - 10, input],
-            getNextRightRange: async (input: number) => [input + 10, input + 20],
-            inputToNumber: (input: string) => parseInt(input),
-            numberToInput: (number: number) => number.toString(),
-            isReregistration: false,
+      getNextLeftRange: async (input: number) => [input - 10, input],
+      getNextRightRange: async (input: number) => [input + 10, input + 20],
+      inputToNumber: (input: string) => parseInt(input),
+      numberToInput: (number: number) => number.toString(),
+      isReregistration: false,
           },
           false
         )
         await registerReadableRange<string>(
-          'testRangeUtil-error-readable-reregister',
-          '950',
+          rangeId,
+          secondInput,
           {
             getViewableRange: async (input: number) => [input, input + 10],
             getNextLeftRange: async (input: number) => [input - 10, input],
@@ -2505,30 +1294,43 @@ export const testRangeUtil: Module = {
           },
           true
         )
-        errorResults.readableReregisterWithInput = {
-          success: false,
-          message:
-            'Should have thrown error for initialInput in readable reregistration',
-        }
+        errorResults.readableRangeReregisterWithInitialInput = createTestResult(
+          false,
+          'Should have thrown error for initialInput in readable range reregistration',
+          undefined,
+          {
+            rangeId,
+            firstInput,
+            secondInput,
+            scenario: 'Attempting to reregister readable range with initialInput',
+            expectedBehavior: 'Should throw error',
+            actualBehavior: 'No error thrown',
+          }
+        )
       } catch (error: any) {
-        errorResults.readableReregisterWithInput = {
-          success: true,
-          message:
-            'Correctly threw error for initialInput in readable reregistration',
-          error: error.message,
-        }
+        errorResults.readableRangeReregisterWithInitialInput = createTestResult(
+          true,
+          'Correctly threw error for initialInput in readable range reregistration',
+          error,
+          {
+            scenario: 'Attempting to reregister readable range with initialInput',
+            expectedBehavior: 'Should throw error',
+            actualBehavior: 'Error thrown as expected',
+          }
+        )
       }
 
       results.errors = errorResults
     }
 
-    // Test accessConversionStore type safety
+    // Test accessConversionStore type safety - type checking and validation
     if (!testName || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-type-safety'
+        const rangeId = 'testRangeUtil-access-conversion-store-type-safety'
+        const initialInput = '1000'
         await registerReadableRange<string>(
           rangeId,
-          '1000',
+          initialInput,
           {
             getViewableRange: async (input: number) => [input - 5, input + 5],
             getNextLeftRange: async (input: number) => [input - 20, input - 5],
@@ -2541,31 +1343,49 @@ export const testRangeUtil: Module = {
         )
 
         const store = accessConversionStore<string>(rangeId)
-        const input = store.input
+        const initialStoreInput = store.input
         store.input = '1100'
-        const viewableRange = store.viewableRange
+        const updatedStoreInput = store.input
+        const initialViewableRange = store.viewableRange
         store.viewableRange = ['1095', '1105']
+        const updatedViewableRange = store.viewableRange
 
         // Test type mismatch error
         let typeMismatchError = false
+        let typeMismatchErrorDetails: any = null
         try {
           store.input = 1234 as any // Should fail type check
         } catch (error: any) {
           typeMismatchError = true
+          typeMismatchErrorDetails = {
+            errorMessage: error.message,
+            errorType: error.name,
+          }
         }
 
-        results.typeSafety = {
-          success: true,
-          message: 'Type safety tests passed',
-          input,
-          viewableRange,
-          typeMismatchError,
-        }
+        results.accessConversionStoreTypeSafety = createTestResult(
+          true,
+          'accessConversionStore type safety tests passed',
+          undefined,
+          {
+            rangeId,
+            inputType: 'string',
+            initialInput,
+            initialStoreInput,
+            updatedStoreInput,
+            initialViewableRange,
+            updatedViewableRange,
+            typeMismatchError,
+            typeMismatchErrorDetails,
+            typeSafetyWorking: typeMismatchError === true,
+          }
+        )
       } catch (error: any) {
-        results.typeSafety = {
-          success: false,
-          error: error.message,
-        }
+        results.accessConversionStoreTypeSafety = createTestResult(
+          false,
+          'accessConversionStore type safety tests failed',
+          error
+        )
       }
     }
 
@@ -2573,7 +1393,7 @@ export const testRangeUtil: Module = {
     
     // Display results in DOM
     displayTestResults(results)
-    
+
     return Promise.resolve({
       formatted: results,
     })
