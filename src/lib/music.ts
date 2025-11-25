@@ -69,6 +69,7 @@ const allSamplesLoadedPromise = new Promise<void>((resolve) => {
         resolve()
     }
 })
+
 let allLoadedTimeout: NodeJS.Timeout | null = null
 if (allLoadedTimeout === null) {
     allLoadedTimeout = setInterval(() => {
