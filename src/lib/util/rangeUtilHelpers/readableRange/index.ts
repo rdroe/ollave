@@ -12,9 +12,9 @@ export type StringOrNumberOrDate = string | number | Date
 export const conversionStore: {
   [rangeId: string]: {
     input: NumericInput
-    viewableRange: [start: number, end: number]
-    nextLeftRange: [start: number, end: number]
-    nextRightRange: [start: number, end: number]
+    viewableRange: [start: StringOrNumberOrDate, end: StringOrNumberOrDate]
+    nextLeftRange: [start: StringOrNumberOrDate, end: StringOrNumberOrDate]
+    nextRightRange: [start: StringOrNumberOrDate, end: StringOrNumberOrDate]
     convertedLoading: boolean
     convertedViewableRangeLoading: boolean
     convertedNextLeftRangeLoading: boolean
@@ -82,10 +82,11 @@ const isMatchingInputType = <InputType extends StringOrNumberOrDate>(
 
 const requireMatchingInputType = <InputType extends StringOrNumberOrDate>(
   toReplace: any,
-  value: StringOrNumberOrDate
+  value: StringOrNumberOrDate,
+  note: string = ''
 ): InputType => {
   if (!isMatchingInputType<InputType>(toReplace, value)) {
-    throw new Error('Input type mismatch')
+    throw new Error('Input type mismatch; ' + note + (note? '; ' : '') + ' toReplace: ' + JSON.stringify(toReplace, null, 2) + ' value: ' + JSON.stringify(value, null, 2))
   }
   return value
 }
@@ -100,6 +101,11 @@ export const accessConversionStore = <
       return conversionStore[rangeId].input as InputType
     },
     set input(value: InputType) {
+      console.log('setting input', rangeId, {
+        "value": value,
+        "conversionStore[rangeId].input": conversionStore[rangeId].input,
+
+      })
       // @ts-expect-error - we know that the input is a proper type
       conversionStore[rangeId].input = requireMatchingInputType<InputType>(
         conversionStore[rangeId].input,
@@ -114,12 +120,11 @@ export const accessConversionStore = <
     },
     set viewableRange(value: [start: InputType, end: InputType]) {
       conversionStore[rangeId].viewableRange = [
-        // @ts-expect-error - we know that the viewable range is a proper type
         requireMatchingInputType<InputType>(
           conversionStore[rangeId].viewableRange[0],
           value[0]
         ),
-        // @ts-expect-error - we know that the viewable range is a proper type
+
         requireMatchingInputType<InputType>(
           conversionStore[rangeId].viewableRange[1],
           value[1]
@@ -134,12 +139,11 @@ export const accessConversionStore = <
     },
     set nextLeftRange(value: [start: InputType, end: InputType]) {
       conversionStore[rangeId].nextLeftRange = [
-        // @ts-expect-error - we know that the next left range is a proper type
+
         requireMatchingInputType<InputType>(
           conversionStore[rangeId].nextLeftRange[0],
           value[0]
         ),
-        // @ts-expect-error - we know that the next left range is a proper type
         requireMatchingInputType<InputType>(
           conversionStore[rangeId].nextLeftRange[1],
           value[1]
@@ -154,12 +158,10 @@ export const accessConversionStore = <
     },
     set nextRightRange(value: [start: InputType, end: InputType]) {
       conversionStore[rangeId].nextRightRange = [
-        // @ts-expect-error - we know that the next right range is a proper type
         requireMatchingInputType<InputType>(
           conversionStore[rangeId].nextRightRange[0],
           value[0]
         ),
-        // @ts-expect-error - we know that the next right range is a proper type
         requireMatchingInputType<InputType>(
           conversionStore[rangeId].nextRightRange[1],
           value[1]
@@ -200,6 +202,10 @@ function convertUpdatedInputHandler<InputType extends StringOrNumberOrDate>(
   if (!rangeId || input === undefined) {
     throw new Error('Invalid event detail')
   }
+  console.log('setting input', rangeId, {
+    "conversionStore[rangeId].input": conversionStore[rangeId].input,
+    "conversionStore[rangeId].fns.numberToInput(input)": conversionStore[rangeId].fns.numberToInput(input),
+  })
   // @ts-expect-error - we know that the input is a proper type
   conversionStore[rangeId].input = conversionStore[rangeId].fns.numberToInput(
     input
@@ -226,7 +232,8 @@ function convertUpdatedViewableRangeHandler<
     throw new Error('Invalid event detail')
   }
 
-  accessConversionStore<InputType>(rangeId).viewableRange = viewableRange
+  const {numberToInput} = conversionStore[rangeId].fns
+    accessConversionStore<InputType>(rangeId).viewableRange = viewableRange.map((value) => numberToInput(value as number)) as [start: InputType, end: InputType]
   conversionEmitters[rangeId].viewableRangeConverted.dispatchEvent(
     new CustomEvent(getConversionEventNames(rangeId).viewableRangeConverted, {
       detail: {
@@ -260,7 +267,8 @@ function convertUpdatedNextLeftRangeHandler<
     throw new Error('Invalid event detail')
   }
 
-  accessConversionStore<InputType>(rangeId).nextLeftRange = nextLeftRange
+  const {numberToInput} = conversionStore[rangeId].fns
+  accessConversionStore<InputType>(rangeId).nextLeftRange = nextLeftRange.map((value) => numberToInput(value as number)) as [start: InputType, end: InputType]
   conversionEmitters[rangeId].nextLeftRangeConverted.dispatchEvent(
     new CustomEvent(getConversionEventNames(rangeId).nextLeftRangeConverted, {
       detail: {
@@ -293,7 +301,8 @@ function convertUpdatedNextRightRangeHandler<
   if (!rangeId || nextRightRange === undefined) {
     throw new Error('Invalid event detail')
   }
-  accessConversionStore<InputType>(rangeId).nextRightRange = nextRightRange
+  const {numberToInput} = conversionStore[rangeId].fns
+  accessConversionStore<InputType>(rangeId).nextRightRange = nextRightRange.map((value) => numberToInput(value as number)) as [start: InputType, end: InputType]
   conversionEmitters[rangeId].nextRightRangeConverted.dispatchEvent(
     new CustomEvent(getConversionEventNames(rangeId).nextRightRangeConverted, {
       detail: {
@@ -480,8 +489,6 @@ export const registerReadableRange = async <
 
   if (isReregistration) {
     if (initialInput !== null) {
-      console.log('reregistration readable range 1', rangeId)
-      console.log('initial input 1', initialInput)
       throw new Error('Initial input disallowed for reregistration')
     }
 
@@ -513,8 +520,7 @@ export const registerReadableRange = async <
   } else {
 
     if (initialInput === null) {
-      console.log('new registration readable range 3', rangeId)
-      console.log('initial input 3', initialInput)
+
       throw new Error('Initial input required for new registration')
     }
     conversionEmitters[rangeId] = {
@@ -530,10 +536,10 @@ export const registerReadableRange = async <
     }
   }
   conversionStore[rangeId] = {
-    input: inputToNumber(initialInput),
-    viewableRange: await getViewableRange(inputToNumber(initialInput)),
-    nextLeftRange: await getNextLeftRange(inputToNumber(initialInput)),
-    nextRightRange: await getNextRightRange(inputToNumber(initialInput)),
+    input: initialInput as NumericInput,
+    viewableRange: (await getViewableRange(inputToNumber(initialInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
+    nextLeftRange: (await getNextLeftRange(inputToNumber(initialInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
+    nextRightRange: (await getNextRightRange(inputToNumber(initialInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
     convertedLoading: false,
     convertedViewableRangeLoading: false,
     convertedNextLeftRangeLoading: false,

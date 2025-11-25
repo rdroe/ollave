@@ -33,6 +33,7 @@ import {
   subscribeToRangeConvertedNextLeftRangeEndLoading,
   subscribeToRangeConvertedNextRightRangeStartLoading,
   subscribeToRangeConvertedNextRightRangeEndLoading,
+  accessConversionStore,
 } from './rangeUtilHelpers/readableRange'
 import { accessTicksStore } from './rangeUtilHelpers/ticks'
 
@@ -135,7 +136,7 @@ export const testReadableRange: Module = {
     }
     registerReadableRange<string>('testReadableRange', '0', {
       getViewableRange: async (input: number) => {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+
         return [input, input + 10]
       },
       getNextLeftRange: async (input: number) => [input - 10, input],
@@ -176,7 +177,7 @@ export const testReadableRange: Module = {
       console.log('end loading')
     })
     subscribeToRangeConvertedStartLoading('testReadableRange', () => {
-      console.log('start loading converted range overall')
+      console.log('start loading converted range overall', conversionStore['testReadableRange'])
     })
     subscribeToRangeConvertedEndLoading('testReadableRange', () => {
       console.log('end loading converted range overall')
@@ -228,7 +229,7 @@ export const testReadableRange: Module = {
         positionalNonCommands,
       }: ParsedCli & { positionalNonCommands: [string] }) => {
         console.log('input', conversionStore['testReadableRange'].input)
-        updateRange('testReadableRange', positionalNonCommands[0])
+        updateRange('testReadableRange', `${positionalNonCommands[0]}`)
       },
     },
   },
@@ -800,15 +801,15 @@ export const testRangeUtil: Module = {
           initialInput,
           {
             getViewableRange: async (input: number) => {
-              await new Promise((resolve) => setTimeout(resolve, 10))
+              
               return [input - 5, input + 5]
             },
             getNextLeftRange: async (input: number) => {
-              await new Promise((resolve) => setTimeout(resolve, 10))
+
               return [input - 20, input - 5]
             },
             getNextRightRange: async (input: number) => {
-              await new Promise((resolve) => setTimeout(resolve, 10))
+
               return [input + 5, input + 20]
             },
           },
@@ -909,15 +910,13 @@ export const testRangeUtil: Module = {
           initialInput,
           {
             getViewableRange: async (input: number) => {
-              await new Promise((resolve) => setTimeout(resolve, 10))
+
               return [input - 5, input + 5]
             },
             getNextLeftRange: async (input: number) => {
-              await new Promise((resolve) => setTimeout(resolve, 10))
               return [input - 20, input - 5]
             },
             getNextRightRange: async (input: number) => {
-              await new Promise((resolve) => setTimeout(resolve, 10))
               return [input + 5, input + 20]
             },
             inputToNumber: (input: string) => parseInt(input),
@@ -1074,7 +1073,7 @@ export const testRangeUtil: Module = {
 
         const beforeUpdate = conversionStore[readableRangeId].input
         updateRange(readableRangeId, updatedInput)
-        await new Promise((resolve) => setTimeout(resolve, 50))
+
         const afterUpdate = conversionStore[readableRangeId].input
 
         results.updateRangeReadable = createTestResult(
@@ -1355,6 +1354,7 @@ export const testRangeUtil: Module = {
         try {
           store.input = 1234 as any // Should fail type check
         } catch (error: any) {
+          console.log('type mismatch error; good failure', error)
           typeMismatchError = true
           typeMismatchErrorDetails = {
             errorMessage: error.message,
@@ -1380,10 +1380,11 @@ export const testRangeUtil: Module = {
           }
         )
       } catch (error: any) {
+
         results.accessConversionStoreTypeSafety = createTestResult(
           false,
           'accessConversionStore type safety tests failed',
-          error
+   JSON.stringify(error.stack, null, 2),
         )
       }
     }
