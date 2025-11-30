@@ -566,7 +566,7 @@ export const registerReadableRange = async <
   // Use effectiveInput (which uses current store input during re-registration if initialInput is null)
   conversionStore[rangeId] = {
     input: effectiveInput as NumericInput,
-    // todo: Dont force this to be synchronous.
+    // todo: Make this async. do it by setting these first to default values, then after the  this object in conversionStore is set, fire the proper events
     viewableRange: (await getViewableRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
     nextLeftRange: (await getNextLeftRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
     nextRightRange: (await getNextRightRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
@@ -579,7 +579,6 @@ export const registerReadableRange = async <
       inputToNumber: inputToNumber as (input: InputType) => number,
     },
   }
-  initializationSubscribers[rangeId].forEach((callback) => callback())
 
   // as range inner emitters fire, we need to convert the input, viewable range, next left range, and next right range to the InputType
   emitters[rangeId].inputChanged.addEventListener(
@@ -610,6 +609,20 @@ export const registerReadableRange = async <
     getConversionEventNames(rangeId).convertedNextRightRangeLoading,
     convertUpdatedNextRightRangeLoadingHandler<InputType>
   )
+  // complete the above todo; fire events that will properly set the ranges based on initial input.
+  const unsubscribeInit = subscribeToRangeConvertedEndLoading(rangeId, () => {
+    fireInitialEvents() 
+    console.log('unsubscribing from initial events')
+    unsubscribeInit()
+  }) 
+  
+  function fireInitialEvents() { 
+    initializationSubscribers?.[rangeId].forEach((callback) => callback()) 
+  }
+
+  updateRange(rangeId, effectiveInput)
+
+
 }
 
 export const subscribeToRangeConvertedStartLoading = (
