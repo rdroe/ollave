@@ -16,18 +16,27 @@ export  type DimensionalRange = {
 const getDimensionalRangeFunctions = (dimensionalRange: DimensionalRange) => {
    const { zoom, unitSize, leftPrefetchFactor, rightPrefetchFactor, unitsPerViewportWidth } = dimensionalRange
     const getViewableRange = (input: number): Promise<[start: number, end: number]> => {
-        const start = input - unitSize * unitsPerViewportWidth * zoom
-        const end = input + unitSize * unitsPerViewportWidth * zoom
+        // viewportWidth decreases as zoom increases (higher zoom = narrower view)
+        const viewportWidth = (unitSize * unitsPerViewportWidth) / zoom
+        const half = viewportWidth / 2
+        const start = input - half
+        const end = input + half
         return Promise.resolve([start, end])
     }
     const getNextLeftRange = (input: number): Promise<[start: number, end: number]> => {
-        const start = input - unitSize * unitsPerViewportWidth * zoom * leftPrefetchFactor
-        const end = input - unitSize * unitsPerViewportWidth * zoom
+        const viewportWidth = (unitSize * unitsPerViewportWidth) / zoom
+        const half = viewportWidth / 2
+        const viewableStart = input - half
+        const start = viewableStart - viewportWidth * leftPrefetchFactor
+        const end = viewableStart
         return Promise.resolve([start, end])
     }
     const getNextRightRange = (input: number): Promise<[start: number, end: number]> => {
-        const start = input + unitSize * unitsPerViewportWidth * zoom
-        const end = input + unitSize * unitsPerViewportWidth * zoom * rightPrefetchFactor
+        const viewportWidth = (unitSize * unitsPerViewportWidth) / zoom
+        const half = viewportWidth / 2
+        const viewableEnd = input + half
+        const start = viewableEnd
+        const end = viewableEnd + viewportWidth * rightPrefetchFactor
         return Promise.resolve([start, end])
     }
     return {

@@ -8,8 +8,10 @@ import {
 } from './commands/song/list'
 import { music } from './lib'
 import { updateTestMode } from './lib/schemas'
-import { testRangeInner, testReadableRange, testRangeUtil, createDomRangeDemo } from './lib/util'
+import { testRangeInner, testReadableRange, testRangeUtil } from './lib/util'
 import { init as songInit } from './lib/util/songUtil'
+import { createDimensionalExampleAlphadex } from './lib/songGanttDemos/dimensionalExampleAlphadex'
+import { createDimensionalExampleNumeric } from './lib/songGanttDemos/dimensionalExampleNumeric'
 // import { playTriads } from './lib/music'
 console.log('location.pathname', location.pathname)
 if (location.pathname.includes('songGanttChart')) {
@@ -17,7 +19,8 @@ if (location.pathname.includes('songGanttChart')) {
   document.body.style.backgroundColor = 'green'
   document.body.style.color = 'white'
   console.log('creating range demo')
-  createDomRangeDemo()
+  createDimensionalExampleAlphadex()
+  createDimensionalExampleNumeric()
   // populate the songGanttChart div with the song gantt chart
 } else {
     document.body.onload = async () => {
