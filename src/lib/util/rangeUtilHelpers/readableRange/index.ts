@@ -467,7 +467,20 @@ export const registerReadableRange = async <
   },
   isReregistration = false
 ) => {
-  const numericInitialInput = inputToNumber(initialInput) 
+  // During re-registration, use the current input from the store if initialInput is null
+  const effectiveInput = isReregistration && initialInput === null 
+    ? conversionStore[rangeId]?.input as InputType
+    : initialInput
+
+  if (effectiveInput === null) {
+    if (isReregistration) {
+      throw new Error('Cannot re-register: no current input in store and no initialInput provided')
+    } else {
+      throw new Error('Initial input required for new registration')
+    }
+  }
+
+  const numericInitialInput = inputToNumber(effectiveInput)
   if (!isReregistration && typeof numericInitialInput !== 'number') {
     throw new Error('Initial input must be a  number')
   }
@@ -488,9 +501,6 @@ export const registerReadableRange = async <
   }
 
   if (isReregistration) {
-    if (initialInput !== null) {
-      throw new Error('Initial input disallowed for reregistration')
-    }
 
     conversionEmitters[rangeId].inputConverted.removeEventListener(
       getConversionEventNames(rangeId).inputConverted,
@@ -518,11 +528,6 @@ export const registerReadableRange = async <
     conversionEmitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
     conversionEmitters[rangeId].cleanup = []
   } else {
-
-    if (initialInput === null) {
-
-      throw new Error('Initial input required for new registration')
-    }
     conversionEmitters[rangeId] = {
       inputConverted: new EventTarget(),
       viewableRangeConverted: new EventTarget(),
@@ -535,11 +540,12 @@ export const registerReadableRange = async <
       cleanup: [],
     }
   }
+  // Use effectiveInput (which uses current store input during re-registration if initialInput is null)
   conversionStore[rangeId] = {
-    input: initialInput as NumericInput,
-    viewableRange: (await getViewableRange(inputToNumber(initialInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
-    nextLeftRange: (await getNextLeftRange(inputToNumber(initialInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
-    nextRightRange: (await getNextRightRange(inputToNumber(initialInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
+    input: effectiveInput as NumericInput,
+    viewableRange: (await getViewableRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
+    nextLeftRange: (await getNextLeftRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
+    nextRightRange: (await getNextRightRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
     convertedLoading: false,
     convertedViewableRangeLoading: false,
     convertedNextLeftRangeLoading: false,
