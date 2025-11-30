@@ -218,6 +218,114 @@ export const createDimensionalExampleNumeric = () => {
   root.appendChild(upvwUpBtn)
   root.appendChild(upvwDownBtn)
 
+  // Graphical tickmark rendering in lower right corner
+  const tickmarkContainer = document.createElement('div')
+  tickmarkContainer.id = 'tickmark-container'
+  tickmarkContainer.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 50px;
+    width: 600px;
+    height: 120px;
+    background-color: #2a2a2a;
+    border: 2px solid #555;
+    border-radius: 8px;
+    padding: 0;
+    z-index: 10001;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-sizing: border-box;
+  `
+
+  const tickmarkRuler = document.createElement('div')
+  tickmarkRuler.id = 'tickmark-ruler'
+  tickmarkRuler.style.cssText = `
+    position: relative;
+    width: 100%;
+    height: 60px;
+    border-top: 2px solid #666;
+    margin-top: 10px;
+  `
+
+  const tickmarkLabel = document.createElement('div')
+  tickmarkLabel.textContent = 'Tickmarks'
+  tickmarkLabel.style.cssText = `
+    color: #d4d4d4;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  `
+
+  tickmarkContainer.appendChild(tickmarkLabel)
+  tickmarkContainer.appendChild(tickmarkRuler)
+
+  const renderTickmarks = () => {
+    const rangeStore = accessConversionStore(rangeId)
+    const ticks = ticksInRange(rangeStore.viewableRange.map(convertAlphadex) as RangePair)
+    const [rangeStart, rangeEnd] = rangeStore.viewableRange.map(convertAlphadex) as RangePair
+    const rangeWidth = rangeEnd - rangeStart
+
+    // Clear existing tickmarks
+    tickmarkRuler.innerHTML = ''
+
+    if (ticks.length === 0 || !Number.isFinite(rangeWidth) || rangeWidth === 0) {
+      return
+    }
+
+    // Render each tickmark
+    ticks.forEach((tickStr) => {
+      const tick = parseFloat(tickStr)
+      if (!Number.isFinite(tick)) return
+
+      // Calculate position as percentage of range
+      const position = ((tick - rangeStart) / rangeWidth) * 100
+
+      // Create tickmark line
+      const tickLine = document.createElement('div')
+      tickLine.style.cssText = `
+        position: absolute;
+        left: ${position}%;
+        top: 0;
+        width: 1px;
+        height: 20px;
+        background-color: #888;
+        transform: translateX(-50%);
+      `
+
+      // Create tickmark label
+      const tickLabel = document.createElement('div')
+      tickLabel.textContent = tickStr
+      tickLabel.style.cssText = `
+        position: absolute;
+        left: ${position}%;
+        top: 22px;
+        transform: translateX(-50%);
+        color: #aaa;
+        font-family: 'Courier New', monospace;
+        font-size: 10px;
+        white-space: nowrap;
+      `
+
+      tickmarkRuler.appendChild(tickLine)
+      tickmarkRuler.appendChild(tickLabel)
+    })
+
+    // Add center indicator (current input position)
+    const centerPosition = ((convertAlphadex(rangeStore.input as number) - rangeStart) / rangeWidth) * 100
+    const centerIndicator = document.createElement('div')
+    centerIndicator.style.cssText = `
+      position: absolute;
+      left: ${centerPosition}%;
+      top: 0;
+      width: 2px;
+      height: 30px;
+      background-color: #4a9eff;
+      transform: translateX(-50%);
+      z-index: 10;
+    `
+    tickmarkRuler.appendChild(centerIndicator)
+  }
+
   const render = () => {
     const rangeStore = accessConversionStore(rangeId)
     letterValue.textContent = `${rangeStore.input}`
@@ -230,9 +338,13 @@ export const createDimensionalExampleNumeric = () => {
     zoomValue.textContent = dimensionalRange.zoom.toString()
     unitSizeValue.textContent = dimensionalRange.unitSize.toString()
     upvwValue.textContent = dimensionalRange.unitsPerViewportWidth.toString()
+    
+    // Update graphical tickmarks
+    renderTickmarks()
   }
 
   document.body.appendChild(root)
+  document.body.appendChild(tickmarkContainer)
   subscribeToRangeInitialization(rangeId, render)
   registerDimensionalRange(rangeId, {
     initialInput: initLetter,
