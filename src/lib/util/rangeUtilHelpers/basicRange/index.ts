@@ -271,7 +271,7 @@ export const registerRange = <InputType extends NumericInput>(
       getEventNames2(rangeId).inputAfterChanged,
       inputAfterChangedListener
     )
-    emitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
+    // emitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
   } else {
 
     if (initialInput === null) {
@@ -501,3 +501,19 @@ export const updateRangeInputInner = (rangeId: string, input: NumericInput) => {
   )
 }
 
+
+// remove all listeners and cleanup for a range, return a function to unsubscribe
+export const unregisterRange = (rangeId: string) => {
+  emitters[rangeId].inputChanged.removeEventListener(
+    getEventNames2(rangeId).inputChanged,
+    internalInputChangedListener
+  )
+  emitters[rangeId].inputChanged.removeEventListener(
+    getEventNames2(rangeId).inputAfterChanged,
+    inputAfterChangedListener
+  )
+
+  emitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
+  emitters[rangeId].cleanup = []
+
+}

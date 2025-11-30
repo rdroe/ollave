@@ -9,35 +9,39 @@ export type { StringOrNumberOrDate } from './rangeUtilHelpers/readableRange'
 export type { TicksArray } from './rangeUtilHelpers/ticks'
 
 import { convertAlphadex, numberToAlphadex } from './alphadex'
+import { DimensionalRange, registerDimensionalRange, subscribeToDimensionalRangeConvertedEndLoading, updateDimensionalRange, updateDimensionalRangeParams } from './rangeUtilHelpers/dimensionalRange'
+import { accessConversionStore, subscribeToRangeInitialization } from './rangeUtilHelpers/readableRange'
 
 // Re-export test modules from the separate test file
 export { testRangeInner, testReadableRange, testRangeUtil } from './rangeUtilTests'
-
+const rangeId = 'dimensionalRange'
+export const dimensionalRange: DimensionalRange = {
+  zoom: 1,
+  unitSize: 0.1,
+  unitsPerViewportWidth: 10,
+  leftPrefetchFactor: 2,
+  rightPrefetchFactor: 2,
+}
 
 export const createDomRangeDemo = () => {
   if (typeof document === 'undefined') return
 
-  // --- State (equivalent to the zustand store in the JSX example) ---
-  let zoom = 1
-  let unitSize = 0.1
-  let unitsPerViewportWidth = 10
-  let leftPrefetchFactor = 2
-  let rightPrefetchFactor = 2
 
   const initLetterRaw = numberToAlphadex(Math.random() * 20)
   const initLetter = Math.random() < 0.1 ? initLetterRaw : `-${initLetterRaw}`
+
   let currentScroll: string | null = null
 
   const getCurrentLetter = () => currentScroll || initLetter
 
   const incrementUtil = (letter: string) => {
     const n = convertAlphadex(letter)
-    return numberToAlphadex(n + unitSize)
+    return numberToAlphadex(n + dimensionalRange.unitSize)
   }
 
   const decrementUtil = (letter: string) => {
     const n = convertAlphadex(letter)
-    return numberToAlphadex(n - unitSize)
+    return numberToAlphadex(n - dimensionalRange.unitSize)
   }
 
   type RangePair = [number, number]
@@ -46,7 +50,7 @@ export const createDomRangeDemo = () => {
     const [start, end] = range
     const ticks: string[] = []
     if (!Number.isFinite(start) || !Number.isFinite(end)) return ticks
-    const step = Math.max(unitSize, 0.1)
+    const step = Math.max(dimensionalRange.unitSize, 0.1)
     if (step <= 0) return ticks
     if (start <= end) {
       for (let v = start; v <= end + 1e-9; v += step) {
@@ -62,27 +66,6 @@ export const createDomRangeDemo = () => {
     return ticks
   }
 
-  const computeRanges = () => {
-    const center = convertAlphadex(getCurrentLetter())
-    const viewportWidth = (unitsPerViewportWidth || 1) / (zoom || 1)
-    const half = viewportWidth / 2
-
-    const viewableRange: RangePair = [center - half, center + half]
-    const nextLeftRange: RangePair = [
-      viewableRange[0] - viewportWidth * leftPrefetchFactor,
-      viewableRange[0],
-    ]
-    const nextRightRange: RangePair = [
-      viewableRange[1],
-      viewableRange[1] + viewportWidth * rightPrefetchFactor,
-    ]
-
-    return {
-      viewableRange,
-      nextLeftRange,
-      nextRightRange,
-    }
-  }
 
   // --- DOM creation (pure JS version of the JSX app) ---
   const root = document.createElement('div')
@@ -139,14 +122,15 @@ export const createDomRangeDemo = () => {
   const letterButtonsRow = document.createElement('div')
   const prevBtn = makeButton('prev', () => {
     const prevLetter = decrementUtil(getCurrentLetter())
-    currentScroll = prevLetter
-    render()
+    currentScroll = prevLetter 
+    updateDimensionalRange(rangeId, prevLetter)
   })
   const nextBtn = makeButton('next', () => {
     const nextLetter = incrementUtil(getCurrentLetter())
-    currentScroll = nextLetter
-    render()
+    currentScroll = nextLetter 
+    updateDimensionalRange(rangeId, nextLetter)
   })
+
   letterButtonsRow.appendChild(prevBtn)
   letterButtonsRow.appendChild(nextBtn)
 
@@ -169,39 +153,41 @@ export const createDomRangeDemo = () => {
   const zoomLabel = makeLabel('zoom')
   const zoomValue = makeValue()
   const zoomInBtn = makeButton('zoom in', () => {
-    zoom = zoom + 0.5
-    render()
+    console.log('zooming in', dimensionalRange.zoom)
+    dimensionalRange.zoom = dimensionalRange.zoom + 0.5
+    updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
   const zoomOutBtn = makeButton('zoom out', () => {
-    zoom = zoom - 0.5
-    if (zoom <= 0) zoom = 0.5
-    render()
+    console.log('zooming out', dimensionalRange.zoom)
+    dimensionalRange.zoom = dimensionalRange.zoom - 0.5
+    if (dimensionalRange.zoom <= 0) dimensionalRange.zoom = 0.5
+    updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
 
   // unitSize controls
   const unitSizeLabel = makeLabel('unitSize')
   const unitSizeValue = makeValue()
   const unitSizeUpBtn = makeButton('unitSize up', () => {
-    unitSize = unitSize + 0.05
-    render()
+    dimensionalRange.unitSize = dimensionalRange.unitSize + 0.05
+    updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
   const unitSizeDownBtn = makeButton('unitSize down', () => {
-    unitSize = unitSize - 0.05
-    if (unitSize <= 0.01) unitSize = 0.01
-    render()
+    dimensionalRange.unitSize = dimensionalRange.unitSize - 0.05
+    if (dimensionalRange.unitSize <= 0.01) dimensionalRange.unitSize = 0.01
+    updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
 
   // unitsPerViewportWidth controls
   const upvwLabel = makeLabel('unitsPerViewportWidth')
   const upvwValue = makeValue()
   const upvwUpBtn = makeButton('unitsPerViewportWidth up', () => {
-    unitsPerViewportWidth = unitsPerViewportWidth + 1
-    render()
+    dimensionalRange.unitsPerViewportWidth = dimensionalRange.unitsPerViewportWidth + 1
+    updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
   const upvwDownBtn = makeButton('unitsPerViewportWidth down', () => {
-    unitsPerViewportWidth = unitsPerViewportWidth - 1
-    if (unitsPerViewportWidth <= 1) unitsPerViewportWidth = 1
-    render()
+    dimensionalRange.unitsPerViewportWidth = dimensionalRange.unitsPerViewportWidth - 1
+    if (dimensionalRange.unitsPerViewportWidth <= 1) dimensionalRange.unitsPerViewportWidth = 1
+    updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
 
   // Assemble DOM
@@ -239,30 +225,26 @@ export const createDomRangeDemo = () => {
   root.appendChild(upvwDownBtn)
 
   const render = () => {
-    const letter = getCurrentLetter()
-    letterValue.textContent = letter
-
-    const { viewableRange, nextLeftRange, nextRightRange } = computeRanges()
-
-    const fmtRange = (r: RangePair) =>
-      `${numberToAlphadex(Math.round(r[0] * 10) / 10)}, ${numberToAlphadex(
-        Math.round(r[1] * 10) / 10
-      )}`
-
-    viewableValue.textContent = fmtRange(viewableRange)
-    nextLeftValue.textContent = fmtRange(nextLeftRange)
-    nextRightValue.textContent = fmtRange(nextRightRange)
-
-    currentTicksValue.textContent = ticksInRange(viewableRange).join(', ')
-    nextLeftTicksValue.textContent = ticksInRange(nextLeftRange).join(', ')
-    nextRightTicksValue.textContent = ticksInRange(nextRightRange).join(', ')
-
-    zoomValue.textContent = String(zoom)
-    unitSizeValue.textContent = String(unitSize.toFixed(2))
-    upvwValue.textContent = String(unitsPerViewportWidth)
+    const rangeStore = accessConversionStore(rangeId)
+    letterValue.textContent = `${rangeStore.input}`
+    viewableValue.textContent = rangeStore.viewableRange.join(', ')
+    nextLeftValue.textContent = rangeStore.nextLeftRange.join(', ')
+    nextRightValue.textContent = rangeStore.nextRightRange.join(', ')
+    currentTicksValue.textContent = ticksInRange(rangeStore.viewableRange.map(convertAlphadex) as RangePair).join(', ')
+    nextLeftTicksValue.textContent = ticksInRange(rangeStore.nextLeftRange.map(convertAlphadex) as RangePair).join(', ')
+    nextRightTicksValue.textContent = ticksInRange(rangeStore.nextRightRange.map(convertAlphadex) as RangePair).join(', ')
+    zoomValue.textContent = dimensionalRange.zoom.toString()
+    unitSizeValue.textContent = dimensionalRange.unitSize.toString()
+    upvwValue.textContent = dimensionalRange.unitsPerViewportWidth.toString()
   }
 
-  render()
   document.body.appendChild(root)
-} 
-
+  subscribeToRangeInitialization(rangeId, render)
+  registerDimensionalRange(rangeId, {
+    initialInput: initLetter,
+    dimensionalRange,
+    inputToNumber: convertAlphadex,
+    numberToInput: numberToAlphadex,
+  })
+  subscribeToDimensionalRangeConvertedEndLoading(rangeId, render)
+}

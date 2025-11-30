@@ -5,6 +5,7 @@ import {
   emitters,
   getEventNames2,
   setConversionStoreCallbacks,
+  unregisterRange,
 } from '../basicRange'
 
 export type StringOrNumberOrDate = string | number | Date
@@ -53,6 +54,7 @@ const CONVERTED_NEXT_RIGHT_RANGE_LOADING_EVENT =
   'CONVERTED_NEXT_RIGHT_RANGE_LOADING'
 const CONVERTED_LOADING_EVENT = 'CONVERTED_LOADING'
 
+
 export const getConversionEventNames = (rangeId: string) => {
   return {
     inputConverted: `${rangeId}-${INPUT_CONVERTED_EVENT}`,
@@ -66,6 +68,26 @@ export const getConversionEventNames = (rangeId: string) => {
     convertedNextRightRangeLoading: `${rangeId}-${CONVERTED_NEXT_RIGHT_RANGE_LOADING_EVENT}`,
   }
 }
+// initialization subscribers are handled differently. 
+// the user may need to know when the range is initialized before the emitters are keyed.
+const initializationSubscribers: {
+  [rangeId: string]: (() => void)[]
+} = {}
+
+export const subscribeToRangeInitialization = (
+  rangeId: string,
+  callback: () => void
+) => {
+  if (!initializationSubscribers[rangeId]) {
+    initializationSubscribers[rangeId] = []
+  }
+  initializationSubscribers[rangeId].push(callback) 
+  return function unsubscribe() {
+    initializationSubscribers[rangeId] = initializationSubscribers[rangeId].filter((cb) => cb !== callback)
+  }
+}
+
+
 
 const isMatchingInputType = <InputType extends StringOrNumberOrDate>(
   toReplace: any,
@@ -525,8 +547,9 @@ export const registerReadableRange = async <
       getConversionEventNames(rangeId).convertedNextRightRangeLoading,
       convertUpdatedNextRightRangeLoadingHandler
     )
-    conversionEmitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
-    conversionEmitters[rangeId].cleanup = []
+    // this is commented out because I think we want to keep the user subscriptions. 
+    // conversionEmitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
+    // conversionEmitters[rangeId].cleanup = []
   } else {
     conversionEmitters[rangeId] = {
       inputConverted: new EventTarget(),
@@ -543,6 +566,7 @@ export const registerReadableRange = async <
   // Use effectiveInput (which uses current store input during re-registration if initialInput is null)
   conversionStore[rangeId] = {
     input: effectiveInput as NumericInput,
+    // todo: Dont force this to be synchronous.
     viewableRange: (await getViewableRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
     nextLeftRange: (await getNextLeftRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
     nextRightRange: (await getNextRightRange(inputToNumber(effectiveInput))).map((value) => numberToInput(value)) as [start: InputType, end: InputType],
@@ -555,6 +579,7 @@ export const registerReadableRange = async <
       inputToNumber: inputToNumber as (input: InputType) => number,
     },
   }
+  initializationSubscribers[rangeId].forEach((callback) => callback())
 
   // as range inner emitters fire, we need to convert the input, viewable range, next left range, and next right range to the InputType
   emitters[rangeId].inputChanged.addEventListener(
@@ -859,3 +884,39 @@ setConversionStoreCallbacks(
   getConversionEventNames
 )
 
+// remove all listeners and cleanup for a range, return a function to unsubscribe
+export const unregisterReadableRange = (rangeId: string) => {
+  unregisterRange(rangeId)
+
+  conversionEmitters[rangeId].inputConverted.removeEventListener(
+    getConversionEventNames(rangeId).inputConverted,
+    convertUpdatedInputHandler
+  )
+  conversionEmitters[rangeId].viewableRangeConverted.removeEventListener(
+    getConversionEventNames(rangeId).viewableRangeConverted,
+    convertUpdatedViewableRangeHandler
+  )
+  conversionEmitters[rangeId].nextLeftRangeConverted.removeEventListener(
+    getConversionEventNames(rangeId).nextLeftRangeConverted,
+    convertUpdatedNextLeftRangeHandler
+  )
+  conversionEmitters[rangeId].nextRightRangeConverted.removeEventListener(
+    getConversionEventNames(rangeId).nextRightRangeConverted,
+    convertUpdatedNextRightRangeHandler
+  )
+
+  conversionEmitters[rangeId].convertedViewableRangeLoading.removeEventListener(
+    getConversionEventNames(rangeId).convertedViewableRangeLoading,
+    convertUpdatedViewableRangeLoadingHandler
+  )
+  conversionEmitters[rangeId].convertedNextLeftRangeLoading.removeEventListener(
+    getConversionEventNames(rangeId).convertedNextLeftRangeLoading,
+    convertUpdatedNextLeftRangeLoadingHandler
+  )
+  conversionEmitters[rangeId].convertedNextRightRangeLoading.removeEventListener(
+    getConversionEventNames(rangeId).convertedNextRightRangeLoading,
+    convertUpdatedNextRightRangeLoadingHandler
+  )
+  conversionEmitters[rangeId].cleanup.forEach((cleanupFn) => cleanupFn())
+  conversionEmitters[rangeId].cleanup = []
+}
