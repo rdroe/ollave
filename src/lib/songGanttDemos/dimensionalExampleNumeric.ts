@@ -27,14 +27,28 @@ export const createDimensionalExampleNumeric = () => {
 
   const getCurrentLetter = () => currentScroll || initLetter
 
+  const getViewableRangeWidth = (): number => {
+    try {
+      const rangeStore = accessConversionStore(rangeId)
+      const [start, end] = rangeStore.viewableRange.map(convertAlphadex) as RangePair
+      return Math.abs(end - start)
+    } catch {
+      // Fallback to calculated width if store not ready
+      const viewportWidth = (dimensionalRange.unitSize * dimensionalRange.unitsPerViewportWidth) / dimensionalRange.zoom
+      return viewportWidth
+    }
+  }
+
   const incrementUtil = (letter: number) => {
     const n = convertAlphadex(letter)
-    return numberToAlphadex(n + dimensionalRange.unitSize)
+    const viewableWidth = getViewableRangeWidth()
+    return numberToAlphadex(n + viewableWidth)
   }
 
   const decrementUtil = (letter: number) => {
     const n = letter
-    return numberToAlphadex(n - dimensionalRange.unitSize)
+    const viewableWidth = getViewableRangeWidth()
+    return numberToAlphadex(n - viewableWidth)
   }
 
   type RangePair = [number, number]
