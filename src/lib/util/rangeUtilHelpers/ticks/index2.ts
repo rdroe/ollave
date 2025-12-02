@@ -116,7 +116,7 @@ function getDispatchAdder(rangeId: string, eventName: string, emitterName: keyof
     const myHandler = (event: Event & { detail: {
       [key in typeof detailProp]: boolean
     } }) => {
-      if (event.detail[detailProp]) {
+      if (!event.detail[detailProp]) {
         ticksEmitters[rangeId][eventName].dispatchEvent(new CustomEvent(eventName, {
           detail: {
             rangeId: rangeId,
