@@ -123,11 +123,7 @@ export const accessConversionStore = <
       return conversionStore[rangeId].input as InputType
     },
     set input(value: InputType) {
-      console.log('setting input', rangeId, {
-        "value": value,
-        "conversionStore[rangeId].input": conversionStore[rangeId].input,
 
-      })
       // @ts-expect-error - we know that the input is a proper type
       conversionStore[rangeId].input = requireMatchingInputType<InputType>(
         conversionStore[rangeId].input,
@@ -224,10 +220,7 @@ function convertUpdatedInputHandler<InputType extends StringOrNumberOrDate>(
   if (!rangeId || input === undefined) {
     throw new Error('Invalid event detail')
   }
-  console.log('setting input', rangeId, {
-    "conversionStore[rangeId].input": conversionStore[rangeId].input,
-    "conversionStore[rangeId].fns.numberToInput(input)": conversionStore[rangeId].fns.numberToInput(input),
-  })
+
   // @ts-expect-error - we know that the input is a proper type
   conversionStore[rangeId].input = conversionStore[rangeId].fns.numberToInput(
     input
@@ -372,9 +365,7 @@ function convertUpdatedViewableRangeLoadingHandler<
       accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading
 
     if (!otherRangesLoading) {
-      console.log(
-        'setting converted loading to false in convertUpdatedViewableRangeLoadingHandler'
-      )
+
       accessConversionStore<InputType>(rangeId).convertedLoading = false
       conversionEmitters[rangeId].convertedLoading.dispatchEvent(
         new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
@@ -414,9 +405,7 @@ function convertUpdatedNextLeftRangeLoadingHandler<
       accessConversionStore<InputType>(rangeId).convertedNextRightRangeLoading
 
     if (!otherRangesLoading) {
-      console.log(
-        'setting converted loading to false in convertUpdatedNextLeftRangeLoadingHandler'
-      )
+
       accessConversionStore<InputType>(rangeId).convertedLoading = false
       conversionEmitters[rangeId].convertedLoading.dispatchEvent(
         new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
@@ -456,9 +445,7 @@ function convertUpdatedNextRightRangeLoadingHandler<
       accessConversionStore<InputType>(rangeId).convertedNextLeftRangeLoading
 
     if (!otherRangesLoading) {
-      console.log(
-        'setting converted loading to false in convertUpdatedNextRightRangeLoadingHandler'
-      )
+
       accessConversionStore<InputType>(rangeId).convertedLoading = false
       conversionEmitters[rangeId].convertedLoading.dispatchEvent(
         new CustomEvent(getConversionEventNames(rangeId).convertedLoading, {
@@ -612,7 +599,6 @@ export const registerReadableRange = async <
   // complete the above todo; fire events that will properly set the ranges based on initial input.
   const unsubscribeInit = subscribeToRangeConvertedEndLoading(rangeId, () => {
     fireInitialEvents() 
-    console.log('unsubscribing from initial events')
     unsubscribeInit()
   }) 
   

@@ -124,9 +124,6 @@ export function inputAfterChangedListener(
     const conversionEventNames = getConversionEventNames(rangeId)
     
     if (conversionStore.convertedLoading === false) {
-      console.log(
-        'setting converted loading to true in convertUpdatedNextRightRangeLoadingHandler'
-      )
       conversionStore.convertedLoading = true
       conversionEmitters.convertedLoading.dispatchEvent(
         new CustomEvent(conversionEventNames.convertedLoading, {
@@ -145,14 +142,7 @@ export function inputAfterChangedListener(
   store[rangeId].fns.getViewableRange(newInput).then((viewableRange) => {
     store[rangeId].viewableRange = viewableRange
     emitters[rangeId].loadingRefCount--
-    if (emitters[rangeId].loadingRefCount === 0) {
-      store[rangeId].loading = false
-      emitters[rangeId].loading.dispatchEvent(
-        new CustomEvent(getEventNames2(rangeId).loading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
+
     emitters[rangeId].viewableRange.dispatchEvent(
       new CustomEvent(getEventNames2(rangeId).viewableRange, {
         detail: {
@@ -161,6 +151,15 @@ export function inputAfterChangedListener(
         },
       })
     )
+    if (emitters[rangeId].loadingRefCount === 0) {
+
+      store[rangeId].loading = false
+      emitters[rangeId].loading.dispatchEvent(
+        new CustomEvent(getEventNames2(rangeId).loading, {
+          detail: { rangeId: rangeId, loading: false },
+        })
+      )
+    }
   })
   
   if (getConversionEmitters && getConversionEventNames) {
@@ -178,14 +177,7 @@ export function inputAfterChangedListener(
   emitters[rangeId].loadingRefCount++
   store[rangeId].fns.getNextLeftRange(newInput).then((nextLeftRange) => {
     emitters[rangeId].loadingRefCount--
-    if (emitters[rangeId].loadingRefCount === 0) {
-      store[rangeId].loading = false
-      emitters[rangeId].loading.dispatchEvent(
-        new CustomEvent(getEventNames2(rangeId).loading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
+
     store[rangeId].nextLeftRange = nextLeftRange
     emitters[rangeId].nextLeftRange.dispatchEvent(
       new CustomEvent(getEventNames2(rangeId).nextLeftRange, {
@@ -195,6 +187,14 @@ export function inputAfterChangedListener(
         },
       })
     )
+    if (emitters[rangeId].loadingRefCount === 0) {
+      store[rangeId].loading = false
+      emitters[rangeId].loading.dispatchEvent(
+        new CustomEvent(getEventNames2(rangeId).loading, {
+          detail: { rangeId: rangeId, loading: false },
+        })
+      )
+    }
   })
   
   if (getConversionEmitters && getConversionEventNames) {
@@ -211,14 +211,7 @@ export function inputAfterChangedListener(
   emitters[rangeId].loadingRefCount++
   store[rangeId].fns.getNextRightRange(newInput).then((nextRightRange) => {
     emitters[rangeId].loadingRefCount--
-    if (emitters[rangeId].loadingRefCount === 0) {
-      store[rangeId].loading = false
-      emitters[rangeId].loading.dispatchEvent(
-        new CustomEvent(getEventNames2(rangeId).loading, {
-          detail: { rangeId: rangeId, loading: false },
-        })
-      )
-    }
+
     store[rangeId].nextRightRange = nextRightRange
     emitters[rangeId].nextRightRange.dispatchEvent(
       new CustomEvent(getEventNames2(rangeId).nextRightRange, {
@@ -228,6 +221,14 @@ export function inputAfterChangedListener(
         },
       })
     )
+    if (emitters[rangeId].loadingRefCount === 0) {
+      store[rangeId].loading = false
+      emitters[rangeId].loading.dispatchEvent(
+        new CustomEvent(getEventNames2(rangeId).loading, {
+          detail: { rangeId: rangeId, loading: false },
+        })
+      )
+    }
   })
 }
 

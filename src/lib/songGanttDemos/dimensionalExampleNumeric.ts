@@ -1,6 +1,6 @@
-import { accessConversionStore, registerTicks as rtOld, subscribeToRangeInitialization, TicksArray } from "../util"
+import { accessConversionStore, registerTicks as rtOld, subscribeToRangeConvertedEndLoading, subscribeToRangeInitialization, TicksArray } from "../util"
 import { DimensionalRange, registerDimensionalRange, subscribeToDimensionalRangeConvertedEndLoading, updateDimensionalRange, updateDimensionalRangeParams } from "../util/rangeUtilHelpers/dimensionalRange"
-import { registerTicks } from "../util/rangeUtilHelpers/ticks/index2"
+import { registerTicks, subscribeToTicksInitialization, subscribeToTicksLoadingComplete, ticksStore } from "../util/rangeUtilHelpers/ticks/index2"
 
 const rangeId = 'dimensionalRangeNumeric'
 const dimensionalRange: DimensionalRange = {
@@ -53,21 +53,21 @@ export const createDimensionalExampleNumeric = () => {
 
   type RangePair = [number, number]
 
-  const ticksInRange = (range: RangePair): string[] => {
+  const ticksInRange = (range: RangePair): TicksArray<number> => {
     const [start, end] = range
-    const ticks: string[] = []
+    const ticks: TicksArray<number> = []
     if (!Number.isFinite(start) || !Number.isFinite(end)) return ticks
     const step = Math.max(dimensionalRange.unitSize, 0.1)
     if (step <= 0) return ticks
     if (start <= end) {
       for (let v = start; v <= end + 1e-9; v += step) {
         const rounded = Math.round(v * 10) / 10
-        ticks.push(rounded.toString())
+        ticks.push({ value: rounded, label: rounded.toString() })
       }
     } else {
       for (let v = start; v >= end - 1e-9; v -= step) {
         const rounded = Math.round(v * 10) / 10
-        ticks.push(rounded.toString())
+        ticks.push({ value: rounded, label: rounded.toString() })
       }
     }
     return ticks
@@ -275,11 +275,11 @@ export const createDimensionalExampleNumeric = () => {
 
   const renderTickmarks = () => {
     const rangeStore = accessConversionStore(rangeId)
-    const ticks = ticksInRange(rangeStore.viewableRange.map(convertAlphadex) as RangePair)
-    const [rangeStart, rangeEnd] = rangeStore.viewableRange.map(convertAlphadex) as RangePair
-    const rangeWidth = rangeEnd - rangeStart
+    const ticks = ticksStore[rangeId].ticks.viewableRange
+    if (ticks.length < 1) return
+  const rangeWidth = ticks[ticks.length - 1].value - ticks[0].value     
+  const rangeStart = ticks[0].value
 
-    // Clear existing tickmarks
     tickmarkRuler.innerHTML = ''
 
     if (ticks.length === 0 || !Number.isFinite(rangeWidth) || rangeWidth === 0) {
@@ -287,8 +287,8 @@ export const createDimensionalExampleNumeric = () => {
     }
 
     // Render each tickmark
-    ticks.forEach((tickStr) => {
-      const tick = parseFloat(tickStr)
+    ticks.forEach(({ value: tick, label: tickStr}) => {
+
       if (!Number.isFinite(tick)) return
 
       // Calculate position as percentage of range
@@ -359,19 +359,28 @@ export const createDimensionalExampleNumeric = () => {
 
   document.body.appendChild(root)
   document.body.appendChild(tickmarkContainer)
-  subscribeToRangeInitialization(rangeId, render)
+  // subscribeToRangeInitialization(rangeId, render)
+  subscribeToRangeInitialization(rangeId, () => {
+    registerTicks(rangeId, async ([start, end]: [start: number, end: number]) => {
+      return ticksInRange([start, end])
+    }, true)
+    subscribeToTicksInitialization(rangeId, (ticks) => {
+      render()
+    })
+    subscribeToTicksLoadingComplete(rangeId, (ticks) => {
+      render()
+    })
+
+
+    render()
+  })
   registerDimensionalRange(rangeId, {
     initialInput: initLetter,
     dimensionalRange,
     inputToNumber: convertAlphadex,
     numberToInput: numberToAlphadex,
   })
-  registerTicks(rangeId, ([start, end]: [start: number, end: number]) => {
-    const ticks: TicksArray<number> = []
-    for (let i = start; i <= end; i += 1) {
-      ticks.push({ value: i, label: i.toString() })
-    }
-    return ticks
-  })
-  subscribeToDimensionalRangeConvertedEndLoading(rangeId, render)
+
+
+
 }
