@@ -1,6 +1,6 @@
-import { accessConversionStore, subscribeToRangeInitialization } from "../util"
+import { accessConversionStore, registerTicks as rtOld, subscribeToRangeInitialization, TicksArray } from "../util"
 import { DimensionalRange, registerDimensionalRange, subscribeToDimensionalRangeConvertedEndLoading, updateDimensionalRange, updateDimensionalRangeParams } from "../util/rangeUtilHelpers/dimensionalRange"
-
+import { registerTicks } from "../util/rangeUtilHelpers/ticks/index2"
 
 const rangeId = 'dimensionalRangeNumeric'
 const dimensionalRange: DimensionalRange = {
@@ -365,6 +365,13 @@ export const createDimensionalExampleNumeric = () => {
     dimensionalRange,
     inputToNumber: convertAlphadex,
     numberToInput: numberToAlphadex,
+  })
+  registerTicks(rangeId, ([start, end]: [start: number, end: number]) => {
+    const ticks: TicksArray<number> = []
+    for (let i = start; i <= end; i += 1) {
+      ticks.push({ value: i, label: i.toString() })
+    }
+    return ticks
   })
   subscribeToDimensionalRangeConvertedEndLoading(rangeId, render)
 }
