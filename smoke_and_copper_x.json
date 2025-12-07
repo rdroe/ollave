@@ -1,0 +1,3778 @@
+{
+  "song": {
+    "name": "smoke_and_copper",
+    "tempo": 112,
+    "track-ids": [
+      1,
+      2,
+      3
+    ]
+  },
+  "tracks": [
+    {
+      "id": 1,
+      "phase-ids": [
+        1
+      ],
+      "phase-names": [
+        "melody"
+      ],
+      "notesByBar": {
+        "melody:0": [
+          {
+            "note": "G4",
+            "tags": [
+              "groupId=56fc6b",
+              "noteId=730cd3",
+              "barId=melody:0",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=96",
+              "velocity=88",
+              "sliderMax=536",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "56fc6b"
+              ],
+              "noteId": [
+                "730cd3"
+              ],
+              "barId": [
+                "melody:0"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                88
+              ],
+              "sliderMax": [
+                536
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "Bb4",
+            "tags": [
+              "groupId=c9420d",
+              "noteId=58289f",
+              "barId=melody:0",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=96",
+              "duration=64",
+              "velocity=84",
+              "sliderMax=528",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "c9420d"
+              ],
+              "noteId": [
+                "58289f"
+              ],
+              "barId": [
+                "melody:0"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                96
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                84
+              ],
+              "sliderMax": [
+                528
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "C5",
+            "tags": [
+              "groupId=6df214",
+              "noteId=1dedfd",
+              "barId=melody:0",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=160",
+              "duration=192",
+              "velocity=92",
+              "sliderMax=544",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "6df214"
+              ],
+              "noteId": [
+                "1dedfd"
+              ],
+              "barId": [
+                "melody:0"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                160
+              ],
+              "duration": [
+                192
+              ],
+              "velocity": [
+                92
+              ],
+              "sliderMax": [
+                544
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "Eb5",
+            "tags": [
+              "groupId=26b536",
+              "noteId=f40582",
+              "barId=melody:0",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=352",
+              "duration=128",
+              "velocity=90",
+              "sliderMax=540",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "26b536"
+              ],
+              "noteId": [
+                "f40582"
+              ],
+              "barId": [
+                "melody:0"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                352
+              ],
+              "duration": [
+                128
+              ],
+              "velocity": [
+                90
+              ],
+              "sliderMax": [
+                540
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "melody:1": [
+          {
+            "note": "D5",
+            "tags": [
+              "groupId=daca72",
+              "noteId=fd5965",
+              "barId=melody:1",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=128",
+              "velocity=86",
+              "sliderMax=532",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "daca72"
+              ],
+              "noteId": [
+                "fd5965"
+              ],
+              "barId": [
+                "melody:1"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                128
+              ],
+              "velocity": [
+                86
+              ],
+              "sliderMax": [
+                532
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "C5",
+            "tags": [
+              "groupId=eaa6c6",
+              "noteId=f3f44c",
+              "barId=melody:1",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=128",
+              "duration=64",
+              "velocity=84",
+              "sliderMax=528",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "eaa6c6"
+              ],
+              "noteId": [
+                "f3f44c"
+              ],
+              "barId": [
+                "melody:1"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                128
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                84
+              ],
+              "sliderMax": [
+                528
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "Eb5",
+            "tags": [
+              "groupId=4649f3",
+              "noteId=dbaed9",
+              "barId=melody:1",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=192",
+              "duration=160",
+              "velocity=90",
+              "sliderMax=540",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "4649f3"
+              ],
+              "noteId": [
+                "dbaed9"
+              ],
+              "barId": [
+                "melody:1"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                192
+              ],
+              "duration": [
+                160
+              ],
+              "velocity": [
+                90
+              ],
+              "sliderMax": [
+                540
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "G4",
+            "tags": [
+              "groupId=5f3216",
+              "noteId=7a66f1",
+              "barId=melody:1",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=352",
+              "duration=160",
+              "velocity=88",
+              "sliderMax=536",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "5f3216"
+              ],
+              "noteId": [
+                "7a66f1"
+              ],
+              "barId": [
+                "melody:1"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                352
+              ],
+              "duration": [
+                160
+              ],
+              "velocity": [
+                88
+              ],
+              "sliderMax": [
+                536
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "melody:2": [
+          {
+            "note": "A4",
+            "tags": [
+              "groupId=c86be6",
+              "noteId=fa3ecf",
+              "barId=melody:2",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=96",
+              "velocity=86",
+              "sliderMax=532",
+              "quantize=16th",
+              "oct=4",
+              "chord=Fm",
+              "roman=IVm"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "c86be6"
+              ],
+              "noteId": [
+                "fa3ecf"
+              ],
+              "barId": [
+                "melody:2"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                86
+              ],
+              "sliderMax": [
+                532
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Fm"
+              ],
+              "roman": [
+                "IVm"
+              ]
+            }
+          },
+          {
+            "note": "C5",
+            "tags": [
+              "groupId=f399ad",
+              "noteId=db8aa8",
+              "barId=melody:2",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=96",
+              "duration=96",
+              "velocity=88",
+              "sliderMax=536",
+              "quantize=16th",
+              "oct=5",
+              "chord=Fm",
+              "roman=IVm"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "f399ad"
+              ],
+              "noteId": [
+                "db8aa8"
+              ],
+              "barId": [
+                "melody:2"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                96
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                88
+              ],
+              "sliderMax": [
+                536
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Fm"
+              ],
+              "roman": [
+                "IVm"
+              ]
+            }
+          },
+          {
+            "note": "Eb5",
+            "tags": [
+              "groupId=5f0668",
+              "noteId=f6f06e",
+              "barId=melody:2",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=192",
+              "duration=192",
+              "velocity=84",
+              "sliderMax=528",
+              "quantize=16th",
+              "oct=5",
+              "chord=Fm",
+              "roman=IVm"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "5f0668"
+              ],
+              "noteId": [
+                "f6f06e"
+              ],
+              "barId": [
+                "melody:2"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                192
+              ],
+              "duration": [
+                192
+              ],
+              "velocity": [
+                84
+              ],
+              "sliderMax": [
+                528
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Fm"
+              ],
+              "roman": [
+                "IVm"
+              ]
+            }
+          },
+          {
+            "note": "F5",
+            "tags": [
+              "groupId=67bfd9",
+              "noteId=0cf1d4",
+              "barId=melody:2",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=384",
+              "duration=128",
+              "velocity=86",
+              "sliderMax=532",
+              "quantize=16th",
+              "oct=5",
+              "chord=Fm",
+              "roman=IVm"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "67bfd9"
+              ],
+              "noteId": [
+                "0cf1d4"
+              ],
+              "barId": [
+                "melody:2"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                384
+              ],
+              "duration": [
+                128
+              ],
+              "velocity": [
+                86
+              ],
+              "sliderMax": [
+                532
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Fm"
+              ],
+              "roman": [
+                "IVm"
+              ]
+            }
+          }
+        ],
+        "melody:3": [
+          {
+            "note": "B4",
+            "tags": [
+              "groupId=48a2c9",
+              "noteId=3fb5eb",
+              "barId=melody:3",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=64",
+              "velocity=88",
+              "sliderMax=536",
+              "quantize=16th",
+              "oct=4",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "48a2c9"
+              ],
+              "noteId": [
+                "3fb5eb"
+              ],
+              "barId": [
+                "melody:3"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                88
+              ],
+              "sliderMax": [
+                536
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "D5",
+            "tags": [
+              "groupId=83a225",
+              "noteId=d1b4eb",
+              "barId=melody:3",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=64",
+              "duration=96",
+              "velocity=92",
+              "sliderMax=544",
+              "quantize=16th",
+              "oct=5",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "83a225"
+              ],
+              "noteId": [
+                "d1b4eb"
+              ],
+              "barId": [
+                "melody:3"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                64
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                92
+              ],
+              "sliderMax": [
+                544
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "F5",
+            "tags": [
+              "groupId=0fb9a1",
+              "noteId=d33f0b",
+              "barId=melody:3",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=160",
+              "duration=160",
+              "velocity=85",
+              "sliderMax=530",
+              "quantize=16th",
+              "oct=5",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "0fb9a1"
+              ],
+              "noteId": [
+                "d33f0b"
+              ],
+              "barId": [
+                "melody:3"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                160
+              ],
+              "duration": [
+                160
+              ],
+              "velocity": [
+                85
+              ],
+              "sliderMax": [
+                530
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "G5",
+            "tags": [
+              "groupId=9467af",
+              "noteId=a09bbe",
+              "barId=melody:3",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=320",
+              "duration=192",
+              "velocity=90",
+              "sliderMax=540",
+              "quantize=16th",
+              "oct=5",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "9467af"
+              ],
+              "noteId": [
+                "a09bbe"
+              ],
+              "barId": [
+                "melody:3"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                320
+              ],
+              "duration": [
+                192
+              ],
+              "velocity": [
+                90
+              ],
+              "sliderMax": [
+                540
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          }
+        ],
+        "melody:4": [
+          {
+            "note": "C5",
+            "tags": [
+              "groupId=dadda2",
+              "noteId=0f092a",
+              "barId=melody:4",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=256",
+              "velocity=92",
+              "sliderMax=544",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "dadda2"
+              ],
+              "noteId": [
+                "0f092a"
+              ],
+              "barId": [
+                "melody:4"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                92
+              ],
+              "sliderMax": [
+                544
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "Bb4",
+            "tags": [
+              "groupId=165b29",
+              "noteId=5b2d86",
+              "barId=melody:4",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=256",
+              "duration=128",
+              "velocity=86",
+              "sliderMax=532",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "165b29"
+              ],
+              "noteId": [
+                "5b2d86"
+              ],
+              "barId": [
+                "melody:4"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                256
+              ],
+              "duration": [
+                128
+              ],
+              "velocity": [
+                86
+              ],
+              "sliderMax": [
+                532
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "G4",
+            "tags": [
+              "groupId=de7aed",
+              "noteId=fd95f5",
+              "barId=melody:4",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=384",
+              "duration=128",
+              "velocity=88",
+              "sliderMax=536",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "de7aed"
+              ],
+              "noteId": [
+                "fd95f5"
+              ],
+              "barId": [
+                "melody:4"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                384
+              ],
+              "duration": [
+                128
+              ],
+              "velocity": [
+                88
+              ],
+              "sliderMax": [
+                536
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "melody:5": [
+          {
+            "note": "A4",
+            "tags": [
+              "groupId=4d2d31",
+              "noteId=2f43d0",
+              "barId=melody:5",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=64",
+              "velocity=84",
+              "sliderMax=528",
+              "quantize=16th",
+              "oct=4",
+              "chord=Bb",
+              "roman=VII"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "4d2d31"
+              ],
+              "noteId": [
+                "2f43d0"
+              ],
+              "barId": [
+                "melody:5"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                84
+              ],
+              "sliderMax": [
+                528
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Bb"
+              ],
+              "roman": [
+                "VII"
+              ]
+            }
+          },
+          {
+            "note": "Bb4",
+            "tags": [
+              "groupId=3851a1",
+              "noteId=4c06fb",
+              "barId=melody:5",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=64",
+              "duration=96",
+              "velocity=88",
+              "sliderMax=536",
+              "quantize=16th",
+              "oct=4",
+              "chord=Bb",
+              "roman=VII"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "3851a1"
+              ],
+              "noteId": [
+                "4c06fb"
+              ],
+              "barId": [
+                "melody:5"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                64
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                88
+              ],
+              "sliderMax": [
+                536
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Bb"
+              ],
+              "roman": [
+                "VII"
+              ]
+            }
+          },
+          {
+            "note": "D5",
+            "tags": [
+              "groupId=f8d4b4",
+              "noteId=cc70fd",
+              "barId=melody:5",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=160",
+              "duration=160",
+              "velocity=90",
+              "sliderMax=540",
+              "quantize=16th",
+              "oct=5",
+              "chord=Bb",
+              "roman=VII"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "f8d4b4"
+              ],
+              "noteId": [
+                "cc70fd"
+              ],
+              "barId": [
+                "melody:5"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                160
+              ],
+              "duration": [
+                160
+              ],
+              "velocity": [
+                90
+              ],
+              "sliderMax": [
+                540
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Bb"
+              ],
+              "roman": [
+                "VII"
+              ]
+            }
+          },
+          {
+            "note": "F5",
+            "tags": [
+              "groupId=85ad5b",
+              "noteId=92e17d",
+              "barId=melody:5",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=320",
+              "duration=192",
+              "velocity=87",
+              "sliderMax=534",
+              "quantize=16th",
+              "oct=5",
+              "chord=Bb",
+              "roman=VII"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "85ad5b"
+              ],
+              "noteId": [
+                "92e17d"
+              ],
+              "barId": [
+                "melody:5"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                320
+              ],
+              "duration": [
+                192
+              ],
+              "velocity": [
+                87
+              ],
+              "sliderMax": [
+                534
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Bb"
+              ],
+              "roman": [
+                "VII"
+              ]
+            }
+          }
+        ],
+        "melody:6": [
+          {
+            "note": "B4",
+            "tags": [
+              "groupId=f9dcea",
+              "noteId=1c1a70",
+              "barId=melody:6",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=96",
+              "velocity=90",
+              "sliderMax=540",
+              "quantize=16th",
+              "oct=4",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "f9dcea"
+              ],
+              "noteId": [
+                "1c1a70"
+              ],
+              "barId": [
+                "melody:6"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                90
+              ],
+              "sliderMax": [
+                540
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "D5",
+            "tags": [
+              "groupId=d8fe3b",
+              "noteId=31260d",
+              "barId=melody:6",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=96",
+              "duration=64",
+              "velocity=94",
+              "sliderMax=548",
+              "quantize=16th",
+              "oct=5",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "d8fe3b"
+              ],
+              "noteId": [
+                "31260d"
+              ],
+              "barId": [
+                "melody:6"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                96
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                94
+              ],
+              "sliderMax": [
+                548
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "F5",
+            "tags": [
+              "groupId=77f9ae",
+              "noteId=939a91",
+              "barId=melody:6",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=160",
+              "duration=192",
+              "velocity=86",
+              "sliderMax=532",
+              "quantize=16th",
+              "oct=5",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "77f9ae"
+              ],
+              "noteId": [
+                "939a91"
+              ],
+              "barId": [
+                "melody:6"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                160
+              ],
+              "duration": [
+                192
+              ],
+              "velocity": [
+                86
+              ],
+              "sliderMax": [
+                532
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "A5",
+            "tags": [
+              "groupId=5f53c8",
+              "noteId=5640bd",
+              "barId=melody:6",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=352",
+              "duration=128",
+              "velocity=90",
+              "sliderMax=540",
+              "quantize=16th",
+              "oct=5",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "5f53c8"
+              ],
+              "noteId": [
+                "5640bd"
+              ],
+              "barId": [
+                "melody:6"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                352
+              ],
+              "duration": [
+                128
+              ],
+              "velocity": [
+                90
+              ],
+              "sliderMax": [
+                540
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          }
+        ],
+        "melody:7": [
+          {
+            "note": "G5",
+            "tags": [
+              "groupId=1ea26d",
+              "noteId=cbf6d9",
+              "barId=melody:7",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=192",
+              "velocity=88",
+              "sliderMax=536",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "1ea26d"
+              ],
+              "noteId": [
+                "cbf6d9"
+              ],
+              "barId": [
+                "melody:7"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                192
+              ],
+              "velocity": [
+                88
+              ],
+              "sliderMax": [
+                536
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "Eb5",
+            "tags": [
+              "groupId=d401b0",
+              "noteId=892fe8",
+              "barId=melody:7",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=192",
+              "duration=160",
+              "velocity=86",
+              "sliderMax=532",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "d401b0"
+              ],
+              "noteId": [
+                "892fe8"
+              ],
+              "barId": [
+                "melody:7"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                192
+              ],
+              "duration": [
+                160
+              ],
+              "velocity": [
+                86
+              ],
+              "sliderMax": [
+                532
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "C5",
+            "tags": [
+              "groupId=fda895",
+              "noteId=c86d49",
+              "barId=melody:7",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=352",
+              "duration=160",
+              "velocity=92",
+              "sliderMax=544",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "fda895"
+              ],
+              "noteId": [
+                "c86d49"
+              ],
+              "barId": [
+                "melody:7"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                352
+              ],
+              "duration": [
+                160
+              ],
+              "velocity": [
+                92
+              ],
+              "sliderMax": [
+                544
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "phase-ids": [
+        2
+      ],
+      "phase-names": [
+        "bass"
+      ],
+      "notesByBar": {
+        "bass:0": [
+          {
+            "note": "C2",
+            "tags": [
+              "groupId=661b0c",
+              "noteId=d20deb",
+              "barId=bass:0",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=192",
+              "velocity=72",
+              "sliderMax=354",
+              "quantize=16th",
+              "oct=2",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "661b0c"
+              ],
+              "noteId": [
+                "d20deb"
+              ],
+              "barId": [
+                "bass:0"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                192
+              ],
+              "velocity": [
+                72
+              ],
+              "sliderMax": [
+                354
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "G2",
+            "tags": [
+              "groupId=927bd5",
+              "noteId=f99803",
+              "barId=bass:0",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=192",
+              "duration=320",
+              "velocity=70",
+              "sliderMax=350",
+              "quantize=16th",
+              "oct=2",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "927bd5"
+              ],
+              "noteId": [
+                "f99803"
+              ],
+              "barId": [
+                "bass:0"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                192
+              ],
+              "duration": [
+                320
+              ],
+              "velocity": [
+                70
+              ],
+              "sliderMax": [
+                350
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "bass:1": [
+          {
+            "note": "C3",
+            "tags": [
+              "groupId=aae835",
+              "noteId=229eab",
+              "barId=bass:1",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=256",
+              "velocity=74",
+              "sliderMax=358",
+              "quantize=16th",
+              "oct=3",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "aae835"
+              ],
+              "noteId": [
+                "229eab"
+              ],
+              "barId": [
+                "bass:1"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                74
+              ],
+              "sliderMax": [
+                358
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                3
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "G2",
+            "tags": [
+              "groupId=061d53",
+              "noteId=acdd05",
+              "barId=bass:1",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=256",
+              "duration=256",
+              "velocity=68",
+              "sliderMax=346",
+              "quantize=16th",
+              "oct=2",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "061d53"
+              ],
+              "noteId": [
+                "acdd05"
+              ],
+              "barId": [
+                "bass:1"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                256
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                68
+              ],
+              "sliderMax": [
+                346
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "bass:2": [
+          {
+            "note": "F2",
+            "tags": [
+              "groupId=2ec55f",
+              "noteId=35a2c8",
+              "barId=bass:2",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=256",
+              "velocity=75",
+              "sliderMax=360",
+              "quantize=16th",
+              "oct=2",
+              "chord=Fm",
+              "roman=IVm"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "2ec55f"
+              ],
+              "noteId": [
+                "35a2c8"
+              ],
+              "barId": [
+                "bass:2"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                75
+              ],
+              "sliderMax": [
+                360
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Fm"
+              ],
+              "roman": [
+                "IVm"
+              ]
+            }
+          },
+          {
+            "note": "C3",
+            "tags": [
+              "groupId=bfc955",
+              "noteId=1daef4",
+              "barId=bass:2",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=256",
+              "duration=256",
+              "velocity=73",
+              "sliderMax=356",
+              "quantize=16th",
+              "oct=3",
+              "chord=Fm",
+              "roman=IVm"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "bfc955"
+              ],
+              "noteId": [
+                "1daef4"
+              ],
+              "barId": [
+                "bass:2"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                256
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                73
+              ],
+              "sliderMax": [
+                356
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                3
+              ],
+              "chord": [
+                "Fm"
+              ],
+              "roman": [
+                "IVm"
+              ]
+            }
+          }
+        ],
+        "bass:3": [
+          {
+            "note": "G2",
+            "tags": [
+              "groupId=79df26",
+              "noteId=26dfd0",
+              "barId=bass:3",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=256",
+              "velocity=76",
+              "sliderMax=362",
+              "quantize=16th",
+              "oct=2",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "79df26"
+              ],
+              "noteId": [
+                "26dfd0"
+              ],
+              "barId": [
+                "bass:3"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                76
+              ],
+              "sliderMax": [
+                362
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "D3",
+            "tags": [
+              "groupId=a0bdc5",
+              "noteId=d3711f",
+              "barId=bass:3",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=256",
+              "duration=256",
+              "velocity=74",
+              "sliderMax=358",
+              "quantize=16th",
+              "oct=3",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "a0bdc5"
+              ],
+              "noteId": [
+                "d3711f"
+              ],
+              "barId": [
+                "bass:3"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                256
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                74
+              ],
+              "sliderMax": [
+                358
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                3
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          }
+        ],
+        "bass:4": [
+          {
+            "note": "C2",
+            "tags": [
+              "groupId=60d9db",
+              "noteId=35a9c3",
+              "barId=bass:4",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=256",
+              "velocity=72",
+              "sliderMax=354",
+              "quantize=16th",
+              "oct=2",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "60d9db"
+              ],
+              "noteId": [
+                "35a9c3"
+              ],
+              "barId": [
+                "bass:4"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                72
+              ],
+              "sliderMax": [
+                354
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "G2",
+            "tags": [
+              "groupId=051d86",
+              "noteId=b27d46",
+              "barId=bass:4",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=256",
+              "duration=256",
+              "velocity=70",
+              "sliderMax=350",
+              "quantize=16th",
+              "oct=2",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "051d86"
+              ],
+              "noteId": [
+                "b27d46"
+              ],
+              "barId": [
+                "bass:4"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                256
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                70
+              ],
+              "sliderMax": [
+                350
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "bass:5": [
+          {
+            "note": "Bb2",
+            "tags": [
+              "groupId=e0cf02",
+              "noteId=1a3f26",
+              "barId=bass:5",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=256",
+              "velocity=72",
+              "sliderMax=354",
+              "quantize=16th",
+              "oct=2",
+              "chord=Bb",
+              "roman=VII"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "e0cf02"
+              ],
+              "noteId": [
+                "1a3f26"
+              ],
+              "barId": [
+                "bass:5"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                72
+              ],
+              "sliderMax": [
+                354
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Bb"
+              ],
+              "roman": [
+                "VII"
+              ]
+            }
+          },
+          {
+            "note": "F3",
+            "tags": [
+              "groupId=a06d89",
+              "noteId=1e6a60",
+              "barId=bass:5",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=256",
+              "duration=256",
+              "velocity=70",
+              "sliderMax=350",
+              "quantize=16th",
+              "oct=3",
+              "chord=Bb",
+              "roman=VII"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "a06d89"
+              ],
+              "noteId": [
+                "1e6a60"
+              ],
+              "barId": [
+                "bass:5"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                256
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                70
+              ],
+              "sliderMax": [
+                350
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                3
+              ],
+              "chord": [
+                "Bb"
+              ],
+              "roman": [
+                "VII"
+              ]
+            }
+          }
+        ],
+        "bass:6": [
+          {
+            "note": "G2",
+            "tags": [
+              "groupId=180db4",
+              "noteId=5ba89e",
+              "barId=bass:6",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=256",
+              "velocity=76",
+              "sliderMax=362",
+              "quantize=16th",
+              "oct=2",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "180db4"
+              ],
+              "noteId": [
+                "5ba89e"
+              ],
+              "barId": [
+                "bass:6"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                76
+              ],
+              "sliderMax": [
+                362
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "D3",
+            "tags": [
+              "groupId=bfb37e",
+              "noteId=b7e76b",
+              "barId=bass:6",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=256",
+              "duration=256",
+              "velocity=74",
+              "sliderMax=358",
+              "quantize=16th",
+              "oct=3",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "bfb37e"
+              ],
+              "noteId": [
+                "b7e76b"
+              ],
+              "barId": [
+                "bass:6"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                256
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                74
+              ],
+              "sliderMax": [
+                358
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                3
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          }
+        ],
+        "bass:7": [
+          {
+            "note": "C2",
+            "tags": [
+              "groupId=e2ddb5",
+              "noteId=25b4e2",
+              "barId=bass:7",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=0",
+              "duration=256",
+              "velocity=72",
+              "sliderMax=354",
+              "quantize=16th",
+              "oct=2",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "e2ddb5"
+              ],
+              "noteId": [
+                "25b4e2"
+              ],
+              "barId": [
+                "bass:7"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                0
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                72
+              ],
+              "sliderMax": [
+                354
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "G2",
+            "tags": [
+              "groupId=cf65bd",
+              "noteId=74eaa2",
+              "barId=bass:7",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=256",
+              "duration=256",
+              "velocity=70",
+              "sliderMax=350",
+              "quantize=16th",
+              "oct=2",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "cf65bd"
+              ],
+              "noteId": [
+                "74eaa2"
+              ],
+              "barId": [
+                "bass:7"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                256
+              ],
+              "duration": [
+                256
+              ],
+              "velocity": [
+                70
+              ],
+              "sliderMax": [
+                350
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                2
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "phase-ids": [
+        3
+      ],
+      "phase-names": [
+        "accent"
+      ],
+      "notesByBar": {
+        "accent:0": [
+          {
+            "note": "Eb4",
+            "tags": [
+              "groupId=f3d155",
+              "noteId=9fbb25",
+              "barId=accent:0",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=128",
+              "duration=64",
+              "velocity=66",
+              "sliderMax=392",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "f3d155"
+              ],
+              "noteId": [
+                "9fbb25"
+              ],
+              "barId": [
+                "accent:0"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                128
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                66
+              ],
+              "sliderMax": [
+                392
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "G4",
+            "tags": [
+              "groupId=b62416",
+              "noteId=41ea64",
+              "barId=accent:0",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=352",
+              "duration=96",
+              "velocity=68",
+              "sliderMax=396",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "b62416"
+              ],
+              "noteId": [
+                "41ea64"
+              ],
+              "barId": [
+                "accent:0"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                352
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                68
+              ],
+              "sliderMax": [
+                396
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "accent:1": [
+          {
+            "note": "G4",
+            "tags": [
+              "groupId=e4e6f7",
+              "noteId=9ac89d",
+              "barId=accent:1",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=160",
+              "duration=64",
+              "velocity=64",
+              "sliderMax=388",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "e4e6f7"
+              ],
+              "noteId": [
+                "9ac89d"
+              ],
+              "barId": [
+                "accent:1"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                160
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                64
+              ],
+              "sliderMax": [
+                388
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "C5",
+            "tags": [
+              "groupId=963e5a",
+              "noteId=1bede8",
+              "barId=accent:1",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=384",
+              "duration=64",
+              "velocity=62",
+              "sliderMax=384",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "963e5a"
+              ],
+              "noteId": [
+                "1bede8"
+              ],
+              "barId": [
+                "accent:1"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                384
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                62
+              ],
+              "sliderMax": [
+                384
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "accent:2": [
+          {
+            "note": "C4",
+            "tags": [
+              "groupId=e5b2a3",
+              "noteId=f4015f",
+              "barId=accent:2",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=64",
+              "duration=64",
+              "velocity=62",
+              "sliderMax=384",
+              "quantize=16th",
+              "oct=4",
+              "chord=Fm",
+              "roman=IVm"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "e5b2a3"
+              ],
+              "noteId": [
+                "f4015f"
+              ],
+              "barId": [
+                "accent:2"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                64
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                62
+              ],
+              "sliderMax": [
+                384
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Fm"
+              ],
+              "roman": [
+                "IVm"
+              ]
+            }
+          },
+          {
+            "note": "Eb4",
+            "tags": [
+              "groupId=dac3db",
+              "noteId=d3ded5",
+              "barId=accent:2",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=320",
+              "duration=96",
+              "velocity=64",
+              "sliderMax=388",
+              "quantize=16th",
+              "oct=4",
+              "chord=Fm",
+              "roman=IVm"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "dac3db"
+              ],
+              "noteId": [
+                "d3ded5"
+              ],
+              "barId": [
+                "accent:2"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                320
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                64
+              ],
+              "sliderMax": [
+                388
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Fm"
+              ],
+              "roman": [
+                "IVm"
+              ]
+            }
+          }
+        ],
+        "accent:3": [
+          {
+            "note": "D4",
+            "tags": [
+              "groupId=4a613c",
+              "noteId=e0100d",
+              "barId=accent:3",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=96",
+              "duration=64",
+              "velocity=66",
+              "sliderMax=392",
+              "quantize=16th",
+              "oct=4",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "4a613c"
+              ],
+              "noteId": [
+                "e0100d"
+              ],
+              "barId": [
+                "accent:3"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                96
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                66
+              ],
+              "sliderMax": [
+                392
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "F4",
+            "tags": [
+              "groupId=6f25b9",
+              "noteId=f6c151",
+              "barId=accent:3",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=352",
+              "duration=96",
+              "velocity=70",
+              "sliderMax=400",
+              "quantize=16th",
+              "oct=4",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "6f25b9"
+              ],
+              "noteId": [
+                "f6c151"
+              ],
+              "barId": [
+                "accent:3"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                352
+              ],
+              "duration": [
+                96
+              ],
+              "velocity": [
+                70
+              ],
+              "sliderMax": [
+                400
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          }
+        ],
+        "accent:4": [
+          {
+            "note": "Eb4",
+            "tags": [
+              "groupId=2a5c02",
+              "noteId=980d29",
+              "barId=accent:4",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=192",
+              "duration=64",
+              "velocity=68",
+              "sliderMax=396",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "2a5c02"
+              ],
+              "noteId": [
+                "980d29"
+              ],
+              "barId": [
+                "accent:4"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                192
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                68
+              ],
+              "sliderMax": [
+                396
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "G4",
+            "tags": [
+              "groupId=088e5a",
+              "noteId=ccefe0",
+              "barId=accent:4",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=384",
+              "duration=64",
+              "velocity=70",
+              "sliderMax=400",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "088e5a"
+              ],
+              "noteId": [
+                "ccefe0"
+              ],
+              "barId": [
+                "accent:4"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                384
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                70
+              ],
+              "sliderMax": [
+                400
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ],
+        "accent:5": [
+          {
+            "note": "F4",
+            "tags": [
+              "groupId=7e64c7",
+              "noteId=f9b144",
+              "barId=accent:5",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=160",
+              "duration=64",
+              "velocity=64",
+              "sliderMax=388",
+              "quantize=16th",
+              "oct=4",
+              "chord=Bb",
+              "roman=VII"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "7e64c7"
+              ],
+              "noteId": [
+                "f9b144"
+              ],
+              "barId": [
+                "accent:5"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                160
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                64
+              ],
+              "sliderMax": [
+                388
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Bb"
+              ],
+              "roman": [
+                "VII"
+              ]
+            }
+          },
+          {
+            "note": "A4",
+            "tags": [
+              "groupId=ca49bc",
+              "noteId=9c215b",
+              "barId=accent:5",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=352",
+              "duration=64",
+              "velocity=66",
+              "sliderMax=392",
+              "quantize=16th",
+              "oct=4",
+              "chord=Bb",
+              "roman=VII"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "ca49bc"
+              ],
+              "noteId": [
+                "9c215b"
+              ],
+              "barId": [
+                "accent:5"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                352
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                66
+              ],
+              "sliderMax": [
+                392
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Bb"
+              ],
+              "roman": [
+                "VII"
+              ]
+            }
+          }
+        ],
+        "accent:6": [
+          {
+            "note": "D4",
+            "tags": [
+              "groupId=f7b3e6",
+              "noteId=c30604",
+              "barId=accent:6",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=128",
+              "duration=64",
+              "velocity=66",
+              "sliderMax=392",
+              "quantize=16th",
+              "oct=4",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "f7b3e6"
+              ],
+              "noteId": [
+                "c30604"
+              ],
+              "barId": [
+                "accent:6"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                128
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                66
+              ],
+              "sliderMax": [
+                392
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          },
+          {
+            "note": "F4",
+            "tags": [
+              "groupId=aac234",
+              "noteId=4d5a9e",
+              "barId=accent:6",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=384",
+              "duration=64",
+              "velocity=68",
+              "sliderMax=396",
+              "quantize=16th",
+              "oct=4",
+              "chord=G",
+              "roman=V"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "aac234"
+              ],
+              "noteId": [
+                "4d5a9e"
+              ],
+              "barId": [
+                "accent:6"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                384
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                68
+              ],
+              "sliderMax": [
+                396
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "G"
+              ],
+              "roman": [
+                "V"
+              ]
+            }
+          }
+        ],
+        "accent:7": [
+          {
+            "note": "G4",
+            "tags": [
+              "groupId=014b3f",
+              "noteId=fd2948",
+              "barId=accent:7",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=192",
+              "duration=64",
+              "velocity=66",
+              "sliderMax=392",
+              "quantize=16th",
+              "oct=4",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "014b3f"
+              ],
+              "noteId": [
+                "fd2948"
+              ],
+              "barId": [
+                "accent:7"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                192
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                66
+              ],
+              "sliderMax": [
+                392
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                4
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          },
+          {
+            "note": "C5",
+            "tags": [
+              "groupId=148a55",
+              "noteId=fc9cda",
+              "barId=accent:7",
+              "scaleTonic=C",
+              "scaleName=minor",
+              "barDelay=384",
+              "duration=64",
+              "velocity=70",
+              "sliderMax=400",
+              "quantize=16th",
+              "oct=5",
+              "chord=Cm",
+              "roman=Im"
+            ],
+            "tagsObj": {
+              "groupId": [
+                "148a55"
+              ],
+              "noteId": [
+                "fc9cda"
+              ],
+              "barId": [
+                "accent:7"
+              ],
+              "scaleTonic": [
+                "C"
+              ],
+              "scaleName": [
+                "minor"
+              ],
+              "barDelay": [
+                384
+              ],
+              "duration": [
+                64
+              ],
+              "velocity": [
+                70
+              ],
+              "sliderMax": [
+                400
+              ],
+              "quantize": [
+                "16th"
+              ],
+              "oct": [
+                5
+              ],
+              "chord": [
+                "Cm"
+              ],
+              "roman": [
+                "Im"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": 1,
+      "name": "melody",
+      "scaleTonic": "C",
+      "scaleName": "minor",
+      "tempo": 112,
+      "follows-ids": []
+    },
+    {
+      "id": 2,
+      "name": "bass",
+      "scaleTonic": "C",
+      "scaleName": "minor",
+      "tempo": 112,
+      "follows-ids": []
+    },
+    {
+      "id": 3,
+      "name": "accent",
+      "scaleTonic": "C",
+      "scaleName": "minor",
+      "tempo": 112,
+      "follows-ids": []
+    }
+  ]
+}

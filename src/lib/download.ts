@@ -184,28 +184,33 @@ const songToEvents = async (mappedTicks: MidiMap) => {
       if (notes.length) {
         // go through all the notes
         notes.forEach((aNote) => {
+          // Get the correct maxRef for this note's track, not the first note's track
+          const aNoteTrackIdx = aNote.trackIdx ?? 0
+          maxes[aNoteTrackIdx] = maxes[aNoteTrackIdx] || { num: 0 }
+          const aNoteMaxRef = maxes[aNoteTrackIdx]
+          
           if (aNote.onOrOff === 'tempo') {
             relativized.push([
               aNote.tempo,
               // aNote.abso - max,
-              aNote.abso - maxRef.num,
+              aNote.abso - aNoteMaxRef.num,
               aNote.onOrOff,
               undefined,
               aNote.trackIdx,
             ])
             // max = aNote.abso
-            maxRef.num = aNote.abso
+            aNoteMaxRef.num = aNote.abso
           } else {
             relativized.push([
               aNote.note,
               // aNote.abso - max,
-              aNote.abso - maxRef.num,
+              aNote.abso - aNoteMaxRef.num,
               aNote.onOrOff,
               aNote.velocity,
               aNote.trackIdx,
             ])
             // max = aNote.abso
-            maxRef.num = aNote.abso
+            aNoteMaxRef.num = aNote.abso
           }
         })
       }

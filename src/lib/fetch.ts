@@ -178,7 +178,7 @@ export async function initLoadedSong() {
     slider.remove()
   })
   compileTracksToNotesByBar()
-  setLatestMap(mapSongToMidiTicks())
+  await setLatestMap(mapSongToMidiTicks())
   // addSlider functionality removed - not used by web app
 
   startCueObservable()

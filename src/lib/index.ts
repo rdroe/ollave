@@ -75,3 +75,6 @@ export type { Abbreviation } from './util/constantsUtil'
 export * as util from './util'
 export { addSongLoadCallback, onLoadSongCallbacks } from './util/songUtil'
 export { DEFAULT_VELOCITY } from './shared/midiMappingCore'
+
+// greek women exports
+export * from './greek-women'

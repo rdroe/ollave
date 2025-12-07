@@ -16,6 +16,10 @@ export const parseNoteTags = (tags: string[]): TagEntries => {
       return [...accum, [tag, []] as [nm: string, data: TagData]]
     }
     const split = tag.split('=')
+    if (split[0] === 'noteId') {
+      console.log('noteId', split[1])
+    }
+
     let tagDat: TagData = []
     if (peprnIsNum(split[1])) {
       tagDat = [parseFloat(split[1])]
@@ -25,6 +29,9 @@ export const parseNoteTags = (tags: string[]): TagEntries => {
       tagDat = [split[1]]
     }
 
+    if (split[0] === 'noteId') {
+      console.log('noteId out', tagDat)
+    }
     return [...accum, [split[0], tagDat]] as TagEntries
   }, [] as TagEntries)
 

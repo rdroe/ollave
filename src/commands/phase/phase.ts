@@ -18,6 +18,7 @@ import {
   phaseUnfollows,
 } from '../../lib/util/phaseUtil'
 import { getPhaseChordNames } from 'src/lib/util/graphUtil'
+import { getRandomWord } from 'src/lib/util/songUtil'
 
 const { observables } = mem()
 export const findPhase = (name: string) => {
@@ -202,7 +203,13 @@ const module: Module = {
         return allScales
       },
     },
+    randomWord: {
+      fn: async () => {
+        return getRandomWord()
+      },
+    },
   },
+  
 }
 
 export default module

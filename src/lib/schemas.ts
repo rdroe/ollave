@@ -135,11 +135,22 @@ export const makeNoteByBar = (
 
   const tagsObj = tagsObjSchema.parse(tags)
 
-  const noteByBarSansSetters = noteByBarSchema.parse({
+  const noteByBarSansSettersOutput = noteByBarSchema.safeParse({
     note,
     tags: latestTagsWithValue,
     tagsObj,
   })
+  if (!noteByBarSansSettersOutput.success) {
+    console.error({
+      note,
+      tags: latestTagsWithValue,
+      tagsObj,
+    })
+    console.error('Failed to parse note by bar: ' + noteByBarSansSettersOutput.error.message)
+    return null
+  }
+  const noteByBarSansSetters = noteByBarSansSettersOutput.data
+
   const retObj = wrapWithGetters(noteByBarSansSetters)
   const noteId = z.string().parse(noteByBarSansSetters.tagsObj.noteId?.[0])
   if (testMode) {

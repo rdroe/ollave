@@ -1,0 +1,1239 @@
+[
+    {
+      "name": "Aceso",
+      "type": "Goddess",
+      "domain": "healing process",
+      "region": "Asklepieia"
+    },
+    {
+      "name": "Achelois",
+      "type": "Goddess",
+      "domain": "moon, healing",
+      "region": "Boeotia"
+    },
+    {
+      "name": "Actaea",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Aetna",
+      "type": "Goddess or nymph",
+      "domain": "various / unclear",
+      "region": "Greece or Mediterranean"
+    },
+    {
+      "name": "Agariste of Sicyon",
+      "type": "Noblewoman (historical)",
+      "domain": "dynastic marriage politics",
+      "region": "Sicyon / Athens"
+    },
+    {
+      "name": "Agave",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Aglaia",
+      "type": "Grace",
+      "domain": "splendor, adornment",
+      "region": "Olympus"
+    },
+    {
+      "name": "Alcyone",
+      "type": "Pleiad / Nymph",
+      "domain": "calm seas",
+      "region": "Aegean / Pleiades"
+    },
+    {
+      "name": "Alectrona",
+      "type": "Goddess",
+      "domain": "morning light",
+      "region": "Rhodes"
+    },
+    {
+      "name": "Alimede",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Amphitrite",
+      "type": "Nereid",
+      "domain": "sea-queen, wife of Poseidon",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Ananke",
+      "type": "Primordial Goddess",
+      "domain": "necessity",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Ankhiale",
+      "type": "Goddess",
+      "domain": "warmth of fire",
+      "region": "Cilicia"
+    },
+    {
+      "name": "Antheia",
+      "type": "Goddess",
+      "domain": "flowers",
+      "region": "Crete / Argos"
+    },
+    {
+      "name": "Aoide",
+      "type": "Early Muse",
+      "domain": "song",
+      "region": "Pieria"
+    },
+    {
+      "name": "Aphaia",
+      "type": "Goddess",
+      "domain": "local fertility and hunting",
+      "region": "Aegina"
+    },
+    {
+      "name": "Aphrodite",
+      "type": "Olympian Goddess",
+      "domain": "love, beauty",
+      "region": "Panhellenic (Olympus / Cyprus)"
+    },
+    {
+      "name": "Apseudes",
+      "type": "Nereid",
+      "domain": "truthful, \"not lying\" sea-nymph (later tradition)",
+      "region": "Sea"
+    },
+    {
+      "name": "Arche",
+      "type": "Muse (variant tradition)",
+      "domain": "origin, beginnings",
+      "region": "Pieria"
+    },
+    {
+      "name": "Arete of Cyrene",
+      "type": "Philosopher (historical)",
+      "domain": "Cyrenaic ethics, teaching",
+      "region": "Cyrene / Athens"
+    },
+    {
+      "name": "Artemis",
+      "type": "Olympian Goddess",
+      "domain": "hunt, wilderness, young women",
+      "region": "Panhellenic (Delos / Arcadia)"
+    },
+    {
+      "name": "Asia",
+      "type": "Oceanid",
+      "domain": "regional eponym (Asia)",
+      "region": "Anatolia / world-ocean"
+    },
+    {
+      "name": "Asteria",
+      "type": "Titanide",
+      "domain": "shooting stars, nocturnal oracles",
+      "region": "Delos / cosmos"
+    },
+    {
+      "name": "Astraea",
+      "type": "Goddess",
+      "domain": "justice (Golden Age), constellation Virgo",
+      "region": "Heavens"
+    },
+    {
+      "name": "Atropos",
+      "type": "Fate",
+      "domain": "cuts the thread of life",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Aura",
+      "type": "Nymph / minor goddess",
+      "domain": "breeze",
+      "region": "Lydia"
+    },
+    {
+      "name": "Auxo",
+      "type": "Hora",
+      "domain": "growth",
+      "region": "Olympus"
+    },
+    {
+      "name": "Axiothea",
+      "type": "Philosopher (historical)",
+      "domain": "Platonist student",
+      "region": "Phlius / Athens"
+    },
+    {
+      "name": "Bia",
+      "type": "Spirit",
+      "domain": "force, violence",
+      "region": "Olympus"
+    },
+    {
+      "name": "Britomartis",
+      "type": "Goddess",
+      "domain": "nets, hunting, harbors",
+      "region": "Crete"
+    },
+    {
+      "name": "Brizo",
+      "type": "Goddess",
+      "domain": "sailors, prophetic dreams",
+      "region": "Delos"
+    },
+    {
+      "name": "Callianassa",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Callianeira",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Calliope",
+      "type": "Muse",
+      "domain": "epic poetry, eloquence",
+      "region": "Mount Helicon / Pieria"
+    },
+    {
+      "name": "Calypso",
+      "type": "Nymph",
+      "domain": "island enchantress, concealment",
+      "region": "Ogygia (mythic island)"
+    },
+    {
+      "name": "Cardea",
+      "type": "Goddess",
+      "domain": "hinges, thresholds (Greco-Roman)",
+      "region": "Latium / Greek-associated myth"
+    },
+    {
+      "name": "Carpo",
+      "type": "Hora",
+      "domain": "fruits of the year",
+      "region": "Olympus"
+    },
+    {
+      "name": "Celaeno",
+      "type": "Pleiad",
+      "domain": "star-nymph",
+      "region": "Pleiades"
+    },
+    {
+      "name": "Ceto",
+      "type": "Primordial Goddess",
+      "domain": "sea-monsters",
+      "region": "Sea"
+    },
+    {
+      "name": "Circe",
+      "type": "Goddess / witch",
+      "domain": "sorcery, transformation",
+      "region": "Aeaea (mythic island)"
+    },
+    {
+      "name": "Clio",
+      "type": "Muse",
+      "domain": "history",
+      "region": "Mount Helicon / Pieria"
+    },
+    {
+      "name": "Clotho",
+      "type": "Fate",
+      "domain": "spins the thread of life",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Clymene",
+      "type": "Oceanid",
+      "domain": "fame, renown",
+      "region": "Ocean"
+    },
+    {
+      "name": "Cranto",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Cybele",
+      "type": "Mother Goddess",
+      "domain": "mountains, wild nature",
+      "region": "Phrygia / pan-Mediterranean"
+    },
+    {
+      "name": "Cymatolege",
+      "type": "Nereid",
+      "domain": "calming waves",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Cymo",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Cymodoce",
+      "type": "Nereid",
+      "domain": "calming the waves",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Cymothoe",
+      "type": "Nereid",
+      "domain": "sea currents",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Deiopea",
+      "type": "Nereid (later tradition)",
+      "domain": "sea (Nereid)",
+      "region": "Sea"
+    },
+    {
+      "name": "Demeter",
+      "type": "Olympian Goddess",
+      "domain": "agriculture, grain",
+      "region": "Eleusis / panhellenic"
+    },
+    {
+      "name": "Dero",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Dia",
+      "type": "Goddess or heroine",
+      "domain": "fertility, eponymous island",
+      "region": "Thessaly / islands (varies by myth)"
+    },
+    {
+      "name": "Diotima",
+      "type": "Historical or literary woman",
+      "domain": "philosophy of love, religious rites",
+      "region": "Mantinea / Athens"
+    },
+    {
+      "name": "Dione",
+      "type": "Titanide",
+      "domain": "oracular water, motherhood (Aphrodite’s mother in some myths)",
+      "region": "Dodona / Olympus"
+    },
+    {
+      "name": "Dike",
+      "type": "Hora",
+      "domain": "justice",
+      "region": "Olympus"
+    },
+    {
+      "name": "Doris",
+      "type": "Oceanid",
+      "domain": "abundant sea, mother of Nereids",
+      "region": "World-ocean"
+    },
+    {
+      "name": "Doto",
+      "type": "Nereid",
+      "domain": "safe voyage, generous catch",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Drymo",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Dynamene",
+      "type": "Nereid",
+      "domain": "sea’s power",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Eileithyia",
+      "type": "Goddess",
+      "domain": "childbirth",
+      "region": "Crete / Olympus"
+    },
+    {
+      "name": "Eione",
+      "type": "Nereid",
+      "domain": "shore, beach sands",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Eirene",
+      "type": "Hora",
+      "domain": "peace",
+      "region": "Olympus / Athens"
+    },
+    {
+      "name": "Electra",
+      "type": "Oceanid / Pleiad (depending on tradition)",
+      "domain": "storm-clouds or star-nymph",
+      "region": "Ocean / Pleiades"
+    },
+    {
+      "name": "Elpis",
+      "type": "Spirit",
+      "domain": "hope",
+      "region": "Panhellenic"
+    },
+    {
+      "name": "Enyo",
+      "type": "Goddess",
+      "domain": "battle, destruction",
+      "region": "Olympus"
+    },
+    {
+      "name": "Enope",
+      "type": "Nymph",
+      "domain": "water or local spring (fragmentary)",
+      "region": "Local Greek cult (uncertain)"
+    },
+    {
+      "name": "Eos",
+      "type": "Goddess",
+      "domain": "dawn",
+      "region": "Sky / East"
+    },
+    {
+      "name": "Erato",
+      "type": "Muse",
+      "domain": "lyric and erotic poetry",
+      "region": "Mount Helicon / Pieria"
+    },
+    {
+      "name": "Eris",
+      "type": "Goddess",
+      "domain": "strife",
+      "region": "Panhellenic"
+    },
+    {
+      "name": "Euagore",
+      "type": "Nereid (extended list)",
+      "domain": "sea (good leader / good assembly)",
+      "region": "Sea"
+    },
+    {
+      "name": "Eudora",
+      "type": "Nymph",
+      "domain": "bounty, good gifts",
+      "region": "Sea or land (varies)"
+    },
+    {
+      "name": "Eudore",
+      "type": "Nereid",
+      "domain": "good gifts of the sea",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Eukelade",
+      "type": "Muse (later tradition)",
+      "domain": "song",
+      "region": "Pieria"
+    },
+    {
+      "name": "Eulimene",
+      "type": "Nereid-like nymph",
+      "domain": "good harbor",
+      "region": "Sea"
+    },
+    {
+      "name": "Eunice",
+      "type": "Nereid",
+      "domain": "good victory",
+      "region": "Sea"
+    },
+    {
+      "name": "Eunike",
+      "type": "Nereid-like nymph",
+      "domain": "good victory",
+      "region": "Sea"
+    },
+    {
+      "name": "Eunomia",
+      "type": "Hora",
+      "domain": "good order",
+      "region": "Olympus"
+    },
+    {
+      "name": "Euocrante",
+      "type": "Nereid",
+      "domain": "fair wind / good sea-braking",
+      "region": "Sea"
+    },
+    {
+      "name": "Eucrante",
+      "type": "Nereid",
+      "domain": "good surf / breaking waves",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Euphrosyne",
+      "type": "Grace",
+      "domain": "mirth, joy",
+      "region": "Olympus"
+    },
+    {
+      "name": "Eupompe",
+      "type": "Nereid",
+      "domain": "fine procession, sea-journeys",
+      "region": "Sea"
+    },
+    {
+      "name": "Eurobia",
+      "type": "Nymph",
+      "domain": "wide-stepping, fertility (obscure)",
+      "region": "Uncertain / poetic"
+    },
+    {
+      "name": "Europa",
+      "type": "Mythic heroine",
+      "domain": "mother of Minos; royal consort of Zeus",
+      "region": "Phoenicia / Crete"
+    },
+    {
+      "name": "Eurydice",
+      "type": "Nereid (in some lists) / heroine",
+      "domain": "sea-nymph or Orphic bride (variant traditions)",
+      "region": "Sea / Thrace"
+    },
+    {
+      "name": "Eurynome",
+      "type": "Oceanid / goddess",
+      "domain": "broad-pasture, order; sometimes mother of Graces",
+      "region": "Ocean / Olympus"
+    },
+    {
+      "name": "Euterpe",
+      "type": "Muse",
+      "domain": "lyric poetry, music",
+      "region": "Mount Helicon / Pieria"
+    },
+    {
+      "name": "Gaia",
+      "type": "Primordial Goddess",
+      "domain": "earth",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Galatea",
+      "type": "Nereid",
+      "domain": "sea-foam, love",
+      "region": "Sicilian coast"
+    },
+    {
+      "name": "Galene",
+      "type": "Nereid",
+      "domain": "calm seas",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Glauce",
+      "type": "Nereid",
+      "domain": "blue-grey sea",
+      "region": "Sea"
+    },
+    {
+      "name": "Glauconome",
+      "type": "Nereid",
+      "domain": "mastering the grey sea",
+      "region": "Sea"
+    },
+    {
+      "name": "Glauke",
+      "type": "Nereid / nymph",
+      "domain": "grey-blue waters",
+      "region": "Sea"
+    },
+    {
+      "name": "Gorgo",
+      "type": "Queen (historical)",
+      "domain": "Spartan politics, diplomacy",
+      "region": "Sparta"
+    },
+    {
+      "name": "Halia",
+      "type": "Nereid / sea nymph",
+      "domain": "brine, the salty sea",
+      "region": "Rhodes / Aegean"
+    },
+    {
+      "name": "Halie",
+      "type": "Nereid",
+      "domain": "sea, brine",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Halimede",
+      "type": "Nereid",
+      "domain": "sea (lady of the brine)",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Harmonia",
+      "type": "Goddess",
+      "domain": "harmony, concord",
+      "region": "Thebes"
+    },
+    {
+      "name": "Hebe",
+      "type": "Olympian Goddess",
+      "domain": "youth, cupbearer of the gods",
+      "region": "Olympus"
+    },
+    {
+      "name": "Hecate",
+      "type": "Goddess",
+      "domain": "magic, crossroads, liminal spaces",
+      "region": "Thrace / Caria / crossroads"
+    },
+    {
+      "name": "Hegemone",
+      "type": "Grace (variant tradition)",
+      "domain": "leadership, rulership",
+      "region": "Boeotia / Olympus"
+    },
+    {
+      "name": "Helike",
+      "type": "Nymph / star figure",
+      "domain": "constellation Helice (Ursa Major), guidance",
+      "region": "Thrace / sky"
+    },
+    {
+      "name": "Hemera",
+      "type": "Primordial Goddess",
+      "domain": "day",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Hera",
+      "type": "Olympian Goddess",
+      "domain": "marriage, queenship",
+      "region": "Argos / Samos / Olympus"
+    },
+    {
+      "name": "Hesione",
+      "type": "Mythic princess",
+      "domain": "rescued from sea-monster by Heracles",
+      "region": "Troy"
+    },
+    {
+      "name": "Hesperides",
+      "type": "Collective Nymphs",
+      "domain": "evening light, golden apples",
+      "region": "Far western edge of the world"
+    },
+    {
+      "name": "Hipparchia",
+      "type": "Philosopher (historical)",
+      "domain": "Cynic philosophy",
+      "region": "Maroneia / Athens"
+    },
+    {
+      "name": "Hippothoe",
+      "type": "Nereid",
+      "domain": "swift waves (\"swift horses\")",
+      "region": "Sea"
+    },
+    {
+      "name": "Hipponoe",
+      "type": "Nereid",
+      "domain": "knowledge of waves (\"horse-minded\")",
+      "region": "Sea"
+    },
+    {
+      "name": "Horae",
+      "type": "Collective Goddesses",
+      "domain": "seasons, civic order",
+      "region": "Olympus"
+    },
+    {
+      "name": "Hygeia",
+      "type": "Goddess",
+      "domain": "health",
+      "region": "Asklepieia"
+    },
+    {
+      "name": "Hygieia",
+      "type": "Goddess",
+      "domain": "health",
+      "region": "Asklepieia"
+    },
+    {
+      "name": "Iaira",
+      "type": "Nereid (variant)",
+      "domain": "sea (Nereid)",
+      "region": "Sea"
+    },
+    {
+      "name": "Ianassa",
+      "type": "Nereid (variant)",
+      "domain": "sea (Nereid)",
+      "region": "Sea"
+    },
+    {
+      "name": "Ianira",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Sea"
+    },
+    {
+      "name": "Ianeira",
+      "type": "Nereid (variant)",
+      "domain": "sea (Nereid)",
+      "region": "Sea"
+    },
+    {
+      "name": "Ione",
+      "type": "Nereid",
+      "domain": "sea (Nereid)",
+      "region": "Sea"
+    },
+    {
+      "name": "Iris",
+      "type": "Goddess",
+      "domain": "rainbow, divine messenger",
+      "region": "Sky / Olympus"
+    },
+    {
+      "name": "Kallichore",
+      "type": "Nymph / Muse (alt list)",
+      "domain": "beautiful dance or chorus",
+      "region": "Sky / Pieria"
+    },
+    {
+      "name": "KerES",
+      "type": "Spirits",
+      "domain": "violent death",
+      "region": "Battlefield"
+    },
+    {
+      "name": "Keres",
+      "type": "Spirits",
+      "domain": "violent death",
+      "region": "Battlefield"
+    },
+    {
+      "name": "Khione",
+      "type": "Goddess / nymph",
+      "domain": "snow",
+      "region": "Mountains"
+    },
+    {
+      "name": "Kotys",
+      "type": "Goddess",
+      "domain": "orgiastic rites, wild festivals",
+      "region": "Thrace"
+    },
+    {
+      "name": "Lachesis",
+      "type": "Fate",
+      "domain": "measures the life-thread",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Laima",
+      "type": "Fate-like spirit",
+      "domain": "lot, destiny (non-Greek analog adopted in late sources)",
+      "region": "Regional"
+    },
+    {
+      "name": "Lasthenia",
+      "type": "Philosopher (historical)",
+      "domain": "Platonist student",
+      "region": "Mantinea / Athens"
+    },
+    {
+      "name": "Leagore",
+      "type": "Nereid (extended lists)",
+      "domain": "sea (Nereid)",
+      "region": "Sea"
+    },
+    {
+      "name": "Laomedea",
+      "type": "Nereid (extended lists)",
+      "domain": "sea (Nereid)",
+      "region": "Sea"
+    },
+    {
+      "name": "Leto",
+      "type": "Titanide",
+      "domain": "mother of Apollo and Artemis",
+      "region": "Delos / Lycia"
+    },
+    {
+      "name": "Leucothea",
+      "type": "Sea goddess",
+      "domain": "rescue of sailors",
+      "region": "Boeotia / sea"
+    },
+    {
+      "name": "Limnoreia",
+      "type": "Nereid / harbor nymph",
+      "domain": "harbors, calm anchorages",
+      "region": "Coastal Greece"
+    },
+    {
+      "name": "Limnoria",
+      "type": "Nereid",
+      "domain": "harbors, sea",
+      "region": "Aegean Sea"
+    },
+    {
+      "name": "Maia",
+      "type": "Nymph",
+      "domain": "mother of Hermes",
+      "region": "Arcadia (Mount Cyllene)"
+    },
+    {
+      "name": "Mania",
+      "type": "Spirit / goddess",
+      "domain": "madness, spirits of the dead",
+      "region": "Underworld / Etruria (later syncretism)"
+    },
+    {
+      "name": "Melite",
+      "type": "Nereid",
+      "domain": "sea, sweetness",
+      "region": "Sea"
+    },
+    {
+      "name": "Melobosis",
+      "type": "Nymph (Homeric hymn)",
+      "domain": "orchards / fruit growth",
+      "region": "Meadows of Persephone myth"
+    },
+    {
+      "name": "Melpomene",
+      "type": "Muse",
+      "domain": "tragedy",
+      "region": "Mount Helicon / Pieria"
+    },
+    {
+      "name": "Merope",
+      "type": "Pleiad / heroine",
+      "domain": "faded star, shame",
+      "region": "Pleiades"
+    },
+    {
+      "name": "Metis",
+      "type": "Titanide",
+      "domain": "cunning, wisdom",
+      "region": "Cosmos / Olympus"
+    },
+    {
+      "name": "Mnemosyne",
+      "type": "Titanide",
+      "domain": "memory",
+      "region": "Cosmos / Boeotia"
+    },
+    {
+      "name": "Nausithoe",
+      "type": "Nereid",
+      "domain": "swift ship / sea-journeys",
+      "region": "Sea"
+    },
+    {
+      "name": "Neda",
+      "type": "Nymph",
+      "domain": "river Neda",
+      "region": "Arcadia"
+    },
+    {
+      "name": "Neilo",
+      "type": "Nymph",
+      "domain": "river Nile (Hellenized figure)",
+      "region": "Egypt (Greek mythic frame)"
+    },
+    {
+      "name": "Nemertes",
+      "type": "Nereid / nymph",
+      "domain": "truthfulness",
+      "region": "Sea"
+    },
+    {
+      "name": "Nemesis",
+      "type": "Goddess",
+      "domain": "retribution, due share",
+      "region": "Rhamnous"
+    },
+    {
+      "name": "Neomeris",
+      "type": "Nereid",
+      "domain": "new part / new sea",
+      "region": "Sea"
+    },
+    {
+      "name": "Nesaea",
+      "type": "Nereid",
+      "domain": "islands / headlands",
+      "region": "Sea"
+    },
+    {
+      "name": "Neso",
+      "type": "Nereid",
+      "domain": "island seas",
+      "region": "Sea"
+    },
+    {
+      "name": "Nephele",
+      "type": "Cloud nymph",
+      "domain": "clouds, mist",
+      "region": "Sky"
+    },
+    {
+      "name": "Nike",
+      "type": "Goddess",
+      "domain": "victory",
+      "region": "Olympus"
+    },
+    {
+      "name": "Nyx",
+      "type": "Primordial Goddess",
+      "domain": "night",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Oceanids",
+      "type": "Collective Nymphs",
+      "domain": "springs, rivers, ocean",
+      "region": "World-ocean"
+    },
+    {
+      "name": "Opis",
+      "type": "Nymph (Vergilian)",
+      "domain": "swift aid, attendant of Artemis",
+      "region": "Mythic Italy / Greece"
+    },
+    {
+      "name": "Oreithyia",
+      "type": "Nymph / princess",
+      "domain": "abducted by Boreas; winds",
+      "region": "Athens / Thrace"
+    },
+    {
+      "name": "Orthosie",
+      "type": "Hora (in some lists)",
+      "domain": "prosperity, stability",
+      "region": "Olympus"
+    },
+    {
+      "name": "Pandia",
+      "type": "Goddess",
+      "domain": "full moon, brightness",
+      "region": "Athens"
+    },
+    {
+      "name": "Pandora",
+      "type": "Mythic figure",
+      "domain": "first woman, jar of evils",
+      "region": "Panhellenic"
+    },
+    {
+      "name": "Panope",
+      "type": "Nereid",
+      "domain": "all-seeing sea, safe passages",
+      "region": "Sea"
+    },
+    {
+      "name": "Pasithea",
+      "type": "Grace",
+      "domain": "relaxation, hallucination, rest",
+      "region": "Olympus"
+    },
+    {
+      "name": "Peitho",
+      "type": "Goddess",
+      "domain": "persuasion",
+      "region": "Athens / Argos"
+    },
+    {
+      "name": "Penelopeia",
+      "type": "Nymph / name variant",
+      "domain": "river or water nymph (late sources)",
+      "region": "Arcadia (varies)"
+    },
+    {
+      "name": "Persephone",
+      "type": "Goddess",
+      "domain": "underworld queen, spring growth",
+      "region": "Underworld / Eleusis"
+    },
+    {
+      "name": "Pherusa",
+      "type": "Nereid",
+      "domain": "she who carries (surge of waves)",
+      "region": "Sea"
+    },
+    {
+      "name": "Phoebe",
+      "type": "Titanide",
+      "domain": "oracles, bright intellect",
+      "region": "Delphi / cosmos"
+    },
+    {
+      "name": "Phyllodoce",
+      "type": "Nereid (Vergilian)",
+      "domain": "leaf-receiving / green sea",
+      "region": "Sea"
+    },
+    {
+      "name": "Pleione",
+      "type": "Oceanid",
+      "domain": "mother of the Pleiades",
+      "region": "Mount Cyllene"
+    },
+    {
+      "name": "Ploto",
+      "type": "Nereid",
+      "domain": "sea-wealth",
+      "region": "Sea"
+    },
+    {
+      "name": "Polyhymnia",
+      "type": "Muse",
+      "domain": "sacred hymns, solemn poetry",
+      "region": "Mount Helicon / Pieria"
+    },
+    {
+      "name": "Polymnia",
+      "type": "Muse",
+      "domain": "sacred hymns, solemn poetry",
+      "region": "Mount Helicon / Pieria"
+    },
+    {
+      "name": "Polynoe",
+      "type": "Nereid",
+      "domain": "many-minded sea",
+      "region": "Sea"
+    },
+    {
+      "name": "Polynome",
+      "type": "Nereid",
+      "domain": "many-law / varied currents",
+      "region": "Sea"
+    },
+    {
+      "name": "Pontomedusa",
+      "type": "Nereid",
+      "domain": "sea-ruler",
+      "region": "Sea"
+    },
+    {
+      "name": "Pontoporea",
+      "type": "Nereid",
+      "domain": "sea-crossing",
+      "region": "Sea"
+    },
+    {
+      "name": "Praxidike",
+      "type": "Goddess",
+      "domain": "judicial punishment, exacting justice",
+      "region": "Boeotia"
+    },
+    {
+      "name": "Pronoia",
+      "type": "Personified concept",
+      "domain": "forethought, providence",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Proto",
+      "type": "Nereid",
+      "domain": "first voyage, pioneering journeys",
+      "region": "Sea"
+    },
+    {
+      "name": "Protomedea",
+      "type": "Nereid",
+      "domain": "first counsel, planning",
+      "region": "Sea"
+    },
+    {
+      "name": "Psamathe",
+      "type": "Nereid",
+      "domain": "sand, shore",
+      "region": "Sea / Argos"
+    },
+    {
+      "name": "Rhea",
+      "type": "Titanide",
+      "domain": "mother of Olympian gods",
+      "region": "Crete / Mount Ida"
+    },
+    {
+      "name": "Rhode",
+      "type": "Nymph / goddess",
+      "domain": "island of Rhodes",
+      "region": "Rhodes"
+    },
+    {
+      "name": "Sao",
+      "type": "Nereid",
+      "domain": "safe sea passages",
+      "region": "Sea"
+    },
+    {
+      "name": "Sappho",
+      "type": "Poet (historical)",
+      "domain": "lyric poetry",
+      "region": "Lesbos"
+    },
+    {
+      "name": "Selene",
+      "type": "Goddess",
+      "domain": "moon",
+      "region": "Sky"
+    },
+    {
+      "name": "Speo",
+      "type": "Nereid",
+      "domain": "grotto waters, caves",
+      "region": "Sea"
+    },
+    {
+      "name": "Speio",
+      "type": "Nereid",
+      "domain": "grotto waters, caves",
+      "region": "Sea"
+    },
+    {
+      "name": "Spio",
+      "type": "Nereid",
+      "domain": "deep sea",
+      "region": "Sea"
+    },
+    {
+      "name": "Sterope",
+      "type": "Pleiad",
+      "domain": "lightning",
+      "region": "Pleiades"
+    },
+    {
+      "name": "Styx",
+      "type": "Oceanid",
+      "domain": "oaths, underworld river",
+      "region": "Underworld"
+    },
+    {
+      "name": "Taygete",
+      "type": "Pleiad",
+      "domain": "mountain nymph",
+      "region": "Sparta / Mount Taygetus"
+    },
+    {
+      "name": "Telesilla",
+      "type": "Poet (historical)",
+      "domain": "lyric poetry, legendary defence of Argos",
+      "region": "Argos"
+    },
+    {
+      "name": "Terpsichore",
+      "type": "Muse",
+      "domain": "dance",
+      "region": "Mount Helicon / Pieria"
+    },
+    {
+      "name": "Tethys",
+      "type": "Titanide",
+      "domain": "fresh waters, nursing rivers",
+      "region": "World-ocean"
+    },
+    {
+      "name": "Thalia",
+      "type": "Muse / Grace",
+      "domain": "comedy and pastoral (as Muse); festivity and bloom (as Grace)",
+      "region": "Mount Helicon / Olympus"
+    },
+    {
+      "name": "Theano",
+      "type": "Philosopher (historical)",
+      "domain": "Pythagorean ethics and cosmology",
+      "region": "Croton"
+    },
+    {
+      "name": "Thebe",
+      "type": "Nymph / eponym",
+      "domain": "city eponym",
+      "region": "Thebes"
+    },
+    {
+      "name": "Theia",
+      "type": "Titanide",
+      "domain": "light, sight, precious metals",
+      "region": "Cosmos"
+    },
+    {
+      "name": "Theisoa",
+      "type": "Nymph",
+      "domain": "Arcadian nymph of Mount Lycaios",
+      "region": "Arcadia"
+    },
+    {
+      "name": "Thelxinoe",
+      "type": "Muse (alt tradition)",
+      "domain": "enchanting mind / heart",
+      "region": "Pieria"
+    },
+    {
+      "name": "Themisto",
+      "type": "Nereid / also name of a mortal queen",
+      "domain": "sea or tragic motherhood (depending on figure)",
+      "region": "Sea / Boeotia"
+    },
+    {
+      "name": "Themis",
+      "type": "Titanide",
+      "domain": "divine law, custom",
+      "region": "Olympus"
+    },
+    {
+      "name": "Thetis",
+      "type": "Nereid",
+      "domain": "mother of Achilles; protection of heroes",
+      "region": "Aegean / Phthia"
+    },
+    {
+      "name": "Thoe",
+      "type": "Nereid",
+      "domain": "swift waves",
+      "region": "Sea"
+    },
+    {
+      "name": "Tritone",
+      "type": "Nymph",
+      "domain": "lake Tritonis",
+      "region": "Libya"
+    },
+    {
+      "name": "Tyche",
+      "type": "Goddess",
+      "domain": "fortune, luck of cities",
+      "region": "Panhellenic"
+    },
+    {
+      "name": "Urania",
+      "type": "Muse",
+      "domain": "astronomy",
+      "region": "Mount Helicon / sky"
+    },
+    {
+      "name": "Xanthippe",
+      "type": "Athenian woman (historical)",
+      "domain": "wife of Socrates; figure in later anecdotes",
+      "region": "Athens"
+    }
+  ]
+  
