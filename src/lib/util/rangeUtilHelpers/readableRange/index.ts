@@ -603,7 +603,7 @@ export const registerReadableRange = async <
   }) 
   
   function fireInitialEvents() { 
-    initializationSubscribers?.[rangeId].forEach((callback) => callback()) 
+    initializationSubscribers[rangeId]?.forEach((callback) => callback()) 
   }
 
   updateRange(rangeId, effectiveInput)

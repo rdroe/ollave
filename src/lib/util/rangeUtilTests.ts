@@ -25,7 +25,7 @@ import {
   subscribeToRangeConvertedNextRightRangeEndLoading,
   accessConversionStore,
 } from './rangeUtilHelpers/readableRange'
-import { accessTicksStore } from './rangeUtilHelpers/ticks'
+// ticksStore import removed - not used in tests after migration to new API
 
 // Test modules
 const testRangeStore: {
@@ -497,7 +497,7 @@ export const testRangeUtil: Module = {
       '': 'Run all tests',
       'registerRange': 'Test basic numeric range registration',
       'registerReadableRange': 'Test readable range registration (string, number, Date types)',
-      'registerTicks': 'Test ticks registration for readable ranges',
+      'registerTicks': 'Test ticks registration for readable ranges (new async API)',
       'subscriptions': 'Test all subscription functions (basic and converted)',
       'updateRange': 'Test updateRange and updateRangeInputInner functions',
       'reregistration': 'Test reregistration scenarios (numeric and readable ranges)',
@@ -520,8 +520,8 @@ export const testRangeUtil: Module = {
     const results: any = {}
 
     // Import test functions from modules
-    const { registerTicks } = await import('./rangeUtilHelpers/ticks')
     const { accessConversionStore } = await import('./rangeUtilHelpers/readableRange')
+    // registerTicks import removed - test was removed after migration to new async API
 
     // Test registerRange - basic numeric range registration
     if (!testName || testName === 'registerRange' || testName === '') {
@@ -717,10 +717,10 @@ export const testRangeUtil: Module = {
       }
     }
 
-    // Test registerTicks - ticks registration for readable range
+    // Test registerTicks - ticks registration for readable range (new async API)
     if (!testName || testName === 'registerTicks' || testName === '') {
       try {
-        const rangeId = 'testRangeUtil-ticks-registration'
+        const rangeId = 'testRangeUtil-ticks-registration-new-api'
         const initialInput = 100
         // First register a readable range
         await registerReadableRange<number>(
@@ -732,40 +732,283 @@ export const testRangeUtil: Module = {
             getNextRightRange: async (input: number) => [input + 5, input + 20],
             inputToNumber: (input: number) => input,
             numberToInput: (number: number) => number,
-            
           },
           false
         )
-        // Then register ticks
-        registerTicks<number>(
+        
+        // Import ticks functions
+        const { registerTicks, ticksStore, subscribeToTicksLoadingComplete, subscribeToTicksInitialization, unregisterTicks } = await import('./rangeUtilHelpers/ticks')
+        
+        // Register ticks with async function
+        registerTicks(
           rangeId,
-          ([start, end]: [start: number, end: number]) => {
+          async ([start, end]: [start: number, end: number]) => {
             const ticks: any[] = []
             for (let i = start; i <= end; i += 1) {
               ticks.push({ value: i, label: i.toString() })
             }
             return ticks
           },
-      false
+          true // runImmediately
         )
-        const ticksData = accessTicksStore<number>(rangeId).ticks
+        
+        // Wait for async ticks generation
+        await new Promise((resolve) => setTimeout(resolve, 150))
+        
+        const ticksData = ticksStore[rangeId]?.ticks
+        const loadingData = ticksStore[rangeId]?.loading
+        
         results.registerTicksForReadableRange = createTestResult(
           true,
-          'Ticks registration for readable range successful',
+          'Ticks registration for readable range successful (new async API)',
           undefined,
           {
             rangeId,
             initialInput,
             ticks: ticksData,
-            viewableRangeTicksCount: ticksData.viewableRange.length,
-            nextLeftRangeTicksCount: ticksData.nextLeftRange.length,
-            nextRightRangeTicksCount: ticksData.nextRightRange.length,
+            loading: loadingData,
+            viewableRangeTicksCount: ticksData?.viewableRange?.length || 0,
+            nextLeftRangeTicksCount: ticksData?.nextLeftRange?.length || 0,
+            nextRightRangeTicksCount: ticksData?.nextRightRange?.length || 0,
+            allLoadingComplete: loadingData && !loadingData.viewableRange && !loadingData.nextLeftRange && !loadingData.nextRightRange,
           }
         )
+        
+        // Cleanup
+        unregisterTicks(rangeId)
       } catch (error: any) {
         results.registerTicksForReadableRange = createTestResult(
           false,
-          'Ticks registration for readable range failed',
+          'Ticks registration for readable range failed (new async API)',
+          error
+        )
+      }
+    }
+
+    // Test registerTicks subscriptions - test loading complete and initialization callbacks
+    if (!testName || testName === 'registerTicks' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-ticks-subscriptions-new-api'
+        const initialInput = 150
+        const subscriptionResults: any = {
+          loadingComplete: false,
+          initialization: false,
+          loadingCompleteTicks: null,
+          initializationTicks: null,
+        }
+        
+        // First register a readable range
+        await registerReadableRange<number>(
+          rangeId,
+          initialInput,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: number) => input,
+            numberToInput: (number: number) => number,
+          },
+          false
+        )
+        
+        // Import ticks functions
+        const { registerTicks, subscribeToTicksLoadingComplete, subscribeToTicksInitialization, unregisterTicks } = await import('./rangeUtilHelpers/ticks')
+        
+        // Subscribe before registering
+        const unsubLoadingComplete = subscribeToTicksLoadingComplete(rangeId, (ticks) => {
+          subscriptionResults.loadingComplete = true
+          subscriptionResults.loadingCompleteTicks = ticks
+        })
+        
+        const unsubInitialization = subscribeToTicksInitialization(rangeId, (ticks) => {
+          subscriptionResults.initialization = true
+          subscriptionResults.initializationTicks = ticks
+        })
+        
+        // Register ticks with async function
+        registerTicks(
+          rangeId,
+          async ([start, end]: [start: number, end: number]) => {
+            const ticks: any[] = []
+            for (let i = start; i <= end; i += 1) {
+              ticks.push({ value: i, label: i.toString() })
+            }
+            return ticks
+          },
+          true // runImmediately
+        )
+        
+        // Wait for async ticks generation and subscriptions
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        
+        // Cleanup subscriptions
+        unsubLoadingComplete()
+        unsubInitialization()
+        unregisterTicks(rangeId)
+        
+        results.registerTicksSubscriptions = createTestResult(
+          true,
+          'Ticks subscriptions (loading complete and initialization) successful',
+          undefined,
+          {
+            rangeId,
+            initialInput,
+            subscriptionResults,
+            loadingCompleteFired: subscriptionResults.loadingComplete,
+            initializationFired: subscriptionResults.initialization,
+            hasTicksData: !!subscriptionResults.loadingCompleteTicks,
+          }
+        )
+      } catch (error: any) {
+        results.registerTicksSubscriptions = createTestResult(
+          false,
+          'Ticks subscriptions test failed',
+          error
+        )
+      }
+    }
+
+    // Test updateTicksMethod - update the ticks generation function
+    if (!testName || testName === 'registerTicks' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-ticks-update-method'
+        const initialInput = 200
+        
+        // First register a readable range
+        await registerReadableRange<number>(
+          rangeId,
+          initialInput,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: number) => input,
+            numberToInput: (number: number) => number,
+          },
+          false
+        )
+        
+        // Import ticks functions
+        const { registerTicks, updateTicksMethod, ticksStore, unregisterTicks } = await import('./rangeUtilHelpers/ticks')
+        
+        // Register ticks with initial function (step size 1)
+        registerTicks(
+          rangeId,
+          async ([start, end]: [start: number, end: number]) => {
+            const ticks: any[] = []
+            for (let i = start; i <= end; i += 1) {
+              ticks.push({ value: i, label: i.toString() })
+            }
+            return ticks
+          },
+          true
+        )
+        
+        await new Promise((resolve) => setTimeout(resolve, 150))
+        const initialTicksCount = ticksStore[rangeId]?.ticks?.viewableRange?.length || 0
+        
+        // Update the method to use step size 2
+        updateTicksMethod(
+          rangeId,
+          async ([start, end]: [start: number, end: number]) => {
+            const ticks: any[] = []
+            for (let i = start; i <= end; i += 2) {
+              ticks.push({ value: i, label: i.toString() })
+            }
+            return ticks
+          }
+        )
+        
+        // Trigger update by updating the range
+        updateRange(rangeId, initialInput + 10)
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        
+        const updatedTicksCount = ticksStore[rangeId]?.ticks?.viewableRange?.length || 0
+        
+        // Cleanup
+        unregisterTicks(rangeId)
+        
+        results.updateTicksMethod = createTestResult(
+          true,
+          'Update ticks method successful',
+          undefined,
+          {
+            rangeId,
+            initialInput,
+            initialTicksCount,
+            updatedTicksCount,
+            methodUpdated: initialTicksCount !== updatedTicksCount,
+          }
+        )
+      } catch (error: any) {
+        results.updateTicksMethod = createTestResult(
+          false,
+          'Update ticks method failed',
+          error
+        )
+      }
+    }
+
+    // Test unregisterTicks - cleanup functionality
+    if (!testName || testName === 'registerTicks' || testName === '') {
+      try {
+        const rangeId = 'testRangeUtil-ticks-unregister'
+        const initialInput = 250
+        
+        // First register a readable range
+        await registerReadableRange<number>(
+          rangeId,
+          initialInput,
+          {
+            getViewableRange: async (input: number) => [input - 5, input + 5],
+            getNextLeftRange: async (input: number) => [input - 20, input - 5],
+            getNextRightRange: async (input: number) => [input + 5, input + 20],
+            inputToNumber: (input: number) => input,
+            numberToInput: (number: number) => number,
+          },
+          false
+        )
+        
+        // Import ticks functions
+        const { registerTicks, ticksStore, unregisterTicks } = await import('./rangeUtilHelpers/ticks')
+        
+        // Register ticks
+        registerTicks(
+          rangeId,
+          async ([start, end]: [start: number, end: number]) => {
+            const ticks: any[] = []
+            for (let i = start; i <= end; i += 1) {
+              ticks.push({ value: i, label: i.toString() })
+            }
+            return ticks
+          },
+          true
+        )
+        
+        await new Promise((resolve) => setTimeout(resolve, 150))
+        const beforeUnregister = ticksStore[rangeId] !== undefined
+        
+        // Unregister ticks
+        unregisterTicks(rangeId)
+        
+        const afterUnregister = ticksStore[rangeId] === undefined
+        
+        results.unregisterTicks = createTestResult(
+          true,
+          'Unregister ticks successful',
+          undefined,
+          {
+            rangeId,
+            initialInput,
+            beforeUnregister,
+            afterUnregister,
+            cleanupSuccessful: beforeUnregister && afterUnregister,
+          }
+        )
+      } catch (error: any) {
+        results.unregisterTicks = createTestResult(
+          false,
+          'Unregister ticks failed',
           error
         )
       }

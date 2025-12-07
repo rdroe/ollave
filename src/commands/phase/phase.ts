@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { mem } from '../../core/mem'
 import { setLatestMap } from '../../core/observables'
-import { DEFAULT_VELOCITY } from '../../lib'
+import { allScales, DEFAULT_VELOCITY } from '../../lib'
 import { isNum, isString } from '../../lib/helpers'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
 import {
@@ -17,6 +17,7 @@ import {
   phaseFollowsPhase,
   phaseUnfollows,
 } from '../../lib/util/phaseUtil'
+import { getPhaseChordNames } from 'src/lib/util/graphUtil'
 
 const { observables } = mem()
 export const findPhase = (name: string) => {
@@ -186,6 +187,19 @@ const module: Module = {
             barIds: barIdsRaw,
           })
         copyBarNotesToEndOfPhase(barIds)
+      },
+    },
+    scaleChords: {
+      fn: async ({ positionalNonCommands }) => {
+
+        const [scaleTonic, scaleName] = positionalNonCommands
+        return getPhaseChordNames(scaleTonic, scaleName, 'all')
+
+      },
+    },
+    allScales: {
+      fn: async () => {
+        return allScales
       },
     },
   },

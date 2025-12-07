@@ -1,6 +1,6 @@
 import { accessConversionStore, registerTicks as rtOld, subscribeToRangeConvertedEndLoading, subscribeToRangeInitialization, TicksArray } from "../util"
 import { DimensionalRange, registerDimensionalRange, subscribeToDimensionalRangeConvertedEndLoading, updateDimensionalRange, updateDimensionalRangeParams } from "../util/rangeUtilHelpers/dimensionalRange"
-import { registerTicks, subscribeToTicksInitialization, subscribeToTicksLoadingComplete, ticksStore } from "../util/rangeUtilHelpers/ticks/index2"
+import { registerTicks, subscribeToTicksInitialization, subscribeToTicksLoadingComplete, ticksStore } from "../util/rangeUtilHelpers/ticks"
 
 const rangeId = 'dimensionalRangeNumeric'
 const dimensionalRange: DimensionalRange = {

@@ -1,9 +1,9 @@
 import type { StringOrNumberOrDate } from '../readableRange'
+import { conversionEmitters } from '../readableRange'
 import {
-  accessConversionStore,
   getConversionEventNames,
-  conversionEmitters,
 } from '../readableRange'
+import { store as basicRangeStore } from '../basicRange'
 
 export type TicksArray<InputType extends StringOrNumberOrDate> = Array<{
   value: InputType
@@ -11,168 +11,253 @@ export type TicksArray<InputType extends StringOrNumberOrDate> = Array<{
   dimensions?: { width: number; height: number }
 }>
 
-const ticksStore: {
+type Emitters = {
+  [rangeId: string]: Record<string, EventTarget>
+}
+
+type Cleanup = {
+  [rangeId: string]: (() => void)[]
+}
+
+type Fns = {
+  [rangeId: string]: {
+    [ticksType: string]: (inputRange: [start: number, end: number]) => Promise<TicksArray<number>>
+  }
+}
+const fns: Fns = {}
+
+const emitters: Emitters = {}
+const cleanup: Cleanup = {}
+export  const ticksStore: {
   [rangeId: string]: {
     ticks: {
-      viewableRange: TicksArray<StringOrNumberOrDate>
-      nextLeftRange: TicksArray<StringOrNumberOrDate>
-      nextRightRange: TicksArray<StringOrNumberOrDate>
+      viewableRange: TicksArray<number>
+      nextLeftRange: TicksArray<number>
+      nextRightRange: TicksArray<number>
     }
-    fns: {
-      createDefaultTicks: (
-        inputRange: [start: StringOrNumberOrDate, end: StringOrNumberOrDate]
-      ) => TicksArray<StringOrNumberOrDate>
+    loading: {
+      viewableRange: boolean
+      nextLeftRange: boolean
+      nextRightRange: boolean
     }
   }
 } = {}
 
-const ticksEmitters: {
-  [rangeId: string]: {
-    ticksChanged: EventTarget
-    loading: boolean
-    cleanup: (() => void)[]
-  }
-} = {}
 
-const TICKS_CHANGED_EVENT = 'TICKS_CHANGED'
-
-const getTicksEventNames = (rangeId: string) => {
-  return {
-    ticksChanged: `${rangeId}-${TICKS_CHANGED_EVENT}`,
-  }
-}
-
-export const accessTicksStore = <InputType extends StringOrNumberOrDate>(
-  rangeId: string
+const addEventHandlerAndTrigger = (rangeId: string, baseName: string, 
+  handler: (event: Event) => void,
+  addTriggeringEventHandlerFn?: (
+    readableEmitters: typeof conversionEmitters,
+    ticksEmitters: Emitters,
+  ) => void, 
 ) => {
-  return {
-    ticks: ticksStore[rangeId].ticks as {
-      viewableRange: TicksArray<InputType>
-      nextLeftRange: TicksArray<InputType>
-      nextRightRange: TicksArray<InputType>
-    },
-    fns: ticksStore[rangeId].fns,
-  } as {
-    ticks: {
-      viewableRange: TicksArray<InputType>
-      nextLeftRange: TicksArray<InputType>
-      nextRightRange: TicksArray<InputType>
-    }
-    fns: {
-      createDefaultTicks: (
-        inputRange: [start: InputType, end: InputType]
-      ) => TicksArray<InputType>
-    }
-  }
-}
 
-// listens for the readable range to be updated, and creates the ticks array for the range passed as input
-const viewableRangeTicksChangedHandler = <
-  InputType extends StringOrNumberOrDate,
->(
-  conversionEvent: Event & {
-    detail: {
-      rangeId: string
-      viewableRange: [start: InputType, end: InputType]
-    }
-  }
-): void => {
-  const { rangeId, viewableRange } = conversionEvent.detail
-  if (!rangeId || viewableRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  accessTicksStore<InputType>(rangeId).ticks.viewableRange =
-    accessTicksStore<InputType>(rangeId).fns.createDefaultTicks(viewableRange)
-}
+  if (!emitters[rangeId]) {
 
-const nextLeftRangeTicksChangedHandler = <
-  InputType extends StringOrNumberOrDate,
->(
-  conversionEvent: Event & {
-    detail: {
-      rangeId: string
-      nextLeftRange: [start: InputType, end: InputType]
-    }
+    cleanup[rangeId] = []
+    emitters[rangeId] = {}
   }
-): void => {
-  const { rangeId, nextLeftRange } = conversionEvent.detail
-  if (!rangeId || nextLeftRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  accessTicksStore<InputType>(rangeId).ticks.nextLeftRange =
-    accessTicksStore<InputType>(rangeId).fns.createDefaultTicks(nextLeftRange)
-}
-
-const nextRightRangeTicksChangedHandler = <
-  InputType extends StringOrNumberOrDate,
->(
-  conversionEvent: Event & {
-    detail: {
-      rangeId: string
-      nextRightRange: [start: InputType, end: InputType]
-    }
-  }
-): void => {
-  const { rangeId, nextRightRange } = conversionEvent.detail
-  if (!rangeId || nextRightRange === undefined) {
-    throw new Error('Invalid event detail')
-  }
-  accessTicksStore<InputType>(rangeId).ticks.nextRightRange =
-    accessTicksStore<InputType>(rangeId).fns.createDefaultTicks(nextRightRange)
-}
-
-export const registerTicks = <InputType extends StringOrNumberOrDate>(
-  rangeId: string,
-  createDefaultTicks: ([start, end]: [
-    start: InputType,
-    end: InputType,
-  ]) => TicksArray<StringOrNumberOrDate>,
-  isReregistration: boolean = false
-) => {
-  // ticks are registered to respond to the human-readable ranges being updated, such as viewable range, next left range, next right range in the reagle range.
-  // so we need to register the ticks to respond to the readable range events.
-  // this function assumes the readable range (and at a lower level, the numeric range) with rangeId is already registered
-  // First, set up this range id in the ticks store and emitters
-  const conversionEventNames = getConversionEventNames(rangeId)
-  if (ticksEmitters[rangeId] && !isReregistration) {
-    // todo: remove the appropriate ticksStore fns and ticksEmitters, etc.
+  if (!emitters[rangeId][baseName]) {
+    emitters[rangeId][baseName] = new EventTarget()
   } else {
-    ticksEmitters[rangeId] = {
-      ticksChanged: new EventTarget(),
-      loading: false,
-      cleanup: [],
+    throw new Error(`Emitter ${baseName} already exists`)
+  }
+  emitters[rangeId][baseName].addEventListener(baseName, handler)
+  cleanup[rangeId].push(() => {
+    emitters[rangeId][baseName].removeEventListener(baseName, handler)
+  })
+
+  if (addTriggeringEventHandlerFn) {
+    addTriggeringEventHandlerFn(conversionEmitters, emitters)
+  } 
+}
+const completionEvents = {
+  'viewableRange' : 'VIEWABLE_TICKS_LOADING_COMPLETE',
+  'nextLeftRange' : 'NEXT_LEFT_TICKS_LOADING_COMPLETE',
+  'nextRightRange' : 'NEXT_RIGHT_TICKS_LOADING_COMPLETE',
+}
+const TICKS_LOADING_COMPLETE_EVENT = 'TICKS_LOADING_COMPLETE'
+const isLoading: {
+  [rangeId: string]: Record<"viewableRange" | "nextLeftRange" | "nextRightRange", boolean>
+} = {}
+
+function getTicksLoadingStartHandler(rangeId: string, rangeName: "viewableRange" | "nextLeftRange" | "nextRightRange") { 
+  return function () {
+    const range = basicRangeStore[rangeId][rangeName]
+    if (!range) {
+      throw new Error(`${rangeName} not found`)
+    }
+    ticksStore[rangeId].loading[rangeName] = true
+    isLoading[rangeId][rangeName] = true
+
+      fns[rangeId].createDefaultTicks(range).then((ticks) => { 
+
+      ticksStore[rangeId].ticks[rangeName] = ticks
+
+      const completionEvent = completionEvents[rangeName]
+      if (!emitters[rangeId][completionEvent]) {
+        emitters[rangeId][completionEvent] = new EventTarget() 
+      }
+      emitters[rangeId][completionEvent].dispatchEvent(new CustomEvent(completionEvent, {
+        detail: {
+          name: completionEvent, 
+          boolean: true,
+        },
+      }))
+    }).catch((error) => {
+      console.error(`Error loading ticks for ${rangeName} ${rangeId}`, error)
+    })
+  }
+} 
+
+function getDispatchAdder(rangeId: string, eventName: string, emitterName: keyof Omit<typeof conversionEmitters[string], "cleanup">, detailProp: "viewableRangeLoading" | "nextLeftRangeLoading" | "nextRightRangeLoading"  ) {
+  return function dispatchAdder(cEmitters: typeof conversionEmitters, ticksEmitters: Emitters)  {
+    const myHandler = (event: Event & { detail: {
+      [key in typeof detailProp]: boolean
+    } }) => {
+      if (!event.detail[detailProp]) {
+        ticksEmitters[rangeId][eventName].dispatchEvent(new CustomEvent(eventName, {
+          detail: {
+            rangeId: rangeId,
+          },
+        }))
+      }
     }
 
-    const currentViewableRange =
-      accessConversionStore<InputType>(rangeId).viewableRange
-    const currentNextLeftRange =
-      accessConversionStore<InputType>(rangeId).nextLeftRange
-    const currentNextRightRange =
-      accessConversionStore<InputType>(rangeId).nextRightRange
+    cEmitters[rangeId][emitterName].addEventListener(getConversionEventNames(rangeId)[emitterName],  myHandler) 
+    cEmitters[rangeId].cleanup.push(() => {
+      cEmitters[rangeId][emitterName].removeEventListener(getConversionEventNames(rangeId)[emitterName], myHandler)
+    })
+    cleanup[rangeId].push(() => {
+      cEmitters[rangeId][emitterName].removeEventListener(getConversionEventNames(rangeId)[emitterName], myHandler)
+    })
+  }
+}
 
+const getCompletionEventHandler = (rangeId: string, rangeName: "viewableRange" | "nextLeftRange" | "nextRightRange") => {
+  return function handler() {
+    isLoading[rangeId][rangeName] = false
+    const otherRangesLoadingEntriesLength = Object.entries(isLoading[rangeId]).filter(([key, value]) => key !== rangeName && value === true).length
+    if (otherRangesLoadingEntriesLength === 0) {
+      ticksStore[rangeId].loading[rangeName] = false
+      emitters[rangeId][TICKS_LOADING_COMPLETE_EVENT].dispatchEvent(new CustomEvent(TICKS_LOADING_COMPLETE_EVENT, {
+        detail: {
+          name: TICKS_LOADING_COMPLETE_EVENT,
+          boolean: true,
+        },
+      }))
+    }
+  }
+}
+
+export const registerTicks = (rangeId: string, createDefaultTicks: (inputRange: [start: number, end: number]) => Promise<TicksArray<number>>, runImmediately: boolean = false) => {
+  fns[rangeId] = {
+    createDefaultTicks: createDefaultTicks,
+  }
+  if (ticksStore[rangeId]) {
+    unregisterTicks(rangeId)
+  }
+  if (!ticksStore[rangeId]) {
     ticksStore[rangeId] = {
       ticks: {
-        viewableRange: createDefaultTicks(currentViewableRange),
-        nextLeftRange: createDefaultTicks(currentNextLeftRange),
-        nextRightRange: createDefaultTicks(currentNextRightRange),
+        viewableRange: [],
+        nextLeftRange: [],
+        nextRightRange: [],
       },
-      fns: {
-        createDefaultTicks: createDefaultTicks,
-      },
+      loading: {
+        viewableRange: false,
+        nextLeftRange: false,
+        nextRightRange: false,
+      }
     }
-    // listen for the conversion events
-    conversionEmitters[rangeId].viewableRangeConverted.addEventListener(
-      conversionEventNames.viewableRangeConverted,
-      viewableRangeTicksChangedHandler<InputType>
-    )
-    conversionEmitters[rangeId].nextLeftRangeConverted.addEventListener(
-      conversionEventNames.nextLeftRangeConverted,
-      nextLeftRangeTicksChangedHandler<InputType>
-    )
-    conversionEmitters[rangeId].nextRightRangeConverted.addEventListener(
-      conversionEventNames.nextRightRangeConverted,
-      nextRightRangeTicksChangedHandler<InputType>
-    )
+  }
+  if (!cleanup[rangeId]) {
+    cleanup[rangeId] = []
+  }
+  if (!isLoading[rangeId]) {
+    isLoading[rangeId] = {
+      viewableRange: false,
+      nextLeftRange: false,
+      nextRightRange: false,
+    }
+  }
+
+  if (!emitters[rangeId]) {
+    emitters[rangeId] = {}
+  }
+  if (!emitters[rangeId][TICKS_LOADING_COMPLETE_EVENT]) {
+    emitters[rangeId][TICKS_LOADING_COMPLETE_EVENT] = new EventTarget()
+  }
+
+  const completionEventHandlerViewableRange = getCompletionEventHandler(rangeId, 'viewableRange')
+  const completionEventHandlerNextLeftRange = getCompletionEventHandler(rangeId, 'nextLeftRange')
+  const completionEventHandlerNextRightRange = getCompletionEventHandler(rangeId, 'nextRightRange')
+  addEventHandlerAndTrigger(rangeId, completionEvents.viewableRange, completionEventHandlerViewableRange)
+  addEventHandlerAndTrigger(rangeId, completionEvents.nextLeftRange, completionEventHandlerNextLeftRange)
+  addEventHandlerAndTrigger(rangeId, completionEvents.nextRightRange, completionEventHandlerNextRightRange)
+
+  const viewableTicksLoadingStartHandler = getTicksLoadingStartHandler(rangeId, 'viewableRange') 
+  const nextLeftTicksLoadingStartHandler = getTicksLoadingStartHandler(rangeId, 'nextLeftRange') 
+  const nextRightTicksLoadingStartHandler = getTicksLoadingStartHandler(rangeId, 'nextRightRange') 
+
+  const dispatchAdderViewableRange = getDispatchAdder(rangeId, 'VIEWABLE_TICKS_LOADING', 'convertedViewableRangeLoading', 'viewableRangeLoading')
+  const dispatchAdderNextLeftRange = getDispatchAdder(rangeId, 'NEXT_LEFT_TICKS_LOADING', 'convertedNextLeftRangeLoading', 'nextLeftRangeLoading')
+  const dispatchAdderNextRightRange = getDispatchAdder(rangeId, 'NEXT_RIGHT_TICKS_LOADING', 'convertedNextRightRangeLoading', 'nextRightRangeLoading')
+  addEventHandlerAndTrigger(rangeId, 'VIEWABLE_TICKS_LOADING', viewableTicksLoadingStartHandler, dispatchAdderViewableRange)
+  addEventHandlerAndTrigger(rangeId, 'NEXT_LEFT_TICKS_LOADING', nextLeftTicksLoadingStartHandler, dispatchAdderNextLeftRange)
+  addEventHandlerAndTrigger(rangeId, 'NEXT_RIGHT_TICKS_LOADING', nextRightTicksLoadingStartHandler, dispatchAdderNextRightRange)
+
+  if (runImmediately) {
+    viewableTicksLoadingStartHandler()
+    nextLeftTicksLoadingStartHandler()
+    nextRightTicksLoadingStartHandler()
   }
 }
 
+export const unregisterTicks = (rangeId: string) => {
+  cleanup[rangeId].forEach((cleanupFn) => cleanupFn())
+  cleanup[rangeId] = []
+  emitters[rangeId] = {}
+  ticksStore[rangeId] = undefined
+  isLoading[rangeId] = undefined
+}
+
+
+export const subscribeToTicksLoadingComplete = (rangeId: string, callback: (ticks: (typeof ticksStore[string])['ticks']) => void) => {
+  function handler() {
+    callback(ticksStore[rangeId].ticks)
+  }
+  emitters[rangeId][TICKS_LOADING_COMPLETE_EVENT].addEventListener(TICKS_LOADING_COMPLETE_EVENT, handler)
+  cleanup[rangeId].push(() => {
+    emitters[rangeId][TICKS_LOADING_COMPLETE_EVENT].removeEventListener(TICKS_LOADING_COMPLETE_EVENT, handler)
+  })
+  return function unsubscribe() {
+    emitters[rangeId][TICKS_LOADING_COMPLETE_EVENT].removeEventListener(TICKS_LOADING_COMPLETE_EVENT, handler)
+  }
+}
+
+export const updateTicksMethod = (rangeId: string, createDefaultTicks: (inputRange: [start: number, end: number]) => Promise<TicksArray<number>>) => {
+  fns[rangeId].createDefaultTicks = createDefaultTicks
+}
+
+const onInitOnceFns: {
+  [rangeId: string]: {
+    allRanges: () => void 
+  }
+} = {}
+
+export const subscribeToTicksInitialization = (rangeId: string, callback: (ticks: (typeof ticksStore[string])['ticks']) => void) => {
+
+
+  const cleanupFn = () => {
+    emitters[rangeId][TICKS_LOADING_COMPLETE_EVENT].removeEventListener(TICKS_LOADING_COMPLETE_EVENT, thisHandler)
+  } 
+  const thisHandler = () => {
+    callback(ticksStore[rangeId].ticks)
+    cleanupFn()
+  }
+
+  emitters[rangeId][TICKS_LOADING_COMPLETE_EVENT].addEventListener(TICKS_LOADING_COMPLETE_EVENT, thisHandler)
+  
+  return cleanupFn
+}
