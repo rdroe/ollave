@@ -17,8 +17,8 @@ import {
   phaseFollowsPhase,
   phaseUnfollows,
 } from '../../lib/util/phaseUtil'
-import { getPhaseChordNames } from 'src/lib/util/graphUtil'
-import { getRandomWord } from 'src/lib/util/songUtil'
+import { getPhaseChordNames } from '../../lib/util/graphUtil'
+import { getRandomWord } from '../../lib/util/songUtil'
 
 const { observables } = mem()
 export const findPhase = (name: string) => {
