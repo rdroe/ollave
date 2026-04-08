@@ -12,85 +12,122 @@ import {
   updateDimensionalRangeParams,
 } from 'open-range'
 
-const rangeId = 'dimensionalRangeNumeric'
-const dimensionalRange: DimensionalRange = {
-  zoom: 1,
-  unitSize: 0.1,
-  unitsPerViewportWidth: 10,
-  leftPrefetchFactor: 2,
-  rightPrefetchFactor: 2,
+import {
+  granularityLabel,
+  granularityToMs,
+  TIME_GRANULARITIES,
+  type TimeGranularity,
+} from './timeGranularity'
+
+const rangeId = 'dimensionalRangeDatetime'
+
+/** Internal axis is always UTC epoch milliseconds. */
+export function datetimeIsoToMs(iso: string): number {
+  const t = Date.parse(iso)
+  return Number.isFinite(t) ? t : Date.now()
 }
-const convertAlphadex = (input: number) => {
-  return input
+
+export function msToDatetimeIso(ms: number): string {
+  return new Date(ms).toISOString()
 }
-const numberToAlphadex = (input: number) => {
-  return input
+
+let currentGranularity: TimeGranularity = 'day'
+
+function makeDimensionalRange(): DimensionalRange {
+  return {
+    zoom: 1,
+    unitSize: granularityToMs(currentGranularity),
+    unitsPerViewportWidth: 10,
+    leftPrefetchFactor: 2,
+    rightPrefetchFactor: 2,
+  }
 }
-export const createDimensionalExampleNumeric = () => {
+
+let dimensionalRange: DimensionalRange = makeDimensionalRange()
+
+type RangePair = [number, number]
+
+function formatTickLabel(ms: number): string {
+  const d = new Date(ms)
+  switch (currentGranularity) {
+    case 'minute':
+    case 'hour':
+      return d.toISOString().slice(0, 16).replace('T', ' ')
+    case 'day':
+      return d.toISOString().slice(0, 10)
+    case 'week': {
+      const start = new Date(ms)
+      return `W ${start.toISOString().slice(0, 10)}`
+    }
+    case 'month':
+      return d.toISOString().slice(0, 7)
+    case 'year':
+      return d.toISOString().slice(0, 4)
+    default:
+      return d.toISOString()
+  }
+}
+
+export const createDimensionalExampleDatetime = () => {
   if (typeof document === 'undefined') return
 
+  const initMs = Date.now()
+  const initIso = msToDatetimeIso(initMs)
 
-  const initLetterRaw = Math.random() * 20
-  const initLetter = Math.random() < 0.1 ? initLetterRaw : 0 - initLetterRaw
-
-  let currentScroll: number | null = null
-
-  const getCurrentLetter = () => currentScroll || initLetter
+  let currentScroll: string | null = null
+  const getCurrent = () => currentScroll ?? initIso
 
   const getViewableRangeWidth = (): number => {
     try {
       const rangeStore = accessConversionStore(rangeId)
-      const [start, end] = rangeStore.viewableRange.map(convertAlphadex) as RangePair
+      const [start, end] = rangeStore.viewableRange.map(datetimeIsoToMs) as RangePair
       return Math.abs(end - start)
     } catch {
-      // Fallback to calculated width if store not ready
-      const viewportWidth = (dimensionalRange.unitSize * dimensionalRange.unitsPerViewportWidth) / dimensionalRange.zoom
+      const viewportWidth =
+        (dimensionalRange.unitSize * dimensionalRange.unitsPerViewportWidth) /
+        dimensionalRange.zoom
       return viewportWidth
     }
   }
 
-  const incrementUtil = (letter: number) => {
-    const n = convertAlphadex(letter)
-    const viewableWidth = getViewableRangeWidth()
-    return numberToAlphadex(n + viewableWidth)
+  const incrementUtil = (iso: string) => {
+    const n = datetimeIsoToMs(iso)
+    const w = getViewableRangeWidth()
+    return msToDatetimeIso(n + w)
   }
 
-  const decrementUtil = (letter: number) => {
-    const n = letter
-    const viewableWidth = getViewableRangeWidth()
-    return numberToAlphadex(n - viewableWidth)
+  const decrementUtil = (iso: string) => {
+    const n = datetimeIsoToMs(iso)
+    const w = getViewableRangeWidth()
+    return msToDatetimeIso(n - w)
   }
-
-  type RangePair = [number, number]
 
   const ticksInRange = (range: RangePair): TicksArray<number> => {
     const [start, end] = range
     const ticks: TicksArray<number> = []
     if (!Number.isFinite(start) || !Number.isFinite(end)) return ticks
-    const step = Math.max(dimensionalRange.unitSize, 0.1)
+    const step = Math.max(dimensionalRange.unitSize, 1)
     if (step <= 0) return ticks
     if (start <= end) {
       for (let v = start; v <= end + 1e-9; v += step) {
-        const rounded = Math.round(v * 10) / 10
-        ticks.push({ value: rounded, label: rounded.toString() })
+        const rounded = Math.round(v)
+        ticks.push({ value: rounded, label: formatTickLabel(rounded) })
       }
     } else {
       for (let v = start; v >= end - 1e-9; v -= step) {
-        const rounded = Math.round(v * 10) / 10
-        ticks.push({ value: rounded, label: rounded.toString() })
+        const rounded = Math.round(v)
+        ticks.push({ value: rounded, label: formatTickLabel(rounded) })
       }
     }
     return ticks
   }
 
-
-  // --- DOM creation (pure JS version of the JSX app) ---
   const root = document.createElement('div')
-  root.id = 'dimensional-example-numeric'
+  root.id = 'dimensional-example-datetime'
   root.style.cssText = `
     position: fixed;
     top: 0;
-    right: 400px;
+    right: 800px;
     width: 400px;
     max-height: 80vh;
     overflow-y: auto;
@@ -115,6 +152,7 @@ export const createDimensionalExampleNumeric = () => {
   const makeValue = () => {
     const el = document.createElement('div')
     el.style.marginBottom = '4px'
+    el.style.wordBreak = 'break-all'
     return el
   }
 
@@ -133,27 +171,41 @@ export const createDimensionalExampleNumeric = () => {
     return btn
   }
 
-  // Letter + prev/next
-  const letterLabel = makeLabel('letter')
-  const letterValue = makeValue()
+  const granLabel = makeLabel('unitSize granularity (axis step)')
+  const granSelect = document.createElement('select')
+  granSelect.style.marginBottom = '8px'
+  granSelect.style.maxWidth = '100%'
+  for (const g of TIME_GRANULARITIES) {
+    const opt = document.createElement('option')
+    opt.value = g
+    opt.textContent = granularityLabel(g)
+    granSelect.appendChild(opt)
+  }
+  granSelect.value = currentGranularity
+  granSelect.addEventListener('change', () => {
+    currentGranularity = granSelect.value as TimeGranularity
+    dimensionalRange.unitSize = granularityToMs(currentGranularity)
+    updateDimensionalRangeParams(rangeId, dimensionalRange)
+  })
+
+  const centerLabel = makeLabel('center (ISO UTC ↔ ms)')
+  const centerValue = makeValue()
 
   const letterButtonsRow = document.createElement('div')
-  const prevBtn = makeButton('prev', () => {
-    const prevLetter = decrementUtil(getCurrentLetter())
-    currentScroll = prevLetter
-    updateDimensionalRange(rangeId, prevLetter)
+  const prevBtn = makeButton('prev window', () => {
+    const prevIso = decrementUtil(getCurrent())
+    currentScroll = prevIso
+    updateDimensionalRange(rangeId, prevIso)
   })
-  const nextBtn = makeButton('next', () => {
-    const nextLetter = incrementUtil(getCurrentLetter())
-    currentScroll = nextLetter
-    updateDimensionalRange(rangeId, nextLetter)
+  const nextBtn = makeButton('next window', () => {
+    const nextIso = incrementUtil(getCurrent())
+    currentScroll = nextIso
+    updateDimensionalRange(rangeId, nextIso)
   })
-
   letterButtonsRow.appendChild(prevBtn)
   letterButtonsRow.appendChild(nextBtn)
 
-  // Ranges and ticks
-  const viewableLabel = makeLabel('viewableRange')
+  const viewableLabel = makeLabel('viewableRange (ms)')
   const viewableValue = makeValue()
   const nextLeftLabel = makeLabel('nextLeftRange')
   const nextLeftValue = makeValue()
@@ -167,35 +219,18 @@ export const createDimensionalExampleNumeric = () => {
   const nextRightTicksLabel = makeLabel('nextRightTicks')
   const nextRightTicksValue = makeValue()
 
-  // Zoom controls
   const zoomLabel = makeLabel('zoom')
   const zoomValue = makeValue()
   const zoomInBtn = makeButton('zoom in', () => {
-    console.log('zooming in', dimensionalRange.zoom)
     dimensionalRange.zoom = dimensionalRange.zoom + 0.5
     updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
   const zoomOutBtn = makeButton('zoom out', () => {
-    console.log('zooming out', dimensionalRange.zoom)
     dimensionalRange.zoom = dimensionalRange.zoom - 0.5
     if (dimensionalRange.zoom <= 0) dimensionalRange.zoom = 0.5
     updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
 
-  // unitSize controls
-  const unitSizeLabel = makeLabel('unitSize')
-  const unitSizeValue = makeValue()
-  const unitSizeUpBtn = makeButton('unitSize up', () => {
-    dimensionalRange.unitSize = dimensionalRange.unitSize + 0.05
-    updateDimensionalRangeParams(rangeId, dimensionalRange)
-  })
-  const unitSizeDownBtn = makeButton('unitSize down', () => {
-    dimensionalRange.unitSize = dimensionalRange.unitSize - 0.05
-    if (dimensionalRange.unitSize <= 0.01) dimensionalRange.unitSize = 0.01
-    updateDimensionalRangeParams(rangeId, dimensionalRange)
-  })
-
-  // unitsPerViewportWidth controls
   const upvwLabel = makeLabel('unitsPerViewportWidth')
   const upvwValue = makeValue()
   const upvwUpBtn = makeButton('unitsPerViewportWidth up', () => {
@@ -208,9 +243,10 @@ export const createDimensionalExampleNumeric = () => {
     updateDimensionalRangeParams(rangeId, dimensionalRange)
   })
 
-  // Assemble DOM
-  root.appendChild(letterLabel)
-  root.appendChild(letterValue)
+  root.appendChild(granLabel)
+  root.appendChild(granSelect)
+  root.appendChild(centerLabel)
+  root.appendChild(centerValue)
   root.appendChild(letterButtonsRow)
 
   root.appendChild(viewableLabel)
@@ -232,23 +268,17 @@ export const createDimensionalExampleNumeric = () => {
   root.appendChild(zoomInBtn)
   root.appendChild(zoomOutBtn)
 
-  root.appendChild(unitSizeLabel)
-  root.appendChild(unitSizeValue)
-  root.appendChild(unitSizeUpBtn)
-  root.appendChild(unitSizeDownBtn)
-
   root.appendChild(upvwLabel)
   root.appendChild(upvwValue)
   root.appendChild(upvwUpBtn)
   root.appendChild(upvwDownBtn)
 
-  // Graphical tickmark rendering in lower right corner
   const tickmarkContainer = document.createElement('div')
-  tickmarkContainer.id = 'tickmark-container'
+  tickmarkContainer.id = 'tickmark-container-datetime'
   tickmarkContainer.style.cssText = `
     position: fixed;
     bottom: 20px;
-    right: 50px;
+    left: 50px;
     width: 600px;
     height: 120px;
     background-color: #2a2a2a;
@@ -261,7 +291,6 @@ export const createDimensionalExampleNumeric = () => {
   `
 
   const tickmarkRuler = document.createElement('div')
-  tickmarkRuler.id = 'tickmark-ruler'
   tickmarkRuler.style.cssText = `
     position: relative;
     width: 100%;
@@ -270,9 +299,9 @@ export const createDimensionalExampleNumeric = () => {
     margin-top: 10px;
   `
 
-  const tickmarkLabel = document.createElement('div')
-  tickmarkLabel.textContent = 'Tickmarks'
-  tickmarkLabel.style.cssText = `
+  const tickmarkTitle = document.createElement('div')
+  tickmarkTitle.textContent = 'Tickmarks (datetime)'
+  tickmarkTitle.style.cssText = `
     color: #d4d4d4;
     font-family: 'Courier New', monospace;
     font-size: 14px;
@@ -280,31 +309,26 @@ export const createDimensionalExampleNumeric = () => {
     margin-bottom: 5px;
   `
 
-  tickmarkContainer.appendChild(tickmarkLabel)
+  tickmarkContainer.appendChild(tickmarkTitle)
   tickmarkContainer.appendChild(tickmarkRuler)
 
   const renderTickmarks = () => {
     const rangeStore = accessConversionStore(rangeId)
-    const ticks = ticksStore[rangeId].ticks.viewableRange
-    if (ticks.length < 1) return
+    const ticks = ticksStore[rangeId]?.ticks?.viewableRange
+    if (!ticks || ticks.length < 1) return
     const rangeWidth = ticks[ticks.length - 1].value - ticks[0].value
     const rangeStart = ticks[0].value
 
     tickmarkRuler.innerHTML = ''
 
-    if (ticks.length === 0 || !Number.isFinite(rangeWidth) || rangeWidth === 0) {
+    if (!Number.isFinite(rangeWidth) || rangeWidth === 0) {
       return
     }
 
-    // Render each tickmark
     ticks.forEach(({ value: tick, label: tickStr }) => {
-
       if (!Number.isFinite(tick)) return
-
-      // Calculate position as percentage of range
       const position = ((tick - rangeStart) / rangeWidth) * 100
 
-      // Create tickmark line
       const tickLine = document.createElement('div')
       tickLine.style.cssText = `
         position: absolute;
@@ -316,7 +340,6 @@ export const createDimensionalExampleNumeric = () => {
         transform: translateX(-50%);
       `
 
-      // Create tickmark label
       const tickLabel = document.createElement('div')
       tickLabel.textContent = tickStr
       tickLabel.style.cssText = `
@@ -326,7 +349,7 @@ export const createDimensionalExampleNumeric = () => {
         transform: translateX(-50%);
         color: #aaa;
         font-family: 'Courier New', monospace;
-        font-size: 10px;
+        font-size: 9px;
         white-space: nowrap;
       `
 
@@ -334,8 +357,8 @@ export const createDimensionalExampleNumeric = () => {
       tickmarkRuler.appendChild(tickLabel)
     })
 
-    // Add center indicator (current input position)
-    const centerPosition = ((convertAlphadex(rangeStore.input as number) - rangeStart) / rangeWidth) * 100
+    const centerMs = datetimeIsoToMs(rangeStore.input as string)
+    const centerPosition = ((centerMs - rangeStart) / rangeWidth) * 100
     const centerIndicator = document.createElement('div')
     centerIndicator.style.cssText = `
       position: absolute;
@@ -343,7 +366,7 @@ export const createDimensionalExampleNumeric = () => {
       top: 0;
       width: 2px;
       height: 30px;
-      background-color: #4a9eff;
+      background-color: #6bcf7f;
       transform: translateX(-50%);
       z-index: 10;
     `
@@ -352,26 +375,37 @@ export const createDimensionalExampleNumeric = () => {
 
   const render = () => {
     const rangeStore = accessConversionStore(rangeId)
-    letterValue.textContent = `${rangeStore.input}`
+    const ms = datetimeIsoToMs(rangeStore.input as string)
+    centerValue.textContent = `${rangeStore.input}  |  ${ms} ms`
     viewableValue.textContent = rangeStore.viewableRange.join(', ')
     nextLeftValue.textContent = rangeStore.nextLeftRange.join(', ')
     nextRightValue.textContent = rangeStore.nextRightRange.join(', ')
-    currentTicksValue.textContent = ticksInRange(rangeStore.viewableRange.map(convertAlphadex) as RangePair).join(', ')
-    nextLeftTicksValue.textContent = ticksInRange(rangeStore.nextLeftRange.map(convertAlphadex) as RangePair).join(', ')
-    nextRightTicksValue.textContent = ticksInRange(rangeStore.nextRightRange.map(convertAlphadex) as RangePair).join(', ')
+    currentTicksValue.textContent = ticksInRange(
+      rangeStore.viewableRange.map(datetimeIsoToMs) as RangePair
+    )
+      .map((t) => `${t.label}`)
+      .join(', ')
+    nextLeftTicksValue.textContent = ticksInRange(
+      rangeStore.nextLeftRange.map(datetimeIsoToMs) as RangePair
+    )
+      .map((t) => `${t.label}`)
+      .join(', ')
+    nextRightTicksValue.textContent = ticksInRange(
+      rangeStore.nextRightRange.map(datetimeIsoToMs) as RangePair
+    )
+      .map((t) => `${t.label}`)
+      .join(', ')
     zoomValue.textContent = dimensionalRange.zoom.toString()
-    unitSizeValue.textContent = dimensionalRange.unitSize.toString()
     upvwValue.textContent = dimensionalRange.unitsPerViewportWidth.toString()
 
-    // Update graphical tickmarks
     renderTickmarks()
   }
 
   document.body.appendChild(root)
   document.body.appendChild(tickmarkContainer)
-  // subscribeToRangeInitialization(rangeId, render)
+
   subscribeToRangeInitialization(rangeId, () => {
-    registerTicks(rangeId, async ([start, end]: [start: number, end: number]) => {
+    registerTicks(rangeId, async ([start, end]: [number, number]) => {
       return ticksInRange([start, end])
     }, true)
     subscribeToTicksInitialization(rangeId, () => {
@@ -380,17 +414,13 @@ export const createDimensionalExampleNumeric = () => {
     subscribeToTicksLoadingComplete(rangeId, () => {
       render()
     })
-
-
     render()
   })
+
   registerDimensionalRange(rangeId, {
-    initialInput: initLetter,
+    initialInput: initIso,
     dimensionalRange,
-    inputToNumber: convertAlphadex,
-    numberToInput: numberToAlphadex,
+    inputToNumber: datetimeIsoToMs,
+    numberToInput: msToDatetimeIso,
   })
-
-
-
 }

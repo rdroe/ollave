@@ -11,6 +11,7 @@ import { updateTestMode } from './lib/schemas'
 import { testRangeInner, testReadableRange, testRangeUtil } from './lib/util'
 import { init as songInit } from './lib/util/songUtil'
 import { createDimensionalExampleAlphadex } from './lib/songGanttDemos/dimensionalExampleAlphadex'
+import { createDimensionalExampleDatetime } from './lib/songGanttDemos/dimensionalExampleDatetime'
 import { createDimensionalExampleNumeric } from './lib/songGanttDemos/dimensionalExampleNumeric'
 // import { playTriads } from './lib/music'
 console.log('location.pathname', location.pathname)
@@ -21,6 +22,7 @@ if (location.pathname.includes('songGanttChart')) {
   console.log('creating range demo')
   createDimensionalExampleAlphadex()
   createDimensionalExampleNumeric()
+  createDimensionalExampleDatetime()
   // populate the songGanttChart div with the song gantt chart
 } else {
     document.body.onload = async () => {

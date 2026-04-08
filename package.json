@@ -16,6 +16,7 @@
         "deep-equal": "^2.2.3",
         "http-server": "^14.1.0",
         "jsmidgen": "^0.1.5",
+        "open-range": "^0.2.0",
         "peprn": "^0.4.12",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
@@ -79,9 +80,9 @@
         "js-build": "node build.js",
         "css-build": "esbuild --keep-names --bundle css/main.css --outfile=public/css/style.css",
         "mon-sub": "yarn nodemon --exec \"yarn ts-build && yarn css-build && yarn js-build\" --watch ../../dist-browser --watch ./src --watch ./css --ext js,ts,mjs,ts,css  --ignore public",
-        "start": "yarn http-server --mimetypes mime.types --cors",
-        "mon": "yarn concurrently \"yarn http-server -p 8080\" \"yarn mon-sub\"",
-        "mon8910": "yarn concurrently \"yarn http-server -p 8910\" \"yarn mon-sub\""
+        "start": "yarn http-server public --mimetypes mime.types --cors",
+        "mon": "yarn concurrently \"yarn http-server public -p 8080 --mimetypes mime.types --cors\" \"yarn mon-sub\"",
+        "mon8910": "yarn concurrently \"yarn http-server public -p 8910 --mimetypes mime.types --cors\" \"yarn mon-sub\""
     },
     "packageManager": "yarn@4.0.2"
 }

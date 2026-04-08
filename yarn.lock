@@ -3231,6 +3231,7 @@ __metadata:
     jsmidgen: "npm:^0.1.5"
     madge: "npm:^8.0.0"
     nodemon: "npm:^2.0.16"
+    open-range: "npm:^0.2.0"
     peprn: "npm:^0.4.12"
     react: "npm:^19.0.0"
     react-dom: "npm:^19.0.0"
@@ -3260,6 +3261,13 @@ __metadata:
   dependencies:
     mimic-fn: "npm:^2.1.0"
   checksum: e9fd0695a01cf226652f0385bf16b7a24153dbbb2039f764c8ba6d2306a8506b0e4ce570de6ad99c7a6eb49520743afdb66edd95ee979c1a342554ed49a9aadd
+  languageName: node
+  linkType: hard
+
+"open-range@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "open-range@npm:0.2.0"
+  checksum: 3770aba0b402ba94ced1b23fb965754a267a74e91b164c3bda513a928aa168e918d45b144887b98b9b54b94a5773f23e5e6333c673dc96972fac9d2343f6c88d
   languageName: node
   linkType: hard
 

@@ -1,6 +1,13 @@
-import { accessConversionStore, subscribeToRangeInitialization } from "../util"
+import {
+  accessConversionStore,
+  DimensionalRange,
+  registerDimensionalRange,
+  subscribeToDimensionalRangeConvertedEndLoading,
+  subscribeToRangeInitialization,
+  updateDimensionalRange,
+  updateDimensionalRangeParams,
+} from 'open-range'
 import { convertAlphadex, numberToAlphadex } from "../util/alphadex"
-import { DimensionalRange, registerDimensionalRange, subscribeToDimensionalRangeConvertedEndLoading, updateDimensionalRange, updateDimensionalRangeParams } from "../util/rangeUtilHelpers/dimensionalRange"
 
 
 const rangeId = 'dimensionalRange'

@@ -1,30 +1,28 @@
 // Unit tests for rangeUtil
 import { Module, ParsedCli } from 'peprn/util'
 import {
+  accessConversionStore,
+  conversionStore,
   registerRange,
-  updateRangeInputInner,
+  registerReadableRange,
   store,
+  subscribeToRangeConvertedEndLoading,
+  subscribeToRangeConvertedNextLeftRangeEndLoading,
+  subscribeToRangeConvertedNextLeftRangeStartLoading,
+  subscribeToRangeConvertedNextRightRangeEndLoading,
+  subscribeToRangeConvertedNextRightRangeStartLoading,
+  subscribeToRangeConvertedStartLoading,
+  subscribeToRangeConvertedViewableRangeEndLoading,
+  subscribeToRangeConvertedViewableRangeStartLoading,
+  subscribeToRangeEndLoading,
   subscribeToRangeInputChanged,
-  subscribeToRangeViewableRange,
   subscribeToRangeNextLeftRange,
   subscribeToRangeNextRightRange,
   subscribeToRangeStartLoading,
-  subscribeToRangeEndLoading,
-} from './rangeUtilHelpers/basicRange'
-import {
-  registerReadableRange,
+  subscribeToRangeViewableRange,
   updateRange,
-  conversionStore,
-  subscribeToRangeConvertedStartLoading,
-  subscribeToRangeConvertedEndLoading,
-  subscribeToRangeConvertedViewableRangeStartLoading,
-  subscribeToRangeConvertedViewableRangeEndLoading,
-  subscribeToRangeConvertedNextLeftRangeStartLoading,
-  subscribeToRangeConvertedNextLeftRangeEndLoading,
-  subscribeToRangeConvertedNextRightRangeStartLoading,
-  subscribeToRangeConvertedNextRightRangeEndLoading,
-  accessConversionStore,
-} from './rangeUtilHelpers/readableRange'
+  updateRangeInputInner,
+} from 'open-range'
 // ticksStore import removed - not used in tests after migration to new API
 
 // Test modules
@@ -520,7 +518,7 @@ export const testRangeUtil: Module = {
     const results: any = {}
 
     // Import test functions from modules
-    const { accessConversionStore } = await import('./rangeUtilHelpers/readableRange')
+    const { accessConversionStore } = await import('open-range')
     // registerTicks import removed - test was removed after migration to new async API
 
     // Test registerRange - basic numeric range registration
@@ -737,7 +735,7 @@ export const testRangeUtil: Module = {
         )
         
         // Import ticks functions
-        const { registerTicks, ticksStore, subscribeToTicksLoadingComplete, subscribeToTicksInitialization, unregisterTicks } = await import('./rangeUtilHelpers/ticks')
+        const { registerTicks, ticksStore, subscribeToTicksLoadingComplete, subscribeToTicksInitialization, unregisterTicks } = await import('open-range')
         
         // Register ticks with async function
         registerTicks(
@@ -812,7 +810,7 @@ export const testRangeUtil: Module = {
         )
         
         // Import ticks functions
-        const { registerTicks, subscribeToTicksLoadingComplete, subscribeToTicksInitialization, unregisterTicks } = await import('./rangeUtilHelpers/ticks')
+        const { registerTicks, subscribeToTicksLoadingComplete, subscribeToTicksInitialization, unregisterTicks } = await import('open-range')
         
         // Subscribe before registering
         const unsubLoadingComplete = subscribeToTicksLoadingComplete(rangeId, (ticks) => {
@@ -889,7 +887,7 @@ export const testRangeUtil: Module = {
         )
         
         // Import ticks functions
-        const { registerTicks, updateTicksMethod, ticksStore, unregisterTicks } = await import('./rangeUtilHelpers/ticks')
+        const { registerTicks, updateTicksMethod, ticksStore, unregisterTicks } = await import('open-range')
         
         // Register ticks with initial function (step size 1)
         registerTicks(
@@ -970,7 +968,7 @@ export const testRangeUtil: Module = {
         )
         
         // Import ticks functions
-        const { registerTicks, ticksStore, unregisterTicks } = await import('./rangeUtilHelpers/ticks')
+        const { registerTicks, ticksStore, unregisterTicks } = await import('open-range')
         
         // Register ticks
         registerTicks(
