@@ -1,3 +1,4 @@
+export { default as arrange } from './arrange/arrange'
 export { default as phase, parseColonTag } from './phase/phase'
 export { default as song, init, songInvocation, useSongReady, } from './song/song'
 export { default as debug } from './debug/debug'
