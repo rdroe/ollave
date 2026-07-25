@@ -9,6 +9,7 @@ import {
   SerializableMidiMappingResult,
 } from './worker-serialization'
 import { workerBall } from './worker-utils'
+import { workerSource } from './workerBundle.gen'
 import { generateInlineWorkerCode } from './workerCodeGenerator'
 
 // Worker message types
@@ -51,14 +52,20 @@ class WorkerManager {
 
   private initializeWorker() {
     try {
-      // Create inline worker since ollave is a library and worker files won't be served by parent apps
-      const raw = this.getInlineWorkerCode()
-      const workerCode = Object.keys(workerBall)
-        .concat(['workerBall', 'DEFAULT_VELOCITY'])
-        .reduce((acc, key) => {
-          const regexx = new RegExp(`${key}[0-9]+`, 'g')
-          return acc.replace(regexx, key)
-        }, raw)
+      // Create inline worker since ollave is a library and worker files won't be served by parent apps.
+      // Preferred path: the build-time bundle of worker.entry.ts — real imports,
+      // type-checked, no string surgery. The legacy runtime generator remains as
+      // a fallback for running straight from tsc output (workerSource empty);
+      // its regex cleanup must NOT run on the bundle, since esbuild's own
+      // numbered identifiers (workerBall2 etc.) are exactly what it mangles.
+      const workerCode = workerSource
+        ? workerSource
+        : Object.keys(workerBall)
+            .concat(['workerBall', 'DEFAULT_VELOCITY'])
+            .reduce((acc, key) => {
+              const regexx = new RegExp(`${key}[0-9]+`, 'g')
+              return acc.replace(regexx, key)
+            }, this.getInlineWorkerCode())
 
       const blob = new Blob([workerCode], { type: 'application/javascript' })
       this.worker = new Worker(URL.createObjectURL(blob))
