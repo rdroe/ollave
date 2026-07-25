@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect } from 'react'
 
-import deepEqual from 'deep-equal'
 import { z } from 'zod'
-import { createStore, useStore } from 'zustand'
+import { createStore, StoreApi, useStore } from 'zustand'
 import { useShallow } from 'zustand/shallow'
 
 import { mem, Mem } from '../core/mem'
@@ -161,57 +160,64 @@ const buildNoteAndGroupIdsStore = (mem: Mem): NoteAndGroupIds => {
   }
 }
 
+// One store and one compilation subscription shared by every consumer.
+// Previously each useSubscribeToIds call site (one per PhaseControl, plus
+// several in BarControls) created its own store and its own subscription, so a
+// single compile ran the full build + compare once per mounted component — and
+// the subscriptions were never cleaned up on unmount.
+let sharedStore: StoreApi<NoteAndGroupIds> | null = null
+let sharedUnsubscribe: (() => void) | null = null
+let refCount = 0
+
+const getSharedStore = () => {
+  if (!sharedStore) {
+    sharedStore = createStore<NoteAndGroupIds>(() => ({
+      ...buildNoteAndGroupIdsStore(mem()),
+    }))
+  }
+  return sharedStore
+}
+
+const retainSubscription = () => {
+  refCount++
+  if (refCount > 1) {
+    return
+  }
+  // Re-seed on (re)subscribe: compiles that happened while nothing was mounted
+  // never reached the store.
+  getSharedStore().setState(buildNoteAndGroupIdsStore(mem()))
+  sharedUnsubscribe = makeCompilationSubscribe({
+    selector: (mem: Mem) => {
+      return buildNoteAndGroupIdsStore(mem)
+    },
+    name: 'useSubscribeToIds',
+  })({
+    next: (noteAndGroupIds) => {
+      getSharedStore().setState(noteAndGroupIds)
+    },
+    error: (err) => {
+      console.error('error', err)
+    },
+    complete: () => {
+      // completion comes from our own unsubscribe; nothing to do
+    },
+  })
+}
+
+const releaseSubscription = () => {
+  refCount--
+  if (refCount === 0 && sharedUnsubscribe) {
+    sharedUnsubscribe()
+    sharedUnsubscribe = null
+  }
+}
+
 export const useSubscribeToIds = () => {
-  const store = useMemo(
-    () =>
-      createStore<NoteAndGroupIds>(() => ({
-        ...buildNoteAndGroupIdsStore(mem()),
-      })),
-    []
-  )
-  const [didUnsubscribe, setDidUnsubscribe] = useState(false)
+  const store = getSharedStore()
   useEffect(() => {
-    const unsubscribe = makeCompilationSubscribe({
-      selector: (mem: Mem) => {
-        return buildNoteAndGroupIdsStore(mem)
-      },
-      compare: (a, bDefault) => {
-        const b = bDefault || buildNoteAndGroupIdsStore(mem())
-        // we need to find the mismiatch.
-        // do deep equal on all the properties
-        const properties = Object.keys(a).filter(
-          (property) => property !== 'unsubscribe'
-        )
-        const comparison = properties.every((property) => {
-          const comparison = deepEqual(
-            a[property as keyof NoteAndGroupIds],
-            b[property as keyof NoteAndGroupIds],
-            { strict: true }
-          )
-          return comparison
-        })
-        if (comparison) {
-          return true
-        } else {
-          return false
-        }
-      },
-      name: 'useSubscribeToIds',
-    })({
-      next: (noteAndGroupIds) => {
-        store.setState(noteAndGroupIds)
-      },
-      error: (err) => {
-        console.error('error', err)
-      },
-      complete: () => {
-        if (!didUnsubscribe) {
-          setDidUnsubscribe(true)
-          unsubscribe()
-        }
-      },
-    })
-  }, [didUnsubscribe])
+    retainSubscription()
+    return releaseSubscription
+  }, [])
 
   const shallowNotesByBar = useStore(
     store,

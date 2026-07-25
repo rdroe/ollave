@@ -14,6 +14,7 @@ import { generateInlineWorkerCode } from './workerCodeGenerator'
 // Worker message types
 type WorkerMessage = {
   type: 'MAP_SONG_TO_MIDI_TICKS'
+  requestId: string
   data: {
     phases: SerializablePhases
     notesByBar: SerializableNotesByBar
@@ -22,11 +23,13 @@ type WorkerMessage = {
 
 type WorkerResponse = {
   type: 'MAP_SONG_TO_MIDI_TICKS_RESULT'
+  requestId?: string
   data: SerializableMidiMappingResult
 }
 
 type WorkerError = {
   type: 'ERROR'
+  requestId?: string
   error: string
 }
 
@@ -103,11 +106,33 @@ class WorkerManager {
     return generateInlineWorkerCode()
   }
 
+  // Route a worker reply to the request that produced it. Falls back to the
+  // oldest pending request when the reply carries no id (a worker built from
+  // older code), preserving the previous behavior for that case only.
+  private takePending(requestId?: string) {
+    if (requestId) {
+      const pending = this.pendingRequests.get(requestId)
+      if (pending) {
+        this.pendingRequests.delete(requestId)
+        return pending
+      }
+      // Reply for a request we no longer track (typically one that already
+      // timed out). Drop it rather than stealing another request's slot.
+      return undefined
+    }
+    // No id on the reply — a worker built from older code. Preserve the old
+    // resolve-the-oldest behavior for that case only.
+    const first = this.pendingRequests.entries().next().value
+    if (!first) {
+      return undefined
+    }
+    this.pendingRequests.delete(first[0])
+    return first[1]
+  }
+
   private handleWorkerMessage(message: WorkerMessageUnion) {
     if (message.type === 'MAP_SONG_TO_MIDI_TICKS_RESULT') {
-      // For now, resolve the first pending request
-      // In a more sophisticated implementation, we'd track request IDs
-      const firstPending = this.pendingRequests.values().next().value
+      const firstPending = this.takePending(message.requestId)
       if (firstPending) {
         try {
           // Deserialize the result back to MidiMappingResult
@@ -122,8 +147,6 @@ class WorkerManager {
             )
           )
         }
-        // Clear all pending requests since we only support one at a time for now
-        this.pendingRequests.clear()
       }
     } else if (message.type === 'ERROR') {
       // Handle cases where message.error might be undefined or not a string
@@ -134,7 +157,10 @@ class WorkerManager {
           : message.error
             ? String(message.error)
             : 'Unknown worker error occurred'
-      this.rejectAllPending(errorMessage)
+      const pending = this.takePending(message.requestId)
+      if (pending) {
+        pending.reject(new Error(errorMessage))
+      }
     }
   }
 
@@ -187,6 +213,7 @@ class WorkerManager {
 
         const message: WorkerMessage = {
           type: 'MAP_SONG_TO_MIDI_TICKS',
+          requestId,
           data: {
             phases: serializedPhases,
             notesByBar: serializedNotesByBar,

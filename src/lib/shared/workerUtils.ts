@@ -86,7 +86,7 @@ export function createWorkerMessageHandler(
   workerFunction: (phases: any, notesByBar: any) => any
 ): (e: MessageEvent) => void {
   return function (e: MessageEvent) {
-    const { type, data } = e.data
+    const { type, data, requestId } = e.data
     if (type === 'MAP_SONG_TO_MIDI_TICKS') {
       try {
         // Validate input data
@@ -105,6 +105,7 @@ export function createWorkerMessageHandler(
         const result = workerFunction(data.phases, data.notesByBar)
         self.postMessage({
           type: 'MAP_SONG_TO_MIDI_TICKS_RESULT',
+          requestId,
           data: result,
         })
       } catch (error) {
@@ -118,6 +119,7 @@ export function createWorkerMessageHandler(
         console.error('Worker sending error message:', errorMessage)
         self.postMessage({
           type: 'ERROR',
+          requestId,
           error: errorMessage,
         })
       }

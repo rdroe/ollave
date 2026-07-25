@@ -46,24 +46,37 @@ const notesStore = createStore<NoteStore>((set, get) => ({
   isStale: false,
 }))
 
-setInterval(() => {
-  if (notesStore.getState().isStale) {
+// Trailing debounce, replacing a 50ms staleness-poll interval. The old
+// interval re-ran setLatestMap (full remap of every note + a whole-song
+// IndexedDB write, on the main thread) every 50ms for as long as updates kept
+// arriving — so dragging a note slider recompiled the song up to 20x/second,
+// which is what made dragging crawl and playback stutter on long songs. Now a
+// burst of updates compiles once, when the user pauses.
+let staleTimeout: ReturnType<typeof setTimeout> | null = null
+const RECOMPILE_IDLE_MS = 150
+const scheduleRecompile = () => {
+  notesStore.setState({ isStale: true })
+  if (staleTimeout) {
+    clearTimeout(staleTimeout)
+  }
+  staleTimeout = setTimeout(() => {
+    staleTimeout = null
     notesStore.setState({ isStale: false })
     setLatestMap(mapSongToMidiTicks())
-  }
-}, 50)
+  }, RECOMPILE_IDLE_MS)
+}
 export const updateNoteSilently = (
   noteId: string,
   tagName: string,
   tagValue: TagData
 ) => {
-  notesStore.setState({ isStale: true })
+  scheduleRecompile()
   const memNote = getNoteByBar(mem, noteId)
   memNote.tagsObj[tagName] = tagValue
   notesStore.getState().setNote(noteId, memNote)
 }
 export const updateOctaveSilently = (noteId: string, change: number) => {
-  notesStore.setState({ isStale: true })
+  scheduleRecompile()
   const memNote = getNoteByBar(mem, noteId)
   const [letter, accidental, currOctaveRaw] = tokenizeNote(memNote.note)
   const currOctave = parseInt(currOctaveRaw)
@@ -120,5 +133,5 @@ export const useNotes = (noteIds: string[]) => {
 }
 
 export const setIsStale = () => {
-  notesStore.setState({ isStale: true })
+  scheduleRecompile()
 }
