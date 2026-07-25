@@ -20,6 +20,7 @@ import { SongRecord, TrackRecord } from './types'
 import { PhaseRecord } from './util/phaseTypes'
 import { phaseCountInner, phaseFollowsPhaseInner } from './util/phaseUtil'
 import { compileTracksToNotesByBar } from './util/schemaUtil'
+import { namesPromise } from './util/songNamesUtil'
 
 export const fetchLatestSongAndTracks = async () => {
   const songs = (
@@ -188,7 +189,17 @@ export async function initLoadedSong() {
 
 export async function initNewSong() {
   const songNames = mem().songNames
-  const shiftedOff = songNames.shift()
+  // songNames is filled by an async import in songUtil, so on a cold load it is
+  // still empty here, and shifting it leaves name undefined so the
+  // songRecordSchema.parse below throws. Wait for it, but cap the wait — if that
+  // import fails the promise never settles and song creation would hang.
+  if (songNames.length === 0) {
+    await Promise.race([
+      namesPromise,
+      new Promise((res) => setTimeout(res, 3000)),
+    ])
+  }
+  const shiftedOff = songNames.shift() ?? `song-${Date.now()}`
   const data: Omit<SongRecord, 'id'> = {
     name: shiftedOff,
     tempo: 120,
