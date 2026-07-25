@@ -6,6 +6,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { mem, Mem } from '../core/mem'
 import { makeCompilationSubscribe } from '../core/subjects/compilationSubject'
+import { addSongLoadCallback } from '../lib/util/songUtil'
 
 type NoteAndGroupIds = {
   barsByPhase: {
@@ -178,14 +179,24 @@ const getSharedStore = () => {
   return sharedStore
 }
 
+// The compilation subject only connects to its observable ~1s after module
+// load, so a song-load compile can fire into the void; without this, whoever
+// subscribed early sits on an empty store until the next compile.
+addSongLoadCallback(() => {
+  if (sharedStore && refCount > 0) {
+    sharedStore.setState(buildNoteAndGroupIdsStore(mem()))
+  }
+})
+
 const retainSubscription = () => {
   refCount++
+  // Re-seed on every retain, not only the first: a late-mounting consumer may
+  // arrive after data the subscription never saw (see the song-load race
+  // above), and one build per component mount is cheap.
+  getSharedStore().setState(buildNoteAndGroupIdsStore(mem()))
   if (refCount > 1) {
     return
   }
-  // Re-seed on (re)subscribe: compiles that happened while nothing was mounted
-  // never reached the store.
-  getSharedStore().setState(buildNoteAndGroupIdsStore(mem()))
   sharedUnsubscribe = makeCompilationSubscribe({
     selector: (mem: Mem) => {
       return buildNoteAndGroupIdsStore(mem)
