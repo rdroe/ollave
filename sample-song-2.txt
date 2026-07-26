@@ -1,13 +1,17 @@
-this is a pretty good one for having been randomly produced
+Arranging en masse — apply a timing pattern to a whole group, bar, or phase.
 
-chord graph song A minor
-phase aphrodite 69
-phase aphrodite scale A minor
-bars aphrodite fill Am,3 Am,3 Gdim,3 E,3 Am,3 Bdim,3 C,3 Ebdim,3 F,3 Dm,3 D#dim,3 Gdim,3 E,3 Am,3 Bdim,3 C7,3 F,3 Bdim,3 Ebdim,3 Bdim,3 C,3 Ebdim,3 Dm,3 B,3 Gdim,3 E,3 V64,3 N6,3 E,3 Am,3 V64,3 Am,3 Bdim,3 C,3 C7,3 Dm,3 Gdim,3 E,3 V64,3 N6,3 E,3 Am,3 Am,3 Am,3 Am,3 E,3 Aug6,3 E,3 V64,3 Am,3 E,3 V64,3 N6,3 E,3 V64,3 Am,3 Dm,3 B,3 Gdim,3 E,3 Am,3 Bdim,3 Ebdim,3 Bdim,3 C7,3 F,3 Dm,3 V64,3 A,3
-song start
+Pattern tokens are one note's delay each: a fraction name ('quarter'), a
+comma-joined sum ('half,eighth' = half + eighth), or raw ticks (128). Ties in
+the current delays are ordered low-to-high by pitch, so a fresh chord
+arpeggiates upward.
 
-another note is that you can "repack" a phase's bars.
+arrange bar aphrodite:0 0th quarter half
+arrange phase aphrodite 0th eighth quarter quarter,eighth
+arrange group <groupId> 0 64 128
 
-bars aphrodite repack --pack 2 4 6 2
+Coordinated moves (negative ticks allowed, clamped at 0):
 
-the above line stuffs the existing bars' timing more tightly into  aphrodite's bars. in this example,the  evenly-spaced original bars will be resituatied with  2 to bar 0, 4 to bar 1, 6 to bar 2, 2 to bar 3, then 2 to bar 4, and so on.
+arrange shift aphrodite:0 64
+arrange shift <groupId> -32
+
+Find a groupId in the UI (the six-hex label on a chord group).

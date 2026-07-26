@@ -74,16 +74,60 @@ export default {
   },
   submodules: {
     test: {
-      fn: () => {
-        return fakeCli(
-          `
-phase aphrodite 10
-bars aphrodite fill C,3 Dm,3 Em,3 F,4 G,4 Am,4 Bdim,4
-phase aphrodite 20
-song start
-`,
-          'cli'
-        )
+      fn: async () => {
+        // Three traps this works around:
+        // 1. The old `bars <phase> fill ...` command was never registered, so
+        //    this demo silently did nothing.
+        // 2. fakeCli's default path collapses newlines to spaces, turning a
+        //    multi-line block into one garbage command. isInternal=true skips
+        //    that, letting the evaluator's own multiline queue split and run
+        //    the lines sequentially.
+        // 3. The evaluator is not re-entrant: fakeCli from inside a running
+        //    command silently no-ops, so kick it off after this evaluation
+        //    completes.
+        const lines = [
+          'phase aphrodite 10',
+          'phase aphrodite scale C major',
+          'addChord C,3 --barName aphrodite:0',
+          'addChord Dm,3 --barName aphrodite:1',
+          'addChord Em,3 --barName aphrodite:2',
+          'addChord F,3 --barName aphrodite:3',
+          'addChord G,3 --barName aphrodite:4',
+          'addChord Am,3 --barName aphrodite:5',
+          'addChord Bdim,3 --barName aphrodite:6',
+          'arrange phase aphrodite 0th quarter half',
+          'song start',
+        ].join('\n')
+        // Drive the textarea one line at a time with real gaps. peprn's
+        // multiline paths (fakeCli isInternal and textarea paste alike) stall
+        // after ~3 lines: the dataWait line-sync leaves an unresolved promise
+        // that then blocks every later multiline line until reload. The
+        // single-line path has no such protocol and is rock solid.
+        const cliEl = document.getElementById('cli') as HTMLTextAreaElement
+        if (!cliEl) {
+          return { formatted: { pasteTheseLines: lines.split('\n') } }
+        }
+        const lineList = lines.split('\n')
+        lineList.forEach((line, idx) => {
+          setTimeout(
+            () => {
+              cliEl.value = line
+              cliEl.dispatchEvent(
+                new KeyboardEvent('keyup', {
+                  key: 'Enter',
+                  shiftKey: false,
+                  bubbles: true,
+                })
+              )
+            },
+            300 + idx * 1500
+          )
+        })
+        return {
+          formatted: {
+            building: `demo in phase aphrodite over ~${Math.ceil((lineList.length * 1.5))}s (stop: song stop)`,
+          },
+        }
       },
     },
     list: {

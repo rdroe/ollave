@@ -8,9 +8,7 @@ import {
   SerializableNotesByBar,
   SerializableMidiMappingResult,
 } from './worker-serialization'
-import { workerBall } from './worker-utils'
 import { workerSource } from './workerBundle.gen'
-import { generateInlineWorkerCode } from './workerCodeGenerator'
 
 // Worker message types
 type WorkerMessage = {
@@ -52,22 +50,21 @@ class WorkerManager {
 
   private initializeWorker() {
     try {
-      // Create inline worker since ollave is a library and worker files won't be served by parent apps.
-      // Preferred path: the build-time bundle of worker.entry.ts — real imports,
-      // type-checked, no string surgery. The legacy runtime generator remains as
-      // a fallback for running straight from tsc output (workerSource empty);
-      // its regex cleanup must NOT run on the bundle, since esbuild's own
-      // numbered identifiers (workerBall2 etc.) are exactly what it mangles.
-      const workerCode = workerSource
-        ? workerSource
-        : Object.keys(workerBall)
-            .concat(['workerBall', 'DEFAULT_VELOCITY'])
-            .reduce((acc, key) => {
-              const regexx = new RegExp(`${key}[0-9]+`, 'g')
-              return acc.replace(regexx, key)
-            }, this.getInlineWorkerCode())
-
-      const blob = new Blob([workerCode], { type: 'application/javascript' })
+      // Inline worker from the build-time bundle of worker.entry.ts (built by
+      // build.js into workerBundle.gen.js) — ollave is a library, so worker
+      // files can't be served by parent apps. An empty workerSource means the
+      // package was run straight from tsc output without js-build; degrade to
+      // the synchronous mapping path rather than string-assembling a worker at
+      // runtime (the old generator was removed — it rebuilt the worker with
+      // Function.toString + regex surgery and was unmaintainable).
+      if (!workerSource) {
+        console.warn(
+          'ollave: workerBundle.gen.js is empty (run js-build); using synchronous mapping'
+        )
+        this.worker = null
+        return
+      }
+      const blob = new Blob([workerSource], { type: 'application/javascript' })
       this.worker = new Worker(URL.createObjectURL(blob))
 
       this.worker.onmessage = (e: MessageEvent<WorkerMessageUnion>) => {
@@ -90,27 +87,6 @@ class WorkerManager {
       // Fallback to synchronous processing
       this.worker = null
     }
-  }
-
-  private getWorkerUrl(): string | null {
-    // Try to construct the worker URL based on the current script location
-    try {
-      // In a real application, this would be handled by the build system
-      // For now, we'll try to load from a relative path
-      const currentScript = document.currentScript as HTMLScriptElement
-      if (currentScript) {
-        const baseUrl = currentScript.src.replace(/\/[^\/]*$/, '/')
-        return `${baseUrl}mapSongToTicksWorker.js`
-      }
-    } catch (error) {
-      console.warn('Could not determine worker URL:', error)
-    }
-    return null
-  }
-
-  private getInlineWorkerCode(): string {
-    // Generate worker code from shared core logic to avoid duplication
-    return generateInlineWorkerCode()
   }
 
   // Route a worker reply to the request that produced it. Falls back to the

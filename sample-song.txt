@@ -1,5 +1,19 @@
-The following can be entered all at once into the textarea.
-phase aphrodite 10
-bars aphrodite fill Em,3 Am,3 [] C3,E3,G#3
-phase aphrodite 20
+Quickstart — enter these into the CLI textarea one line at a time (the CLI
+evaluates a single command per Enter; multi-line pastes collapse into one
+garbage command).
+
+song new
+phase aphrodite 8
+phase aphrodite scale A minor
+addChord Am,3 --barName aphrodite:0
+addChord Dm,3 --barName aphrodite:1
+addChord E,3 --barName aphrodite:2
+addChord Am,3 --barName aphrodite:3
 song start
+song stop
+
+Notes
+- addChord takes <chordName>,<octave> and a --barName of <phase>:<barIndex>.
+- Setting the phase scale populates the chord graph (the draggable chord
+  chips and each group's next-chord suggestions).
+- `song test` builds a slightly bigger demo in one shot.
