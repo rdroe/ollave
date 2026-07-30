@@ -67,6 +67,14 @@ export const startCueObservable = (
   const songObservable = new Observable(makeTickSubscribe(startAt))
   const observables = mem().observables[song] || {}
 
+  // Starting while already started used to overwrite these subscriptions
+  // without unsubscribing them: the orphans kept playing forever and stop only
+  // killed the latest ones — which read as "the stop button is broken".
+  Object.values(observables).forEach((subscription) => {
+    subscription.unsubscribe()
+  })
+  mem().observables[song] = observables
+
   observables['tick'] = songObservable.subscribe({
     next: ({ tick }) => {
       const expTick = exportableTick()
@@ -84,7 +92,9 @@ export const startCueObservable = (
           note: `tempo: ${mem().song.tempo}`,
           compositionTags: [],
         })
-        return
+        // No early return: playback starts at tick 0, so returning here
+        // swallowed every note sitting at time 0 on the first play after a
+        // page load.
       }
       mem().latestMap[adjustedCursor]?.forEach(
         (note: {
@@ -137,14 +147,13 @@ export const startCueObservable = (
   })
 
   Object.entries(mem().functions[song] || {}).forEach(([fnName, fn]) => {
-    mem().observables[song][fnName] = songObservable.subscribe({
+    observables[fnName] = songObservable.subscribe({
       next: ({ tick }) => {
         const adjustedCursor = getSongCursor(tick)
         fn(adjustedCursor, tick, mem(), song)
       },
     })
   })
-  mem().observables[song] = observables
 }
 
 export const stopCueObservable = () => {
