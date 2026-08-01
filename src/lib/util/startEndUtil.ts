@@ -57,12 +57,28 @@ export const startEndData = (phaseName: string): StartEndTuple[] => {
     return startEndData[phaseName] || []
 }
 
+// lastTick is called on EVERY playback tick (getSongCursor), and computing
+// it walks the whole phase graph and every bar's notes. Memoize on the
+// identity of mem().latestMap and mem().notesByBar — both are replaced
+// (new object) exactly when the song recompiles or a different song/scratch
+// context is mounted, which is precisely when the answer can change.
+let lastTickCacheKeyMap: unknown = undefined
+let lastTickCacheKeyNotes: unknown = undefined
+let lastTickCacheVal = 0
+
 export const lastTick = () => {
-    // this is called very frequently!
+    const keyMap = mem().latestMap
+    const keyNotes = mem().notesByBar
+    if (keyMap === lastTickCacheKeyMap && keyNotes === lastTickCacheKeyNotes) {
+        return lastTickCacheVal
+    }
     const songStartEndData = phaseBeginningsAndEnds()
-    const lastTick = Object.values(songStartEndData).reduce((acc, curr) => {
+    const computed = Object.values(songStartEndData).reduce((acc, curr) => {
         const lastPhaseTick = curr[curr.length - 1][1]
         return Math.max(acc, lastPhaseTick)
     }, 0)
-    return lastTick
+    lastTickCacheKeyMap = keyMap
+    lastTickCacheKeyNotes = keyNotes
+    lastTickCacheVal = computed
+    return computed
 }

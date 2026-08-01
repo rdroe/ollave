@@ -27,6 +27,8 @@ export const getSongName = () => {
 }
 
 let isFirstCueStart = true
+// last time the .ollave-ticks display element was written (throttled ~30Hz)
+let lastTickDisplayWrite = 0
 
 export const subscribeToSongTicks = (
   song: string,
@@ -83,8 +85,14 @@ export const startCueObservable = (
       // get the midi tick relative to the start of the song
       const adjustedCursor = getSongCursor(tick)
       mem().adjustedCursor = adjustedCursor
-      document.querySelector('.ollave-ticks').innerHTML =
-        mem().adjustedCursor.toString()
+      // Display-only element: writing it every tick (hundreds/sec) forces
+      // style/layout work per write; ~30Hz is indistinguishable to the eye.
+      const nowMs = Date.now()
+      if (nowMs - lastTickDisplayWrite > 33) {
+        lastTickDisplayWrite = nowMs
+        document.querySelector('.ollave-ticks').innerHTML =
+          mem().adjustedCursor.toString()
+      }
       if (isFirstCueStart) {
         isFirstCueStart = false
         mem().playedMap[tick] = mem().playedMap[tick] || []
@@ -126,12 +134,18 @@ export const startCueObservable = (
             : 0.5
 
           playTriads([[note.note, rasterDuration, 0.01, velocity]])
-          mem().played.unshift({
+          // Debug log of what actually sounded. push + cap, NOT unshift:
+          // unshift is O(n) per note and the array previously grew without
+          // bound, so long listens got progressively slower. Newest last.
+          mem().played.push({
             time: Date.now(),
             songTick: adjustedCursor,
             note: note.note,
             tags: note.compositionTags,
           })
+          if (mem().played.length > 2000) {
+            mem().played.splice(0, 1000)
+          }
           mem().playedMap[rtMode ? rtTick : expTick] =
             mem().playedMap[rtMode ? rtTick : expTick] || []
           mem().playedMap[rtMode ? rtTick : expTick].push({

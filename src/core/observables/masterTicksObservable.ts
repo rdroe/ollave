@@ -8,7 +8,6 @@ import {
   ONE_TWENTY_EIGHTH,
   ppq,
   QUARTER,
-  roundToTenths,
   SIXTEENTH,
   SIXTY_FOURTH,
   THIRTY_SECOND,
@@ -30,10 +29,14 @@ const round = (num: number) => {
 
 // The number of ticks per musical entity dos not change. if the user wants to speed up the pace of the music, increase the "speed" variable.
 // This function calculated how many ms each tick should last. notice it accesess the capable-of-changing-in-real-time "speed" variable.x
+// Finer rounding than roundToTenths: at ~3.7ms/tick, tenth-of-a-ms
+// quantization alone mis-tempos playback by up to ~1.5%.
+const roundTo4 = (num: number) => Math.round(num * 10000) / 10000
+
 export const msPerTick = (/*tick: number*/) => {
   const as1 = airSpeed()
   const msPer = 60000 / (trackTempo * ppq) / as1 // fraction raises the number
-  return roundToTenths(msPer)
+  return roundTo4(msPer)
 }
 
 export const msPerQuarterNote = (/*tick: number*/) => {
@@ -55,7 +58,11 @@ export const tempoFromAirSpeed = (speed: number) => {
 }
 
 export const airSpeedArgFromTempo = (tempo: number) => {
-  return tempo / 113.75
+  // tempo relative to the fixed trackTempo (120). The historical constant
+  // 113.75 over-sped playback ~5.5% — almost certainly an empirical fudge
+  // compensating the old tick engine's systematic drag; with wall-clock
+  // anchored emission the honest divisor is trackTempo itself.
+  return tempo / trackTempo
 }
 
 type TempoChange = [tickCount: number, tempo: number]
@@ -140,11 +147,13 @@ const airSpeedRef_ = {
 window.airSpeedRef = airSpeedRef_
 
 export const setAirSpeed = (speedFloat: number) => {
-  window.airSpeedRef.air = roundToTenths(speedFloat)
+  // 4-decimal precision: tenth-rounding quantized tempo into ~10% steps
+  // (e.g. 126bpm -> air 1.1077 -> 1.1 -> plays as ~132bpm).
+  window.airSpeedRef.air = roundTo4(speedFloat)
 }
 
 export const airSpeed = () => {
-  return roundToTenths(window.airSpeedRef.air)
+  return roundTo4(window.airSpeedRef.air)
 }
 
 const MODE: 'air' | 'paper' = 'air'
@@ -205,30 +214,45 @@ const midiTicksQueue: number[] = [0]
 export let curr: TimeMarker = [0, midiTicksQueue[midiTicksQueue.length - 1]]
 window.curr = curr
 
-// pop ticks from theq queue. fire the ticks to the subscribers (which should be multi-casting subjects, btw)
+// Wall-clock-anchored tick emission.
+//
+// The previous implementation advanced musical time per callback batch: it
+// reset its epoch (lastPushTime = Date.now()) inside the emission loop,
+// discarding the fractional remainder every batch (a constant ~4% tempo
+// drag), and its nextTick = lastTick + i / lastTick = nextTick bookkeeping
+// re-emitted the same tick on 1-tick batches. Any main-thread jank became
+// PERMANENT time loss, so tempo degraded over a session.
+//
+// This version integrates elapsed wall time into a fractional tick position
+// (remainder never discarded; live msPerTick changes preserve position) and
+// emits monotonically increasing ticks up to the wall-clock target. Short
+// stalls catch up (notes a touch late but played); stalls longer than
+// MAX_CATCHUP_TICKS jump to the target without emitting the gap — musical
+// position stays true to the clock and there is no note avalanche.
+const MAX_CATCHUP_TICKS = 256 // ~1s of music at 120bpm
+
 export const masterTicksObservable = new Observable(function subscribe(
   subscriber: Subscriber<any>
 ) {
-  let lastPushTime = Date.now()
-  let lastTick = 0
+  let lastNow = Date.now()
+  let tickFloat = 0
+  let lastEmitted = -1
 
   const intervalId = setInterval(() => {
-    const msPer = msPerTick()
-    const sinceLast = Date.now() - lastPushTime
-    const newTicksCnt = Math.floor(Math.round(sinceLast / msPer))
-
-    for (let i = 0; i < newTicksCnt; i++) {
-      const nextTick = lastTick + i
-      new Promise((res) => {
-        if (window.realtimeTickRef.running && window.realtimeTickRef.mode) {
-          updateRealtimeTick()
-        }
-        res(subscriber.next(lastTick + i))
-      })
-      lastPushTime = Date.now()
-      lastTick = nextTick
-
-      curr = [lastPushTime, lastTick]
+    const now = Date.now()
+    tickFloat += (now - lastNow) / msPerTick()
+    lastNow = now
+    const target = Math.floor(tickFloat)
+    if (target - lastEmitted > MAX_CATCHUP_TICKS) {
+      lastEmitted = target - MAX_CATCHUP_TICKS
+    }
+    while (lastEmitted < target) {
+      lastEmitted++
+      if (window.realtimeTickRef.running && window.realtimeTickRef.mode) {
+        updateRealtimeTick()
+      }
+      subscriber.next(lastEmitted)
+      curr = [now, lastEmitted]
     }
   }, 1)
 
