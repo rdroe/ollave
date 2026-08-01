@@ -1,88 +1,88 @@
 {
-    "name": "ollave",
-    "version": "0.3.12",
-    "repository": "git@github.com:rdroe/ollave.git",
-    "license": "MIT",
-    "description": "framework for developing musical streams",
-    "keywords": [
-        "yargs",
-        "node",
-        "browser",
-        "cli"
-    ],
-    "dependencies": {
-        "@tonejs/piano": "^0.2.1",
-        "@types/jsmidgen": "^0.1.0",
-        "deep-equal": "^2.2.3",
-        "http-server": "^14.1.0",
-        "jsmidgen": "^0.1.5",
-        "open-range": "^0.2.0",
-        "peprn": "^0.4.12",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
-        "rxjs": "^7.8.2",
-        "tonal": "^5.0.0",
-        "tone": "14.6.1",
-        "user-tables": "^0.0.20",
-        "webmidi": "2.*",
-        "zod": "^4.1.5",
-        "zustand": "^5.0.8"
-    },
-    "devDependencies": {
-        "@types/deep-equal": "^1.0.4",
-        "@types/isomorphic-fetch": "^0.0.36",
-        "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
-        "concurrently": "^8.2.2",
-        "esbuild": "^0.14.38",
-        "madge": "^8.0.0",
-        "nodemon": "^2.0.16",
-        "typescript": "^5.0.0"
-    },
-    "main": "ollave",
-    "exports": {
-        "./commands": "./public/js/commands/index.js",
-        "./lib": "./public/js/lib/index.js",
-        "./lib/*": "./public/js/lib/*.js",
-        "./cli": "./public/js/cli.js",
-        "./core": "./public/js/core/index.js",
-        "./subscribers": "./public/js/subscribers/index.js"
-    },
-    "typesVersions": {
-        "*": {
-            "*": [
-                "public/js"
-            ],
-            "lib": [
-                "public/js/lib/index.d.ts"
-            ],
-            "lib/*": [
-                "public/js/lib/*.d.ts"
-            ],
-            "commands": [
-                "public/js/commands/index.d.ts"
-            ],
-            "core": [
-                "public/js/core/index.d.ts"
-            ],
-            "subscribers": [
-                "public/js/subscribers/index.d.ts"
-            ],
-            "cli": [
-                "public/js/cli.d.ts"
-            ]
-        }
-    },
-    "scripts": {
-        "note": "echo \"first build typescript; then build javascript, which will work off of typescript output; at any time, build css. to understand the goal of the build, see main.js. main.js imports the results of the build.",
-        "ts-dev": "tsc -w",
-        "ts-build": "tsc",
-        "js-build": "node build.js",
-        "css-build": "esbuild --keep-names --bundle css/main.css --outfile=public/css/style.css",
-        "mon-sub": "yarn nodemon --exec \"yarn ts-build && yarn css-build && yarn js-build\" --watch ../../dist-browser --watch ./src --watch ./css --ext js,ts,mjs,ts,css  --ignore public",
-        "start": "yarn http-server public --mimetypes mime.types --cors",
-        "mon": "yarn concurrently \"yarn http-server public -p 8080 --mimetypes mime.types --cors\" \"yarn mon-sub\"",
-        "mon8910": "yarn concurrently \"yarn http-server public -p 8910 --mimetypes mime.types --cors\" \"yarn mon-sub\""
-    },
-    "packageManager": "yarn@4.0.2"
+  "name": "ollave",
+  "version": "0.3.13",
+  "repository": "git@github.com:rdroe/ollave.git",
+  "license": "MIT",
+  "description": "framework for developing musical streams",
+  "keywords": [
+    "yargs",
+    "node",
+    "browser",
+    "cli"
+  ],
+  "dependencies": {
+    "@tonejs/piano": "^0.2.1",
+    "@types/jsmidgen": "^0.1.0",
+    "deep-equal": "^2.2.3",
+    "http-server": "^14.1.0",
+    "jsmidgen": "^0.1.5",
+    "open-range": "^0.2.0",
+    "peprn": "^0.4.12",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "rxjs": "^7.8.2",
+    "tonal": "^5.0.0",
+    "tone": "14.6.1",
+    "user-tables": "^0.0.20",
+    "webmidi": "2.*",
+    "zod": "^4.1.5",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@types/deep-equal": "^1.0.4",
+    "@types/isomorphic-fetch": "^0.0.36",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.14.38",
+    "madge": "^8.0.0",
+    "nodemon": "^2.0.16",
+    "typescript": "^5.0.0"
+  },
+  "main": "ollave",
+  "exports": {
+    "./commands": "./public/js/commands/index.js",
+    "./lib": "./public/js/lib/index.js",
+    "./lib/*": "./public/js/lib/*.js",
+    "./cli": "./public/js/cli.js",
+    "./core": "./public/js/core/index.js",
+    "./subscribers": "./public/js/subscribers/index.js"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "public/js"
+      ],
+      "lib": [
+        "public/js/lib/index.d.ts"
+      ],
+      "lib/*": [
+        "public/js/lib/*.d.ts"
+      ],
+      "commands": [
+        "public/js/commands/index.d.ts"
+      ],
+      "core": [
+        "public/js/core/index.d.ts"
+      ],
+      "subscribers": [
+        "public/js/subscribers/index.d.ts"
+      ],
+      "cli": [
+        "public/js/cli.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "note": "echo \"first build typescript; then build javascript, which will work off of typescript output; at any time, build css. to understand the goal of the build, see main.js. main.js imports the results of the build.",
+    "ts-dev": "tsc -w",
+    "ts-build": "tsc",
+    "js-build": "node build.js",
+    "css-build": "esbuild --keep-names --bundle css/main.css --outfile=public/css/style.css",
+    "mon-sub": "yarn nodemon --exec \"yarn ts-build && yarn css-build && yarn js-build\" --watch ../../dist-browser --watch ./src --watch ./css --ext js,ts,mjs,ts,css  --ignore public",
+    "start": "yarn http-server public --mimetypes mime.types --cors",
+    "mon": "yarn concurrently \"yarn http-server public -p 8080 --mimetypes mime.types --cors\" \"yarn mon-sub\"",
+    "mon8910": "yarn concurrently \"yarn http-server public -p 8910 --mimetypes mime.types --cors\" \"yarn mon-sub\""
+  },
+  "packageManager": "yarn@4.0.2"
 }
