@@ -70,8 +70,14 @@ export const updateNoteSilently = (
   tagName: string,
   tagValue: TagData
 ) => {
-  scheduleRecompile()
   const memNote = getNoteByBar(mem, noteId)
+  // No-op on identical values: a recompile is a full-song remap plus a
+  // whole-track IndexedDB write, so callers that re-sync state on mount
+  // (e.g. NoteControl effects) must not pay for writes that change nothing.
+  if (JSON.stringify(memNote.tagsObj[tagName]) === JSON.stringify(tagValue)) {
+    return
+  }
+  scheduleRecompile()
   memNote.tagsObj[tagName] = tagValue
   notesStore.getState().setNote(noteId, memNote)
 }

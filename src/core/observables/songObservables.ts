@@ -30,6 +30,17 @@ let isFirstCueStart = true
 // last time the .ollave-ticks display element was written (throttled ~30Hz)
 let lastTickDisplayWrite = 0
 
+// ---- Audio lookahead -------------------------------------------------------
+// Notes are handed to Tone up to NOTE_LOOKAHEAD_MS ahead of their musical due
+// time, each at its exact due offset on the audio clock. A main-thread stall
+// shorter than the horizon then cannot delay audio at all — the stalled
+// window's notes were already scheduled before the stall began. Stalls longer
+// than the horizon degrade exactly as before: bounded catch-up, notes late
+// but played. scheduledUpToTick makes scheduling monotonic (each tick is
+// scheduled exactly once per run), reset on every startCueObservable.
+const NOTE_LOOKAHEAD_MS = 180
+let scheduledUpToTick = -1
+
 // ---- Note-lag instrumentation --------------------------------------------
 // Documents mis-timed notes end to end. Two probe points:
 //   1. TRIGGER (here, synchronous with the tick): captures the wall time the
@@ -132,12 +143,17 @@ window.__noteLagMarkSounded = (note: string) => {
   }
 }
 
-const recordNoteTrigger = (note: string, tick: number) => {
+const recordNoteTrigger = (note: string, tick: number, aheadMs = 0) => {
   const triggeredAt = Date.now()
   const entry: NoteLagEntry = {
     note,
     tick,
-    intendedAt: window.__tickIntendedAt ?? triggeredAt,
+    // aheadMs: with lookahead scheduling the note is handed to Tone before it
+    // is musically due — its due time is the current tick's intended wall
+    // time plus the scheduling offset. lagMs stays "sounded minus due":
+    // negative/zero while the scheduler is healthy, positive only when the
+    // main thread stalled past the lookahead horizon.
+    intendedAt: (window.__tickIntendedAt ?? triggeredAt) + aheadMs,
     triggeredAt,
     soundedAt: null,
     lagMs: null,
@@ -186,6 +202,9 @@ export const startCueObservable = (
 ) => {
   startRealtimeTick()
   mem().isRunning = true
+  // Fresh run: nothing scheduled ahead yet (also prevents a stale horizon
+  // from a previous run suppressing the first notes of this one).
+  scheduledUpToTick = -1
 
   // make a new observable that subscribes to master ticks
   // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
@@ -233,59 +252,77 @@ export const startCueObservable = (
         // swallowed every note sitting at time 0 on the first play after a
         // page load.
       }
-      mem().latestMap[adjustedCursor]?.forEach(
-        (note: {
-          note: string
-          velocity?: number
-          duration?: number
-          compositionTags: string[]
-        }) => {
-          let doPlay = true
-          if (note.compositionTags.includes('muted=true')) {
-            doPlay = false
-          }
-          if (
-            mem().exclusivePlayMode &&
-            !note.compositionTags.includes('playExclusively=true')
-          ) {
-            doPlay = false
-          }
-          if (!doPlay) {
-            return
-          }
-          if (ignoreNote(adjustedCursor, note)) {
-            return
-          }
+      // Lookahead scheduling: hand every not-yet-scheduled note due in
+      // (scheduledUpToTick, tick + horizon] to Tone now, each offset to its
+      // exact due time. In steady state each emission schedules exactly one
+      // new tick (the one entering the horizon); after a stall, the catch-up
+      // emissions advance the horizon in bulk.
+      const mpt = msPerTick()
+      const horizonTicks = Math.max(1, Math.ceil(NOTE_LOOKAHEAD_MS / mpt))
+      const fromTick = Math.max(tick, scheduledUpToTick + 1)
+      const toTick = tick + horizonTicks
+      for (let schedTick = fromTick; schedTick <= toTick; schedTick++) {
+        const schedCursor = getSongCursor(schedTick)
+        const aheadTicks = schedTick - tick
+        mem().latestMap[schedCursor]?.forEach(
+          (note: {
+            note: string
+            velocity?: number
+            duration?: number
+            compositionTags: string[]
+          }) => {
+            let doPlay = true
+            if (note.compositionTags.includes('muted=true')) {
+              doPlay = false
+            }
+            if (
+              mem().exclusivePlayMode &&
+              !note.compositionTags.includes('playExclusively=true')
+            ) {
+              doPlay = false
+            }
+            if (!doPlay) {
+              return
+            }
+            if (ignoreNote(schedCursor, note)) {
+              return
+            }
 
-          const velocity = note.velocity ?? DEFAULT_VELOCITY
-          const rasterDuration = note.duration
-            ? (msPerTick() * note.duration) / 1000
-            : 0.5
+            const velocity = note.velocity ?? DEFAULT_VELOCITY
+            const rasterDuration = note.duration
+              ? (mpt * note.duration) / 1000
+              : 0.5
 
-          recordNoteTrigger(note.note, adjustedCursor)
-          playTriads([[note.note, rasterDuration, 0.01, velocity]])
-          // Debug log of what actually sounded. push + cap, NOT unshift:
-          // unshift is O(n) per note and the array previously grew without
-          // bound, so long listens got progressively slower. Newest last.
-          mem().played.push({
-            time: Date.now(),
-            songTick: adjustedCursor,
-            note: note.note,
-            tags: note.compositionTags,
-          })
-          if (mem().played.length > 2000) {
-            mem().played.splice(0, 1000)
+            recordNoteTrigger(note.note, schedCursor, aheadTicks * mpt)
+            playTriads([
+              [note.note, rasterDuration, (aheadTicks * mpt) / 1000 + 0.01, velocity],
+            ])
+            // Debug log of what actually sounded. push + cap, NOT unshift:
+            // unshift is O(n) per note and the array previously grew without
+            // bound, so long listens got progressively slower. Newest last.
+            mem().played.push({
+              time: Date.now(),
+              songTick: schedCursor,
+              note: note.note,
+              tags: note.compositionTags,
+            })
+            if (mem().played.length > 2000) {
+              mem().played.splice(0, 1000)
+            }
+            // Bookkeeping keys shift with the lookahead so recordings land on
+            // the tick the note is due, not the tick it was scheduled from.
+            const bookKey = (rtMode ? rtTick : expTick) + aheadTicks
+            mem().playedMap[bookKey] = mem().playedMap[bookKey] || []
+            mem().playedMap[bookKey].push({
+              note: note.note,
+              compositionTags: note.compositionTags,
+              velocity,
+              duration: note.duration ?? DEFAULT_DURATION,
+            })
           }
-          mem().playedMap[rtMode ? rtTick : expTick] =
-            mem().playedMap[rtMode ? rtTick : expTick] || []
-          mem().playedMap[rtMode ? rtTick : expTick].push({
-            note: note.note,
-            compositionTags: note.compositionTags,
-            velocity,
-            duration: note.duration ?? DEFAULT_DURATION,
-          })
-        }
-      )
+        )
+      }
+      scheduledUpToTick = toTick
       updateExportableTick()
     },
   })
