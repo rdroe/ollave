@@ -91,6 +91,10 @@ const playMusic = async (json: Triad[]) => {
         const stop = `+${t2 + t1}`
         piano.keyDown({ note: note, time: start, velocity })
         piano.keyUp({ note: note, time: stop })
+        // note-lag instrumentation: this keyDown is the deepest JS moment
+        // before audio (Tone sounds it +t2 s later). Hook installed by
+        // core/observables/songObservables; optional so lib stays decoupled.
+        ;(window as any).__noteLagMarkSounded?.(note)
     })
 
     return json

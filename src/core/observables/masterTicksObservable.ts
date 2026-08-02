@@ -79,6 +79,8 @@ declare global {
       air: number
     }
     curr: TimeMarker
+    /** Wall time the most recently emitted tick was musically due. */
+    __tickIntendedAt: number
   }
 }
 window.realtimeTickRef = {
@@ -240,7 +242,8 @@ export const masterTicksObservable = new Observable(function subscribe(
 
   const intervalId = setInterval(() => {
     const now = Date.now()
-    tickFloat += (now - lastNow) / msPerTick()
+    const msPer = msPerTick()
+    tickFloat += (now - lastNow) / msPer
     lastNow = now
     const target = Math.floor(tickFloat)
     if (target - lastEmitted > MAX_CATCHUP_TICKS) {
@@ -251,6 +254,11 @@ export const masterTicksObservable = new Observable(function subscribe(
       if (window.realtimeTickRef.running && window.realtimeTickRef.mode) {
         updateRealtimeTick()
       }
+      // The wall time this tick SHOULD have occurred, derived from the
+      // fractional accumulator (exact under tempo changes and catch-up
+      // bursts). Side channel for note-lag instrumentation: emission is
+      // synchronous, so downstream subscribers read it for their tick.
+      window.__tickIntendedAt = now - (tickFloat - lastEmitted) * msPer
       subscriber.next(lastEmitted)
       curr = [now, lastEmitted]
     }
