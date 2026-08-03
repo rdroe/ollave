@@ -19,6 +19,10 @@ import {
 import { SongRecord, TrackRecord } from './types'
 import { PhaseRecord } from './util/phaseTypes'
 import { phaseCountInner, phaseFollowsPhaseInner } from './util/phaseUtil'
+import {
+  BarTemplate,
+  importBarTemplatesForSong,
+} from './barTemplates'
 import { compileTracksToNotesByBar } from './util/schemaUtil'
 import { namesPromise } from './util/songNamesUtil'
 
@@ -336,7 +340,7 @@ export async function duplicateCurrentSong() {
   return newSongId
 }
 
-export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord, 'id'>, tracks: (Omit<TrackRecord, 'id'>)[], phases: Omit<PhaseRecord, 'id'>[] }) {
+export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord, 'id'>, tracks: (Omit<TrackRecord, 'id'>)[], phases: Omit<PhaseRecord, 'id'>[], barTemplates?: Omit<BarTemplate, 'id'>[] }) {
 
   const { song, tracks, phases } = songAndTracks
   const memPhases = phases.reduce((acc, phase, idx) => {
@@ -393,6 +397,58 @@ export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord
 
   mem().song.name = `${newName} <- imported <- ${origName}`
   mem().notesByBar = notesByBar
+
+  // Bar templates: recreate them under the new song and repoint the
+  // customBarId tags on placed notes at the new row ids, so the imported
+  // song's locked bars stay editable and keep propagating. Older exports have
+  // no barTemplates key — placements still import, just without their
+  // templates (previous behavior).
+  const barTemplates = (
+    songAndTracks as { barTemplates?: Omit<BarTemplate, 'id'>[] }
+  ).barTemplates
+  if (barTemplates?.length) {
+    // The export drops row ids, so recover each template's OLD id from the
+    // placements themselves (customBar=<name> travels with customBarId).
+    const oldIdsByName: { [name: string]: number } = {}
+    Object.values(notesByBar).forEach((notes) => {
+      notes.forEach((note) => {
+        const tags = note.tags || []
+        const nameTag = tags.find((t: string) => t.startsWith('customBar='))
+        const idTag = tags.find((t: string) => t.startsWith('customBarId='))
+        if (nameTag && idTag) {
+          const name = nameTag.slice('customBar='.length)
+          const oldId = Number(idTag.slice('customBarId='.length))
+          if (!Number.isNaN(oldId)) {
+            oldIdsByName[name] = oldId
+          }
+        }
+      })
+    })
+    const idMap = await importBarTemplatesForSong(
+      newSongId,
+      barTemplates,
+      oldIdsByName
+    )
+    if (Object.keys(idMap).length) {
+      Object.entries(notesByBar).forEach(([barId, notes]) => {
+        notesByBar[barId] = notes.map((note) => {
+          const tags = note.tags || []
+          const idx = tags.findIndex((t: string) =>
+            t.startsWith('customBarId=')
+          )
+          if (idx === -1) return note
+          const oldId = Number(tags[idx].slice('customBarId='.length))
+          const newId = idMap[oldId]
+          if (newId === undefined) return note
+          const rebuilt = [...tags]
+          rebuilt[idx] = `customBarId=${newId}`
+          // Rebuilt, not mutated: makeNoteByBar keeps tags/_tags/tagsObj in
+          // sync internally.
+          return makeNoteByBar(note.note, rebuilt)
+        })
+      })
+    }
+  }
 
   await setLatestMap(mapSongToMidiTicks())
   return newSongId

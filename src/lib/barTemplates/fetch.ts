@@ -188,3 +188,44 @@ export async function deleteBarTemplate(
   }
   await browser.userTables.delete(BAR_TEMPLATE_TABLE, { id: existing.id })
 }
+
+/**
+ * Templates for a song, stripped of row ids, ready to embed in a song export.
+ * Ids are dropped deliberately: the importing database assigns its own.
+ */
+export async function exportBarTemplatesForSong(
+  songId: number
+): Promise<Omit<BarTemplate, 'id'>[]> {
+  const templates = await listBarTemplates(songId)
+  return templates.map(({ id: _id, ...rest }) => rest)
+}
+
+/**
+ * Recreate exported templates under a newly imported song and return a map of
+ * old row id -> new row id, so placed notes' `customBarId=` tags can be
+ * repointed (they are the rename-proof link between a placement and its
+ * template; a stale id would break live propagation after import).
+ *
+ * Templates are matched to their old ids by name — the exported payload keeps
+ * no ids, so callers pass the ids observed on the placed notes.
+ */
+export async function importBarTemplatesForSong(
+  songId: number,
+  templates: Omit<BarTemplate, 'id'>[],
+  oldIdsByName: { [name: string]: number } = {}
+): Promise<{ [oldId: number]: number }> {
+  const idMap: { [oldId: number]: number } = {}
+  for (const t of templates) {
+    const parsed = barTemplateSchema.safeParse({ ...t, songId })
+    if (!parsed.success) {
+      console.warn(`Skipping invalid imported barTemplate "${t.name}"`, parsed.error)
+      continue
+    }
+    const newId = await saveBarTemplate({ ...parsed.data, songId })
+    const oldId = oldIdsByName[t.name]
+    if (oldId !== undefined) {
+      idMap[oldId] = newId
+    }
+  }
+  return idMap
+}

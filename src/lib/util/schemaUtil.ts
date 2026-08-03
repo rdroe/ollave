@@ -145,6 +145,11 @@ export function saveSongAndTracks() {
     browser.userTables.update('track', { id: track.id, data: track }, {})
   })
 }
+/**
+ * Bar templates are fetched separately (async, from their own table) and
+ * attached by the export command — see exportBarTemplatesForSong. Kept out of
+ * this sync function so its signature and every existing caller stay intact.
+ */
 export function exportSongAndTracks(): {
   song: Omit<SongRecord, 'id'>,
   tracks: (Omit<TrackRecord, 'id'>)[],

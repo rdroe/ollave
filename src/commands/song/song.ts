@@ -37,6 +37,7 @@ import {
   parseNoteTags,
 } from '../../lib/util/tagsUtil'
 
+import { exportBarTemplatesForSong } from '../../lib/barTemplates'
 import { exportSongAndTracks } from '../../lib/util/schemaUtil'
 
 export { init } from '../../lib/util/songUtil'
@@ -354,7 +355,12 @@ export default {
     },
     export: {
       fn: async () => {
-          const exported = exportSongAndTracks()
+          const exportedCore = exportSongAndTracks()
+          // Bar templates live in their own table and used to be omitted, so
+          // an imported song kept its placed (locked) notes but lost the
+          // templates behind them — no editing, no propagation.
+          const barTemplates = await exportBarTemplatesForSong(mem().song.id)
+          const exported = { ...exportedCore, barTemplates }
           downloadJson([JSON.stringify(exported, null, 2)], `${exported.song.name.replace(/\ \<\-\ /g, '-from-')}.json`)
           return {
               formatted: {
