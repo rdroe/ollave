@@ -205,6 +205,11 @@ export const startCueObservable = (
   // Fresh run: nothing scheduled ahead yet (also prevents a stale horizon
   // from a previous run suppressing the first notes of this one).
   scheduledUpToTick = -1
+  // Every run records its tempo marker into playedMap. This was one-shot per
+  // page load, so any take recorded after the session's first play exported
+  // with no tempo event at all — `dl -p` then had only the null-tempo
+  // placeholder (mpqn 0), which DAWs import as a silent/collapsed file.
+  isFirstCueStart = true
 
   // make a new observable that subscribes to master ticks
   // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
@@ -243,8 +248,13 @@ export const startCueObservable = (
       }
       if (isFirstCueStart) {
         isFirstCueStart = false
-        mem().playedMap[tick] = mem().playedMap[tick] || []
-        mem().playedMap[tick].push({
+        // Key the tempo marker exactly like the note bookkeeping below
+        // (rt/exp tick, not the raw engine tick): a resumed take's raw tick
+        // sits far past the recorded notes, which stranded the marker at the
+        // end of the exported file.
+        const markerKey = rtMode ? rtTick : expTick
+        mem().playedMap[markerKey] = mem().playedMap[markerKey] || []
+        mem().playedMap[markerKey].push({
           note: `tempo: ${mem().song.tempo}`,
           compositionTags: [],
         })

@@ -69,7 +69,13 @@ export const addEvents = (
     const track = tracks[noteTrackIdx]
     //
     if (isNewMidiTrack) {
-      track.setTempo(tempo)
+      // tempo is null for playedMap downloads (the take embeds its own tempo
+      // markers). jsmidgen would write mpqn 0 for null — an invalid tempo
+      // that DAWs import as a silent/collapsed file — so skip the placeholder
+      // and let the embedded tempo events (or the DAW's 120 default) govern.
+      if (tempo) {
+        track.setTempo(tempo)
+      }
       file.addTrack(track)
     }
 
