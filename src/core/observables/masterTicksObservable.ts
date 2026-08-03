@@ -99,17 +99,32 @@ export const updateRealtimeTick = () => {
   // ;(window as any).realtimeTick += 1
   window.realtimeTickRef.tick += 1
 }
+// True while the user has explicitly paused (the Realtime Paused checkbox).
+// Distinguishes user intent from the engine's auto-start on play: without
+// it, clicking play called startRealtimeTick and silently un-paused a
+// pause set before playback began.
+let realtimePausedExplicitly = false
+
 export const startRealtimeTick = () => {
+  realtimePausedExplicitly = false
   window.realtimeTickRef.running = true
   if (window.realtimeTickRef.tick < window.expTick) {
     window.realtimeTickRef.tick = window.expTick
   }
 }
 export const stopRealtimeTick = () => {
+  realtimePausedExplicitly = true
   window.realtimeTickRef.running = false
   // set the exportable tick to the realtime tick so that notes don't overlap when the user resumes the song
   if (window.expTick < window.realtimeTickRef.tick) {
     window.expTick = window.realtimeTickRef.tick
+  }
+}
+/** Engine auto-start (play): runs the realtime clock unless the user has it
+ * explicitly paused — only the checkbox (startRealtimeTick) clears that. */
+export const resumeRealtimeTick = () => {
+  if (!realtimePausedExplicitly) {
+    startRealtimeTick()
   }
 }
 export const setRealtimeMode = (mode: boolean) => {
@@ -118,8 +133,15 @@ export const setRealtimeMode = (mode: boolean) => {
     if (window.realtimeTickRef.tick < window.expTick) {
       window.realtimeTickRef.tick = window.expTick
     }
+    // Mode-on starts the take clock immediately (jam chords record without
+    // playback ever running) — unless the user has it explicitly paused.
+    resumeRealtimeTick()
   } else {
-    stopRealtimeTick()
+    // Mode-off suspends the clock WITHOUT registering a user pause: only
+    // the Realtime Paused checkbox owns that flag (stopRealtimeTick). This
+    // used to call stopRealtimeTick, which would have made a later play
+    // treat mere mode-off as "user paused" and never resume the clock.
+    window.realtimeTickRef.running = false
   }
 }
 export const realtimeTick = () => {

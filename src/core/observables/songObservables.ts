@@ -14,7 +14,7 @@ import {
   realtimeMode,
   realtimeRunning,
   realtimeTick,
-  startRealtimeTick,
+  resumeRealtimeTick,
   updateExportableTick,
 } from './masterTicksObservable'
 
@@ -27,7 +27,9 @@ export const getSongName = () => {
   return song
 }
 
-let isFirstCueStart = true
+// Set false at each startCueObservable; the run's tempo marker is stamped
+// alongside its first recorded note (see the recording branch).
+let tempoMarkerStampedThisRun = false
 // last time the .ollave-ticks display element was written (throttled ~30Hz)
 let lastTickDisplayWrite = 0
 
@@ -198,24 +200,34 @@ export const getSongCursor = (tick: number) => {
  * jam-only session (playback never run) still exports with a valid tempo.
  */
 export const recordLiveNotes = (
-  notes: { note: string; velocity?: number; durationSec?: number }[]
+  notes: {
+    note: string
+    velocity?: number
+    durationSec?: number
+    /** Attack offset from the trigger moment — preserves a template chord's
+     * internal strum/roll timing in the capture. Absent = 0 (simultaneous). */
+    offsetSec?: number
+  }[]
 ) => {
   if (!realtimeMode() || !realtimeRunning()) {
     return
   }
-  const key = realtimeTick()
+  const baseKey = realtimeTick()
   const playedMap = mem().playedMap
   if (Object.keys(playedMap).length === 0) {
-    playedMap[key] = [
+    playedMap[baseKey] = [
       {
         note: `tempo: ${mem().song.tempo}`,
         compositionTags: [],
       },
     ]
   }
-  playedMap[key] = playedMap[key] || []
   const mpt = msPerTick()
   notes.forEach((n) => {
+    const key =
+      baseKey +
+      (n.offsetSec ? Math.max(0, Math.round((n.offsetSec * 1000) / mpt)) : 0)
+    playedMap[key] = playedMap[key] || []
     playedMap[key].push({
       note: n.note,
       compositionTags: [],
@@ -240,16 +252,19 @@ export const startCueObservable = (
     }
   ) => boolean = () => false
 ) => {
-  startRealtimeTick()
+  // Respects an explicit Realtime Paused: play must not silently un-pause
+  // the take clock (it used to call startRealtimeTick unconditionally).
+  resumeRealtimeTick()
   mem().isRunning = true
   // Fresh run: nothing scheduled ahead yet (also prevents a stale horizon
   // from a previous run suppressing the first notes of this one).
   scheduledUpToTick = -1
-  // Every run records its tempo marker into playedMap. This was one-shot per
-  // page load, so any take recorded after the session's first play exported
-  // with no tempo event at all — `dl -p` then had only the null-tempo
-  // placeholder (mpqn 0), which DAWs import as a silent/collapsed file.
-  isFirstCueStart = true
+  // Each run stamps a tempo marker lazily, alongside its first RECORDED
+  // note (see the recording branch) — so a run started while paused still
+  // gets its marker when recording begins, runs that record nothing leave
+  // nothing behind, and every recorded take exports with a valid tempo
+  // (dl -p's placeholder is the invalid mpqn 0 otherwise).
+  tempoMarkerStampedThisRun = false
 
   // make a new observable that subscribes to master ticks
   // if the fed-in tick modular-divides to 0 on bar ticks, trigger.
@@ -272,15 +287,13 @@ export const startCueObservable = (
 
   observables['tick'] = songObservable.subscribe({
     next: ({ tick }) => {
-      const expTick = exportableTick()
       const rtTick = realtimeTick()
       const rtMode = realtimeMode()
-      // "Realtime Paused" freezes the realtime clock AND stops recording:
-      // playback keeps sounding, but nothing lands in playedMap (previously
-      // notes kept piling onto the frozen realtime tick). The per-run tempo
-      // marker below stays unconditional so a take started while paused
-      // still exports with a valid tempo.
-      const recording = !rtMode || realtimeRunning()
+      // playedMap is the realtime capture buffer: recording happens ONLY
+      // with Realtime Mode on and not paused. Plain playback (mode off)
+      // records nothing; "Realtime Paused" freezes capture while playback
+      // keeps sounding.
+      const recording = rtMode && realtimeRunning()
       // get the midi tick relative to the start of the song
       const adjustedCursor = getSongCursor(tick)
       mem().adjustedCursor = adjustedCursor
@@ -291,22 +304,6 @@ export const startCueObservable = (
         lastTickDisplayWrite = nowMs
         document.querySelector('.ollave-ticks').innerHTML =
           mem().adjustedCursor.toString()
-      }
-      if (isFirstCueStart) {
-        isFirstCueStart = false
-        // Key the tempo marker exactly like the note bookkeeping below
-        // (rt/exp tick, not the raw engine tick): a resumed take's raw tick
-        // sits far past the recorded notes, which stranded the marker at the
-        // end of the exported file.
-        const markerKey = rtMode ? rtTick : expTick
-        mem().playedMap[markerKey] = mem().playedMap[markerKey] || []
-        mem().playedMap[markerKey].push({
-          note: `tempo: ${mem().song.tempo}`,
-          compositionTags: [],
-        })
-        // No early return: playback starts at tick 0, so returning here
-        // swallowed every note sitting at time 0 on the first play after a
-        // page load.
       }
       // Lookahead scheduling: hand every not-yet-scheduled note due in
       // (scheduledUpToTick, tick + horizon] to Tone now, each offset to its
@@ -368,8 +365,17 @@ export const startCueObservable = (
             // Bookkeeping keys shift with the lookahead so recordings land on
             // the tick the note is due, not the tick it was scheduled from.
             if (recording) {
-              const bookKey = (rtMode ? rtTick : expTick) + aheadTicks
+              const bookKey = rtTick + aheadTicks
               mem().playedMap[bookKey] = mem().playedMap[bookKey] || []
+              if (!tempoMarkerStampedThisRun) {
+                tempoMarkerStampedThisRun = true
+                // Marker first in the bucket, so it precedes the note in the
+                // exported file.
+                mem().playedMap[bookKey].unshift({
+                  note: `tempo: ${mem().song.tempo}`,
+                  compositionTags: [],
+                })
+              }
               mem().playedMap[bookKey].push({
                 note: note.note,
                 compositionTags: note.compositionTags,
