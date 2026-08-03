@@ -127,6 +127,12 @@ export const resumeRealtimeTick = () => {
     startRealtimeTick()
   }
 }
+/** Engine-internal suspend (boot priming, mode-off): stops the clock WITHOUT
+ * registering a user pause. Boot's start/stop priming used stopRealtimeTick,
+ * which marked every page load as "user paused" and blocked all recording. */
+export const suspendRealtimeTick = () => {
+  window.realtimeTickRef.running = false
+}
 export const setRealtimeMode = (mode: boolean) => {
   window.realtimeTickRef.mode = mode
   if (mode) {
@@ -141,7 +147,7 @@ export const setRealtimeMode = (mode: boolean) => {
     // the Realtime Paused checkbox owns that flag (stopRealtimeTick). This
     // used to call stopRealtimeTick, which would have made a later play
     // treat mere mode-off as "user paused" and never resume the clock.
-    window.realtimeTickRef.running = false
+    suspendRealtimeTick()
   }
 }
 export const realtimeTick = () => {

@@ -1,6 +1,6 @@
 import { songInvocation } from '../../commands/song/song'
 import { mem } from '../../core/mem'
-import { setLatestMap, stopRealtimeTick } from '../../core/observables'
+import { setLatestMap, suspendRealtimeTick } from '../../core/observables'
 import {
   startCueObservable,
   stopCueObservable,
@@ -57,7 +57,7 @@ export async function init() {
   setLatestMap(mapSongToMidiTicks())
   startCueObservable()
   stopCueObservable()
-  stopRealtimeTick()
+  suspendRealtimeTick()
   songInvocation.setState({ ready: true })
 }
 
