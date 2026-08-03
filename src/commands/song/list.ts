@@ -128,6 +128,19 @@ export const deleteSongAndRelatedTracksAndPhasesBySongId: Module = {
         return browser.userTables.delete('track', { id: track.id })
       })
     )
+    // delete the song's bar templates. Keyed by songId in the indexed `a`
+    // column (see barTemplates/fetch.ts); without this they outlived their
+    // song as unreachable rows. The table name is inlined rather than
+    // imported from lib/barTemplates to keep this command free of that
+    // module's import graph.
+    const barTemplateRows = await (
+      await browser.userTables.where('barTemplate', { a: String(songId) })
+    ).toArray()
+    const barTemplateDeletions = await Promise.all(
+      barTemplateRows.map((row) => {
+        return browser.userTables.delete('barTemplate', { id: row.id })
+      })
+    )
     // delete the phases
     const phaseDeletions = await Promise.all(
       phases.map((phase) => {
@@ -139,6 +152,7 @@ export const deleteSongAndRelatedTracksAndPhasesBySongId: Module = {
         songDeletion,
         trackDeletions,
         phaseDeletions,
+        barTemplateDeletions,
       },
     }
   },
