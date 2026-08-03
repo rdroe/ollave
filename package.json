@@ -1,6 +1,6 @@
 {
   "name": "ollave",
-  "version": "0.3.14",
+  "version": "0.3.15",
   "repository": "git@github.com:rdroe/ollave.git",
   "license": "MIT",
   "description": "framework for developing musical streams",
