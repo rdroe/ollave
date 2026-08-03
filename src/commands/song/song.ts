@@ -37,7 +37,9 @@ import {
   parseNoteTags,
 } from '../../lib/util/tagsUtil'
 
-import { exportBarTemplatesForSong } from '../../lib/barTemplates'
+// Specific module, not the barrel — see the note in lib/fetch.ts about the
+// import cycle the barrel creates.
+import { exportBarTemplatesForSong } from '../../lib/barTemplates/fetch'
 import { exportSongAndTracks } from '../../lib/util/schemaUtil'
 
 export { init } from '../../lib/util/songUtil'

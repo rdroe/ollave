@@ -19,10 +19,12 @@ import {
 import { SongRecord, TrackRecord } from './types'
 import { PhaseRecord } from './util/phaseTypes'
 import { phaseCountInner, phaseFollowsPhaseInner } from './util/phaseUtil'
-import {
-  BarTemplate,
-  importBarTemplatesForSong,
-} from './barTemplates'
+// Import the specific modules, NOT the './barTemplates' barrel: the barrel
+// pulls in compile.ts, which imports the lib index — a cycle that left
+// startCueObservable/compilationObservable uninitialized in the production
+// bundle (blank page, "Cannot access X before initialization").
+import { importBarTemplatesForSong } from './barTemplates/fetch'
+import { BarTemplate } from './barTemplates/schemas'
 import { compileTracksToNotesByBar } from './util/schemaUtil'
 import { namesPromise } from './util/songNamesUtil'
 
