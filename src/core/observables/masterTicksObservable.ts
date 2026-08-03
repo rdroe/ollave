@@ -128,6 +128,10 @@ export const realtimeTick = () => {
 export const realtimeMode = () => {
   return window.realtimeTickRef.mode
 }
+/** False while "Realtime Paused": the realtime clock is frozen. */
+export const realtimeRunning = () => {
+  return window.realtimeTickRef.running
+}
 
 window.expTick = 0
 export const updateExportableTick = () => {

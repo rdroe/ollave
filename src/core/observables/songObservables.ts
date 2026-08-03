@@ -12,6 +12,7 @@ import {
   exportableTick,
   msPerTick,
   realtimeMode,
+  realtimeRunning,
   realtimeTick,
   startRealtimeTick,
   updateExportableTick,
@@ -235,6 +236,12 @@ export const startCueObservable = (
       const expTick = exportableTick()
       const rtTick = realtimeTick()
       const rtMode = realtimeMode()
+      // "Realtime Paused" freezes the realtime clock AND stops recording:
+      // playback keeps sounding, but nothing lands in playedMap (previously
+      // notes kept piling onto the frozen realtime tick). The per-run tempo
+      // marker below stays unconditional so a take started while paused
+      // still exports with a valid tempo.
+      const recording = !rtMode || realtimeRunning()
       // get the midi tick relative to the start of the song
       const adjustedCursor = getSongCursor(tick)
       mem().adjustedCursor = adjustedCursor
@@ -321,14 +328,16 @@ export const startCueObservable = (
             }
             // Bookkeeping keys shift with the lookahead so recordings land on
             // the tick the note is due, not the tick it was scheduled from.
-            const bookKey = (rtMode ? rtTick : expTick) + aheadTicks
-            mem().playedMap[bookKey] = mem().playedMap[bookKey] || []
-            mem().playedMap[bookKey].push({
-              note: note.note,
-              compositionTags: note.compositionTags,
-              velocity,
-              duration: note.duration ?? DEFAULT_DURATION,
-            })
+            if (recording) {
+              const bookKey = (rtMode ? rtTick : expTick) + aheadTicks
+              mem().playedMap[bookKey] = mem().playedMap[bookKey] || []
+              mem().playedMap[bookKey].push({
+                note: note.note,
+                compositionTags: note.compositionTags,
+                velocity,
+                duration: note.duration ?? DEFAULT_DURATION,
+              })
+            }
           }
         )
       }
