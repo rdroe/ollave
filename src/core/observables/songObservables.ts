@@ -189,6 +189,45 @@ export const getSongCursor = (tick: number) => {
   return tick % lastTick()
 }
 
+/**
+ * Record live-triggered notes (jam-panel pushbutton/keyboard chords — sounds
+ * that never pass through the playback tick loop) into playedMap. Applies
+ * the same gate as the tick subscriber: realtime mode must be ON and not
+ * paused; outside realtime mode live play is audition-only. Keys by the
+ * realtime tick, and stamps a tempo marker when the take is empty so a
+ * jam-only session (playback never run) still exports with a valid tempo.
+ */
+export const recordLiveNotes = (
+  notes: { note: string; velocity?: number; durationSec?: number }[]
+) => {
+  if (!realtimeMode() || !realtimeRunning()) {
+    return
+  }
+  const key = realtimeTick()
+  const playedMap = mem().playedMap
+  if (Object.keys(playedMap).length === 0) {
+    playedMap[key] = [
+      {
+        note: `tempo: ${mem().song.tempo}`,
+        compositionTags: [],
+      },
+    ]
+  }
+  playedMap[key] = playedMap[key] || []
+  const mpt = msPerTick()
+  notes.forEach((n) => {
+    playedMap[key].push({
+      note: n.note,
+      compositionTags: [],
+      velocity: n.velocity ?? DEFAULT_VELOCITY,
+      duration:
+        n.durationSec !== undefined
+          ? Math.max(1, Math.round((n.durationSec * 1000) / mpt))
+          : DEFAULT_DURATION,
+    })
+  })
+}
+
 export const startCueObservable = (
   startAt?: number,
   ignoreNote: (
