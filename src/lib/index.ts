@@ -224,6 +224,73 @@ export { seventhOf, seventhSuggestions } from './sevenths'
 export { pivotSuggestions, romanInKey } from './pivots'
 export type { PivotSuggestion } from './pivots'
 
+// cadences, harmonic function and pathfinding (Stage M-B, B2) --------------
+// The interaction-model change: from "what may follow this chord" to "get me
+// to a cadence in four bars", and its inverse, "label the cadences I already
+// wrote". `functionOf` tags a roman T/PD/D and is what makes the search
+// goal-directed rather than merely legal — without it the shortest four-bar
+// route from I to a PAC is `I - I - I - V - I`.
+export {
+  functionLabel,
+  functionMap,
+  functionOf,
+  taggedRomans,
+  transitionCost,
+} from './harmonicFunction'
+export type { HarmonicFunction } from './harmonicFunction'
+
+// Cadence types are authored ONCE, as spans, and read in both directions:
+// `pathToCadence` routes toward them, `detectCadences` matches them. Note that
+// detection deliberately does NOT consult the chart's edges — the minor plagal
+// and deceptive cadences are absent from the chart and are perfectly ordinary
+// music, so analysis matches romans instead.
+export {
+  cadenceDefinition,
+  cadenceDefinitions,
+  cadenceFunctions,
+  cadenceLabel,
+  cadenceSpanRomans,
+  cadenceSpans,
+  detectCadences,
+  isCadentialPair,
+  romanOf,
+  scaleDegreeOf,
+} from './cadence'
+export type {
+  CadenceDefinition,
+  CadenceType,
+  DetectedCadence,
+  ProgressionChord,
+} from './cadence'
+
+export { cadenceOptions, pathToCadence } from './progressionPath'
+export type {
+  PathReason,
+  PathResult,
+  PathStep,
+  PathToCadenceOptions,
+  ProgressionPath,
+} from './progressionPath'
+
+// Modulation-targeted pathfinding — one chord heard two ways is the hinge, and
+// the result names it in BOTH keys. `PivotSource`/`extraPivots` is the
+// extension point for B4's enharmonic pairs: implementing one adds pivots
+// without changing `pathThroughModulation`'s signature.
+export {
+  diatonicPivots,
+  modulationTargets,
+  pathThroughModulation,
+  pivotsBetween,
+} from './modulation'
+export type {
+  ModulationOptions,
+  ModulationPlan,
+  ModulationResult,
+  PivotCandidate,
+  PivotKind,
+  PivotSource,
+} from './modulation'
+
 export {
   createRng,
   randomProgression as randomProgressionNames,
