@@ -4,6 +4,98 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added — inversions, figured bass, and the span schema
+
+**A chord can now say which note is in its bass.** Before this the data model
+had no notion of a bass at all: a chord was a pitch-class set, so inversions
+lived only in the voicing layer, where `nearestVoicing` would *pick* one but
+nobody could *ask* for one. That was the biggest gap in the model, because a
+bass line is a melody — a composer thinks `I–I⁶–IV–V⁴₃–I⁶`, not "I then IV then
+V".
+
+**The schema is a structured field, not a naming convention.** A chart edge is
+now `string | { chord, figure }`. A bare string still means root position and is
+still the normal form, so every edge authored before this change takes a
+byte-identical path. Slash names (`C/E`) were rejected because `/` already means
+tonicization here (`V7/III`) and `Chord.get('C/E')` returns no notes; a suffix
+convention (`I6`) was rejected because it collides with real chord suffixes
+(`C6` is a sixth chord, `V64` is already a function-name node).
+
+**The figured-bass vocabulary** is `6`, `64`, `7`, `65`, `43`, `42` (plus `53`
+for explicit root position), each naming which chord tone is in the bass:
+
+| Figure | Bass | | Figure | Bass |
+|---|---|---|---|---|
+| `6` | third | | `65` | third |
+| `64` | fifth | | `43` | fifth |
+| `7` | root | | `42` | seventh |
+
+Unicode spellings (`⁶`, `⁶₄`, `⁶₅`, `⁴₃`, `⁴₂`) are accepted as input and
+normalized; ASCII is what's stored. The figure→bass mapping indexes into the
+chord's own note list rather than transposing an interval, which keeps spelling
+exact in every key — `bassOf('Db7', '42')` is `Cb`, not `B`; `bassOf('G#7',
+'65')` is `B#`, not `C`.
+
+**New suggestion fields.** `ChordSuggestion` gains optional `figure` and `bass`.
+They are **absent — not `undefined`** — on root-position suggestions, so every
+suggestion produced before this change serializes identically. `name` stays the
+plain chord symbol (`'G7'`, never `'G7/B'`) because the name is the graph's key;
+`roman` carries the figured roman (`V65`, not `V765` — a seventh-chord figure
+absorbs the `7`, as it does on the page).
+
+**New chart edges**, all `dotted`: `I⁶`, `V⁶`, `vii°⁶`, and `V⁶₅`/`V⁴₃`/`V⁴₂`,
+in both charts. `V⁴₂ → I⁶` gets its own edge because the chordal seventh in the
+bass *must* resolve down by step, so it can only resolve to a first-inversion
+tonic.
+
+**`nextChord` is byte-identical**, verified by probing every node in A minor and
+C major before and after. Every inversion edge is dotted, the same rule that
+made the sevenths promotion non-breaking. `nextChordDetail` lists grow, entirely
+in the dotted layer, and seeded walks shift for a given seed.
+
+One consequence worth flagging: **a chord name is no longer unique in a
+suggestion list.** `Am` appears as `Im` and again as `Im⁶` — same name,
+different bass, different chord. Code that dedupes suggestions should key on
+`(name, figure)`, which is what the graph now does internally.
+
+**`parseChordCsvArg` accepts a figure** as a fourth, optional argument:
+`parseChordCsvArg('C,3', 'C major', undefined, { figure: '6' })` places
+`E3 G3 C4` and tags `figure=6` / `bass=E`. Existing two- and three-argument
+calls are untouched. When a figure and smooth voicing are combined the figure
+decides the inversion and smoothing only picks the octave.
+
+**Spans — a shared schema for multi-chord idioms.** Some devices aren't a chord
+or an edge but an ordered pattern with conditions: a passing ⁶₄, a pedal ⁶₄ and
+a cadential ⁶₄ all contain the *same sonority*, distinguished only by the
+surrounding bass and the metric position, which no first-order edge can carry.
+`HarmonicSpan` is one type for all of them — roman-keyed steps plus optional
+bass/soprano/metric conditions and per-rule waivers. Ships with `cadential-64`,
+`passing-64`, `pedal-64`, `lament-bass`, `descending-bass-idiom` and
+`fauxbourdon`.
+
+Spans are a **parallel, additive channel** — `nextChord` and `nextChordDetail`
+never consult them — so adding the library cannot change any existing result.
+Span **conditions are declared but not yet evaluated**; they are authored now so
+the streams that will evaluate them inherit real content. Span **waivers are
+live data**: `fauxbourdon` licenses the parallel motion it is made of, so a
+future part-writing checker won't flag the library's own content.
+
+**`V64`, `N6` and `Aug6` all stay, as documented aliases** — one policy for all
+three. `V64` is expressible as `I⁶₄` and `N6` as `♭II⁶`, but `Aug6` genuinely
+isn't: it's `♭6–1–♯4`, with no fifth and an augmented sixth above the bass
+instead of stacked thirds, so there's no root to invert and no chord tone for a
+figure to select. Retiring the two that convert would leave the third as a lone
+special case, and would break saved songs (`isChordCsvArg('V64,3')` is `true`
+today). The figured forms are valid chart edges as well — this adds a way to
+spell these, it doesn't remove one.
+
+New exports from `ollave/lib`: `bassOf`, `parseFigure`, `figuredRoman`,
+`figuredVoicings`, `figureBassIndex`, `figureArity`, `figureFitsChord`,
+`figureLabel`, `FIGURES`, `isFiguredChord`, `edgeChord`, `edgeFigure`, `spans`,
+`spansOfKind`, `spanById`, `spanRomans`, `spanWaivedRules`, and the types
+`Figure`, `FiguredChord`, `ChartEdge`, `HarmonicSpan`, `SpanKind`,
+`SpanConditions`, `LineCondition`, `MetricCondition`, `RuleWaiver`.
+
 ### Added — diatonic seventh chords, as first-class chart nodes
 
 **Diatonic sevenths are now nodes in the chord charts.** `nextChordDetail`

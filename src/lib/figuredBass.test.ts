@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Chord } from 'tonal'
+import { Chord, Interval } from 'tonal'
 
 import type { ChordSuggestion } from './chordSuggestion'
 import {
@@ -17,7 +17,7 @@ import {
 } from './figuredBass'
 import type { Figure } from './graphData/types'
 import { nextChord, nextChordDetail } from './nextChord'
-import { parseChordCsvArg } from './util/barsUtil'
+import { isChordCsvArg, parseChordCsvArg } from './util/barsUtil'
 import { figuredVoicings } from './voiceLeading'
 import { chordGraphCreate } from './util/graphUtil'
 
@@ -420,6 +420,73 @@ describe('BLAST RADIUS — nextChord is unchanged by the inversions', () => {
       'N6: V64 G',
       'V64: G',
     ])
+  })
+})
+
+describe('A7 — one alias policy for V64, N6 and Aug6', () => {
+  // ALL THREE STAY as documented aliases. The policy is decided once for the
+  // set, not three times; the reasoning is in docs/chord-theory.md §4.
+
+  it('keeps all three live as user-facing input', () => {
+    // retiring any of them is a BREAKING change: these are accepted CLI args
+    // and appear in saved songs, not internal identifiers
+    for (const name of ['V64', 'N6', 'Aug6']) {
+      expect(isChordCsvArg(`${name},3`), name).toBe(true)
+    }
+    // and case-insensitively, as they always have been
+    expect(isChordCsvArg('v64,3')).toBe(true)
+  })
+
+  it('V64 and N6 ARE expressible in figured terms', () => {
+    // V64 is the tonic triad with the fifth in the bass = I64
+    expect(figuredVoicings('C', '64', { minOctave: 3, maxOctave: 3 })).toEqual([
+      ['G3', 'C4', 'E4'],
+    ])
+    expect(bassOf('C', '64')).toBe('G') // the dominant, in the bass
+
+    // N6 is the lowered second in first inversion = bII6. In A minor the
+    // Neapolitan is Bb, and its first inversion is D-F-Bb — which is exactly
+    // what the N6 function node produces.
+    expect(figuredVoicings('Bb', '6', { minOctave: 3, maxOctave: 3 })).toEqual([
+      ['D3', 'F3', 'Bb3'],
+    ])
+    expect(figuredRoman('bII', '6')).toBe('bII6')
+  })
+
+  it('Aug6 is NOT expressible, which is what settles the policy', () => {
+    // The augmented sixth is not a tertian chord: in A minor it is F-A-D#,
+    // whose intervals from the bass are 1P 3M 6A — a major third and an
+    // AUGMENTED SIXTH, with no fifth. There is no root to invert and so no
+    // chord tone for a figure to select; the '6' in its name is an interval
+    // above the bass, not an inversion label.
+    const augSix = ['F', 'A', 'D#']
+    expect(Interval.distance('F', augSix[1])).toBe('3M')
+    expect(Interval.distance('F', augSix[2])).toBe('6A') // NOT a seventh
+    // asking tonal to name it gives the WRONG analysis — it respells D# as Eb
+    // and turns an outward-resolving chord into a dominant seventh
+    expect(Chord.detect(augSix)).toEqual(['F7no5'])
+    // so no figure applies to the sonority as a chord
+    expect(bassOf('Aug6', '6')).toBeNull()
+  })
+
+  it('all three still resolve to the right pitches, in flat and sharp keys', () => {
+    // the alias policy is only honest if the aliases keep working
+    const cases: [string, string, string, string[]][] = [
+      ['A', 'minor', 'V64', ['E3', 'A3', 'C3']],
+      ['A', 'minor', 'N6', ['D3', 'F3', 'Bb3']],
+      ['A', 'minor', 'Aug6', ['F3', 'A3', 'D#3']],
+      // flat key: the Neapolitan must NOT respell to naturals/sharps
+      ['Eb', 'major', 'N6', ['Ab3', 'Cb3', 'Fb3']],
+      ['Eb', 'major', 'Aug6', ['Cb3', 'Eb3', 'A3']],
+      // sharp key
+      ['F#', 'minor', 'V64', ['C#3', 'F#3', 'A3']],
+      ['F#', 'minor', 'Aug6', ['D3', 'F#3', 'B#3']],
+    ]
+    for (const [tonic, scale, name, notes] of cases) {
+      chordGraphCreate(tonic, scale)
+      const [got] = parseChordCsvArg(`${name},3`, `${tonic} ${scale}`)
+      expect(got, `${name} in ${tonic} ${scale}`).toEqual(notes)
+    }
   })
 })
 

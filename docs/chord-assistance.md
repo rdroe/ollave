@@ -25,6 +25,8 @@ Nine chords that can idiomatically follow A minor in the key of A minor.
 | Which of those flow most smoothly? | `rankByVoiceLeading` |
 | What can I borrow for colour? | `mixtureSuggestions` |
 | Can this chord take a seventh? | on the chart already; `seventhOf` for one chord, `seventhSuggestions` for the key |
+| Which note is in the bass? | on the chart already — `figure` / `bass` on a suggestion; `bassOf`, `figuredVoicings` |
+| What multi-chord idioms are there? | `spans`, `spansOfKind` |
 | Where could this chord take me? | `pivotSuggestions` |
 | Just sketch me something. | `randomProgression` |
 
@@ -81,6 +83,8 @@ nextChordDetail('Am,3', 'A', 'minor')[0]
 | `strength` | `'strong'` = principal move · `'dotted'` = weaker but valid · `'mixture'` = borrowed |
 | `enabledBy` | chords this move works best after; `null` = works from anywhere |
 | `contextMatch` | only present when you pass `prev` (see below) |
+| `figure` | only present when the move specifies an inversion — see §9 |
+| `bass` | the bass pitch class, present exactly when `figure` is |
 
 `nextChordDetail` shows **more** than `nextChord` does: `nextChord` returns only
 the strong moves, while `nextChordDetail` also includes the dotted ones — the
@@ -324,6 +328,15 @@ nextChord('N6,3', 'A', 'minor')   // ['V64', 'E']
 `parseChordCsvArg` resolves them to real pitches when a key is supplied. What
 they mean is covered in the [deep dive](./chord-theory.md).
 
+**All three stay, now that figured bass exists.** Two of them *are* expressible
+in figured terms — `V64` is `I⁶₄` and `N6` is `♭II⁶`, and you may write either
+form on a chart. But `Aug6` genuinely isn't: it's `♭6–1–♯4`, with no fifth and
+an augmented sixth above the bass rather than stacked thirds, so there's no root
+to invert and no chord tone for a figure to pick. Retiring the two that convert
+would leave the third as a lone special case, and would break saved songs
+besides. They're documented aliases, not deprecated. See
+[the deep dive §4](./chord-theory.md) for the full reasoning.
+
 ---
 
 ## Smooth voicing when placing
@@ -336,49 +349,140 @@ It's opt-in. Without the tag, placement is byte-for-byte what it always was.
 
 ---
 
-## Inversions
+## 9. Inversions — asking for a bass
 
-There is no `C/E` chord name, and that's deliberate. **Inversions live in the
-voicing layer, not the naming layer.**
+The bass is a melody, and now you can say so. A composer thinks
+`I–I⁶–IV–V⁴₃–I⁶`, where the bass steps 1–3–4–5–3; half those chords are
+inverted purely to keep the line moving.
 
-`ascendingInversions` already enumerates every one of them:
+**Inverted suggestions arrive on the chart, so you get them without asking:**
+
+```js
+nextChordDetail('C,3', 'C', 'major')
+// C   / I    / strong
+// ...
+// C   / I6   / dotted   figure '6',  bass 'E'
+// Bdim/ VIIdim6/ dotted  figure '6',  bass 'D'
+// G   / V6   / dotted   figure '6',  bass 'B'
+// G7  / V65  / dotted   figure '65', bass 'B'
+// G7  / V43  / dotted   figure '43', bass 'D'
+// G7  / V42  / dotted   figure '42', bass 'F'
+```
+
+Two extra fields appear on a suggestion that specifies an inversion:
+
+| Field | Meaning |
+|---|---|
+| `figure` | `'6'`, `'64'`, `'65'`, `'43'`, `'42'` — which chord tone is in the bass |
+| `bass` | the realized bass pitch class, e.g. `'E'` |
+
+Both are **absent** on ordinary root-position suggestions, so nothing you
+already parse changes shape.
+
+### There is still no `C/E` chord name
+
+`name` stays the plain chord symbol; the inversion rides in `figure`/`bass` and
+in the `roman` (`I6`). Two reasons the slash name would be the wrong fix, both
+unchanged:
+
+- **`/` already means something else here.** The map writes secondary chords as
+  `V7/III` — tonicization, not bass notes.
+- **The underlying library doesn't parse them.** `Chord.get('C/E')` returns no
+  notes at all.
+
+### What the figures mean
+
+| Figure | Bass is the | Applies to |
+|---|---|---|
+| `6` | third | triad |
+| `64` | fifth | triad |
+| `7` | root | seventh chord |
+| `65` | third | seventh chord |
+| `43` | fifth | seventh chord |
+| `42` | seventh | seventh chord |
+
+Unicode input is accepted and normalized, so `'⁶₅'` and `'65'` are the same
+request.
+
+```js
+bassOf('G7', '42')    // 'F'
+bassOf('Db7', '42')   // 'Cb'  — spelling stays correct in flat keys
+bassOf('C', '42')     // null  — a triad has no seventh to put in the bass
+```
+
+An inapplicable figure returns `null` rather than guessing, and callers that
+place chords fall back to the default rather than losing the chord.
+
+### Placing a chord in a specific inversion
+
+```js
+parseChordCsvArg('C,3', 'C major', undefined, { figure: '6' })
+// [['E3','G3','C4'], ['roman=I', 'chord=C', 'figure=6', 'bass=E']]
+```
+
+Opt-in and last, so existing calls are untouched. Combined with smooth voicing,
+the **figure wins** on which inversion and smoothing only picks the octave — an
+explicit request outranks a heuristic.
+
+### Everything from before still works
 
 ```js
 ascendingInversions('C', { minOctave: 3, maxOctave: 3 })
 // [['C3','E3','G3'], ['E3','G3','C4'], ['G3','C4','E4']]
+
+figuredVoicings('C', '6', { minOctave: 3, maxOctave: 3 })
+// [['E3','G3','C4']]   — just the ones the figure permits
 ```
 
-and sevenths get all four:
+`nearestVoicing` and `voicing=smooth` still *choose* an inversion for you when
+you don't care which. What's new is being able to care.
+
+### Two things to know
+
+**`nextChord` is unchanged.** Every inversion edge is dotted, so the names-only
+call returns byte-for-byte what it always did. If your UI already treats dotted
+edges as optional, inversions slot in with no change.
+
+**A chord name is no longer unique in a suggestion list.** `Am` appears as `Im`
+and again as `Im6` — same name, different bass, different chord. If you dedupe
+suggestions, key on `(name, figure)`.
+
+---
+
+## 10. Spans — patterns, not chords
+
+Some devices aren't a chord or a move but a short pattern with conditions:
+
+```
+I – I⁶₄ – I⁶     passing ⁶₄
+I – I⁶₄ – I      pedal ⁶₄
+    I⁶₄ – V      cadential ⁶₄
+```
+
+All three contain the *same sonority*. Only the surrounding bass and the metre
+tell them apart, so no edge can distinguish them.
 
 ```js
-ascendingInversions('Cmaj7', { minOctave: 3, maxOctave: 3 })
-// [['C3','E3','G3','B3'], ['E3','G3','B3','C4'],
-//  ['G3','B3','C4','E4'], ['B3','C4','E4','G4']]
+import { spans, spansOfKind, spanById, spanRomans } from 'ollave/lib'
+
+spanRomans(spanById('descending-bass-idiom'))
+// ['I', 'V6', 'VIm', 'IIIm6', 'IV', 'I6', 'IV', 'V']
+
+spansOfKind('schema', 'minor').map((s) => s.id)
+// ['lament-bass']
 ```
 
-More to the point, you rarely have to ask. `nearestVoicing` and
-`voicing=smooth` already *choose* an inversion for you — that's most of what
-they do. Moving to `C` while holding `E4 G4 C5` costs distance 0, because the
-first inversion is right there.
+What ships: `cadential-64`, `passing-64`, `pedal-64`, `lament-bass`,
+`descending-bass-idiom`, `fauxbourdon`.
 
-So an inversion is something ollave picks, not something you spell. Where a
-first inversion is structural rather than cosmetic, the map names it by
-function instead: `V64` is the cadential six-four and `N6` the Neapolitan
-sixth, both of which are *defined* by being inverted.
+Steps are **roman-keyed**, so one span serves every key. Spans are a parallel,
+additive channel — `nextChord` and `nextChordDetail` never consult them, so
+adding this could not change a suggestion list you already had.
 
-Two concrete reasons a slash name would be the wrong fix:
-
-- **`/` already means something else here.** The map writes secondary chords as
-  `V7/III` and `VIIdim/VIm` — tonicization, not bass notes. A bare `C/E` in the
-  same vocabulary is genuinely ambiguous.
-- **The underlying library doesn't parse them.** `Chord.get('C/E')` returns no
-  notes at all, so a slash name would need its own bass-note parser bolted on
-  ahead of the existing chord-name validation.
-
-Neither is fatal, and full slash-chord support is a reasonable future feature.
-It just belongs with a bass-note field on the suggestion contract rather than
-smuggled into the chord name — which is a larger change than adding sevenths
-was, and one nothing currently needs.
+Each span may declare `conditions` (bass/soprano/metric) and `waivers` — the
+part-writing rules it deliberately breaks, so that a future rule checker doesn't
+red-ink fauxbourdon for the parallel motion that *is* fauxbourdon. **Conditions
+are declared but not yet evaluated**; waivers are live data.
 
 ---
 

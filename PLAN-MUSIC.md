@@ -70,39 +70,39 @@ sevenths/scale-list work.
 
 Everything else depends on this schema. One agent, no parallelism.
 
-- [ ] **A1 — extend the edge/node schema** so a chord can carry a bass. Design
+- [x] **A1 — extend the edge/node schema** so a chord can carry a bass. Design
       decision to make explicitly: a structured field (`{ chord, figure }`) vs a
       naming convention (`I6`, `V65`). **Steer:** structured — `/` already means
       tonicization (`V7/III`), and `Chord.get('C/E')` returns empty, so slash
       names are both ambiguous and unresolvable. Keep bare strings working
       (every existing chart entry is one).
-- [ ] **A2 — figured-bass vocabulary**: `⁶`, `⁶₄`, `⁷`, `⁶₅`, `⁴₃`, `⁴₂` with
+- [x] **A2 — figured-bass vocabulary**: `⁶`, `⁶₄`, `⁷`, `⁶₅`, `⁴₃`, `⁴₂` with
       ASCII spellings (`6`, `64`, `65`, `43`, `42`). Map figure → which chord
       tone is in the bass. Verify spellings in flat AND sharp keys by probe.
-- [ ] **A3 — resolve bass into voicings.** `parseChordCsvArg` must place the
+- [x] **A3 — resolve bass into voicings.** `parseChordCsvArg` must place the
       figured chord with the correct bass note, and `ChordSuggestion` must
       report it. Additive: existing callers see no change.
-- [ ] **A4 — span/pattern schema (shared abstraction, V9).** An ordered list
+- [x] **A4 — span/pattern schema (shared abstraction, V9).** An ordered list
       of figured chords plus bass/soprano/metric conditions and optional
       per-rule waivers — a *template over the graph*, not an edge in it.
       Passing/pedal ⁶₄s (A5), the descending-bass idioms (A6), cadence
       patterns (B2) and sequences (B5) all consume this one type instead of
       inventing it three times. Schema only at this stage; conditions may be
       inert until B1/B3 can evaluate them.
-- [ ] **A5 — chart edges using inversions.** True chord-to-chord edges only:
+- [x] **A5 — chart edges using inversions.** True chord-to-chord edges only:
       `I⁶`, `V⁶`, `vii°⁶`, and the seventh-chord inversions `V⁶₅`/`V⁴₃`/`V⁴₂`.
       This is where the bass becomes a melodic line. Passing and pedal `⁶₄`
       are NOT edges — their identity is contextual (V9); author them as spans.
-- [ ] **A6 — descending-bass idioms** as first-class spans: the lament bass,
+- [x] **A6 — descending-bass idioms** as first-class spans: the lament bass,
       I–V⁶–vi–iii⁶–IV–I⁶–IV–V, fauxbourdon ⁶-chains. Fauxbourdon declares
       waivers for the parallel-motion rules it deliberately breaks (see B1) —
       the tool must not red-ink its own content.
-- [ ] **A7 — one alias policy for every baked-in-inversion node** (V5). `V64`
+- [x] **A7 — one alias policy for every baked-in-inversion node** (V5). `V64`
       is not alone: `N6` is literally named as a first inversion, and `Aug6`
       encodes an interval above the bass. After A1 each is expressible in
       figured terms; retiring any is a breaking change, so likely keep all as
       documented aliases — but decide once, not three times.
-- [ ] **A8 — tests + docs.** Pin that default `nextChord` output is unchanged.
+- [x] **A8 — tests + docs.** Pin that default `nextChord` output is unchanged.
 
 **Blast-radius rule:** as with sevenths, inversions arrive on `dotted` edges
 unless musically principal, so `nextChord` (strong edges only) stays stable.
@@ -186,6 +186,28 @@ Deliberately NOT included: generation parameters (B5's `applySequence` needs a
 transposition interval and a repeat count, which only sequences have — B5 can
 extend `HarmonicSpan` structurally); scoring/weights (no stream has a use yet);
 nesting (P5 is deferred and would be a different type).
+
+**A7 — a correction to V5, found by probe.** The plan assumed "after A1 each
+[of `V64`, `N6`, `Aug6`] is expressible in figured terms". Two of the three are:
+`V64` is `I⁶₄` (probed: `figuredVoicings('C','64')` → `G3 C4 E4`, the same
+pitch classes the node gives and better voiced) and `N6` is `♭II⁶` (probed in
+A minor: → `D3 F3 Bb3`, byte-identical to the node).
+
+**`Aug6` is not, and cannot be.** It is `♭6–1–♯4` — in A minor `F–A–D♯`, whose
+intervals from the bass are `1P 3M 6A`. There is **no fifth**, and the top
+interval is an augmented sixth rather than a stacked third, so there is no root
+to invert and no chord tone for a figure to select. The `6` in its name is an
+interval above the bass, which is what figured bass meant before the notation
+was narrowed to inversion labels. `Chord.detect(['F','A','D#'])` returns
+`['F7no5']` — the wrong analysis, respelling D♯ as E♭ and converting an
+outward-resolving chord into a dominant seventh.
+
+This settles the policy rather than complicating it: retiring the two that
+convert would leave the third as a lone special case, trading one uniform
+concept for two half-concepts. **All three stay as documented aliases** — which
+is where the steer pointed anyway, but now for a demonstrated reason rather
+than a precautionary one. The figured forms are valid chart edges too, so this
+adds a spelling without removing one.
 
 ---
 

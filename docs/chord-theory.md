@@ -141,6 +141,58 @@ Measuring from the tonic rather than from scale degrees is deliberate: in minor,
 the sixth degree is *already* lowered, so flattening "the sixth degree" a second
 time gives the wrong note.
 
+### One alias policy for all three
+
+Since figured bass arrived, two of these three are expressible without a
+function name. The policy is decided once, for all three together:
+
+**All three stay. They are documented aliases, not deprecated.**
+
+The reasoning differs by chord, and the third case is the one that settles it.
+
+**`V64` is expressible.** It is `I⁶₄` — the tonic triad with the fifth in the
+bass. Probed: `figuredVoicings('C', '64')` gives `G3 C4 E4`, the same pitch
+classes the `V64` node produces (`G3 C3 E3`) and better voiced, since the
+function node's `octMap` stacks all three notes in one octave and so is not
+ascending.
+
+**`N6` is expressible.** It is `♭II⁶`. Probed in A minor: `figuredVoicings('Bb',
+'6')` gives `D3 F3 Bb3`, byte-identical to what the `N6` node produces.
+
+**`Aug6` is NOT expressible, and this is not a limitation of the schema.** The
+augmented sixth is not a tertian chord at all. In A minor it is `F–A–D♯`, whose
+intervals from the bass are `1P 3M 6A` — a major third and an augmented sixth,
+with **no fifth**. There is no root to invert and therefore no chord tone for a
+figure to select: the `6` in "Aug6" names an *interval above the bass*, which is
+what figured bass meant before it was narrowed to inversion labels. Asking tonal
+to name the sonority returns `F7no5`, which is the wrong analysis — it respells
+D♯ as E♭ and turns a chord that resolves *outward to the dominant* into one that
+resolves *down to a tonic*. That respelling is the whole reason `Aug6` is
+computed from absolute intervals in the first place.
+
+So a policy of "retire the ones that are now expressible" would retire two of
+three and leave the third as a lone special case — trading one uniform concept
+("these are the function-named chords") for two half-concepts. Keeping all three
+is the cheaper and more honest model.
+
+Three further reasons apply to all of them equally:
+
+- **Retiring any is a breaking change.** `isChordCsvArg('V64,3')` is `true`
+  today, all three pass `isDyna`, and the names appear in saved songs. They are
+  live user-facing input, not internal identifiers.
+- **A function name says what the chord *does*.** `V64` records that the
+  sonority is dominant-function; `I⁶₄` records only that the tonic triad has its
+  fifth in the bass, which is also true of a passing or pedal ⁶₄ that is not
+  dominant at all. The function name carries the analysis, the figure carries
+  the voicing, and they are different facts.
+- **The figured forms work too.** `I⁶₄` and `♭II⁶` are valid chart edges today.
+  Nothing forces a chart author to use the function name — the alias policy adds
+  a way to spell these, it does not remove one.
+
+Where the *context* is what defines the chord rather than its spelling — a
+passing versus pedal versus cadential ⁶₄ — the answer is neither a function name
+nor a figure but a **span** (see §12).
+
 ---
 
 ## 5. Voice leading is a separate axis
@@ -303,7 +355,239 @@ already reaches all of the key's sevenths — the tonic of C major, for instance
 
 ---
 
-## 8. Pivot modulation
+## 8. Inversions, and the bass as a line
+
+Before this, a chord was a pitch-class set and nothing in the data model could
+say which note was on the bottom. Inversions lived entirely in the voicing
+layer: `nearestVoicing` would *pick* one, but no one could *ask* for one, and
+the chart had no way to record that a particular move wants a particular bass.
+
+That was the single biggest gap, because a bass line is a melody. A composer
+thinks `I–I⁶–IV–V⁴₃–I⁶`, where the bass steps 1–3–4–5–3 — not "I then IV then
+V". Half of those chords are inverted purely to keep the line moving by step.
+
+### The schema: a structured field, not a slash name
+
+A chart edge is now `string | { chord, figure }`. The bare string still means
+root position and is still the normal form — every edge authored before this
+change is one, and takes a byte-identical path through the translator.
+
+Slash names (`C/E`) were considered and rejected for two concrete reasons:
+
+- **`/` already means tonicization here.** The chart writes `V7/III` and
+  `VIIdim/VIm`. A bare `C/E` in the same vocabulary is genuinely ambiguous.
+- **The underlying library can't parse them.** `Chord.get('C/E')` returns no
+  notes at all.
+
+A suffix convention (`I6`) was rejected too: it collides with real chord
+suffixes — `C6` is a sixth chord to tonal, and `V64` is already a chord-function
+name here — so the figure couldn't be recovered from the string without a parser
+that knows which suffixes are figures and which are qualities. A structured
+field needs no parser and cannot collide.
+
+### The figures, and which chord tone each puts in the bass
+
+| Figure | Bass is the | Applies to |
+|---|---|---|
+| `53` | root | triad (root position; usually written unfigured) |
+| `6` | **third** | triad (first inversion) |
+| `64` | **fifth** | triad (second inversion) |
+| `7` | root | seventh chord (root position) |
+| `65` | **third** | seventh chord (first inversion) |
+| `43` | **fifth** | seventh chord (second inversion) |
+| `42` | **seventh** | seventh chord (third inversion) |
+
+ASCII is what's stored. The unicode forms (`⁶`, `⁶₄`, `⁶₅`, `⁴₃`, `⁴₂`) are
+accepted as input sugar and normalized, so you can type what a score prints;
+one stored spelling means one thing to a diff and to grep.
+
+**The mapping is by index into the chord's own note list, never by interval
+arithmetic from the root.** That's a correctness decision. `Chord.get(name).notes`
+is already spelling-exact in every key, so indexing inherits that for free:
+
+```js
+bassOf('Db7', '42')   // 'Cb'  — not B
+bassOf('G#7', '65')   // 'B#'  — not C
+bassOf('Fbm', '64')   // 'Cb'  — not B
+bassOf('F##dim', '6') // 'A#'
+```
+
+Transposing a third or a fifth would have to re-derive each of those and gets
+several wrong — the enharmonic-respelling bug class that has bitten this
+codebase repeatedly (see the `N6` and `Aug6` notes in §4).
+
+Arity is checked, not just index existence. `bassOf('C', '7')` returns `null`
+rather than `'C'`: `7` maps to index 0, which exists on a triad, so an
+index-only check would cheerfully report that a C major triad is a `V7` — a
+wrong analysis stated with full confidence.
+
+### What a suggestion carries
+
+```js
+{ name: 'G7', roman: 'V65', notes: [...], strength: 'dotted',
+  enabledBy: null, figure: '65', bass: 'B' }
+```
+
+- **`name` stays the plain chord symbol.** Never `G7/B`. The name is the graph's
+  key and is looked up by name in half a dozen places, so encoding the bass in
+  it would break all of them.
+- **`roman` carries the figured roman** — `roman` has always meant "how this
+  edge is spelled" rather than "which node this is". Note `V65`, not `V765`: a
+  seventh-chord figure absorbs the `7`, because the figure already says seventh
+  chord. That's how it reads on a page.
+- **`figure` and `bass` are absent — not `undefined` — on an unfigured
+  suggestion.** So every suggestion produced before this change serializes
+  byte-identically.
+
+`bass` is a pitch class with no octave. Which octave the bass lands in is a
+placement decision owned by `parseChordCsvArg` and `nearestVoicing`, not by the
+graph.
+
+### Which inversions are edges, and which aren't
+
+Only **true chord-to-chord inversions** are edges — the ones whose identity is a
+property of the move itself: `I⁶`, `V⁶`, `vii°⁶`, and `V⁶₅`/`V⁴₃`/`V⁴₂`.
+
+`V⁴₂ → I⁶` is the one that's a genuinely different move rather than a re-voicing
+of an existing one. The chordal seventh is in the bass and must resolve *down*
+by step, so a `V⁴₂` can only resolve to a first-inversion tonic. That obligation
+earns it its own edge.
+
+**Passing and pedal ⁶₄s are deliberately not edges.** See §9.
+
+### What this cost existing callers
+
+Nothing, in the default path — the same guarantee the sevenths shipped under.
+Every inversion edge is `dotted`, so `nextChord` (strong edges only) is
+byte-for-byte identical across all 50 nodes in both charts. Verified by probe
+before and after.
+
+An inversion is a *refinement* of a motion the chart already offers, not a new
+motion, which makes this the musically honest grading too: the strong edge says
+"go to the dominant", the dotted figured edge adds "and you may put its third in
+the bass".
+
+Two visible changes, both expected:
+
+- **`nextChordDetail` lists grew**, entirely in dotted suggestions.
+- **Seeded walks shifted.** New dotted edges are extra weighted choices, so a
+  given seed lands differently. The walks are still legal; they're just
+  different walks.
+
+One consequence worth stating plainly: **a chord name is no longer unique in a
+suggestion list.** `Am` appears as `Im` and again as `Im⁶` — same name, different
+bass, different musical object. Anything deduping suggestions should key on
+`(name, figure)`, which is what the graph itself now does.
+
+### Placing a figured chord
+
+```js
+parseChordCsvArg('C,3', 'C major', undefined, { figure: '6' })
+// [['E3','G3','C4'], ['roman=I', 'chord=C', 'figure=6', 'bass=E']]
+```
+
+Additive and last, so every existing call site takes the untouched default path.
+When both a figure and `prevNotes` are given, the **figure wins** on which
+inversion and smoothing only chooses among its octaves — a figure is an explicit
+compositional decision, smoothing is a convenience. An inapplicable figure
+(`42` on a triad) falls back to the default rather than losing the chord.
+
+---
+
+## 9. Spans: when the device isn't a chord or an edge
+
+Some of what a composer reaches for is neither a chord nor a chord-to-chord
+move, but a short *ordered pattern with conditions*. The clearest case:
+
+```
+I – I⁶₄ – I⁶     passing ⁶₄     (bass walks stepwise through it)
+I – I⁶₄ – I      pedal ⁶₄       (bass holds under it)
+    I⁶₄ – V      cadential ⁶₄   (strong beat, resolves ⁶₄→⁵₃)
+```
+
+**All three contain the identical sonority.** Only the surrounding bass and the
+metric position tell them apart — and a first-order edge carries neither. No
+amount of edge-adding can distinguish them, because the distinction isn't in the
+chord pair at all.
+
+So there's one shared abstraction, `HarmonicSpan`: an ordered list of figured
+chords plus optional conditions and waivers. A **template over the graph, not an
+edge in it**.
+
+```js
+{
+  id: 'cadential-64',
+  title: 'Cadential six-four',
+  kind: 'idiom',
+  steps: [{ chord: 'I', figure: '64' }, 'V'],
+  conditions: {
+    metric: ['strong', 'weak'],
+    bass: { degrees: [5, 5], motion: 'static' },
+  },
+}
+```
+
+**Steps are roman-keyed, always.** The charts are roman-keyed and
+key-independent; a span written in realized chord names would be a different
+object per key, which is the duplication the roman layer exists to prevent. A
+step is exactly the same `{ chord, figure }` an edge carries, so edges and spans
+speak one vocabulary.
+
+**A span is never consulted by `nextChord` or `nextChordDetail`.** The library is
+a parallel, additive channel — like `mixtureSuggestions` — so nothing in it can
+change a suggestion list that already existed.
+
+### What ships
+
+| id | kind | what it is |
+|---|---|---|
+| `cadential-64` | idiom | tonic notes over ⁵, strong beat, resolving to V |
+| `passing-64` | idiom | bass walks stepwise through the ⁶₄ |
+| `pedal-64` | idiom | bass holds while upper voices step away and back |
+| `lament-bass` | schema | descending tetrachord 1–♭7–♭6–5 (minor) |
+| `descending-bass-idiom` | schema | I–V⁶–vi–iii⁶–IV–I⁶–IV–V (major) |
+| `fauxbourdon` | idiom | parallel ⁶₃ chains |
+
+`descending-bass-idiom` is the clearest demonstration of the point: the bass
+falls 1–7–6–5–4–3 and turns back to 5, and three of its eight chords are
+inverted purely to keep that line stepwise. The harmony is ordinary; the *line*
+is the idea.
+
+### Conditions are declared but inert
+
+`conditions.bass`, `conditions.soprano` and `conditions.metric` are typed,
+stored and authored — and **nothing evaluates them yet**. They're in the schema
+now so that the streams which *will* evaluate them (voice-leading rules for the
+line conditions, metric weight for the metric ones) inherit real content to
+switch on, rather than each inventing a shape that the other and the
+already-authored spans would then have to migrate to.
+
+### Waivers, so the tool doesn't red-ink its own content
+
+`fauxbourdon` is *made of* parallel motion — that's the device, not a mistake.
+A part-writing checker with no notion of context would flag every step of it.
+So a span declares the rules it deliberately breaks, with a human-readable
+reason:
+
+```js
+waivers: [
+  { rule: 'parallel-fourths',
+    reason: 'Fauxbourdon is BUILT from parallel fourths above the bass...' },
+]
+```
+
+Unlike conditions, **waivers are live data**, because the content that needs
+them ships now. A rule checker is expected to take `spanWaivedRules(span)` and
+suppress those rules while verifying a realization.
+
+Rule ids aren't pinned as a union in the chart-data types — a rule catalogue
+belongs with the checker, and pinning it in a zero-import module would mean
+every new rule forces an edit there. `spans.test.ts` asserts instead that every
+id used is from a documented set, so a typo still fails a test.
+
+---
+
+## 10. Pivot modulation
 
 A pivot chord belongs to two keys at once — it's the hinge a modulation turns
 on. `pivotSuggestions` finds every major or minor key containing all of a
@@ -334,7 +618,7 @@ chord is really in. Detection needs all the spellings; a dropdown needs one.
 
 ---
 
-## 9. Random walks
+## 11. Random walks
 
 `randomProgression` walks the map with weighted choices: strong edges 3, dotted
 edges 1, and a ×2 multiplier for context matches. Immediate repeats are
@@ -353,7 +637,7 @@ reported as `stoppedBecause: 'dead-end'`, which is a legitimate musical ending
 
 ---
 
-## 10. What this system is not (yet)
+## 12. What this system is not (yet)
 
 Worth being explicit, so you know when to override it — and each of these is a
 gap to fill rather than a boundary to respect:
@@ -370,7 +654,7 @@ gap to fill rather than a boundary to respect:
 
 ---
 
-## 11. Adding your own chart
+## 13. Adding your own chart
 
 The data format is the contract. A chart is a plain object mapping a Roman
 numeral to one or more nodes:
@@ -411,7 +695,10 @@ node list in a test, as `majorGraph.test.ts` does.
 | Roman → real chord translation, dynamic chords | `src/lib/graphh.ts` |
 | Key instantiation, caching, mode dispatch | `src/lib/util/graphUtil.ts` |
 | `nextChord`, `nextChordDetail` | `src/lib/nextChord.ts` |
-| Voicings and distance | `src/lib/voiceLeading.ts` |
+| Voicings, distance, `figuredVoicings` | `src/lib/voiceLeading.ts` |
+| Figured-bass vocabulary, figure → bass tone | `src/lib/figuredBass.ts` |
+| Shared chart/span types (zero-import) | `src/lib/graphData/types.ts` |
+| Span library (idioms, schemata, waivers) | `src/lib/spans.ts` |
 | Borrowed chords | `src/lib/mixture.ts` |
 | Diatonic sevenths — nodes | `src/lib/graphData/` (with the triads) |
 | Diatonic sevenths — key palette, triad→seventh relation | `src/lib/sevenths.ts` |
