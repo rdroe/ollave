@@ -35,6 +35,11 @@ describe('lib modules import without browser-only side effects', () => {
     const mod = await import('./mixture')
     expect(typeof mod.mixtureSuggestions).toBe('function')
   })
+  it('imports sevenths', async () => {
+    const mod = await import('./sevenths')
+    expect(typeof mod.seventhSuggestions).toBe('function')
+    expect(typeof mod.seventhOf).toBe('function')
+  })
   it('imports pivots', async () => {
     const mod = await import('./pivots')
     expect(typeof mod.pivotSuggestions).toBe('function')
@@ -64,11 +69,13 @@ describe('lib modules import without browser-only side effects', () => {
     expect(sugs.length).toBeGreaterThan(0)
   })
 
-  it('has no runtime edge from voiceLeading or mixture back to nextChord', async () => {
-    // structural assertion on the SOURCE: the cycle is prevented by these two
+  it('has no runtime edge from voiceLeading, mixture or sevenths back to nextChord', async () => {
+    // structural assertion on the SOURCE: the cycle is prevented by these
     // modules never naming nextChord, not by luck of evaluation order.
+    // `sevenths` joins the list for the same reason mixture is on it —
+    // nextChord imports it at runtime for `include: ['sevenths']`.
     const { readFileSync } = await import('node:fs')
-    for (const file of ['voiceLeading', 'mixture']) {
+    for (const file of ['voiceLeading', 'mixture', 'sevenths']) {
       const src = readFileSync(`src/lib/${file}.ts`, 'utf8')
       const imports = src
         .split('\n')
