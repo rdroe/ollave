@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ChordSuggestion } from './chordSuggestion'
+import { isChordFn } from './graphh'
 import { nextChord, nextChordDetail } from './nextChord'
 import { seventhOf, seventhSuggestions } from './sevenths'
 import { chordGraphCreate } from './util/graphUtil'
@@ -185,6 +186,15 @@ describe('the palette and the charts agree', () => {
         // secondary dominants (V7/x) are seventh chords but are not diatonic
         // sevenths of the key; they are excluded by their slash roman
         if (node.roman.includes('/')) continue
+        // The four-note filter above is a heuristic for "is a seventh chord",
+        // and since Stage M-B it is no longer sufficient: the FRENCH and GERMAN
+        // augmented sixths (b6-1-2-#4 and b6-1-b3-#4) have four notes and are
+        // NOT tertian at all — no stacked thirds, no root, and therefore no
+        // triad they could be the seventh of. They are chord-FUNCTION nodes,
+        // like V64 and N6, and are excluded here on the same principle the
+        // slash romans are: this test is about the diatonic seventh palette,
+        // and these chords were never candidates for it.
+        if (isChordFn(node.roman)) continue
         expect(paletteRomans, `orphan seventh node ${node.roman}`).toContain(
           node.roman
         )

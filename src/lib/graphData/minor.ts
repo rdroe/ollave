@@ -158,6 +158,16 @@ export const minor: ProgressionChart = {
         { chord: 'VIIdim', figure: '6' },
         { chord: 'V7', figure: '65' },
         { chord: 'Im', figure: '6' },
+        // the augmented-sixth trio (B4). Predominant-to-predominant chromatic
+        // substitution: iv is the diatonic chord whose bass note b6 the
+        // augmented sixth chromaticizes, so iv -> Aug6 is the smoothest
+        // approach in the idiom (the bass simply holds). DOTTED, per the
+        // blast-radius rule — the generic Aug6 was unreachable from any node
+        // before this, so every one of these edges is new and none may
+        // strengthen an existing suggestion list.
+        'It6',
+        'Fr6',
+        'Ger6',
       ],
     },
   ],
@@ -203,6 +213,11 @@ export const minor: ProgressionChart = {
         { chord: 'VIIdim', figure: '6' },
         { chord: 'V7', figure: '65' },
         { chord: 'V7', figure: '43' },
+        // the augmented-sixth trio (B4) — the other predominant reaches them
+        // too, on the same reasoning as IVm's edges. Dotted, always.
+        'It6',
+        'Fr6',
+        'Ger6',
       ],
     },
   ],
@@ -258,12 +273,54 @@ export const minor: ProgressionChart = {
       dotted: ['V7'],
     },
   ],
-  // non-box with sixes Aug6
+  // non-box with sixes Aug6 — the generic augmented sixth, kept as a working
+  // documented alias for the German (see graphh.ts). The Italian/French/German
+  // trio below are its three real members and carry identical edges: they are
+  // one predominant function with three colours, not three functions.
   Aug6: [
     {
       name: 'Aug6',
       next: ['V64', 'V'],
       dotted: ['V7'],
+    },
+  ],
+  // The augmented-sixth trio (Stage M-B, B4) --------------------------------
+  // All three are predominants approaching the dominant, so all three carry the
+  // same edges the generic Aug6 always had. They differ in PITCH CONTENT, not
+  // in function, which is why splitting them adds nodes but no new topology.
+  //
+  // One edge is graded differently between them, and it is the one place the
+  // distinction is audible in the chart rather than only in the notes: the
+  // GERMAN has a perfect fifth above its bass, so German -> root-position V
+  // moves in parallel fifths. The idiomatic resolution passes through the
+  // cadential 6/4, so Ger6 -> V64 is strong and Ger6 -> V is DOTTED. The
+  // Italian and French have no fifth and go directly to V without trouble, so
+  // both of their edges stay strong, exactly as the generic Aug6's are.
+  //
+  // Aug6 itself is left untouched (both edges strong) — it is a live alias that
+  // appears in saved songs, and re-grading its edges would change `nextChord`
+  // output for an existing node.
+  It6: [
+    {
+      name: 'It6',
+      next: ['V64', 'V'],
+      dotted: ['V7'],
+    },
+  ],
+  Fr6: [
+    {
+      name: 'Fr6',
+      next: ['V64', 'V'],
+      dotted: ['V7'],
+    },
+  ],
+  Ger6: [
+    {
+      name: 'Ger6',
+      // the cadential 6/4 first: resolving a German sixth straight onto a
+      // root-position V gives parallel fifths (see the header note)
+      next: ['V64'],
+      dotted: ['V', 'V7'],
     },
   ],
   // upper boxesssssss ltr

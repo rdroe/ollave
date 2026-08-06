@@ -251,48 +251,195 @@ export const V64 = function V64(
   ]
 }
 
-export const Aug6 = function Aug6(
-  tonic: string,
-  _scaleName?: string
-): ChordNameWithNotes[] {
-  /*
-Think of your key as C. The formula for the chord is (using scale degrees) b6, 1, #4, or in C, this would be Ab, C, F#. https://www.reddit.com/r/musictheory/comments/2vhagj/eli5_augmented_sixth_chords/
+/**
+ * The three notes every augmented sixth chord is built on: ♭6 – 1 – ♯4.
+ *
+ * MEASURED AS ABSOLUTE INTERVALS FROM THE TONIC, never by scale-degree lookup.
+ * This is the bug class that has bitten this codebase repeatedly: in minor the
+ * sixth degree is *already* lowered, so flattening "the scale's sixth degree"
+ * lowers it a second time and produces E natural in A minor where F is wanted.
+ * Interval transposition is spelling-exact in every key and produces double
+ * flats exactly where they genuinely belong — probed across all fifteen tonics
+ * before this was written:
+ *
+ *   C  -> Ab C F#      A  -> F A D#      F# -> D F# B#
+ *   Eb -> Cb Eb A      Db -> Bbb Db G    Gb -> Ebb Gb C
+ *   Cb -> Abb Cb F     D# -> B D# G##    A# -> F# A# D##
+ *
+ * The interval from ♭6 to ♯4 is an AUGMENTED SIXTH (`6A`, ten semitones), which
+ * is what the family is named for and what it must never be respelled as. The
+ * two outer voices expand outward by half step onto the dominant.
+ */
+const aug6Frame = (tonic: string) => ({
+  flatSix: Note.transpose(tonic, 'm6'),
+  one: tonic,
+  sharpFour: Note.transpose(tonic, 'A4'),
+})
 
-b6 and #4 are absolute intervals from the tonic (minor sixth, augmented
-fourth), so they are the same pitches in either mode: F and D# in A minor.
-The previous version flattened the *scale's* sixth degree, which
-double-flattened minor's already lowered sixth (producing E natural in
-A minor instead of F).
-*/
-  const flatSix = Note.transpose(tonic, 'm6')
-  const one = tonic
-  const sharpFour = Note.transpose(tonic, 'A4')
-  if (
-    Note.octave(flatSix) !== undefined ||
-    Note.octave(one) !== undefined ||
-    Note.octave(sharpFour) !== undefined
-  ) {
-    throw new Error(`Aug6th chord ${[flatSix, one, sharpFour]} has octave`)
+/**
+ * Shared constructor for the augmented-sixth family.
+ *
+ * `extra` is the interval from the tonic to the ONE note that distinguishes
+ * this member from the three-note Italian prototype, or `null` for the Italian
+ * itself. It is inserted between 1 and ♯4, which is where it sits in the
+ * conventional close-position spelling (♭6 in the bass, ♯4 on top, so that the
+ * augmented sixth is between the outer voices of the chord itself).
+ */
+const makeAug6 = (
+  name: string,
+  tonic: string,
+  extra: string | null
+): ChordNameWithNotes[] => {
+  const { flatSix, one, sharpFour } = aug6Frame(tonic)
+  const middle = extra === null ? [] : [Note.transpose(tonic, extra)]
+  const notes = [flatSix, one, ...middle, sharpFour]
+
+  if (notes.some((nt) => Note.octave(nt) !== undefined)) {
+    throw new Error(`${name} chord ${notes} has octave`)
   }
 
   return [
     {
-      name: 'Aug6',
-      notes: [flatSix, one, sharpFour],
+      name,
+      notes,
       octMap: (notes, oct) => notes.map((nt) => `${nt}${oct}`),
     },
   ]
 }
 
-export type ChordFunction = 'V64' | 'Aug6' | 'N6' | 'V63'
+/**
+ * Italian augmented sixth: ♭6 – 1 – ♯4. The three-note prototype.
+ *
+ * In A minor `F–A–D♯`; in C `Ab–C–F#`. Intervals from the bass are `1P 3M 6A`.
+ * With only three notes, the doubled tone in a four-voice realization is
+ * conventionally scale degree 1 — the one note that is neither half of the
+ * augmented sixth and so is free to double without creating parallels when the
+ * outer voices expand.
+ *
+ * NOT A TERTIAN CHORD. There is no fifth and the top interval is an augmented
+ * sixth rather than a stacked third, so it has no root to invert and FIGURES DO
+ * NOT APPLY TO IT — see the `Aug6` alias note below and docs/chord-theory.md §4.
+ */
+export const It6 = function It6(
+  tonic: string,
+  _scaleName?: string
+): ChordNameWithNotes[] {
+  return makeAug6('It6', tonic, null)
+}
+
+/**
+ * French augmented sixth: ♭6 – 1 – 2 – ♯4.
+ *
+ * In A minor `F–A–B–D♯`; in C `Ab–C–D–F#`. Intervals from the bass are
+ * `1P 3M 4A 6A`. The added note is scale degree 2, a MAJOR SECOND above the
+ * tonic — which makes the chord whole-tone in content and gives it the
+ * characteristically hollow, unsettled colour that distinguishes it by ear from
+ * the German. `Chord.detect` calls it `Ab7b5` (or the tritone-substitute
+ * rotation `D7b5/Ab`), which is again the wrong analysis for the same reason
+ * the Italian's is: it respells ♯4 as a flat seventh.
+ */
+export const Fr6 = function Fr6(
+  tonic: string,
+  _scaleName?: string
+): ChordNameWithNotes[] {
+  return makeAug6('Fr6', tonic, 'M2')
+}
+
+/**
+ * German augmented sixth: ♭6 – 1 – ♭3 – ♯4.
+ *
+ * In A minor `F–A–C–D♯`; in C `Ab–C–Eb–F#`. Intervals from the bass are
+ * `1P 3M 5P 6A` — it has a perfect fifth, which the other two do not, and that
+ * is exactly why it is ENHARMONICALLY A DOMINANT SEVENTH: respell ♯4 as ♭7 and
+ * `Ab–C–Eb–F#` becomes `Ab7`, the dominant of D♭. That reinterpretation is a
+ * modulation pivot, and is exported as data by `chromatic.ts`'s
+ * `enharmonicPivots` — the chord that sounds like V⁷ of the Neapolitan key.
+ *
+ * The added note is ♭3 measured from the TONIC (a minor third), not the mode's
+ * third degree: in a major key it is the borrowed lowered third, which is what
+ * makes the German usable in major at all.
+ *
+ * Because of the fifth, a German sixth moving directly to a root-position V
+ * produces parallel fifths; the idiomatic resolution goes through the cadential
+ * ⁶₄ instead, which is why its strong edge to `V64` matters more than the other
+ * two members'.
+ */
+export const Ger6 = function Ger6(
+  tonic: string,
+  _scaleName?: string
+): ChordNameWithNotes[] {
+  return makeAug6('Ger6', tonic, 'm3')
+}
+
+/**
+ * `Aug6` — the generic augmented sixth, kept as a WORKING DOCUMENTED ALIAS.
+ *
+ * ALIASED TO THE ITALIAN (`It6`), which makes this split PURELY ADDITIVE:
+ * `Aug6` returns exactly the notes it always returned, in every key.
+ *
+ * The choice was between the Italian (the three-note prototype every member is
+ * built on) and the German (by far the most common in practice, and the only
+ * member with the enharmonic V⁷ reinterpretation). The German is the better
+ * answer to "which one did the composer mean?", and it was the initial choice
+ * here — but it is the wrong answer to the question that actually governs,
+ * which is what `Aug6` ALREADY MEANS in this codebase:
+ *
+ *   - **`Aug6` is a live user-facing input.** `isChordCsvArg('Aug6,3')` is
+ *     true, it passes `isDyna`, and the name appears in SAVED SONGS. Aliasing
+ *     the German would silently change three notes into four in songs already
+ *     on disk — the same chord in the file sounding different after an upgrade.
+ *   - **The existing behaviour is pinned as a regression guard**, not
+ *     incidentally: `graphh.test.ts` asserts `Aug6('A','minor')` is `F-A-D#`
+ *     precisely because an earlier version double-flattened minor's already
+ *     lowered sixth. That test is guarding a real bug that was fixed once, and
+ *     it should not have to be rewritten to accommodate an alias decision.
+ *   - **The Italian IS the prototype.** ♭6-1-♯4 is the frame all three share;
+ *     the French and German each add exactly one note to it. So the generic
+ *     name denoting the generic content is also the honest reading.
+ *
+ * A caller who wants the German — including its V⁷ reinterpretation — names
+ * `Ger6`, which is now available and was not before. Nothing is lost and
+ * nothing changes underfoot.
+ *
+ * The name is NOT rewritten to `It6` in the result: a caller round-tripping a
+ * suggestion must get back the name it asked for, and saved songs contain
+ * 'Aug6'.
+ *
+ * FIGURES DO NOT APPLY TO ANY MEMBER OF THIS FAMILY. The `6` in the name is an
+ * INTERVAL ABOVE THE BASS — figured bass in its original sense — not an
+ * inversion label. None of the three is tertian, so there is no root to invert
+ * and no chord tone for a figure to select. This is why the alias policy in
+ * docs/chord-theory.md §4 keeps all the function-name nodes rather than
+ * retiring the ones that happen to be expressible as figures.
+ */
+export const Aug6 = function Aug6(
+  tonic: string,
+  scaleName?: string
+): ChordNameWithNotes[] {
+  return It6(tonic, scaleName).map((c) => ({ ...c, name: 'Aug6' }))
+}
+
+export type ChordFunction =
+  | 'V64'
+  | 'Aug6'
+  | 'It6'
+  | 'Fr6'
+  | 'Ger6'
+  | 'N6'
+  | 'V63'
+
+const CHORD_FN_NAMES = ['V64', 'Aug6', 'It6', 'Fr6', 'Ger6', 'N6'] as const
 
 export const isChordFn = (arg: any): arg is ChordFunction => {
-  return ['V64', 'Aug6', 'N6'].includes(arg)
+  return (CHORD_FN_NAMES as readonly string[]).includes(arg)
 }
 
 export const fns = {
   V64,
   Aug6,
+  It6,
+  Fr6,
+  Ger6,
   N6,
   V63: () => {
     throw new Error('V63 is not a function')
@@ -304,6 +451,9 @@ export const DynamicChordNames: {
 } = {
   V64: 'V64',
   Aug6: 'Aug6',
+  It6: 'It6',
+  Fr6: 'Fr6',
+  Ger6: 'Ger6',
   N6: 'N6',
 } as const
 export const scaleLetters = (scaleTonic: string, scaleName: string) => {

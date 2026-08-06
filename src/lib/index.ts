@@ -47,6 +47,33 @@ export type {
 export { mixtureSuggestions } from './mixture'
 export type { MixtureStrength, MixtureSuggestion } from './mixture'
 
+// chromatic vocabulary (Stage M-B, B4) ------------------------------------
+// Additive non-graph channels on the `mixtureSuggestions` model: a property of
+// the KEY rather than of where you are standing, so they take no current chord
+// and never change an existing suggestion list. Concat them onto
+// `nextChordDetail` output.
+//
+// The augmented-sixth trio went the other way and became CHART NODES (`It6`,
+// `Fr6`, `Ger6` in graphData/*), because an augmented sixth does have a
+// functional obligation about where it goes. `Aug6` remains a working alias
+// for the German.
+//
+// `enharmonicPivots` is DATA, not a suggestion channel: it reports the keys a
+// chord can be reinterpreted into (Ger6 <-> V7, and the four rotations of a
+// dim7). Its `targetKey`/`targetTonic`/`targetScale` fields deliberately mirror
+// `PivotSuggestion`'s, so a modulation consumer can widen its input to
+// `PivotSuggestion | EnharmonicPivot` without changing its own surface.
+export {
+  chromaticMediants,
+  commonToneDim7s,
+  enharmonicPivots,
+} from './chromatic'
+export type {
+  ChromaticMediantSuggestion,
+  CommonToneDim7Suggestion,
+  EnharmonicPivot,
+} from './chromatic'
+
 // figured bass and inversions (Stage M-A) ---------------------------------
 // `Figure` says WHICH CHORD TONE IS IN THE BASS; `bassOf` resolves it against
 // a realized chord name, and `figuredVoicings` filters `ascendingInversions`
@@ -265,6 +292,13 @@ export {
   dedupeEnharmonicScales,
   isConventionalKeyName,
 } from './graphh'
+
+// the augmented-sixth family as chord-function constructors (Stage M-B, B4).
+// `Aug6` is a documented alias for `Ger6` and keeps its own name in the result.
+// None of these is tertian, so FIGURES DO NOT APPLY — the `6` names an interval
+// above the bass, not an inversion. See docs/chord-theory.md §4.
+export { Aug6, Fr6, Ger6, It6, N6, V64 } from './graphh'
+export type { ChordFunction, ChordNameWithNotes } from './graphh'
 
 // music exports
 export type { Triad, RelativeNote, isReady } from './music'

@@ -175,6 +175,13 @@ export const major: ProgressionChart = {
         { chord: 'V', figure: '6' },
         { chord: 'VIIdim', figure: '6' },
         { chord: 'V7', figure: '65' },
+        // the augmented-sixth trio (B4). IV already reaches the generic Aug6
+        // over a STRONG edge, so the three members must be dotted: promoting
+        // them would triple this node's strong suggestion list for what is one
+        // chromatic colour spelled three ways. See the header of minor.ts.
+        'It6',
+        'Fr6',
+        'Ger6',
       ],
     },
   ],
@@ -194,6 +201,10 @@ export const major: ProgressionChart = {
         { chord: 'VIIdim', figure: '6' },
         { chord: 'V7', figure: '65' },
         { chord: 'V7', figure: '43' },
+        // the augmented-sixth trio (B4), dotted for the same reason as IV's
+        'It6',
+        'Fr6',
+        'Ger6',
       ],
     },
   ],
@@ -259,6 +270,37 @@ export const major: ProgressionChart = {
       name: 'Aug6',
       next: ['V64', 'V'],
       dotted: ['V7'],
+    },
+  ],
+  // The augmented-sixth trio (Stage M-B, B4) --------------------------------
+  // Same three members, same edges and same reasoning as in minor.ts: one
+  // predominant function in three colours. The German's fifth means Ger6 -> V
+  // would move in parallel fifths, so its strong edge is to the cadential 6/4
+  // and its direct resolution to V is dotted; the Italian and French have no
+  // fifth and go straight to V.
+  //
+  // Aug6 keeps both edges strong, untouched: it is a live alias appearing in
+  // saved songs, and re-grading an existing node's edges would change
+  // `nextChord` output for a node that already had suggestions.
+  It6: [
+    {
+      name: 'It6',
+      next: ['V64', 'V'],
+      dotted: ['V7'],
+    },
+  ],
+  Fr6: [
+    {
+      name: 'Fr6',
+      next: ['V64', 'V'],
+      dotted: ['V7'],
+    },
+  ],
+  Ger6: [
+    {
+      name: 'Ger6',
+      next: ['V64'],
+      dotted: ['V', 'V7'],
     },
   ],
 
@@ -355,7 +397,7 @@ export const major: ProgressionChart = {
       name: 'IIm7',
       prev: ['I', 'IIIm', 'VIm', 'IV'],
       next: ['V64', 'VIIdim', 'V', 'VIIdim/V', 'V/V', 'N6', 'Aug6'],
-      dotted: ['VIIm7b5', 'V7'],
+      dotted: ['VIIm7b5', 'V7', 'It6', 'Fr6', 'Ger6'],
     },
   ],
   // subdominant seventh — mirrors IV, plagal cadence included.
@@ -363,7 +405,7 @@ export const major: ProgressionChart = {
     {
       name: 'IVmaj7',
       next: ['IIm', 'V64', 'VIIdim', 'V', 'VIIdim/V', 'V/V', 'N6', 'Aug6'],
-      dotted: ['I', 'IIm7', 'VIIm7b5', 'V7', 'Imaj7'],
+      dotted: ['I', 'IIm7', 'VIIm7b5', 'V7', 'Imaj7', 'It6', 'Fr6', 'Ger6'],
     },
   ],
   // the dominant seventh. Inherits V's strong resolution to I AND its dotted

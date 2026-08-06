@@ -83,12 +83,13 @@ describe('nextChordDetail', () => {
     const names = (sugs: typeof viaF) => sugs.map((s) => s.name).sort()
     // BOTH return the full list — same set, different order
     expect(names(viaF)).toEqual(names(viaAm))
-    // 8 triad edges, the two dotted seventh edges of the IIdim node, and (since
-    // Stage M-A) its four dotted inversion edges: V6, VIIdim6, V65, V43.
+    // 8 triad edges, the two dotted seventh edges of the IIdim node, its four
+    // dotted inversion edges (Stage M-A: V6, VIIdim6, V65, V43), and its three
+    // dotted augmented-sixth edges (Stage M-B: It6, Fr6, Ger6) = 17.
     // The COUNT is what grew; the never-filters property this test exists to
     // guard is asserted below and is unchanged.
-    expect(viaF).toHaveLength(14)
-    expect(viaAm).toHaveLength(14)
+    expect(viaF).toHaveLength(17)
+    expect(viaAm).toHaveLength(17)
 
     // arriving from F enables the IIdim (dominant-complex) edges
     expect(viaF.every((s) => s.contextMatch)).toBe(true)
@@ -98,7 +99,9 @@ describe('nextChordDetail', () => {
     expect(viaAm.slice(0, 3).every((s) => s.contextMatch)).toBe(true)
     expect(viaAm.slice(3).every((s) => !s.contextMatch)).toBe(true)
     // gated edges, in chart order: the six triad/function edges, the two
-    // sevenths, then the four Stage-M-A inversions of those same chords
+    // sevenths, the four Stage-M-A inversions of those same chords, then the
+    // three Stage-M-B augmented sixths. Each new group appends, so the
+    // pre-existing entries keep both their values and their positions.
     expect(viaAm.slice(3).map((s) => [s.roman, s.name])).toEqual([
       ['VIIdim/V', 'D#dim'],
       ['V/V', 'B'],
@@ -111,6 +114,9 @@ describe('nextChordDetail', () => {
       ['VIIdim6', 'G#dim'],
       ['V65', 'E7'],
       ['V43', 'E7'],
+      ['It6', 'It6'],
+      ['Fr6', 'Fr6'],
+      ['Ger6', 'Ger6'],
     ])
   })
 
