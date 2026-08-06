@@ -24,11 +24,13 @@ describe('nextChord', () => {
   })
 
   it('lists compatible next chords for the dominant', () => {
-    expect(nextChord('E,3', 'A', 'minor')).toEqual(['V64', 'Aug6', 'Am'])
+    // V resolves to the tonic; V64/Aug6 approach it rather than follow it
+    expect(nextChord('E,3', 'A', 'minor')).toEqual(['Am'])
   })
 
   it('accepts dynamic chord names', () => {
-    expect(nextChord('V64,3', 'A', 'minor')).toEqual(['N6', 'Aug6', 'A', 'Am'])
+    // the cadential 6/4 resolves to the dominant
+    expect(nextChord('V64,3', 'A', 'minor')).toEqual(['E'])
   })
 
   it('throws for an unknown scale', () => {

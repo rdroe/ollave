@@ -72,16 +72,47 @@ describe('chordGraphCreate', () => {
 
   it('keeps dotted (weak) edges', () => {
     const graph = chordGraphCreate('A', 'minor')
-    expect(graph['E'].next.map((n) => n.name)).toEqual(['V64', 'Aug6', 'Am'])
+    // V resolves to the tonic; the cadential 6/4 and Aug6 now *precede* it
+    expect(graph['E'].next.map((n) => n.name)).toEqual(['Am'])
+    // the Picardy third stays a dotted (weak) option
     expect(graph['E'].dotted.map((n) => n.name)).toEqual(['A'])
+  })
+
+  it('resolves the cadential 6/4 to the dominant', () => {
+    // the 6/4 is dominant-function (tonic notes over scale degree 5), so it
+    // resolves to V rather than straight to a root-position tonic
+    const graph = chordGraphCreate('A', 'minor')
+    expect(graph['V64'].next.map((n) => n.name)).toEqual(['E'])
+    expect(graph['V64'].dotted.map((n) => n.name)).toEqual([])
+  })
+
+  it('routes N6 and Aug6 into the dominant complex', () => {
+    // both are predominants: they approach V, optionally via the cadential 6/4
+    const graph = chordGraphCreate('A', 'minor')
+    expect(graph['N6'].next.map((n) => n.name)).toEqual(['V64', 'E'])
+    expect(graph['Aug6'].next.map((n) => n.name)).toEqual(['V64', 'E'])
+  })
+
+  it('keeps predominant approaches to the cadential 6/4', () => {
+    // arriving at the 6/4 from a predominant is the standard approach and
+    // must survive the V64 direction flip
+    const graph = chordGraphCreate('A', 'minor')
+    expect(graph['Am'].next.map((n) => n.name)).toContain('V64')
+    expect(graph['Dm'].next.map((n) => n.name)).toContain('V64')
+    expect(graph['Bdim'].next.map((n) => n.name)).toContain('V64')
+    expect(graph['D#dim'].next.map((n) => n.name)).toContain('V64')
+    expect(graph['B'].next.map((n) => n.name)).toContain('V64')
   })
 
   it('realizes enabler names instead of leaving them roman', () => {
     // regression for the old todo at the fn-chord branch: enablers stayed
     // roman ('V', 'Im') and could never match graph keys
     const graph = chordGraphCreate('A', 'minor')
-    const v64ViaE = graph['E'].next.find((n) => n.name === 'V64')
-    expect(v64ViaE?.enabler).toEqual(['E'])
+    // realized letters, never romans: G#dim's edge is gated on IVm/IIdim,
+    // which must appear as Dm/Bdim so it can match graph keys
+    const eViaG_sharp_dim = graph['G#dim'].next.find((n) => n.name === 'E')
+    expect(eViaG_sharp_dim?.enabler).toEqual(['Dm', 'Bdim'])
+    // fn edges realize too (V is the source node's own name here)
     const v64ViaAm = graph['Am'].next.find((n) => n.name === 'V64')
     expect(v64ViaAm?.enabler).toEqual(['Am'])
   })

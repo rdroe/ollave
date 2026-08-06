@@ -1,6 +1,14 @@
 import fakeCli from 'peprn/fakeCli'
 import { Chord, Note, Mode, Scale, Collection } from 'tonal'
 
+import { minor } from './graphData/minor'
+import type { ProgressionGraphNode } from './graphData/types'
+
+// chart data lives in ./graphData (a sibling major.ts can be dropped in);
+// re-exported here because `minor` is public API via the lib barrel
+export { minor }
+export type { ProgressionGraphNode, ProgressionChart } from './graphData/types'
+
 export const sharpNoteNames = [
   'C#',
   'C##',
@@ -179,13 +187,6 @@ export const DynamicChordNames: {
   Aug6: 'Aug6',
   N6: 'N6',
 } as const
-export type ProgressionGraphNode = {
-  name: string // may be a function name
-  next: string[]
-  dotted?: string[]
-  prev?: string[]
-}
-
 export const scaleLetters = (scaleTonic: string, scaleName: string) => {
   const ten = oneIndexedArr(10).map(Scale.degrees(`${scaleTonic} ${scaleName}`))
   const len = Scale.get(`${scaleTonic} ${scaleName}`).notes.length
@@ -533,171 +534,6 @@ export const combineEntriesByName = (
   }, progOptions[0] as ProgressionOptions)
 }
 
-export const minor: { [name: string]: ProgressionGraphNode[] } = {
-  Im: [
-    {
-      name: 'Im',
-      next: ['Im', 'IVm', 'VII', 'III', 'VI', 'IIdim', 'V64', 'VIIdim', 'V'],
-    },
-  ],
-
-  IVm: [
-    {
-      name: 'IVm',
-      next: ['VII'],
-      dotted: ['VIIdim/III', 'V7/III'],
-    },
-    // double-box top
-    {
-      name: 'IVm',
-      prev: ['VI', 'VIIdim/VIm', 'V7/VIm'],
-      next: [
-        'VIIdim/V',
-        'V/V', // small upper fork
-        'V64',
-        'VIIdim',
-        'V',
-      ], // big confusing box
-    },
-  ],
-  VII: [
-    {
-      name: 'VII',
-      next: ['III'],
-      dotted: ['I'],
-    },
-  ],
-  III: [
-    {
-      name: 'III',
-      next: ['VIIdim/VIm', 'V7/VIm', 'VI'],
-    },
-  ],
-  VI: [
-    {
-      name: 'VI',
-      next: ['IIdim', 'IVm' /* N6 Aug6 */],
-    },
-  ],
-  // double-box bottom
-  IIdim: [
-    {
-      name: 'IIdim',
-      prev: ['VI'],
-      next: [
-        'VIIdim/V',
-        'V/V', // small upper fork
-        'V64',
-        'VIIdim',
-        'V',
-      ], // big confusing box
-    },
-  ],
-  // big confusing box v64
-  V64: [
-    {
-      name: 'V64',
-      dotted: ['I'],
-      next: ['N6', 'Aug6', 'I', 'Im'],
-    },
-  ],
-  // big confusing box viio (must play V before leaving ???)
-  VIIdim: [
-    {
-      name: 'VIIdim',
-      prev: ['IVm', 'IIdim'],
-      next: ['V'],
-    },
-  ],
-  // big confusing box V
-  V: [
-    {
-      name: 'V',
-      next: ['V64', 'Aug6', 'Im'],
-      dotted: ['I'],
-    },
-  ],
-  // non-box with sixes N6
-  N6: [
-    {
-      name: 'N6',
-      next: ['V'],
-    },
-  ],
-  // non-box with sixes Aug6
-  Aug6: [
-    {
-      name: 'Aug6',
-      next: ['V'],
-    },
-  ],
-  // upper boxesssssss ltr
-  // 1
-  'VIIdim/IV': [
-    {
-      name: 'VIIdim/IV',
-      next: ['VIIdim/VII', 'V7/VII'],
-    },
-  ],
-  'V7/IV': [
-    {
-      name: 'V7/IV',
-      next: ['VIIdim/VII', 'V7/VII'],
-    },
-  ],
-  // 2
-  'VIIdim/VII': [
-    {
-      name: 'VIIdim/VII',
-      next: ['VIIdim/III', 'V7/III', /*downward arrow*/ 'VII'],
-    },
-  ],
-  'V7/VII': [
-    {
-      name: 'V7/VII',
-      next: ['VIIdim/III', 'V7/III', /*downward arrow*/ 'VII'],
-    },
-  ],
-  // 3
-  'VIIdim/III': [
-    {
-      name: 'VIIdim/III',
-      next: ['VIIdim/VIm', 'V7/VIm', /*downward arrow*/ 'III'],
-    },
-  ],
-  'V7/III': [
-    {
-      name: 'V7/III',
-      next: ['VIIdim/VIm', 'V7/VIm', /*downward arrow*/ 'III'],
-    },
-  ],
-  // 4
-  'VIIdim/VIm': [
-    {
-      name: 'VIIdim/VIm',
-      next: ['IVm', 'IIdim', /*downward arrow */ 'VI'],
-    },
-  ],
-  'V7/VIm': [
-    {
-      name: 'V7/VIm',
-      next: ['IVm', 'IIdim', /*downward arrow */ 'VI'],
-    },
-  ],
-  // 5
-  'VIIdim/V': [
-    {
-      name: 'VIIdim/V',
-      next: ['V64', 'VIIdim'],
-    },
-  ],
-  'V/V': [
-    {
-      name: 'V/V',
-      next: ['V64', 'VIIdim'],
-    },
-  ],
-}
 
 export const oneIndexedArr = (len: number) => {
   if (len <= 0) return []
