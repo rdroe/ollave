@@ -135,6 +135,53 @@ describe('pathToCadence — the weighting does the work', () => {
     ).toBe('phrygian-half')
   })
 
+  it('does not lead with a path that already closed halfway through', () => {
+    // FOUND BY PROBE. Before the interior-close tiebreak the top six-bar result
+    // was `I - IIm - V - I - V - I`, which is legal, ends in a PAC, and answers
+    // the wrong question: it closes at bar 4, so the composer who asked for a
+    // six-bar phrase was handed two three-bar ones.
+    const r = pathToCadence('C', 'PAC', 6, 'C', 'major', { limit: 8 })
+    expect(r.exact).toBe(true)
+
+    const closesEarly = (summary: string) => {
+      const romans = summary.split(' - ')
+      // an authentic close anywhere before the final pair
+      for (let i = 0; i < romans.length - 2; i++) {
+        if (
+          (romans[i] === 'V' || romans[i] === 'V7') &&
+          (romans[i + 1] === 'I' || romans[i + 1] === 'Im')
+        ) {
+          return true
+        }
+      }
+      return false
+    }
+
+    expect(closesEarly(r.paths[0].summary), `led with ${r.paths[0].summary}`).toBe(
+      false
+    )
+    expect(r.paths[0].summary).not.toBe('I - IIm - V - I - V - I')
+    // and singly-closed paths as a group outrank doubly-closed ones
+    const firstDouble = r.paths.findIndex((p) => closesEarly(p.summary))
+    if (firstDouble !== -1) {
+      for (let i = 0; i < firstDouble; i++) {
+        expect(closesEarly(r.paths[i].summary)).toBe(false)
+      }
+    }
+  })
+
+  it('does not let a chromatic chord outrank a diatonic one on a sort accident', () => {
+    // Aug6 is correctly tagged PD, so `IIm - Aug6 - V` ties `IIm - V64 - V` on
+    // functional cost — and before the chromatic tiebreak, 'Aug6' won every
+    // such tie purely because of where 'A' sorts alphabetically. A chromatic
+    // chord must stay reachable but must not lead on a string comparison.
+    const r = pathToCadence('C', 'PAC', 5, 'C', 'major', { limit: 10 })
+    expect(r.paths[0].summary).not.toMatch(/Aug6|N6/)
+    // still REACHABLE, just not leading
+    const all = pathToCadence('C', 'PAC', 5, 'C', 'major', { limit: 50 })
+    expect(all.paths.some((p) => p.summary.includes('Aug6'))).toBe(true)
+  })
+
   it('works in minor', () => {
     const r = pathToCadence('Am', 'PAC', 4, 'A', 'minor')
     expect(r.exact).toBe(true)

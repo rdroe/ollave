@@ -66,7 +66,14 @@ import type { ChordProgressionGraph } from './util/graphUtil'
 
 /** One step of a returned progression. */
 export type PathStep = {
-  /** realized chord name, e.g. 'G7' */
+  /**
+   * Realized chord name, e.g. 'G7' — or a CHORD-FUNCTION node name (`V64`,
+   * `N6`, `Aug6`), exactly as `randomProgression`'s steps report them. Those
+   * three are nodes in the chart whose name is resolvable only given the key,
+   * which is why they surface as themselves rather than as a chord symbol; the
+   * existing `parseChordCsvArg` contract already resolves them ('V64,3' works),
+   * so this is the established spelling rather than a leak.
+   */
   name: string
   /** the roman in the key being searched, e.g. 'V7' */
   roman: string
@@ -247,25 +254,92 @@ const figuredFormOf = (roman: string, figure: string): string => {
 }
 
 /**
+ * How many times a path closes BEFORE its final chord.
+ *
+ * FOUND BY PROBE, and it is the difference between a useful answer and a
+ * plausible-looking one. Asked for a six-bar route to a PAC, the search happily
+ * returned `I - IIm - V - I - V - I`, which is legal, correctly ends in a PAC,
+ * and is the wrong answer: it closes at bar 4 and then closes again. A composer
+ * who asked for a six-bar phrase has been handed two three-bar phrases, and the
+ * question they asked — where does this phrase END — was answered at bar 4.
+ *
+ * So an interior cadence is COUNTED and penalised in the ranking rather than
+ * forbidden. Penalised, not forbidden, because a genuine eight-bar period does
+ * contain an interior cadence — that is what a period IS — and a search that
+ * refused them could not model one. What the ranking must not do is offer a
+ * doubly-closed path AHEAD of a singly-closed one of the same length and cost.
+ *
+ * Only authentic closes are counted (V or V7 to a root-position tonic). A half
+ * cadence mid-path is not a structural close in this sense — the music has not
+ * stopped — and counting it would penalise the ordinary approach to the goal.
+ */
+const interiorCloses = (steps: PathStep[]): number => {
+  let count = 0
+  // stop at length-1: the FINAL pair is the requested cadence, not an interior
+  // one, and counting it would penalise every path equally and pointlessly
+  for (let i = 0; i < steps.length - 2; i++) {
+    const a = steps[i]
+    const b = steps[i + 1]
+    const approachIsDominant = a.roman === 'V' || a.roman === 'V7'
+    const arrivalIsTonic = b.roman === 'I' || b.roman === 'Im'
+    if (approachIsDominant && arrivalIsTonic) count++
+  }
+  return count
+}
+
+/**
+ * Chart nodes that are CHROMATIC rather than diatonic: the Neapolitan, the
+ * augmented sixth, and every applied chord.
+ *
+ * Used only as a ranking tiebreak, and it exists because of a specific artifact
+ * the probe caught. `Aug6` is correctly tagged PD, so `IIm - Aug6 - V` costs
+ * exactly what `IIm - IIIm - V` costs, and with the functional cost tied the
+ * next tiebreak was the alphabetical one — which put "Aug6" at the top of every
+ * five-bar result purely because of where 'A' sorts. An augmented sixth leading
+ * a plain diatonic modulation is a real musical claim being made by an
+ * accident of string comparison.
+ *
+ * Chromatic chords are wonderful and must stay reachable; they simply should
+ * not outrank a diatonic option that scores identically. Hence a tiebreak below
+ * cost rather than a penalty inside it: ask for five bars and the diatonic
+ * filling leads, with the chromatic alternatives directly beneath it.
+ */
+const isChromatic = (roman: string): boolean =>
+  roman === 'N6' || roman === 'Aug6' || roman.includes('/')
+
+/**
  * Total order over paths. THE determinism guarantee.
  *
  * Every comparison is total and the final tiebreak is a string compare on the
  * summary, so no two distinct paths can ever compare equal. Ordering, in
  * priority:
  *
- *  1. functional cost, ascending — the whole point of the weighting
- *  2. fewer dotted edges — a path made of the chart's principal motions is
+ *  1. FEWER INTERIOR CLOSES — a path that already ended at bar 4 is not a
+ *     six-bar path to a cadence, whatever its functional cost. This outranks
+ *     cost because it is a question about what was ASKED, not about quality:
+ *     see `interiorCloses`.
+ *  2. functional cost, ascending — the whole point of the weighting
+ *  3. fewer dotted edges — a path made of the chart's principal motions is
  *     preferred to one that leans on dashed arrows, at equal functional cost
- *  3. shorter first — only reachable when lengths differ, i.e. in best-effort
+ *  4. fewer chromatic chords — see `isChromatic`; a diatonic path and a
+ *     chromatic one that score identically should not be separated by where
+ *     'A' happens to sort
+ *  5. shorter first — only reachable when lengths differ, i.e. in best-effort
  *     results
- *  4. summary alphabetically — an arbitrary but FIXED tiebreak, which is what
+ *  6. summary alphabetically — an arbitrary but FIXED tiebreak, which is what
  *     makes the ranking reproducible rather than dependent on enumeration order
  */
 const comparePaths = (a: ProgressionPath, b: ProgressionPath): number => {
+  const closesA = interiorCloses(a.steps)
+  const closesB = interiorCloses(b.steps)
+  if (closesA !== closesB) return closesA - closesB
   if (a.cost !== b.cost) return a.cost - b.cost
   const dottedA = a.steps.filter((s) => s.strength === 'dotted').length
   const dottedB = b.steps.filter((s) => s.strength === 'dotted').length
   if (dottedA !== dottedB) return dottedA - dottedB
+  const chromA = a.steps.filter((s) => isChromatic(s.roman)).length
+  const chromB = b.steps.filter((s) => isChromatic(s.roman)).length
+  if (chromA !== chromB) return chromA - chromB
   if (a.steps.length !== b.steps.length) return a.steps.length - b.steps.length
   return a.summary.localeCompare(b.summary)
 }
