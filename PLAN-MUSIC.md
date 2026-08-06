@@ -101,6 +101,9 @@ or the Stage-M-A test suites.
 - [ ] Compose over the existing contract: `rankByVoiceLeading` sorts, this
       *filters/annotates*. Do NOT fold into `nextChordDetail`'s opts (that
       pattern exists to keep streams independent).
+- [ ] **Strictness is a settable option** (see Decisions): default `'report'`,
+      plus `'warn'` and `'block'`, and per-rule toggles. The default must never
+      remove a suggestion.
 - [ ] Each rule cites its textbook statement in a comment and is pinned by a
       hand-verified example AND a counter-example.
 
@@ -164,12 +167,25 @@ or the Stage-M-A test suites.
 
 ---
 
-## Open questions for the user
+## Decisions (user, 2026-08-06)
 
-- [?] **Target idiom.** These priorities assume common-practice tonal harmony
-      (the tradition the charts already encode). Jazz (extensions, tritone subs,
-      modal interchange) or Romantic chromaticism (neo-Riemannian P/L/R, which
-      is a *different graph topology*, not more nodes) would reorder this list.
-- [?] **How strict should P2 be?** Textbook part-writing forbids things skilled
-      composers do deliberately. Suggest: report violations, never block — same
-      principle as `contextMatch` annotating rather than filtering.
+- [x] **Target idiom: common-practice tonal harmony** — the tradition the
+      charts already encode. Jazz and neo-Riemannian chromaticism are out of
+      scope for this plan (the latter is a *different graph topology*, not more
+      nodes, and would want its own plan).
+- [x] **P2 strictness is a settable option, defaulting to report-never-block.**
+      Violations are always *reported*; whether they filter or block is the
+      caller's choice. Concretely:
+
+      ```ts
+      type StrictnessMode =
+        | 'report'   // DEFAULT — annotate, never remove (matches contextMatch)
+        | 'warn'     // annotate + sort violations last
+        | 'block'    // filter out illegal moves (exercises, student work)
+      ```
+
+      Rationale: skilled composers break textbook rules deliberately, so the
+      default must never hide a legal-but-unconventional move. But a pedagogy
+      or engraving tool wants enforcement, and hardcoding permissiveness would
+      make that impossible. Individual rules should also be toggleable (a user
+      may accept hidden fifths but not parallel octaves).
