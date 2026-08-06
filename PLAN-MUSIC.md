@@ -25,10 +25,10 @@ merge.
 Baseline at authoring: `master`, 283 tests, strict mode ON, v0.4.0 + unreleased
 sevenths/scale-list work.
 
-**STATUS 2026-08-06: Stage M-A complete; Stage M-B streams B1, B3, B4, B5
-merged and independently verified; B2 in flight. 622 tests green (from 283),
-`npx tsc --noEmit` 0 errors, both builds clean.** Each stream's outcome is
-recorded inline below. Stage M-C is the remaining work.
+**STATUS 2026-08-06: Stage M-A and ALL FIVE Stage M-B streams merged and
+independently verified. 752 tests green (from 283), `npx tsc --noEmit` 0
+errors, both builds clean.** Each stream's outcome is recorded inline below.
+Stage M-C is the remaining work.
 
 ---
 
@@ -288,34 +288,61 @@ thing an expert saw).
 - Reported three rule ids for `spans.test.ts`'s `KNOWN_RULES` rather than
   editing a file it didn't own; added in `148dc38`.
 
-### B2 — Cadences, function and pathfinding (P4) — the interaction-model change
+### B2 — Cadences, function and pathfinding (P4) — MERGED `d0b02cb`
 
-- [ ] **T/PD/D function tags — pulled forward from P5.** Tag every chart node
+- [x] **T/PD/D function tags — pulled forward from P5.** Tag every chart node
       tonic / predominant / dominant (`harmonicFunction.ts`). Cheap, and
       without it weighted search returns wandering, functionally aimless
       paths — technically legal chains that don't feel goal-directed. This is
       the P5 down payment; only the hard nesting part stays deferred.
-- [ ] Cadence types as data: PAC, IAC, half, deceptive, plagal, Phrygian
+- [x] Cadence types as data: PAC, IAC, half, deceptive, plagal, Phrygian
       half, and the **evaded cadence** (V⁴₂→I⁶) — the phrase-*extension*
       device; "how do I avoid closing yet" is as valuable to a composer as
       "how do I close." Each is a span (A4): chords + bass/soprano/metric
       conditions, not just a chord pair (PAC requires soprano on 1̂ and both
       chords in root position; the span schema can say so).
-- [ ] `pathToCadence(from, cadenceType, bars, key)` — graph search weighted by
+- [x] `pathToCadence(from, cadenceType, bars, key)` — graph search weighted by
       harmonic function (prefer T→PD→D→T motion), returning ranked
       progressions of the requested length. From "what's next" to "get me
       there."
-- [ ] **Modulation-targeted pathfinding — the headline feature for the
+- [x] **Modulation-targeted pathfinding — the headline feature for the
       target audience, owned here.** `pathToCadence` accepts a `targetKey`:
       route through `pivotSuggestions` (pivots.ts, already exists — V8) to a
       cadence in the new key. Diatonic pivots first; B4's enharmonic pairs
       (Ger⁶↔V⁷, dim⁷ rotations) extend the pivot set later without changing
       this surface.
-- [ ] `detectCadences(progression, key)` — the inverse query; label what a
+- [x] `detectCadences(progression, key)` — the inverse query; label what a
       composer already wrote. Quietly one of the most delightful features:
       analysis of the composer's *own* music.
-- [ ] Honest scoping: exact-length paths may not exist; return best-effort with
+- [x] Honest scoping: exact-length paths may not exist; return best-effort with
       a reason, never throw.
+
+
+**Outcome.** The headline features work end-to-end. Verified independently:
+`pathThroughModulation('Am','PAC',4,'A','minor','C','major')` returns
+`Am - Dm - G - C` pivoting on **Dm** (`IVm` here, `IIm` there) — the ideal
+hinge because it arrives as a predominant in the new key. `detectCadences` on
+`C F Dm G Am F G C` labels the deceptive `V→VIm` at **high** confidence and
+`G→C` as **IAC at medium**, with the reason "no soprano supplied, so it cannot
+be confirmed as perfect" — refusing to overclaim. Determinism confirmed by
+running an identical call twice.
+
+- **Function tags are keyed by ROMAN, not scale degree** — probed, and degree
+  tagging is simply wrong on many nodes: `A7` in C major is degree 6 (reads
+  tonic) but is `V7/IIm`; `G#dim` is chromatic, so degree has no answer for A
+  minor's strongest dominant. Three judgement calls: `V64` = D (spells a tonic,
+  functions as dominant), minor `VII` = T (no leading tone; the chart routes it
+  to III), `V/V` = PD (locally dominant, functionally predominant).
+- **Detection deliberately does NOT use chart edges.** `IVm→Im`, `V→VI` and
+  `IVm6→V` are absent from the minor chart yet are ordinary music. It matches
+  romans instead. `vii°→i` is deliberately left unlabelled rather than given
+  invented vocabulary.
+- Two ranking defects its own probes caught: paths that **closed early**
+  (`I-IIm-V-I-V-I` is two three-bar phrases, not one six-bar one) and
+  **chromatic sort accidents** (`Aug6` led every 5-bar result because 'A' sorts
+  first). Both fixed as tiebreaks.
+- Bounded DFS rather than Dijkstra, deliberately: a composer wants several
+  exact-length options, not one cheapest path.
 
 ### B3 — Harmonic rhythm and metric weight (P3) — MERGED `1450279`
 
@@ -397,6 +424,37 @@ only in the SIGN of the transposition over an identical applied-dominant unit
 ---
 
 ## Stage M-C — Integration (SERIAL)
+
+**Carried over from M-B — contracts both sides designed for but neither could
+complete alone** (each stream correctly declined to edit files it didn't own;
+file ownership is now lifted):
+
+- [x] **C0 — tag B4's Aug6 trio in B2's function map.** B2's exhaustive
+      coverage test caught this on merge: `It6`/`Fr6`/`Ger6` didn't exist when
+      B2 branched, so they were untagged. All three are **predominants** — the
+      whole point of an augmented sixth is ♭6 and ♯4 expanding onto the
+      dominant, and every chart edge routes them to V or the cadential ⁶₄.
+      Fixed in `9f7e1cf`. *This is exactly the failure the cross-stream tests
+      exist to catch.*
+- [ ] **C1 — wire B4's `enharmonicPivots` into B2's `extraPivots`.** Both
+      sides built to the same contract without talking:
+      B2 exposes `PivotSource = (fromTonic, fromScale, toTonic, toScale) =>
+      PivotCandidate[]` and reserves `PivotKind` `'enharmonic'`; B4 returns
+      pivots whose `targetKey`/`targetTonic`/`targetScale` field names and
+      types already match `PivotSuggestion`. **No signature changes needed on
+      either side** — B2 pinned this with a contract test using a stand-in
+      Ger⁶↔V⁷ source. Enharmonic pivots carry a cost surcharge so they stay
+      reachable without burying smooth diatonic hinges.
+- [ ] **C2 — make the minor plagal, minor deceptive and Phrygian half cadences
+      ROUTABLE.** B2 reports they are detectable but not routable: the minor
+      chart lacks the edges (`IVm6` appears nowhere), so `pathToCadence`
+      returns `unreachable-cadence`. Needs `graphData/minor.ts` edits, which B2
+      didn't own. Blast-radius rule still applies — dotted unless principal.
+- [ ] **C3 — route `N6`/`Aug6` through `extraPivots`.** B2 skips them in the
+      diatonic scan because `pivotSuggestions` throws on them; they should
+      arrive as properly-spelled chromatic pivots instead.
+
+**Integration proper:**
 
 - [ ] Compose the streams: a modulation-aware, cadence-targeted path (B2) that
       is voice-leading legal (B1), metrically placed (B3), and realizable in
