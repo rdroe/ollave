@@ -139,11 +139,29 @@ current branch.
       `romanInKey`/`chordGraphCreate` against `Dbb`. Shipped: name matching
       primary, chroma fallback only when name matching returns empty.
       Correctly-spelled input byte-identical.
-- [ ] **C1-followup (better fix, deferred — larger than Stage C's scope):**
-      dedupe `allScales` by pitch-class set, preferring conventional
-      spellings. That would make chroma matching safe everywhere and remove
-      the fallback's asymmetry. `allScales` is public API with pinned tests,
-      so it needs its own change with consumer-impact review.
+- [x] **C1-followup — DONE, but not as specified.** The brief was "dedupe
+      `allScales` by pitch-class set, preferring conventional spellings", to
+      make chroma matching safe everywhere and remove the fallback. Probing
+      showed all three parts of that plan were wrong:
+      1. **Pitch-class set is the wrong grouping key.** C major and A minor
+         share all seven pitch classes; grouping by pitch alone merges every
+         relative major/minor pair and deletes half the keys. The key must be
+         (mode, pitch-class set) — 84 groups, not 12.
+      2. **"Fewest accidentals" is the wrong preference.** It discards
+         `C# major` (7 sharps) for `Db major` (5 flats), `A# minor` for
+         `Bb minor`, `Ab minor` for `G# minor` — all real notated keys. Which
+         spellings are conventional is notation fact, not a derivable count,
+         so the 15+15 are stated as data in `scaleList.ts`.
+      3. **The fallback cannot be removed, and detection must NOT use the
+         deduped list.** A deduped list holds one spelling per sounding
+         scale, so `C# major` is absent from it; detecting the correctly
+         spelled C#-E#-G# against it returns `B lydian` alone. Detection
+         needs every spelling; a picker needs exactly one.
+      Shipped as an **additive** change instead: `allScales` and
+      `detectAllScales` are byte-identical, and `conventionalKeys` (30 real
+      keys, incl. `Cb major` which `allScales` cannot spell) plus
+      `distinctScales` (84) are added for callers. Picker goes 54 entries
+      (20 unplayable) -> 30. 22 tests.
 - [x] **C2 — flat-key N6 spelling fixed.** Root now
       `Note.transpose(tonic, '2m')`. Eb major: `Ab Cb Fb` (was `E G# B`);
       Db major: `Ebb Gb Bbb`. All other keys unchanged, so no pinned test

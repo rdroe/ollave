@@ -192,10 +192,17 @@ the chart's own vocabulary.
 
 **Spelling matters.** Key detection matches note *names*, not pitch numbers.
 A correctly spelled chord finds its keys; a chord written with unconventional
-enharmonics falls back to pitch matching. There's a known wrinkle underneath
-this: the internal scale list contains enharmonic duplicate keys (a "D♭♭ major"
-that is really C major), which is why the fallback is narrow rather than the
-default. Deduplicating that list is tracked as future work.
+enharmonics falls back to pitch matching. The scale list underneath contains
+enharmonic duplicate keys (a "D♭♭ major" that is really C major), which is why
+the fallback is narrow rather than the default.
+
+Those duplicates are a problem for *display*, not for detection, and the two
+needs are now served by different lists. `conventionalKeys` is the 30 real keys
+and is what a scale picker should show; `allScales` keeps every spelling and is
+what detection scans. The distinction is load-bearing: a deduplicated list has
+only one spelling per sounding scale, so C♯ major is absent from it, and
+detecting C♯–E♯–G♯ against it would report `B lydian` instead of the key the
+chord is really in. Detection needs all the spellings; a dropdown needs one.
 
 ---
 

@@ -3,11 +3,20 @@ import { Chord, Note, Mode, Scale, Collection } from 'tonal'
 
 import { minor } from './graphData/minor'
 import type { ProgressionGraphNode } from './graphData/types'
+import { dedupeEnharmonicScales } from './scaleList'
 
 // chart data lives in ./graphData (a sibling major.ts can be dropped in);
 // re-exported here because `minor` is public API via the lib barrel
 export { minor }
 export type { ProgressionGraphNode, ProgressionChart } from './graphData/types'
+// re-exported because the curated scale list is public API via the lib barrel
+export {
+  conventionalKeys,
+  conventionalMajorTonics,
+  conventionalMinorTonics,
+  dedupeEnharmonicScales,
+  isConventionalKeyName,
+} from './scaleList'
 
 export const sharpNoteNames = [
   'C#',
@@ -43,6 +52,19 @@ export const noteNames = [
 
 const allModes = Mode.all()
 
+/**
+ * Every note name crossed with every mode — 189 entries.
+ *
+ * This list contains enharmonic duplicates by construction, because
+ * `noteNames` contains double accidentals: `Dbb major` is C major spelled
+ * unplayably, `F## major` is G major, and so on. 84 of the 189 entries are
+ * such artifacts.
+ *
+ * It is kept unfiltered for backward compatibility — it is public API, callers
+ * may hold stored names that resolve against it, and `isScaleName` /
+ * `properScaleName` search it. **For anything user-facing (a scale picker, a
+ * key dropdown) prefer `conventionalKeys`**, which is the 30 real keys.
+ */
 export const allScales = allModes
   .map((m) => {
     const scales = noteNames.map((nn) => `${nn} ${m.name}`)
@@ -50,6 +72,13 @@ export const allScales = allModes
     return scaleObjs
   })
   .flat()
+
+/**
+ * `allScales` with enharmonic duplicates collapsed — 105 entries, one spelling
+ * per (mode, sounding pitch set). Conventional key spellings win; see
+ * `./scaleList`.
+ */
+export const distinctScales = dedupeEnharmonicScales(allScales)
 
 const inScale = (notes: string[], scale: { notes: string[] }) => {
   // pitch-class membership; the previous ascending-index requirement wrongly
@@ -92,6 +121,15 @@ const inScaleByChroma = (notes: string[], scale: { notes: string[] }) => {
  * spelled input never reaches the fallback and sees byte-identical results to
  * before; a caller with mis-spelled input gets the enharmonic answer set
  * instead of silence.
+ *
+ * C1-followup: this deliberately scans `allScales`, NOT the deduped
+ * `distinctScales`, and the fallback stays. Deduping made the *picker* problem
+ * go away but cannot serve detection: a deduped list holds only one spelling
+ * per sounding scale, so `C# major` is absent (it loses its group to
+ * `Db major`), and detecting the correctly-spelled triad C#-E#-G# against it
+ * returns `B lydian` alone — the key the chord is actually in has been
+ * deleted. Faithful name matching needs every spelling present, so the full
+ * list is the right input here even though it is the wrong list for a UI.
  */
 export const detectAllScales = (notes: string[]) => {
   if (notes.length === 0) return []

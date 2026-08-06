@@ -2,6 +2,66 @@
 
 All notable changes to this project are documented here.
 
+## Unreleased
+
+### Added — curated scale lists (`conventionalKeys`, `distinctScales`)
+
+**If you build a scale or key picker from `allScales`, switch it to
+`conventionalKeys`.**
+
+`allScales` is built by crossing an internal note-name list against all seven
+modes, and that note-name list contains double accidentals. The result is 189
+entries of which 84 are enharmonic duplicates. Filtered to major and minor —
+what a key dropdown does — it yields 54 entries, and **20 of those are
+unplayable spellings**: `Dbb major`, `Ebb major`, `Gbb major`, `Abb major`,
+`Bbb major`, `C## major`, `D## major`, `F## major`, `G## major`, `A## major`,
+and the same ten in minor. `Dbb major` is C major written so no one would ever
+notate it. Users have been seeing all twenty in scale pickers.
+
+Two new exports fix this:
+
+- **`conventionalKeys`** — the 30 real keys (15 major, 15 minor) as resolved
+  `Scale` objects, ordered around the circle of fifths from seven flats to
+  seven sharps. This is the list to put in front of a user.
+- **`distinctScales`** — `allScales` with enharmonic duplicates collapsed, 84
+  entries, one spelling per (mode, sounding pitch set). Use this when you need
+  all seven modes rather than just major and minor.
+
+Also exported: `isConventionalKeyName`, `dedupeEnharmonicScales`,
+`conventionalMajorTonics`, `conventionalMinorTonics`.
+
+*What "conventional spelling" means here.* The 15 conventional major keys are
+C, G, D, A, E, B, F♯, C♯, F, B♭, E♭, A♭, D♭, G♭, C♭, and the 15 minor are A,
+E, B, F♯, C♯, G♯, D♯, A♯, D, G, C, F, B♭, E♭, A♭. That is stated as data, not
+computed, because the tempting rule — "keep whichever spelling has fewer
+accidentals" — is wrong: it discards C♯ major (7 sharps) for D♭ major (5
+flats), A♯ minor for B♭ minor, and A♭ minor for G♯ minor, all of which are
+real notated keys. When `dedupeEnharmonicScales` collapses a group it prefers a
+conventional spelling first, then fewest accidentals, then the flat spelling.
+That last tie-break only decides genuine equal-weight pairs (G♭/F♯ major, E♭/D♯
+minor and their modal equivalents), where both spellings are conventional and
+the choice is convention rather than correctness; flats match the spelling the
+rest of the library produces.
+
+Note that `conventionalKeys` includes **C♭ major**, which `allScales` cannot
+represent at all — its note-name list has no `Cb`.
+
+### Unchanged
+
+**`allScales` is untouched** — still 189 entries, still including every
+double-accidental spelling. Nothing is removed, so stored scale names keep
+resolving and `isScaleName` / `properScaleName` behave exactly as before. There
+is no migration beyond pointing user-facing lists at `conventionalKeys`.
+
+`detectAllScales` is also unchanged, and still scans the full `allScales` with
+its narrow chroma fallback. The fallback **cannot** be retired now that a
+deduped list exists: deduplication keeps one spelling per sounding scale, so
+`C♯ major` is not in `distinctScales`, and detecting the correctly spelled
+triad C♯–E♯–G♯ against it would return `B lydian` alone — the chord's actual
+key having been collapsed away. Detection needs every spelling present; a
+picker needs exactly one. They need different lists, which is why this release
+adds a list instead of changing the existing one.
+
 ## 0.4.0
 
 Composer-grade chord assistance. This release adds a real major-key
