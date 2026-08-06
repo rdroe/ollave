@@ -32,8 +32,11 @@ async function setLatestMap_(mapProm: Promise<MidiMappingResult>) {
   const { map, phaseAndBarStartAndEndTicks } = await mapProm
   mem().latestPhaseAndBarStartAndEndTicks = phaseAndBarStartAndEndTicks
   mem().latestMap = map
-  // mem().song["track-ids"] = mem().tracks.map((track) => track.id)
-  mem().song['track-ids'] = mem().tracks.map((track) => [track.id, 0])
+  const song = mem().song
+  if (!song) {
+    throw new Error('cannot compile: no song in memory')
+  }
+  song['track-ids'] = mem().tracks.map((track) => [track.id, 0])
   compilePhasesToTracks() // ensures that only active phases are saved, old ones oprhaned in db. @todo: code does exist that looks at orphaned ids, but nothing is done with them
   compileNotesByBarToTracks()
   saveSongAndTracks()

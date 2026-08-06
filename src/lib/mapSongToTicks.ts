@@ -260,7 +260,7 @@ export const midiAtBarUtil = (mem: Mem) => {
 }
 
 export const midiAtBar = ([soughtTagName, percent]: BarTagPercent): number => {
-  return midiAtBarUtil(mem())(soughtTagName, percent)
+  return midiAtBarUtil(mem())(soughtTagName as string, percent)
 }
 
 export const extractPhaseAndBarStartAndEndTicks = (): {
@@ -293,6 +293,9 @@ export const extractPhaseAndBarStartAndEndTicks = (): {
     const phaseData = collector.find(
       (phase) => phase[0][0].data1[0].split(':')[0] === phaseName
     )
+    if (!phaseData) {
+      throw new Error(`no tick data collected for phase ${phaseName}`)
+    }
     const mappedTicks = Object.keys(phaseData)
     const firstBarStartEvent = mappedTicks.find(
       (tick) => phaseData[parseInt(tick)][0].occassion === 'BAR_START'

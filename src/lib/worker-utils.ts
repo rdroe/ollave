@@ -241,12 +241,12 @@ export function mapSongToMidiTicksCore(
           .find((tag) => tag.startsWith('duration='))
           ?.split('=')?.[1]
           ?.split(',')?.[0]
-        const parsedDuration = parseInt(durationRaw)
+        const parsedDuration = parseInt(durationRaw ?? '')
         const velocityRaw = note.tags
           .find((tag) => tag.startsWith('velocity='))
           ?.split('=')?.[1]
           ?.split(',')?.[0]
-        const parsedVelocity = parseInt(velocityRaw)
+        const parsedVelocity = parseInt(velocityRaw ?? '')
         phaseMidi[thisNoteTick].push({
           note: note.note,
           compositionTags: note.tags,

@@ -65,12 +65,23 @@ const scheduleRecompile = () => {
     setLatestMap(mapSongToMidiTicks())
   }, RECOMPILE_IDLE_MS)
 }
+// getNoteByBar returns undefined for unknown ids; the update helpers below
+// have always required the note to exist (they crashed otherwise), so fail
+// with a clear message instead
+const mustGetNoteByBar = (noteId: string) => {
+  const memNote = getNoteByBar(mem, noteId)
+  if (!memNote) {
+    throw new Error(`note ${noteId} not found`)
+  }
+  return memNote
+}
+
 export const updateNoteSilently = (
   noteId: string,
   tagName: string,
   tagValue: TagData
 ) => {
-  const memNote = getNoteByBar(mem, noteId)
+  const memNote = mustGetNoteByBar(noteId)
   // No-op on identical values: a recompile is a full-song remap plus a
   // whole-track IndexedDB write, so callers that re-sync state on mount
   // (e.g. NoteControl effects) must not pay for writes that change nothing.
@@ -83,7 +94,7 @@ export const updateNoteSilently = (
 }
 export const updateOctaveSilently = (noteId: string, change: number) => {
   scheduleRecompile()
-  const memNote = getNoteByBar(mem, noteId)
+  const memNote = mustGetNoteByBar(noteId)
   const [letter, accidental, currOctaveRaw] = tokenizeNote(memNote.note)
   const currOctave = parseInt(currOctaveRaw)
   const newOctave = currOctave + change
@@ -96,7 +107,7 @@ export const updateNoteDegreeSilently = (
   scaleTonic: string,
   scaleName: string
 ) => {
-  const memNote = getNoteByBar(mem, noteId)
+  const memNote = mustGetNoteByBar(noteId)
   const note = memNote.note
   const notesInScale = Scale.get(`${scaleTonic} ${scaleName}`).notes
 
@@ -117,7 +128,8 @@ export const useNote = (noteId: string) => {
       return
     }
     if (!notesStore.getState().notes[noteId]) {
-      notesStore.getState().setNote(noteId, getNoteByBar(mem, noteId))
+      const memNote = getNoteByBar(mem, noteId)
+      if (memNote) notesStore.getState().setNote(noteId, memNote)
     }
   }, [noteId])
   return useStore(notesStore, ({ notes }) => {
@@ -129,7 +141,8 @@ export const useNotes = (noteIds: string[]) => {
   useEffect(() => {
     noteIds.forEach((noteId) => {
       if (!notesStore.getState().notes[noteId]) {
-        notesStore.getState().setNote(noteId, getNoteByBar(mem, noteId))
+        const memNote = getNoteByBar(mem, noteId)
+        if (memNote) notesStore.getState().setNote(noteId, memNote)
       }
     })
   }, [noteIds])

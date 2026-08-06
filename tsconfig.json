@@ -5,6 +5,7 @@
 		"esModuleInterop": true,
 		"moduleResolution": "node",
 		"noImplicitAny": true,
+		"strict": true,
 		"removeComments": false,
 		"preserveConstEnums": true,
 		"sourceMap": true,
@@ -19,8 +20,8 @@
 		"module": "ESNext",
 		"resolveJsonModule": true
     },
-	"strict": true,
 	"include": ["./src/**/*.ts"],
+	"exclude": ["./src/**/*.test.ts"],
 	"watchOptions": {
 	"watchDirectory": "useFsEvents"
 	}

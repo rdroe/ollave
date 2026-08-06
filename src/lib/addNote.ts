@@ -1,8 +1,8 @@
-import { parseColonTag } from '../commands/phase/phase'
 import { mem } from '../core/mem'
 
 import { makeNoteByBar, NoteByBar } from './schemas'
 import { randId } from './util/common'
+import { parseColonTag } from './util/parseColonTag'
 import { phaseCount } from './util/phaseUtil'
 import {
   calcFractionalDelay,
@@ -18,7 +18,11 @@ export const addNoteToBar = async (
   _doAddSlider: boolean = false
 ): Promise<NoteByBar> => {
   let barObj = mem().notesByBar[barName]
-  const [phaseName, barNumber] = parseColonTag(barName)
+  const parsedBarName = parseColonTag(barName)
+  if (!parsedBarName) {
+    throw new Error(`${barName} is not a bar tag`)
+  }
+  const [phaseName, barNumber] = parsedBarName
   const tags = unparseTagEntries(tagsIn)
   if (!barObj) {
     if (phaseName) {

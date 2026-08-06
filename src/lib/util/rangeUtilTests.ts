@@ -36,9 +36,9 @@ export const testRangeInner: Module = {
   fn: ({
     'peprn:ancestralDepth': ancestralDepth,
   }: ParsedCli & {
-    'peprn:ancestralDepth': number
+    'peprn:ancestralDepth'?: number
   }) => {
-    if (ancestralDepth > 0) {
+    if ((ancestralDepth ?? 0) > 0) {
       return Promise.resolve({
         formatted: store['testRange'],
       })
@@ -114,10 +114,10 @@ export const testReadableRange: Module = {
   fn: ({
     'peprn:ancestralDepth': ancestralDepth,
   }: ParsedCli & {
-    'peprn:ancestralDepth': number
+    'peprn:ancestralDepth'?: number
   }) => {
     console.log('ancestralDepth', ancestralDepth)
-    if (ancestralDepth > 0) {
+    if ((ancestralDepth ?? 0) > 0) {
       return Promise.resolve({
         formatted: conversionStore['testReadableRange'],
       })
@@ -285,7 +285,7 @@ function getOrCreateTestResultsContainer(): HTMLElement {
       closeButton.style.background = '#444'
     }
     closeButton.onclick = () => {
-      container.style.display = 'none'
+      if (container) container.style.display = 'none'
     }
     container.appendChild(closeButton)
     
@@ -503,13 +503,13 @@ export const testRangeUtil: Module = {
     },
   },
   fn: async ({
-    positionalNonCommands: [testName],
+    positionalNonCommands,
     'peprn:ancestralDepth': ancestralDepth,
   }: ParsedCli & {
-    positionalNonCommands: [string | undefined]
-    'peprn:ancestralDepth': number
+    'peprn:ancestralDepth'?: number
   }) => {
-    if (ancestralDepth > 0) {
+    const [testName] = positionalNonCommands as [string | undefined]
+    if ((ancestralDepth ?? 0) > 0) {
       return Promise.resolve({
         formatted: testRangeUtilStore.testResults,
       })

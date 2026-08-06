@@ -182,7 +182,7 @@ export const earliestNote = (notes1: NoteByBar[]): NoteByBar | null => {
 }
 
 const noteTagDatum = (note: NoteByBar, tagName: string): null | TagEntry[1] => {
-  return parseNoteTags(note.tags).find(([k]) => k === tagName)[1] ?? null
+  return parseNoteTags(note.tags).find(([k]) => k === tagName)?.[1] ?? null
 }
 
 export const scale = function parseNoteScale(

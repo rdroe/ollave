@@ -12,7 +12,9 @@ export const lengthenBar: Module = {
   fn: lengthenBarFn,
 }
 
-export async function lengthenBarFn(...args: Parameters<Module['fn']>) {
+export async function lengthenBarFn(
+  ...args: Parameters<NonNullable<Module['fn']>>
+) {
   const { noteIds: noteIdsArg, amount: amountArg } = args[0]
 
   const { noteIds, amount } = z
@@ -25,6 +27,9 @@ export async function lengthenBarFn(...args: Parameters<Module['fn']>) {
       amount: amountArg,
     })
   const note = getNoteByBar(mem, noteIds[0])
+  if (!note) {
+    throw new Error(`note ${noteIds[0]} not found`)
+  }
   const bar = z.string().parse(note.tagsObj.barId[0])
   if (!bar) {
     throw new Error(`bar note found for note ${noteIds[0]}`)

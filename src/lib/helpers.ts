@@ -83,7 +83,9 @@ export const phaseScale = (
     }
   }
 
-  const properlyCasedScaleName = properScaleName(userScale)
+  // reaching this line requires userScale to have been provided; an undefined
+  // value has always thrown inside properScaleName
+  const properlyCasedScaleName = properScaleName(userScale as string)
 
   phase.scaleName = properlyCasedScaleName
   phase.scaleTonic = userTonic

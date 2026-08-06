@@ -108,9 +108,12 @@ export const deleteSongAndRelatedTracksAndPhasesBySongId: Module = {
         ).first()
       })
     )
-    const phaseIds = tracks.flatMap(
-      (track) => trackRecordSchema.parse(track.data)['phase-ids']
-    )
+    const phaseIds = tracks.flatMap((track) => {
+      if (!track) {
+        throw new Error('track row missing while deleting song')
+      }
+      return trackRecordSchema.parse(track.data)['phase-ids']
+    })
     // fetch the phases
     const phases = await Promise.all(
       phaseIds.map(async (phaseId) => {
@@ -125,6 +128,9 @@ export const deleteSongAndRelatedTracksAndPhasesBySongId: Module = {
     // delete the tracks
     const trackDeletions = await Promise.all(
       tracks.map((track) => {
+        if (!track) {
+          throw new Error('track row missing while deleting song')
+        }
         return browser.userTables.delete('track', { id: track.id })
       })
     )
@@ -144,6 +150,9 @@ export const deleteSongAndRelatedTracksAndPhasesBySongId: Module = {
     // delete the phases
     const phaseDeletions = await Promise.all(
       phases.map((phase) => {
+        if (!phase) {
+          throw new Error('phase row missing while deleting song')
+        }
         return browser.userTables.delete('phase', { id: phase.id })
       })
     )

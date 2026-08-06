@@ -80,7 +80,7 @@ export const createDimensionalExampleDatetime = () => {
   const getViewableRangeWidth = (): number => {
     try {
       const rangeStore = accessConversionStore(rangeId)
-      const [start, end] = rangeStore.viewableRange.map(datetimeIsoToMs) as RangePair
+      const [start, end] = rangeStore.viewableRange.map((v) => datetimeIsoToMs(v as string)) as RangePair
       return Math.abs(end - start)
     } catch {
       const viewportWidth =
@@ -381,17 +381,17 @@ export const createDimensionalExampleDatetime = () => {
     nextLeftValue.textContent = rangeStore.nextLeftRange.join(', ')
     nextRightValue.textContent = rangeStore.nextRightRange.join(', ')
     currentTicksValue.textContent = ticksInRange(
-      rangeStore.viewableRange.map(datetimeIsoToMs) as RangePair
+      rangeStore.viewableRange.map((v) => datetimeIsoToMs(v as string)) as RangePair
     )
       .map((t) => `${t.label}`)
       .join(', ')
     nextLeftTicksValue.textContent = ticksInRange(
-      rangeStore.nextLeftRange.map(datetimeIsoToMs) as RangePair
+      rangeStore.nextLeftRange.map((v) => datetimeIsoToMs(v as string)) as RangePair
     )
       .map((t) => `${t.label}`)
       .join(', ')
     nextRightTicksValue.textContent = ticksInRange(
-      rangeStore.nextRightRange.map(datetimeIsoToMs) as RangePair
+      rangeStore.nextRightRange.map((v) => datetimeIsoToMs(v as string)) as RangePair
     )
       .map((t) => `${t.label}`)
       .join(', ')

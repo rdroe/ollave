@@ -61,7 +61,7 @@ const piano = new Piano({
 piano.load()
 
 // The samples loaded promise will resolve when the piano really is ready (all samples are loaded)
-let resolveAllSamplesLoadedPromise: () => void | null = null
+let resolveAllSamplesLoadedPromise: (() => void) | null = null
 let allSamplesLoadedResolved = false
 const allSamplesLoadedPromise = new Promise<void>((resolve) => {
     resolveAllSamplesLoadedPromise = () => {
@@ -74,8 +74,8 @@ let allLoadedTimeout: NodeJS.Timeout | null = null
 if (allLoadedTimeout === null) {
     allLoadedTimeout = setInterval(() => {
         if (piano.loaded) {
-            clearInterval(allLoadedTimeout)
-            resolveAllSamplesLoadedPromise()
+            if (allLoadedTimeout) clearInterval(allLoadedTimeout)
+            resolveAllSamplesLoadedPromise?.()
         }
     }, 1000)
 }
@@ -83,7 +83,7 @@ if (allLoadedTimeout === null) {
 const playMusic = async (json: Triad[]) => {
     json.forEach((triad) => {
         /** note, dur, timing, velocity */
-        const [note, t1, t2, midiVelocity = DEFAULT_VELOCITY] = triad
+        const [note, t1, t2 = 0, midiVelocity = DEFAULT_VELOCITY] = triad
 
 
         const velocity = midiVelocity / 127

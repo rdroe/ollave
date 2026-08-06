@@ -2,7 +2,7 @@ import { browser } from 'user-tables'
 import { z } from 'zod'
 
 import { mem } from '../../core/mem'
-import { setLatestMap } from '../../core/observables'
+import { setLatestMap } from '../../core/observables/compilationObservable'
 import { mapSongToMidiTicks } from '../mapSongToTicks'
 import { cloneNoteByBar, NoteByBar, phaseRecordSchema } from '../schemas'
 
@@ -180,6 +180,9 @@ export async function phaseCountInner(
         ? []
         : notesByBar[barToCopy].map((note) => {
             const clonedNote = cloneNoteByBar(note)
+            if (!clonedNote) {
+              throw new Error(`could not clone note in ${barToCopy}`)
+            }
             clonedNote.tagsObj.barId = [newBarTag]
             clonedNote.tagsObj.copyGroup = [copyGroup]
             clonedNote.tagsObj.noteId = [randId('', 6)]

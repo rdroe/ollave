@@ -37,7 +37,12 @@ export const fetchLatestSongAndTracks = async () => {
     console.error('no songs found')
     return null
   }
-  return fetchSongAndTracks(songs[0].id)
+  const [latest] = songs
+  if (latest.id === undefined) {
+    console.error('latest song has no id')
+    return null
+  }
+  return fetchSongAndTracks(latest.id)
 }
 
 export const fetchSongAndTracksBySongId = async (songId: number) => {
@@ -52,7 +57,7 @@ export const fetchSongAndTracksBySongId = async (songId: number) => {
   const song = songs.find((song1) => {
     return song1.id === songId
   })
-  if (!song) {
+  if (!song || song.id === undefined) {
     console.error('song not found')
     return null
   }
@@ -70,12 +75,10 @@ export async function loadAndInitSongAndTracks(songId: number) {
     mem().tracks = [latestSong.tracks[0]]
     mem().phases = latestSong.phases.reduce(
       (acc, phase) => {
+        // id/name/'follows-ids'/barSizeMultiplier are always present on the
+        // spread phase, so listing them before it was dead code
         acc[phase.name] = {
-          id: phase.id,
-          name: phase.name,
-          'follows-ids': [],
           speed: 1,
-          barSizeMultiplier: 1,
           scaleName: 'major',
           scaleTonic: 'C',
           ...(phase || {}),
@@ -93,6 +96,9 @@ export async function loadAndInitSongAndTracks(songId: number) {
 export async function fetchSongAndTracks(songId: number) {
   const coll = await browser.userTables.where('song', { id: songId })
   const fetched = await coll.first()
+  if (!fetched) {
+    throw new Error(`song ${songId} not found`)
+  }
   // get the track ids  //
   const validSong = songRecordSchema.parse(fetched.data)
   const trackIds = validSong['track-ids']
@@ -108,6 +114,9 @@ export async function fetchSongAndTracks(songId: number) {
       const fetched = await (
         await browser.userTables.where('track', { id: trackId })
       ).first()
+      if (!fetched) {
+        throw new Error(`track ${trackId} not found`)
+      }
       return trackRecordSchema.parse(fetched.data)
     })
   )
@@ -173,9 +182,10 @@ export async function initLoadedSong() {
   let previousSongName: null | string = null
   let previousSongId: null | number = null
 
-  if (mem().song) {
-    previousSongName = mem().song.name
-    previousSongId = mem().song.id
+  const currentSong = mem().song
+  if (currentSong) {
+    previousSongName = currentSong.name
+    previousSongId = currentSong.id ?? null
     stopCueObservable()
     deleteCueObservable(previousSongName)
   }
@@ -229,6 +239,9 @@ export async function initNewSong() {
   const refetched = await (
     await browser.userTables.where('song', { id: createdId })
   ).first()
+  if (!refetched) {
+    throw new Error(`created song ${createdId} not found`)
+  }
   mem().song = songRecordSchema.parse(refetched.data)
   await initNewTrack()
   return createdId
@@ -242,6 +255,11 @@ async function initNewTrack() {
     notesByBar: {},
   }
 
+  const memSong = mem().song
+  if (!memSong) {
+    throw new Error('cannot init a track without a song in memory')
+  }
+
   const trackId = await browser.userTables.add('track', { data: trackRecord })
   // update the track to have its id in data.
   await browser.userTables.update(
@@ -252,7 +270,7 @@ async function initNewTrack() {
   await browser.userTables.update(
     'song',
     {
-      id: mem().song.id,
+      id: memSong.id,
       data: {
         'track-ids': [[trackId, 0]],
       },
@@ -260,8 +278,11 @@ async function initNewTrack() {
     {}
   )
 
-  const coll = await browser.userTables.where('song', { id: mem().song.id })
+  const coll = await browser.userTables.where('song', { id: memSong.id })
   const fetched = await coll.first()
+  if (!fetched) {
+    throw new Error(`song ${memSong.id} not found while creating track`)
+  }
   const validSong = songRecordSchema.parse(fetched.data)
   const { 'track-ids': songTracks } = validSong
 
@@ -275,7 +296,7 @@ async function initNewTrack() {
       },
     ]
   } else {
-    console.error('no tracks for song', mem().song.id)
+    console.error('no tracks for song', memSong.id)
   }
 }
 export async function initLatestOrNewSong() {
@@ -292,7 +313,11 @@ export async function duplicateCurrentSong() {
   const origMem = {
     ...mem(),
   }
-  const origName = mem().song.name
+  const origSong = mem().song
+  if (!origSong) {
+    throw new Error('cannot duplicate: no song in memory')
+  }
+  const origName = origSong.name
   const notesByBar = Object.fromEntries(
     Object.entries(mem().notesByBar).map(([barId, notes]) => [
       barId,
@@ -303,9 +328,13 @@ export async function duplicateCurrentSong() {
   )
   const newSongId = await initNewSong()
   await initLoadedSong()
+  const loaded = await loadAndInitSongAndTracks(newSongId)
+  if (!loaded) {
+    throw new Error(`could not load duplicated song ${newSongId}`)
+  }
   const {
     song: { name: newName },
-  } = await loadAndInitSongAndTracks(newSongId)
+  } = loaded
 
   // init phases for each current phase.
   const newPhaseToNameHash: Record<number, string> = {}
@@ -322,7 +351,9 @@ export async function duplicateCurrentSong() {
       mem().phases[phaseName].scaleTonic = phase.scaleTonic
       mem().phases[phaseName].speed = phase.speed
       mem().phases[phaseName].barSizeMultiplier = phase.barSizeMultiplier
-      newPhaseToNameHash[newPhaseId] = phaseName
+      if (newPhaseId != null) {
+        newPhaseToNameHash[newPhaseId] = phaseName
+      }
     })
   )
   await Promise.all(
@@ -335,7 +366,10 @@ export async function duplicateCurrentSong() {
       await phaseFollowsPhaseInner(oldPhaseName, subjectNames)
     })
   )
-  mem().song.name = `${newName} <- ${origName}`
+  const duplicatedSong = mem().song
+  if (duplicatedSong) {
+    duplicatedSong.name = `${newName} <- ${origName}`
+  }
   mem().notesByBar = notesByBar
 
   await setLatestMap(mapSongToMidiTicks())
@@ -361,9 +395,13 @@ export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord
   })
   const newSongId = await initNewSong()
   await initLoadedSong()
+  const loaded = await loadAndInitSongAndTracks(newSongId)
+  if (!loaded) {
+    throw new Error(`could not load imported song ${newSongId}`)
+  }
   const {
       song: { name: newName },
-    } = await loadAndInitSongAndTracks(newSongId)
+    } = loaded
   const origName = song.name
   // init phases for each current phase.
   const newPhaseToNameHash: Record<number, string> = {}
@@ -381,7 +419,9 @@ export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord
       mem().phases[phaseName].scaleTonic = phase.scaleTonic
       mem().phases[phaseName].speed = phase.speed
       mem().phases[phaseName].barSizeMultiplier = phase.barSizeMultiplier
-      newPhaseToNameHash[newPhaseId] = phaseName
+      if (newPhaseId != null) {
+        newPhaseToNameHash[newPhaseId] = phaseName
+      }
     })
   )
 
@@ -397,7 +437,10 @@ export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord
     })
   )
 
-  mem().song.name = `${newName} <- imported <- ${origName}`
+  const importedSong = mem().song
+  if (importedSong) {
+    importedSong.name = `${newName} <- imported <- ${origName}`
+  }
   mem().notesByBar = notesByBar
 
   // Bar templates: recreate them under the new song and repoint the

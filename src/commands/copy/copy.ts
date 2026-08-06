@@ -1,3 +1,5 @@
+import { Module } from 'peprn/util'
+
 import { mem } from '../../core/mem'
 import { setLatestMap } from '../../core/observables'
 import { mapSongToMidiTicks } from '../../lib/mapSongToTicks'
@@ -48,6 +50,7 @@ export default {
   },
   yargs: {
     move: {
+      alias: 'm',
       type: 'boolean',
       default: false,
     },
@@ -112,7 +115,11 @@ export default {
           if (notes.length === 0) {
             return
           }
-          const [phaseName, barIndex] = parseColonTag(barId)
+          const parsed = parseColonTag(barId)
+          if (!parsed) {
+            return
+          }
+          const [phaseName, barIndex] = parsed
           if (phaseName !== srcPhase) {
             return
           }
@@ -130,4 +137,4 @@ export default {
       },
     },
   },
-}
+} as Module

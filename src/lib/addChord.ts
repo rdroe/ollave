@@ -1,5 +1,5 @@
 import { mem } from '../core/mem'
-import { setLatestMap } from '../core/observables'
+import { setLatestMap } from '../core/observables/compilationObservable'
 
 import { addNoteToBar } from './addNote'
 import { phaseScale } from './helpers'

@@ -24,7 +24,7 @@ export const addSongLoadCallback = (callback: (song: SongRecord) => void) => {
       const rand = Math.floor(Math.random() * wordList.length)
       songNames.push(wordList[rand])
     }
-    namesResolver(songNames)
+    namesResolver?.(songNames)
   })
 })()
 
@@ -49,9 +49,12 @@ export async function init() {
   }
 
   await initLatestOrNewSong()
-  onLoadSongCallbacks.forEach((callback) => {
-    callback(mem().song)
-  })
+  const loadedSong = mem().song
+  if (loadedSong) {
+    onLoadSongCallbacks.forEach((callback) => {
+      callback(loadedSong)
+    })
+  }
 
   // start and pause the song to get observable set up
   setLatestMap(mapSongToMidiTicks())

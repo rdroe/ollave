@@ -114,24 +114,36 @@ export function compileTracksToPhasesProperties() {
   tracks.forEach((track, idx) => {
     track['phase-names'].forEach((phaseName, idx) => {
       const existingPhase = mem().phases[phaseName]
-      const phaseRecord: PhaseRecord = {
-        id: track['phase-ids'][idx],
-        name: phaseName,
-        'follows-ids': [],
-        speed: 1,
-        barSizeMultiplier: 1,
-        scaleName: 'major',
-        scaleTonic: 'C',
-        ...(existingPhase || {}),
-      }
+      // same merge as before: an existing phase's own props always win over
+      // the defaults, written as a conditional so no key is dead code
+      const phaseRecord: PhaseRecord = existingPhase
+        ? {
+            speed: 1,
+            scaleName: 'major',
+            scaleTonic: 'C',
+            ...existingPhase,
+          }
+        : {
+            id: track['phase-ids'][idx],
+            name: phaseName,
+            'follows-ids': [],
+            speed: 1,
+            barSizeMultiplier: 1,
+            scaleName: 'major',
+            scaleTonic: 'C',
+          }
       mem().phases[phaseName] = phaseRecord
     })
   })
 }
 
 export function saveSongAndTracks() {
-  const songId = mem().song.id
-  browser.userTables.update('song', { id: songId, data: mem().song }, {})
+  const song = mem().song
+  if (!song) {
+    throw new Error('cannot save: no song in memory')
+  }
+  const songId = song.id
+  browser.userTables.update('song', { id: songId, data: song }, {})
   Object.values(mem().phases).forEach((phase) => {
     browser.userTables.update(
       'phase',
@@ -155,12 +167,15 @@ export function exportSongAndTracks(): {
   tracks: (Omit<TrackRecord, 'id'>)[],
   phases: Omit<PhaseRecord, 'id'>[]
 } {
-
+  const song = mem().song
+  if (!song) {
+    throw new Error('cannot export: no song in memory')
+  }
 
   return {
     song: {
-      name: mem().song.name,
-      tempo: mem().song.tempo,
+      name: song.name,
+      tempo: song.tempo,
       'track-ids': [],
 
     },

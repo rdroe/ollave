@@ -35,33 +35,9 @@ a new command
 phases and tracks
 we need to add the track, song, entities and the track-song (or song-track) property on one of those.
 */
-const isTuple = (tuple: unknown): tuple is [string, number] => {
-  return Array.isArray(tuple) && tuple.length === 2
-}
-export const parseColonTag = (
-  str: string
-): null | [semantic: string, number: number] => {
-  let result: null | [semantic: string, number: number] = null
-  if (str.match(/[^\:]\:[0-9]+/)) {
-    const tuple = z
-      .tuple([
-        z.string(),
-        z.number().or(
-          z.string().transform((str) => {
-            if (typeof str !== 'string') {
-              throw new Error('str is not a string')
-            }
-            return parseInt(str)
-          })
-        ),
-      ])
-      .parse(str.split(':'))
-    if (isTuple(tuple)) {
-      result = tuple
-    }
-  }
-  return result
-}
+import { parseColonTag } from '../../lib/util/parseColonTag'
+
+export { parseColonTag }
 
 const notes = (phaseOrBarTag?: string) => {
   let notes: ReturnType<typeof mem>['notesByBar']['string'] = []
