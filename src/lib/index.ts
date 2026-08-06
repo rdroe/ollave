@@ -15,6 +15,7 @@ export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
 export * as voiceLeading from './voiceLeading'
 export * as mixture from './mixture'
+export * as sevenths from './sevenths'
 export * as pivots from './pivots'
 export * as randomProgression from './randomProgression'
 
@@ -44,6 +45,8 @@ export type {
 
 export { mixtureSuggestions } from './mixture'
 export type { MixtureStrength, MixtureSuggestion } from './mixture'
+
+export { seventhOf, seventhSuggestions } from './sevenths'
 
 export { pivotSuggestions, romanInKey } from './pivots'
 export type { PivotSuggestion } from './pivots'

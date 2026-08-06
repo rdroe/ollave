@@ -24,6 +24,7 @@ Nine chords that can idiomatically follow A minor in the key of A minor.
 | What can follow this chord? | `nextChord` / `nextChordDetail` |
 | Which of those flow most smoothly? | `rankByVoiceLeading` |
 | What can I borrow for colour? | `mixtureSuggestions` |
+| Can this chord take a seventh? | `seventhSuggestions` / `seventhOf` |
 | Where could this chord take me? | `pivotSuggestions` |
 | Just sketch me something. | `randomProgression` |
 
@@ -158,7 +159,55 @@ can never cost you the suggestions you already had.
 
 ---
 
-## 5. Everything at once
+## 5. Sevenths
+
+```js
+seventhSuggestions('C', 'major')
+// Imaj7=Cmaj7  IIm7=Dm7  IVmaj7=Fmaj7  V7=G7  VIIm7b5=Bm7b5
+
+seventhSuggestions('A', 'minor')
+// Im7=Am7  IIm7b5=Bm7b5  IVm7=Dm7  V7=E7  VIIdim7=G#dim7
+```
+
+The key's idiomatic diatonic sevenths. `V7` carries `strength: 'strong'` —
+adding the seventh to a dominant is the most ordinary move in tonal harmony.
+The rest are `'dotted'`: valid, but a colouring choice rather than a principal
+motion.
+
+Note the two leading-tone chords differ by mode. Major takes the
+**half-diminished** `VIIm7b5` (B–D–F–A in C); minor takes the **fully
+diminished** `VIIdim7` (G♯–B–D–F in A minor), built on the leading tone, not
+the subtonic.
+
+If you're sitting on a chord and just want to know whether it takes a seventh:
+
+```js
+seventhOf('E', 'A', 'minor')     // E7,    roman 'V7',      strong
+seventhOf('Bdim', 'A', 'minor')  // Bm7b5, roman 'IIm7b5',  dotted
+seventhOf('F', 'A', 'minor')     // null
+```
+
+It matches on the chord name you're holding, so you don't need to know the
+chord's function — and it reads the same chord differently in different keys.
+`Bdim` is `IIm7b5` in A minor but `VIIm7b5` in C major.
+
+**Not every triad gets one.** The mediant and submediant sevenths (`IIIm7`,
+`VIm7`) are perfectly legal but carry no distinct function, so they're left out
+rather than padding every list. `romanChordNameToReal` still resolves them if
+you want them by hand.
+
+Like mixture, it's additive and opt-in:
+
+```js
+nextChordDetail('C,3', 'C', 'major', { include: ['sevenths'] })
+```
+
+Unsupported modes return `[]` rather than throwing, so opting in can never cost
+you the suggestions you already had.
+
+---
+
+## 6. Everything at once
 
 ```js
 nextChordDetail('C,3', 'C', 'major', {
@@ -175,11 +224,13 @@ nextChordDetail('C,3', 'C', 'major', {
 ```
 
 Diatonic moves and borrowed colour together, ordered by how little the fingers
-have to travel.
+have to travel. `include` takes both sources at once —
+`include: ['mixture', 'sevenths']` — and the order you list them doesn't change
+the result.
 
 ---
 
-## 6. Changing key
+## 7. Changing key
 
 ```js
 pivotSuggestions('Am', 'A', 'minor')
@@ -199,7 +250,7 @@ Closely-related keys come first.
 
 ---
 
-## 7. Sketching
+## 8. Sketching
 
 ```js
 randomProgression('C,3', 'C', 'major', 8, { seed: 42 })
@@ -245,6 +296,52 @@ whichever arrangement sits closest to the previous chord in that phase, instead
 of always root position.
 
 It's opt-in. Without the tag, placement is byte-for-byte what it always was.
+
+---
+
+## Inversions
+
+There is no `C/E` chord name, and that's deliberate. **Inversions live in the
+voicing layer, not the naming layer.**
+
+`ascendingInversions` already enumerates every one of them:
+
+```js
+ascendingInversions('C', { minOctave: 3, maxOctave: 3 })
+// [['C3','E3','G3'], ['E3','G3','C4'], ['G3','C4','E4']]
+```
+
+and sevenths get all four:
+
+```js
+ascendingInversions('Cmaj7', { minOctave: 3, maxOctave: 3 })
+// [['C3','E3','G3','B3'], ['E3','G3','B3','C4'],
+//  ['G3','B3','C4','E4'], ['B3','C4','E4','G4']]
+```
+
+More to the point, you rarely have to ask. `nearestVoicing` and
+`voicing=smooth` already *choose* an inversion for you — that's most of what
+they do. Moving to `C` while holding `E4 G4 C5` costs distance 0, because the
+first inversion is right there.
+
+So an inversion is something ollave picks, not something you spell. Where a
+first inversion is structural rather than cosmetic, the map names it by
+function instead: `V64` is the cadential six-four and `N6` the Neapolitan
+sixth, both of which are *defined* by being inverted.
+
+Two concrete reasons a slash name would be the wrong fix:
+
+- **`/` already means something else here.** The map writes secondary chords as
+  `V7/III` and `VIIdim/VIm` — tonicization, not bass notes. A bare `C/E` in the
+  same vocabulary is genuinely ambiguous.
+- **The underlying library doesn't parse them.** `Chord.get('C/E')` returns no
+  notes at all, so a slash name would need its own bass-note parser bolted on
+  ahead of the existing chord-name validation.
+
+Neither is fatal, and full slash-chord support is a reasonable future feature.
+It just belongs with a bass-note field on the suggestion contract rather than
+smuggled into the chord name — which is a larger change than adding sevenths
+was, and one nothing currently needs.
 
 ---
 

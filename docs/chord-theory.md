@@ -175,7 +175,65 @@ succeed.
 
 ---
 
-## 7. Pivot modulation
+## 7. Sevenths, and why they aren't on the chart
+
+`seventhSuggestions` returns the key's idiomatic diatonic sevenths. Like
+mixture, it's an additive palette that never touches the graph — and for a
+related but distinct reason.
+
+The source chart has no seventh nodes. It draws triads, plus the three function
+chords. Adding `V7` as a node would mean **inventing arrows the chart never
+drew**: does `IIm7` go everywhere `IIm` goes? Does `V7` inherit V's dotted
+Picardy edge? Those are real theoretical questions with defensible answers, but
+they'd be *our* answers, not the transcribed figure's — and section 1's whole
+claim is that this map is a transcription. So sevenths are offered beside the
+chart rather than woven into it.
+
+The practical consequence is that triad behaviour is unchanged. Nothing a
+caller already asked for got bigger.
+
+### What's included, and what isn't
+
+| | major | minor |
+|---|---|---|
+| tonic | `Imaj7` | `Im7` |
+| supertonic | `IIm7` | `IIm7b5` |
+| subdominant | `IVmaj7` | `IVm7` |
+| dominant | `V7` | `V7` |
+| leading tone | `VIIm7b5` | `VIIdim7` |
+
+Two things worth reading off that table.
+
+**The supertonic mapping isn't a suffix append.** In minor the supertonic triad
+is diminished (`IIdim`, B–D–F in A minor), but its idiomatic seventh is
+*half*-diminished — `Bm7b5`, B–D–F–A. Stacking a diatonic seventh gives A
+natural, not A♭. That's why the roman for the triad and the roman for its
+seventh are stored as a pair rather than derived.
+
+**The leading-tone seventh differs by mode.** Major takes the half-diminished
+`VIIm7b5`; minor takes the fully-diminished `VIIdim7`, which is the
+characteristic sound of the minor key. Both are built on the **leading tone**,
+which in minor means the raised seventh degree — the same rule described in
+section 4 for `V64` and friends, and the reason `VIIdim7` in A minor is
+`G#dim7` and not the subtonic `Gdim7`. The subtonic `VII` (plain G major) stays
+distinct; only the *diminished* VII family gets raised.
+
+`IIIm7` and `VIm7` are excluded. They're diatonic and legal, but the mediant
+and submediant sevenths carry no distinct function — they're colour on chords
+that are already colour. Including them would make this "every triad also has a
+seventh," which is the suggestion-list bloat the additive design exists to
+avoid. The translator resolves them if you ask by hand.
+
+### Strength
+
+`V7` is `'strong'`; everything else is `'dotted'`. This reuses the existing
+vocabulary rather than adding a `'seventh'` member to the strength union —
+widening that union would break exhaustive switches in existing consumers, and
+it would say nothing the `roman` field doesn't already carry.
+
+---
+
+## 8. Pivot modulation
 
 A pivot chord belongs to two keys at once — it's the hinge a modulation turns
 on. `pivotSuggestions` finds every major or minor key containing all of a
@@ -206,7 +264,7 @@ chord is really in. Detection needs all the spellings; a dropdown needs one.
 
 ---
 
-## 8. Random walks
+## 9. Random walks
 
 `randomProgression` walks the map with weighted choices: strong edges 3, dotted
 edges 1, and a ×2 multiplier for context matches. Immediate repeats are
@@ -225,7 +283,7 @@ reported as `stoppedBecause: 'dead-end'`, which is a legitimate musical ending
 
 ---
 
-## 9. What this system is not
+## 10. What this system is not
 
 Worth being explicit, so you know when to override it:
 
@@ -251,5 +309,6 @@ Worth being explicit, so you know when to override it:
 | `nextChord`, `nextChordDetail` | `src/lib/nextChord.ts` |
 | Voicings and distance | `src/lib/voiceLeading.ts` |
 | Borrowed chords | `src/lib/mixture.ts` |
+| Diatonic sevenths | `src/lib/sevenths.ts` |
 | Modulation | `src/lib/pivots.ts` |
 | Seeded walks | `src/lib/randomProgression.ts` |
