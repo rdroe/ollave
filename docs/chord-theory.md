@@ -131,7 +131,7 @@ like a pedantic detail, but it's what keeps the spelling honest in flat keys —
 E♭ major's Neapolitan is `F♭–A♭–C♭`, not the enharmonically-equal-but-wrong
 `E–G♯–B`.
 
-### Aug6 — the augmented sixth
+### Aug6 — the augmented sixth family
 
 Built as **♭6 – 1 – ♯4** measured as absolute intervals from the tonic: in A
 minor, `F–A–D♯`. The augmented sixth between ♭6 and ♯4 wants to expand outward
@@ -140,6 +140,32 @@ by half step in both directions onto the dominant.
 Measuring from the tonic rather than from scale degrees is deliberate: in minor,
 the sixth degree is *already* lowered, so flattening "the sixth degree" a second
 time gives the wrong note.
+
+There are **three** of these, differing only in what is added inside that outer
+augmented sixth, and all three are chart nodes:
+
+| node | formula | in A minor | in C major |
+|---|---|---|---|
+| `It6` — Italian | ♭6 – 1 – ♯4 | `F A D♯` | `A♭ C F♯` |
+| `Fr6` — French | ♭6 – 1 – 2 – ♯4 | `F A B D♯` | `A♭ C D F♯` |
+| `Ger6` — German | ♭6 – 1 – ♭3 – ♯4 | `F A C D♯` | `A♭ C E♭ F♯` |
+
+**`Aug6` is an alias for the Italian**, so it returns exactly what it always
+returned. The Italian is the three-note prototype the other two each add one
+note to, and aliasing the German instead would have silently turned three notes
+into four in songs already saved to disk.
+
+One grading worth knowing: **`Ger6 → V` is a dotted edge while `It6 → V` and
+`Fr6 → V` are strong.** The German's ♭3 forms a perfect fifth above its bass,
+so moving it directly to a root-position V produces parallel fifths — the
+so-called *Mozart fifths*. Its strong path is through the cadential ⁶₄, which
+is why composers approach V that way when using it.
+
+The German's other consequence is enharmonic: `F–A–C–D♯` respelled as
+`F–A–C–E♭` is `F7`, a dominant seventh. That is the **Ger⁶ ↔ V⁷ pivot**, one of
+the most powerful modulation devices in the tonal repertoire, and it's why
+`enharmonicPivots` exists (see §7). The Italian has no fifth to respell, so
+`enharmonicPivots('Aug6', …)` correctly returns nothing.
 
 ### One alias policy for all three
 
@@ -700,6 +726,10 @@ node list in a test, as `majorGraph.test.ts` does.
 | Shared chart/span types (zero-import) | `src/lib/graphData/types.ts` |
 | Span library (idioms, schemata, waivers) | `src/lib/spans.ts` |
 | Borrowed chords | `src/lib/mixture.ts` |
+| Aug6 trio, CT°7, chromatic mediants, enharmonic pivots | `src/lib/chromatic.ts` |
+| Part-writing rules, four-voice realization | `src/lib/partWriting.ts` |
+| Metric weight, harmonic rhythm | `src/lib/harmonicRhythm.ts` |
+| Sequences and Galant schemata | `src/lib/sequences.ts` |
 | Diatonic sevenths — nodes | `src/lib/graphData/` (with the triads) |
 | Diatonic sevenths — key palette, triad→seventh relation | `src/lib/sevenths.ts` |
 | Modulation | `src/lib/pivots.ts` |
