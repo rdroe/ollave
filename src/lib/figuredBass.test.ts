@@ -379,10 +379,17 @@ describe('BLAST RADIUS — nextChord is unchanged by the inversions', () => {
       'Edim: Dm Bdim F',
       'F: Bdim Dm',
       'F#dim: Bdim G7 G',
+      // Stage M-B (B4): three ADDED nodes. Every line above is byte-identical
+      // to the pre-B4 capture — no pre-existing node's strong edges changed.
+      // Ger6 reaches only V64: its perfect fifth would make Ger6 -> V parallel
+      // fifths, so the direct resolution is dotted.
+      'Fr6: V64 E',
       'G: C',
       'G#dim: E',
       'G#dim7: E',
       'G7: Edim C7 C',
+      'Ger6: V64',
+      'It6: V64 E',
       'N6: V64 E',
       'V64: E',
     ])
@@ -414,9 +421,14 @@ describe('BLAST RADIUS — nextChord is unchanged by the inversions', () => {
       'F: Dm V64 Bdim G F#dim D N6 Aug6',
       'F#dim: V64 Bdim G',
       'Fmaj7: Dm V64 Bdim G F#dim D N6 Aug6',
+      // Stage M-B (B4): three ADDED nodes, same as in minor. Every line above
+      // is byte-identical to the pre-B4 capture.
+      'Fr6: V64 G',
       'G: C',
       'G#dim: Am',
       'G7: C',
+      'Ger6: V64',
+      'It6: V64 G',
       'N6: V64 G',
       'V64: G',
     ])

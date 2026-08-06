@@ -33,6 +33,11 @@ const C_MAJOR_NODES = [
   'Fmaj7', // IVmaj7
   'G7', // V7
   'Bm7b5', // VIIm7b5 — HALF-diminished in major
+  // the augmented-sixth trio (Stage M-B, B4). Aug6 above remains a working
+  // alias for the Italian, so these are three ADDED nodes, not a rename.
+  'It6', // b6-1-#4       — the three-note prototype
+  'Fr6', // b6-1-2-#4     — whole-tone colour
+  'Ger6', // b6-1-b3-#4   — has a fifth; enharmonically a dominant seventh
 ]
 
 describe('major chord graph', () => {
@@ -108,6 +113,13 @@ describe('major chord graph', () => {
       'V6',
       'VIIdim6',
       'V65',
+      // Stage M-B (B4): the augmented-sixth trio. IV already reaches the
+      // generic Aug6 over a STRONG edge, so its three members arrive dotted —
+      // one chromatic colour spelled three ways must not triple the strong
+      // suggestion list.
+      'It6',
+      'Fr6',
+      'Ger6',
     ])
   })
 
@@ -249,7 +261,11 @@ describe('major chord graph', () => {
   it('resolves every node and every edge to non-empty notes', () => {
     for (const key of ['C', 'G', 'F#', 'Eb', 'A', 'Db']) {
       const graph = chordGraphCreate(key, 'major')
-      expect(Object.keys(graph)).toHaveLength(25)
+      // 25 before Stage M-B; +3 for the augmented-sixth trio (It6/Fr6/Ger6).
+      // This loop is the guard that every one of them spells to real notes in
+      // flat and sharp keys alike — Eb's Ger6 is Cb-Eb-Gb-A, Db's It6 is
+      // Bbb-Db-G, and both must resolve rather than come back empty.
+      expect(Object.keys(graph)).toHaveLength(28)
       for (const [name, node] of Object.entries(graph)) {
         expect(
           node.translatedSource.notes.length,

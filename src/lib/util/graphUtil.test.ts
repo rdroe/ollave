@@ -33,6 +33,11 @@ const A_MINOR_NODES = [
   'Dm7', // IVm7
   'E7', // V7
   'G#dim7', // VIIdim7, on the raised seventh degree
+  // the augmented-sixth trio (Stage M-B, B4). Aug6 above remains a working
+  // alias for the Italian, so these are three ADDED nodes, not a rename.
+  'It6', // b6-1-#4       — the three-note prototype
+  'Fr6', // b6-1-2-#4     — whole-tone colour
+  'Ger6', // b6-1-b3-#4   — has a fifth; enharmonically a dominant seventh
 ]
 
 describe('chordGraphCreate', () => {

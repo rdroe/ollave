@@ -300,13 +300,16 @@ describe('chord pivots', () => {
       scale: 'minor',
     })
     // continuation counts include the dotted seventh edges added when the
-    // sevenths became chart nodes
+    // sevenths became chart nodes, and (Stage M-B) the three dotted
+    // augmented-sixth edges the predominants now carry in BOTH charts. Only
+    // the two predominant rows moved (+3 each): Am is iv in E minor and ii in
+    // G major, but vi/v/iii elsewhere, and those are not predominants.
     expect(f.pivots).toEqual([
       'C major  VIm  6 continuations',
       'D minor  Vm  0 continuations',
-      'E minor  IVm  14 continuations',
+      'E minor  IVm  17 continuations',
       'F major  IIIm  7 continuations',
-      'G major  IIm  13 continuations',
+      'G major  IIm  16 continuations',
     ])
   })
 })
