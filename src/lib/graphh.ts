@@ -297,8 +297,20 @@ const romanChordNameToReal_ = (
   // even in minor keys, where the scale's own seventh degree is the subtonic
   // (harmonic-minor practice: G#dim, not Gdim, in A minor). Major keys are
   // unaffected — their seventh degree already is the leading tone.
-  if (romanName === 'VIIdim') {
-    return `${Note.transpose(scaleTonic, '-2m')}dim`
+  //
+  // This applies to the whole VII-DIMINISHED FAMILY, not just the bare triad:
+  // 'VIIdim', the fully-diminished seventh 'VIIdim7', and the half-diminished
+  // 'VIIm7b5' are all leading-tone chords. Matching the literal string
+  // 'VIIdim' (as this did before) silently regressed the seventh forms to the
+  // subtonic — 'VIIdim7' in A minor produced Gdim7 rather than G#dim7.
+  //
+  // The suffix is preserved rather than hardcoded so each form keeps its own
+  // quality. Deliberately NOT matched: bare 'VII' (the subtonic major triad of
+  // natural minor, G in A minor) and 'VII7' — those are diatonic subtonic
+  // chords the chart keeps distinct from vii°, and pinned tests cover them.
+  const viiDim = /^VII(dim7?|m7b5)$/.exec(romanName)
+  if (viiDim) {
+    return `${Note.transpose(scaleTonic, '-2m')}${viiDim[1]}`
   }
   const entries = romanToLetterEntries(scaleTonic, scaleName)
   const newName = entries.reduce((accum, curr) => {

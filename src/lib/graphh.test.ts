@@ -76,6 +76,44 @@ describe('romanChordNameToReal', () => {
     expect(romanChordNameToReal('C', 'major', 'VIIdim')).toBe('Bdim')
   })
 
+  it('builds the whole VII-diminished family on the leading tone', () => {
+    // regression: the leading-tone rule matched the literal string 'VIIdim',
+    // so the seventh forms fell through to the subtonic — 'VIIdim7' in A
+    // minor produced Gdim7 (G-Bb-Db-Fb) instead of G#dim7.
+    expect(romanChordNameToReal('A', 'minor', 'VIIdim7')).toBe('G#dim7')
+    expect(romanChordNameToReal('A', 'minor', 'VIIm7b5')).toBe('G#m7b5')
+    expect(romanChordNameToReal('C#', 'minor', 'VIIdim7')).toBe('B#dim7')
+    // flat minor keys: Eb minor's leading tone is D natural, not Db
+    expect(romanChordNameToReal('Eb', 'minor', 'VIIdim7')).toBe('Ddim7')
+    // major keys are unaffected — their 7th degree already is the leading tone
+    expect(romanChordNameToReal('C', 'major', 'VIIdim7')).toBe('Bdim7')
+    expect(romanChordNameToReal('C', 'major', 'VIIm7b5')).toBe('Bm7b5')
+  })
+
+  it('leaves the subtonic VII family diatonic', () => {
+    // the leading-tone rule must NOT swallow the subtonic chords: in natural
+    // minor VII is a major triad on the flat seventh (G in A minor), and VII7
+    // is its dominant seventh. Only the DIMINISHED family is leading-tone.
+    expect(romanChordNameToReal('A', 'minor', 'VII')).toBe('G')
+    expect(romanChordNameToReal('A', 'minor', 'VII7')).toBe('G7')
+    expect(romanChordNameToReal('Eb', 'minor', 'VII')).toBe('Db')
+  })
+
+  it('resolves seventh suffixes on every diatonic degree', () => {
+    // sevenths were always supported by the translator; the charts simply
+    // never used them. Pinned here so the seventh layer has a foundation.
+    expect(romanChordNameToReal('A', 'minor', 'Im7')).toBe('Am7')
+    expect(romanChordNameToReal('A', 'minor', 'IVm7')).toBe('Dm7')
+    expect(romanChordNameToReal('A', 'minor', 'V7')).toBe('E7')
+    expect(romanChordNameToReal('A', 'minor', 'IIm7b5')).toBe('Bm7b5')
+    expect(romanChordNameToReal('C', 'major', 'Imaj7')).toBe('Cmaj7')
+    expect(romanChordNameToReal('C', 'major', 'IIm7')).toBe('Dm7')
+    expect(romanChordNameToReal('C', 'major', 'IVmaj7')).toBe('Fmaj7')
+    // flat and sharp keys keep their spelling
+    expect(romanChordNameToReal('Eb', 'minor', 'Im7')).toBe('Ebm7')
+    expect(romanChordNameToReal('F#', 'major', 'V7')).toBe('C#7')
+  })
+
   it('translates in sharp keys', () => {
     expect(romanChordNameToReal('C#', 'minor', 'Im')).toBe('C#m')
   })
