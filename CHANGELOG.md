@@ -2,6 +2,45 @@
 
 All notable changes to this project are documented here.
 
+## Unreleased
+
+### Added
+
+**Diatonic seventh chords.** `seventhSuggestions(tonic, scale)` returns a key's
+idiomatic sevenths, and `seventhOf(chordName, tonic, scale)` answers whether
+one particular chord takes a seventh. Both are pure functions over
+`ChordSuggestion[]`, in the same additive, opt-in shape as
+`mixtureSuggestions`, and `nextChordDetail` gains `include: ['sevenths']` as
+sugar over concatenating them.
+
+Into major: `Imaj7`, `IIm7`, `IVmaj7`, `V7`, `VIIm7b5`.
+Into minor: `Im7`, `IIm7b5`, `IVm7`, `V7`, `VIIdim7`.
+
+`V7` carries `strength: 'strong'`; the rest are `'dotted'`. The strength union
+is unchanged — no `'seventh'` member was added, so existing exhaustive switches
+keep compiling. Sevenths are deliberately NOT chart nodes: the source figure
+draws only triads, and adding them there would invent edges it never drew and
+enlarge every suggestion list. Triad behaviour is byte-for-byte unchanged.
+
+The non-functional diatonic sevenths (`IIIm7`, `VIm7`) are excluded by design;
+`romanChordNameToReal` still resolves them on request.
+
+### Fixed
+
+**The leading-tone rule now covers the whole VII-diminished family.** 0.4.0
+built `VIIdim` on the leading tone rather than the subtonic, but matched the
+literal string `'VIIdim'` only — so `VIIdim7` and `VIIm7b5` fell through to the
+subtonic. `romanChordNameToReal('A', 'minor', 'VIIdim7')` returned `Gdim7`
+(G–B♭–D♭–F♭) where it should return `G#dim7`. The subtonic chords `VII` and
+`VII7` are unaffected and remain diatonic, as does secondary-chord resolution.
+
+### Notes
+
+Slash-chord names (`C/E`) remain unsupported, and inversions remain a concern
+of the voicing layer — `ascendingInversions` enumerates them and
+`nearestVoicing` / `voicing=smooth` already select them. See the Inversions
+section of `docs/chord-assistance.md` for the rationale.
+
 ## 0.4.0
 
 Composer-grade chord assistance. This release adds a real major-key
