@@ -10,6 +10,8 @@ import {
 import { parseChordCsvArg } from './util/barsUtil'
 import { chordGraphCreate } from './util/graphUtil'
 import { nextChordDetail, type ChordSuggestion } from './nextChord'
+import { addChord } from './addChord'
+import { mem } from '../core/mem'
 
 const A_MINOR = { tonic: 'A', name: 'minor' }
 
@@ -268,5 +270,76 @@ describe('parseChordCsvArg smooth voicing (opt-in)', () => {
     // a chord the engine cannot enumerate still places its default notes
     const [notes] = parseChordCsvArg('V64,3', 'A minor', ['A3', 'C4', 'E4'])
     expect(notes.length).toBe(3)
+  })
+})
+
+describe('addChord placement', () => {
+  // minimal in-memory song: addChord needs a phase to exist and setLatestMap
+  // needs a song + track, but nothing here touches the DB.
+  const makePhase = (name: string, id: number) => {
+    mem().phases[name] = {
+      id,
+      'follows-ids': [],
+      barSizeMultiplier: 1,
+      speed: null,
+      scaleTonic: 'A',
+      scaleName: 'minor',
+      name,
+    } as never
+    for (let i = 0; i < 4; i++) mem().notesByBar[`${name}:${i}`] = []
+  }
+
+  const notesIn = (barTag: string): string[] =>
+    mem().notesByBar[barTag].map((note) => note.note)
+
+  beforeAll(() => {
+    chordGraphCreate('A', 'minor')
+    // addChord's compile step dispatches a CustomEvent, which the node test
+    // environment lacks. Local shim: the event is fire-and-forget and no
+    // assertion here depends on it.
+    const g = globalThis as { CustomEvent?: unknown }
+    if (typeof g.CustomEvent === 'undefined') {
+      g.CustomEvent = class extends Event {
+        constructor(type: string, init?: EventInit) {
+          super(type, init)
+        }
+      }
+    }
+    mem().song = { id: 1, name: 'vl', tempo: 120, 'track-ids': [] } as never
+    mem().tracks = [
+      {
+        id: 1,
+        'phase-ids': [9991, 9992, 9993],
+        'phase-names': ['vlDefault', 'vlSmooth', 'vlNoPrev'],
+        notesByBar: {},
+      } as never,
+    ]
+    makePhase('vlDefault', 9991)
+    makePhase('vlSmooth', 9992)
+    makePhase('vlNoPrev', 9993)
+  })
+
+  it('places the same notes as today without the tag', () => {
+    addChord('Am,3', 'vlDefault', 0, 0, [], 'A', 'minor')
+    addChord('E,3', 'vlDefault', 1, 0, [], 'A', 'minor')
+
+    expect(notesIn('vlDefault:0')).toEqual(['A3', 'C4', 'E4'])
+    // root position at the requested octave — unchanged behavior
+    expect(notesIn('vlDefault:1')).toEqual(['E3', 'G#3', 'B3'])
+  })
+
+  it('voices smoothly against the previous chord with voicing=smooth', () => {
+    addChord('Am,3', 'vlSmooth', 0, 0, [], 'A', 'minor')
+    addChord('E,3', 'vlSmooth', 1, 0, ['voicing=smooth'], 'A', 'minor')
+
+    expect(notesIn('vlSmooth:0')).toEqual(['A3', 'C4', 'E4'])
+    // the nearest E to A3-C4-E4, not root position
+    expect(notesIn('vlSmooth:1')).toEqual(['G#3', 'B3', 'E4'])
+    expect(notesIn('vlSmooth:1')).not.toEqual(notesIn('vlDefault:1'))
+  })
+
+  it('falls back to the default voicing when there is no previous chord', () => {
+    addChord('E,3', 'vlNoPrev', 0, 0, ['voicing=smooth'], 'A', 'minor')
+    expect(notesIn('vlNoPrev:0')).toEqual(['E3', 'G#3', 'B3'])
   })
 })
