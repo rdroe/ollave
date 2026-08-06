@@ -123,6 +123,37 @@ export type {
   SixFourMetricVerdict,
   SpanMetricFit,
 } from './harmonicRhythm'
+// sequences — spans that GENERATE progressions (Stage M-B, B5) -------------
+// A sequence is (unit, transposition, repeats), not a fixed chord succession:
+// a composer says "sequence down by fifths for four bars", so the chords are
+// the OUTPUT of a rule rather than the rule itself. `applySequence` realizes a
+// pattern into chords; `SequencePattern` is `HarmonicSpan` intersected with the
+// three generation fields, so every pattern is also a valid span and works with
+// the `spans.ts` accessors unchanged.
+// WRAP POLICY: a sequence that runs past the end of the diatonic set WRAPS
+// within the key and reports `wrapped: true`; it never silently modulates. The
+// applied-dominant form is the device for leaving the key.
+export {
+  applySequence,
+  defaultStartDegree,
+  degreeRoman,
+  sequenceById,
+  sequenceEdges,
+  sequenceRomans,
+  sequenceWaivedRules,
+  sequences,
+  sequencesOfMode,
+} from './sequences'
+export type {
+  ApplySequenceOptions,
+  DegreeQuality,
+  SequenceChord,
+  SequenceMode,
+  SequencePattern,
+  SequenceRealization,
+  SequenceStep,
+  SequenceStopReason,
+} from './sequences'
 
 export { seventhOf, seventhSuggestions } from './sevenths'
 
