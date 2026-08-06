@@ -8,6 +8,7 @@ import { setLatestMap } from '../../core/observables/compilationObservable'
 import { mapSongToMidiTicks } from '../mapSongToTicks'
 import { chordNameWithNotes, DynamicChordNames } from '../graphh'
 import { cloneNoteByBar, makeNoteByBar, NoteByBar } from '../schemas'
+import { nearestVoicing } from '../voiceLeading'
 
 import { isString, isCsvArg, parseCsvArg } from './common'
 import { randId } from './common'
@@ -126,7 +127,7 @@ const raiseOctaveOfChordNotes = (
   })
 }
 
-export const parseChordCsvArg = (
+const parseChordCsvArgDefault = (
   str: string,
   userScaleAndTonic?: string
 ): [notes: string[], tags: string[]] => {
@@ -189,6 +190,41 @@ export const parseChordCsvArg = (
   )
 
   return [raised, tags]
+}
+
+/**
+ * Resolve a chord csv arg ('Am,3') to notes + tags.
+ *
+ * `prevNotes` is OPT-IN smooth voicing: when supplied and non-empty, the
+ * chord is placed in whichever of its ascending inversions is reachable with
+ * the least total semitone motion from those notes, rather than the default
+ * root-position-at-the-given-octave voicing. Tags are unaffected either way.
+ *
+ * The param is additive and last, so every existing call site (which passes
+ * at most two arguments) takes the untouched default path verbatim —
+ * barsUtil.test.ts pins that behavior and must keep passing unchanged.
+ *
+ * Smoothing degrades to the default whenever it cannot improve on it: an
+ * unresolvable chord name, or empty prevNotes.
+ */
+export const parseChordCsvArg = (
+  str: string,
+  userScaleAndTonic?: string,
+  prevNotes?: string[]
+): [notes: string[], tags: string[]] => {
+  const [notes, tags] = parseChordCsvArgDefault(str, userScaleAndTonic)
+
+  if (!prevNotes || prevNotes.length === 0) return [notes, tags]
+
+  const [userTonic, userScale] = userScaleAndTonic
+    ? userScaleAndTonic.split(' ')
+    : []
+  const [chordName] = parseCsvArg(str) as [string, number]
+  const { voicing } = nearestVoicing(prevNotes, chordName, {
+    scale: userTonic && userScale ? { tonic: userTonic, name: userScale } : undefined,
+  })
+
+  return voicing.length > 0 ? [voicing, tags] : [notes, tags]
 }
 
 export const isChordCsvArg = (str: string) => {
