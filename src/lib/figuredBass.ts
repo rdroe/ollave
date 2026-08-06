@@ -2,12 +2,23 @@ import { Chord, Note } from 'tonal'
 
 import type { ChartEdge, Figure, FiguredChord } from './graphData/types'
 
-// direct import (not via a barrel) to avoid module-init cycles and
-// browser-only side effects — cf. importHygiene.test.ts
-import { ascendingInversions, type Voicing } from './voiceLeading'
-
 /**
  * Figured-bass vocabulary (Stage M-A, A2).
+ *
+ * DEPENDENCIES: `tonal` and the zero-import chart-data types, and NOTHING
+ * ELSE. That is load-bearing, not incidental. `graphh.ts` imports this module
+ * at runtime to resolve an edge's bass, and `graphh.ts` had no import cycle at
+ * all before Stage M-A — an earlier draft of this file imported
+ * `ascendingInversions` from `voiceLeading.ts`, which introduced one
+ * (`graphh -> figuredBass -> voiceLeading -> util/graphUtil -> graphh`,
+ * confirmed with madge against the pre-Stage-M-A tree). That is the same class
+ * of module-init landmine that produced a production blank page in e302ee7.
+ *
+ * The bass-filtered voicing enumeration therefore lives in `voiceLeading.ts`
+ * as `figuredVoicings`, which is the right home anyway: it is a voicing
+ * question, and voiceLeading already owns `ascendingInversions`. This module
+ * answers only "which note is the bass", which needs no pitch enumeration.
+ * `importHygiene.test.ts` pins the rule.
  *
  * WHAT A FIGURE MEANS HERE: which chord tone is in the bass, and nothing else.
  * Figured bass historically also implies suspensions, alterations and voicing;
@@ -228,29 +239,8 @@ export const figuredRoman = (chord: string, figure: Figure | null): string => {
   return `${chord}${figure}`
 }
 
-/**
- * Every ascending voicing of a chord whose LOWEST NOTE is the one the figure
- * calls for.
- *
- * Built on `ascendingInversions` rather than beside it: the pitch math for
- * enumerating inversions already existed before Stage M-A (V2 in the plan) and
- * this stage is about NAMING and CHOOSING a bass, not about computing pitches.
- * This is the filter that turns "every arrangement" into "the arrangements this
- * figure permits".
- *
- * Returns [] when the figure does not fit the chord or the name is
- * unresolvable, matching `ascendingInversions`' own never-throw contract.
- */
-export const figuredVoicings = (
-  chordName: string,
-  figure: Figure,
-  opts?: Parameters<typeof ascendingInversions>[1]
-): Voicing[] => {
-  const bass = bassOf(chordName, figure)
-  if (!bass) return []
-  return ascendingInversions(chordName, opts).filter((voicing) => {
-    const low = voicing[0]
-    if (!low) return false
-    return (Note.get(low).pc || low) === bass
-  })
-}
+// `figuredVoicings` (every arrangement of a chord whose lowest note is the one
+// a figure calls for) lives in `voiceLeading.ts`, not here — see the header:
+// importing `ascendingInversions` into this module would close a cycle through
+// graphh.ts. It is re-exported from the lib barrel alongside these functions,
+// so a consumer sees one figured-bass API regardless of which file it is in.

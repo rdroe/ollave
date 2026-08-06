@@ -69,6 +69,55 @@ describe('lib modules import without browser-only side effects', () => {
     expect(sugs.length).toBeGreaterThan(0)
   })
 
+  it('imports figuredBass and spans', async () => {
+    const fb = await import('./figuredBass')
+    expect(typeof fb.bassOf).toBe('function')
+    const sp = await import('./spans')
+    expect(Array.isArray(sp.spans)).toBe(true)
+  })
+
+  /**
+   * figuredBass must stay a LEAF: tonal plus the zero-import chart types, and
+   * nothing else from src/lib.
+   *
+   * This is not stylistic. `graphh.ts` imports figuredBass at runtime to
+   * resolve an edge's bass, and graphh had NO import cycle at all before Stage
+   * M-A. An earlier draft of figuredBass imported `ascendingInversions` from
+   * voiceLeading, which closed one:
+   *
+   *   graphh -> figuredBass -> voiceLeading -> util/graphUtil -> graphh
+   *
+   * (confirmed with madge against the pre-Stage-M-A tree). That is the same
+   * module-init hazard that produced a production blank page in e302ee7. The
+   * fix was to home `figuredVoicings` in voiceLeading — which owns
+   * `ascendingInversions` anyway — and this test is what stops it coming back.
+   */
+  it('keeps figuredBass a leaf module', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('src/lib/figuredBass.ts', 'utf8')
+    const localImports = src
+      .split('\n')
+      .filter((l) => /^import\s/.test(l))
+      .filter((l) => /from '\.\.?\//.test(l))
+    // the ONLY permitted local import is the zero-import chart-data types
+    for (const line of localImports) {
+      expect(line, 'figuredBass.ts may only import graphData/types').toMatch(
+        /from '\.\/graphData\/types'/
+      )
+    }
+    expect(src, 'figuredBass.ts must not import voiceLeading').not.toMatch(
+      /from '\.\/voiceLeading'/
+    )
+  })
+
+  it('keeps graphData/types zero-import', async () => {
+    // the property that lets the chart data, figuredBass and spans all share
+    // one vocabulary without any of them depending on the translator
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('src/lib/graphData/types.ts', 'utf8')
+    expect(src.split('\n').filter((l) => /^import\s/.test(l))).toEqual([])
+  })
+
   it('has no runtime edge from voiceLeading, mixture or sevenths back to nextChord', async () => {
     // structural assertion on the SOURCE: the cycle is prevented by these
     // modules never naming nextChord, not by luck of evaluation order.

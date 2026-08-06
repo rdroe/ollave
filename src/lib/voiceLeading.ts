@@ -2,6 +2,11 @@ import { Chord, Note } from 'tonal'
 
 // direct imports (not via the lib barrel) to avoid module-init cycles and
 // browser-only side effects — cf. importHygiene.test.ts
+//
+// figuredBass is a LEAF (tonal + the zero-import chart types only), so this
+// edge adds no cycle; the reverse edge would — see `figuredVoicings` below.
+import { bassOf } from './figuredBass'
+import type { Figure } from './graphData/types'
 import { lookUpGraph } from './util/graphUtil'
 
 // the shared contract, imported from its own leaf module rather than from
@@ -223,6 +228,43 @@ export const nearestVoicing = (
     }
   }
   return { distance: bestDistance, voicing: best }
+}
+
+/**
+ * Every ascending voicing of a chord whose LOWEST NOTE is the one the figure
+ * calls for — i.e. the arrangements a figured-bass symbol permits.
+ *
+ * Built ON `ascendingInversions` rather than beside it. The pitch math for
+ * enumerating inversions already existed before Stage M-A (V2 in
+ * PLAN-MUSIC.md); that stage is about NAMING and CHOOSING a bass, not about
+ * computing pitches, so this is a filter over an existing enumeration and
+ * nothing more.
+ *
+ * WHY IT LIVES HERE and not in `figuredBass.ts`, where the rest of the figure
+ * vocabulary is: `graphh.ts` imports figuredBass at runtime, and graphh had NO
+ * import cycle before Stage M-A. Putting this function in figuredBass would
+ * make that module import voiceLeading and close the loop
+ * (`graphh -> figuredBass -> voiceLeading -> util/graphUtil -> graphh`,
+ * confirmed with madge) — the module-init hazard behind e302ee7. It is also
+ * simply the better home: this is a question about VOICINGS, which is what
+ * this module is for. The lib barrel re-exports it beside the other
+ * figured-bass functions so the split is invisible to consumers.
+ *
+ * Returns [] when the figure does not fit the chord or the name is
+ * unresolvable, matching `ascendingInversions`' own never-throw contract.
+ */
+export const figuredVoicings = (
+  chordName: string,
+  figure: Figure,
+  opts?: AscendingInversionsOptions & { scale?: { tonic: string; name: string } }
+): Voicing[] => {
+  const bass = bassOf(chordName, figure)
+  if (!bass) return []
+  return ascendingInversions(chordName, opts).filter((voicing) => {
+    const low = voicing[0]
+    if (!low) return false
+    return (Note.get(low).pc || low) === bass
+  })
 }
 
 /** Minimal total semitone motion from a voicing to the nearest voicing of a chord. */

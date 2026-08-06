@@ -1,7 +1,6 @@
 import { Module } from 'peprn/util'
 
 import { mem } from '../../core/mem'
-import { figuredVoicings } from '../../lib/figuredBass'
 import { phaseScale } from '../../lib/helpers'
 import { mixtureSuggestions } from '../../lib/mixture'
 import { nextChord, nextChordDetail } from '../../lib/nextChord'
@@ -10,6 +9,7 @@ import { pivotSuggestions } from '../../lib/pivots'
 import { randomProgression } from '../../lib/randomProgression'
 import { parseChordCsvArg } from '../../lib/util/barsUtil'
 import { chordGraphCreate } from '../../lib/util/graphUtil'
+import { figuredVoicings } from '../../lib/voiceLeading'
 import type { RankedSuggestion } from '../../lib/voiceLeading'
 
 // The CLI face of the 0.4.0 chord-assistance API. Every function it wraps is a

@@ -31,6 +31,7 @@ export type { NextChordDetailOptions } from './nextChord'
 
 export {
   ascendingInversions,
+  figuredVoicings,
   nearestVoicing,
   rankByVoiceLeading,
   voiceLeadingDistance,
@@ -45,6 +46,47 @@ export type {
 
 export { mixtureSuggestions } from './mixture'
 export type { MixtureStrength, MixtureSuggestion } from './mixture'
+
+// figured bass and inversions (Stage M-A) ---------------------------------
+// `Figure` says WHICH CHORD TONE IS IN THE BASS; `bassOf` resolves it against
+// a realized chord name, and `figuredVoicings` filters `ascendingInversions`
+// down to the arrangements a figure permits. A suggestion carries `figure` and
+// `bass` only when it specifies an inversion — the name stays the plain chord
+// symbol ('C', never 'C/E'), because the name is the graph's key.
+export {
+  bassOf,
+  edgeChord,
+  edgeFigure,
+  figureArity,
+  figureBassIndex,
+  figureFitsChord,
+  figureLabel,
+  figuredRoman,
+  FIGURES,
+  isFiguredChord,
+  parseFigure,
+} from './figuredBass'
+export type {
+  ChartEdge,
+  Figure,
+  FiguredChord,
+  HarmonicSpan,
+  LineCondition,
+  MetricCondition,
+  RuleWaiver,
+  SpanConditions,
+  SpanKind,
+} from './graphData/types'
+
+// spans — ordered harmonic templates (Stage M-A, A4/A6) --------------------
+// A span is a TEMPLATE OVER THE GRAPH, not an edge in it: the devices whose
+// identity is contextual (passing vs pedal vs cadential 6/4) cannot be
+// distinguished by a first-order edge. `nextChord`/`nextChordDetail` never
+// consult this library — it is a parallel, additive channel.
+// NOTE FOR DOWNSTREAM STREAMS: `conditions` (bass/soprano/metric) is INERT at
+// this stage — declared and stored, never evaluated. B1 activates the voice
+// conditions, B3 the metric ones. `waivers` is live data B1 should consume.
+export { spanById, spanRomans, spanWaivedRules, spans, spansOfKind } from './spans'
 
 export { seventhOf, seventhSuggestions } from './sevenths'
 
