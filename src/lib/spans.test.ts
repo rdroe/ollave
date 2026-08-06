@@ -198,6 +198,11 @@ describe('waivers — LIVE data, consumed by B1', () => {
     'hidden-octaves',
     'augmented-second',
     'spacing',
+    // implemented by partWriting.ts (B1); listed so a future span may waive
+    // them. Keep this in step with partWriting's rule catalogue.
+    'unequal-fifths',
+    'unresolved-leading-tone',
+    'cadential-64-resolution',
   ]
 
   it('uses only known rule ids', () => {
