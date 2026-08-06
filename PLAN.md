@@ -194,6 +194,25 @@ because placement *needs* the engine's nearest-inversion math)
 
 ## Stage C — Integration + polish (SERIAL, one agent, ~hours)
 
+- [ ] **C0 (from B1) — dotted chord-function edges are silently dropped.**
+      `makeProgNodeTranslator`'s `dotted` branch calls
+      `romanChordNameToReal` unconditionally, which returns `''` for a
+      function name (V64/N6/Aug6), so every dotted edge to one is dropped
+      with a "Dropping untranslatable dotted chord" warning. The `next`
+      branch handles this via `isChordFn`; the dotted branch must too.
+      Blocks weak N6/Aug6 edges and any future dotted V64.
+- [ ] **C1 (from B4) — `detectAllScales` is spelling-sensitive**, matching
+      note *names* not chromas: `detectAllScales(['C#','F','G#'])` returns
+      ZERO keys (a mis-spelled C# major triad finds no home). Affects pivot
+      discovery for enharmonically-spelled input. Decide: normalize to
+      chroma, or document the requirement.
+- [ ] **C2 (from B1) — N6/Aug6 respell enharmonically in flat keys**
+      (Eb major N6 = G#-B-E rather than Fb-Ab-Cb) due to `Note.simplify`
+      in graphh.ts's helpers. Pitch-correct, spelling-ugly.
+- [ ] **C3 (from B3) — widen `ChordSuggestion['strength']`** to include
+      `'mixture'`; B3's derived `MixtureSuggestion` type then collapses to
+      structurally identical and its aliases can be retired with zero
+      churn by design.
 - [ ] Decide whether `nextChordDetail` gains convenience opts wrapping the
       B-stream functions (e.g. `include: ['mixture']`,
       `rankBy: 'voiceLeading'`) or the compositional API stands alone —
