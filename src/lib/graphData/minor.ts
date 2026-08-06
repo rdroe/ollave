@@ -3,16 +3,24 @@ import type { ProgressionChart } from './types'
 /**
  * Minor-key harmonic flowchart.
  *
- * PROVENANCE: this is a transcription of a minor-key harmonic flowchart
- * (a boxes-and-arrows figure). The comments below name regions of the source
- * figure — "double-box top", "big confusing box", "non-box with sixes",
- * "upper boxesssssss ltr", "small upper fork", "downward arrow" — and are
- * kept verbatim so the data can still be diffed against the original picture.
- * Solid arrows in the figure become `next`; dashed arrows become `dotted`.
- * Where a box is reachable only from certain predecessors, that arrival
- * context is recorded as `prev` and becomes each edge's `enabler`.
+ * ORIGIN (history, not a specification): this data started as a transcription
+ * of a minor-key boxes-and-arrows figure. The region comments below —
+ * "double-box top", "big confusing box", "non-box with sixes",
+ * "upper boxesssssss ltr", "small upper fork", "downward arrow" — are kept
+ * verbatim because they are useful landmarks when reading the data, and they
+ * let it be diffed against that original picture.
  *
- * DEVIATION FROM THE TRANSCRIPTION — the dominant complex (V64 / N6 / Aug6).
+ * The chart has since been corrected against classical practice where the two
+ * disagreed (see the dominant-complex note below, and the leading-tone
+ * spelling of VIIdim). It is ordinary maintained data: ADD, REMOVE OR RESPELL
+ * EDGES FREELY when the music justifies it. The only obligation is to say what
+ * changed and why, as the note below does.
+ *
+ * Solid arrows become `next`; dashed arrows become `dotted`. Where a node is
+ * reachable only from certain predecessors, that arrival context is recorded
+ * as `prev` and becomes each edge's `enabler`.
+ *
+ * CORRECTION — the dominant complex (V64 / N6 / Aug6).
  * As originally transcribed the arrows ran `V -> V64` and
  * `V64 -> {N6, Aug6, I, Im}`, i.e. the cadential 6/4 came *after* the dominant
  * and the sixth chords came after that. That is backwards for common-practice
@@ -23,7 +31,7 @@ import type { ProgressionChart } from './types'
  *     down to 5 and 3 over a held bass. So it resolves *to* V, and `V64 -> V`
  *     is its only strong edge. `V64 -> {I, Im}` was removed: a 6/4 moving
  *     straight to a root-position tonic is a passing or pedal 6/4, a different
- *     object from the cadential 6/4 this chart draws.
+ *     object from the cadential 6/4 this chart models.
  *   - N6 and Aug6 are predominants. Both approach the dominant, so each now
  *     leads to `V64` (the decorated arrival) as well as directly to `V`.
  *   - V therefore no longer lists V64/Aug6 as successors. It resolves to Im,

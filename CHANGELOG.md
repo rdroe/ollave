@@ -18,9 +18,9 @@ Into minor: `Im7`, `IIm7b5`, `IVm7`, `V7`, `VIIdim7`.
 
 `V7` carries `strength: 'strong'`; the rest are `'dotted'`. The strength union
 is unchanged — no `'seventh'` member was added, so existing exhaustive switches
-keep compiling. Sevenths are deliberately NOT chart nodes: the source figure
-draws only triads, and adding them there would invent edges it never drew and
-enlarge every suggestion list. Triad behaviour is byte-for-byte unchanged.
+keep compiling. Sevenths are not chart nodes yet — promoting them requires
+deciding their edges deliberately rather than guessing in data, so they ship
+beside the chart first. Triad behaviour is byte-for-byte unchanged.
 
 The non-functional diatonic sevenths (`IIIm7`, `VIm7`) are excluded by design;
 `romanChordNameToReal` still resolves them on request.

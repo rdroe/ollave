@@ -3,10 +3,9 @@ import type { ProgressionChart } from './types'
 /**
  * Major-key harmonic flowchart.
  *
- * PROVENANCE: this is the major-mode counterpart to `minor.ts`. Rather than a
- * transcription of the same source figure, it is built from the standard
- * common-practice functional cycle that figure is itself a minor-mode
- * rendering of:
+ * ORIGIN: the major-mode counterpart to `minor.ts`, and a worked example of
+ * authoring a chart from scratch — nothing here was transcribed. It is built
+ * from the standard common-practice functional cycle:
  *
  *   I -> (iii | vi) -> (IV | ii) -> (V | vii°) -> I
  *

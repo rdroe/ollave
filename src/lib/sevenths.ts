@@ -145,13 +145,14 @@ const formsFor = (tonic: string, scale: string): SeventhForm[] | null => {
  * The idiomatic diatonic sevenths of a key, as an additive palette.
  *
  * Like `mixtureSuggestions`, this is a pure function over `ChordSuggestion[]`
- * that does NOT touch the chord graph. That is the deliberate design: the
- * source chart is a transcription of a specific pedagogical figure, and that
- * figure has no seventh nodes. Adding them to `graphData/` would mean
- * inventing edges the chart never drew — and would enlarge every suggestion
- * list whether or not the caller wanted sevenths. Keeping them out here means
- * the triad behaviour of `nextChord` / `nextChordDetail` is byte-for-byte
- * unchanged unless a caller opts in.
+ * that does NOT touch the chord graph, so the triad behaviour of `nextChord` /
+ * `nextChordDetail` is byte-for-byte unchanged unless a caller opts in.
+ *
+ * That is a staging decision, not a permanent boundary. Promoting sevenths to
+ * real nodes in `graphData/` is a supported direction; it just requires
+ * answering their edges deliberately (does `IIm7` inherit everything `IIm`
+ * has? does a seventh node replace its triad in the list or sit beside it?)
+ * rather than guessing them in data.
  *
  * ```ts
  * const all = [

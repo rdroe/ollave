@@ -5,16 +5,25 @@ use it; this is what it's built on and why it answers the way it does.
 
 ---
 
-## 1. The map is a transcribed flowchart
+## 1. The map is hand-authored data
 
-The core is not an algorithm. It's a **hand-authored graph** — a transcription
-of the classic boxes-and-arrows harmony chart, the kind that hangs in theory
-classrooms: tonic on one side, dominant on the other, arrows showing which
-chords legitimately move to which.
+The core is not an algorithm. It's a **hand-authored graph**: tonic on one
+side, dominant on the other, arrows showing which chords legitimately move to
+which.
 
-It lives in `src/lib/graphData/minor.ts` and `major.ts`, and it still carries
-the transcriber's notes about the figure it came from — comments like
-`// double-box top` and `// big confusing box`.
+It began as a transcription of a classic boxes-and-arrows harmony chart — the
+kind that hangs in theory classrooms — and `src/lib/graphData/minor.ts` still
+carries the transcriber's notes about that figure (`// double-box top`,
+`// big confusing box`). Those comments are **history, not a specification**.
+The map has already grown past its source: the major chart was authored from
+the standard functional cycle rather than transcribed, several edges were
+corrected against classical practice, and the leading-tone spellings were
+fixed. Where the original figure and good musicianship disagree, the map
+follows the musicianship.
+
+So treat the provenance notes as a record of where this started, not a fence
+around where it can go. **New charts, new edges and new chord types are all
+fair game** — the data format is the contract, not the figure.
 
 Each node is written in **Roman numerals**, so the chart is key-independent:
 
@@ -26,9 +35,9 @@ Read: *the dominant resolves to the minor tonic; it may also resolve to the
 major tonic, but that's a weaker/special move.*
 
 This matters for how you interpret results. The suggestions aren't derived from
-a rule engine or trained on a corpus — they're one particular pedagogical
-tradition, written down. Where the chart is opinionated, ollave is opinionated
-in exactly the same way.
+a rule engine or trained on a corpus — they're curated common-practice harmony,
+written down. Where the data is opinionated, ollave is opinionated in exactly
+the same way, and the remedy is to edit the data.
 
 ### Roman → real chords
 
@@ -46,7 +55,8 @@ change.)
 
 ## 2. Strong and dotted arrows
 
-The source chart draws two kinds of arrow, and ollave keeps the distinction:
+The map records two kinds of arrow — a distinction inherited from the original
+chart and worth keeping in any chart you add:
 
 - **`strength: 'strong'`** — solid arrow, a principal motion
 - **`strength: 'dotted'`** — dashed arrow, valid but weaker or special-case
@@ -83,8 +93,9 @@ Hence the different orderings you get from `{ prev: ['F'] }` versus
 **Context annotates; it never removes.** This is a deliberate design decision
 with a concrete reason. `G#dim` in A minor has exactly one outgoing edge,
 recorded as reachable from `Dm` and `Bdim`. But `Am → G#dim` is also a
-perfectly legal move on the chart — it just isn't annotated, because the source
-figure only marks context where it's pedagogically interesting. If ollave
+perfectly legal move on the chart — it just isn't annotated, because context is
+recorded only where it's musically interesting, and the annotations are sparse
+by nature. If ollave
 filtered on `enabledBy`, then asking "I'm on G#dim, I came from Am, what now?"
 would return **nothing at all** — not because the answer is nothing, but
 because of a gap in the annotations.
@@ -181,15 +192,20 @@ succeed.
 mixture, it's an additive palette that never touches the graph — and for a
 related but distinct reason.
 
-The source chart has no seventh nodes. It draws triads, plus the three function
-chords. Adding `V7` as a node would mean **inventing arrows the chart never
-drew**: does `IIm7` go everywhere `IIm` goes? Does `V7` inherit V's dotted
-Picardy edge? Those are real theoretical questions with defensible answers, but
-they'd be *our* answers, not the transcribed figure's — and section 1's whole
-claim is that this map is a transcription. So sevenths are offered beside the
-chart rather than woven into it.
+The charts currently hold triads plus the three function chords. Promoting `V7`
+and friends to nodes is a legitimate future move, but it needs its edges
+answered deliberately: does `IIm7` go everywhere `IIm` goes? Does `V7` inherit
+V's dotted Picardy edge? Does a seventh node *replace* its triad in the
+suggestion list or sit beside it? Those are answerable — they're just decisions
+nobody has made yet, and guessing them in data would silently widen every
+existing caller's results.
 
-The practical consequence is that triad behaviour is unchanged. Nothing a
+Offering sevenths beside the chart gets the chords into a composer's hands now
+without pre-empting that design. **If you want them promoted, that's a
+supported direction** — add the nodes to `graphData/`, decide the edges
+explicitly, and retire or re-point `seventhSuggestions`.
+
+The practical consequence today is that triad behaviour is unchanged. Nothing a
 caller already asked for got bigger.
 
 ### What's included, and what isn't
@@ -283,19 +299,53 @@ reported as `stoppedBecause: 'dead-end'`, which is a legitimate musical ending
 
 ---
 
-## 10. What this system is not
+## 10. What this system is not (yet)
 
-Worth being explicit, so you know when to override it:
+Worth being explicit, so you know when to override it — and each of these is a
+gap to fill rather than a boundary to respect:
 
-- **Not a style model.** It encodes common-practice tonal harmony from one
-  pedagogical chart. It doesn't know jazz reharmonization, modal writing, pop
-  loops, or anything post-tonal.
-- **Not exhaustive.** Absent from the map means "not on this chart," not
+- **Not a style model.** It currently encodes common-practice tonal harmony.
+  It doesn't yet know jazz reharmonization, modal writing, pop loops, or
+  anything post-tonal — but the chart format can express all of them.
+- **Not exhaustive.** Absent from the map means "not modelled yet," not
   "wrong." Plenty of good music lives outside it.
-- **Not a ranking of quality.** `strong` versus `dotted` reflects the chart's
-  arrow style — conventionality, not merit. The dotted moves are frequently the
-  more interesting ones.
-- **Major and minor only.** Other modes throw rather than guess.
+- **Not a ranking of quality.** `strong` versus `dotted` marks conventionality,
+  not merit. The dotted moves are frequently the more interesting ones.
+- **Major and minor only.** Other modes throw rather than guess, because no
+  chart exists for them yet.
+
+---
+
+## 11. Adding your own chart
+
+The data format is the contract. A chart is a plain object mapping a Roman
+numeral to one or more nodes:
+
+```js
+export const myChart = {
+  I: [{ name: 'I', next: ['IV', 'V'], dotted: ['VIm'] }],
+  IV: [{ name: 'IV', next: ['V'], prev: ['I'] }],
+}
+```
+
+- `next` — principal motions · `dotted` — weaker or special-case motions
+- `prev` — arrival context, surfaced to callers as `enabledBy`; optional, and
+  sparse by design
+- Multiple nodes under one numeral express context-dependent behaviour (the
+  same chord behaving differently depending on what preceded it)
+- Suffixes are passed to the chord parser, so `IIm7`, `V7`, `VIIm7b5` and
+  friends already resolve — a chart may use them freely
+- `V64`, `N6` and `Aug6` are function-name nodes computed per key; a chart can
+  reference them like any other node
+
+Drop the file in `src/lib/graphData/`, register it in `chartForScale`
+(`src/lib/util/graphUtil.ts`), and it is instantiated into every key for free.
+A jazz chart, a pop-loop chart, or a modal chart are all additions of this
+shape — no engine changes required.
+
+Two things worth doing when you author one: state your reasoning in a header
+comment (so a later reader can tell a deliberate edge from a typo), and pin the
+node list in a test, as `majorGraph.test.ts` does.
 
 ---
 
