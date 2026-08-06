@@ -8,6 +8,14 @@ does lives outside those three assumptions. This plan attacks them in priority
 order: **bass/inversions (P1) → voice-leading legality (P2) → cadence-targeted
 pathfinding (P4) → the rest**.
 
+**Audience.** These features serve advanced composers, who already know the
+rules; what they lack is speed of *planning*. Ranked by delight to that
+audience: (1) modulation-aware cadence targeting, (2) whole-progression
+four-voice realization, (3) cadence detection over their own music,
+(4) schemata and sequences, (5) the rule checker itself — necessary substrate,
+least differentiating. The build order below is dependency order, not value
+order; Stage M-C is where the headline features compose.
+
 Execution shape mirrors the 0.4.0 plan, which worked: **serial foundation where
 shared files change, parallel fan-out where files are disjoint, serial
 integration.** Every stream opens with an empirical probe (scratch vitest
@@ -40,6 +48,21 @@ sevenths/scale-list work.
   `I⁶₄` and the special-case node could be retired (deliberate follow-up, not
   automatic).
 - **V6 — `Aug6` is one generic node**, not the Italian/French/German trio (P6).
+- **V7 — mixture and the Neapolitan already exist** (probed 2026-08-06).
+  `mixtureSuggestions` (mixture.ts) supplies borrowed chords as a non-graph
+  suggestion channel, and `N6` is a chart node reachable from the predominant
+  region. B4's residue (Aug6 trio, CT°7, chromatic mediants) is genuinely
+  what's missing — no more, no less.
+- **V8 — pivot machinery already exists.** `pivotSuggestions` (pivots.ts)
+  names chords shared between keys. Modulation-targeted pathfinding is
+  therefore composable from existing parts plus B2's search — it needs an
+  owner, not a research phase. It gets one in B2.
+- **V9 — several planned devices are not chords or edges but short
+  *patterns*.** A passing ⁶₄ is only a passing ⁶₄ between I and I⁶ with
+  stepwise bass; a cadential ⁶₄ is defined by metric position and its ⁶₄→⁵₃
+  resolution; the lament bass, fauxbourdon, cadence formulas and sequences are
+  all ordered multi-chord templates with conditions. A first-order edge cannot
+  carry that context. One shared span abstraction (A4) serves all of them.
 
 ---
 
@@ -59,19 +82,110 @@ Everything else depends on this schema. One agent, no parallelism.
 - [ ] **A3 — resolve bass into voicings.** `parseChordCsvArg` must place the
       figured chord with the correct bass note, and `ChordSuggestion` must
       report it. Additive: existing callers see no change.
-- [ ] **A4 — chart edges using inversions.** At minimum: `I⁶`, `V⁶`, `vii°⁶`,
-      passing `⁶₄`, pedal `⁶₄`, and the seventh-chord inversions `V⁶₅`/`V⁴₃`/
-      `V⁴₂`. This is where the bass becomes a melodic line.
-- [ ] **A5 — descending-bass idioms** as first-class content: the lament bass,
-      I–V⁶–vi–iii⁶–IV–I⁶–IV–V, fauxbourdon ⁶-chains.
-- [ ] **A6 — decide V64's future** (V5). Expressible as `I⁶₄` after A1; retiring
-      the function node is a breaking change, so likely keep both with the
-      function node documented as an alias.
-- [ ] **A7 — tests + docs.** Pin that default `nextChord` output is unchanged.
+- [ ] **A4 — span/pattern schema (shared abstraction, V9).** An ordered list
+      of figured chords plus bass/soprano/metric conditions and optional
+      per-rule waivers — a *template over the graph*, not an edge in it.
+      Passing/pedal ⁶₄s (A5), the descending-bass idioms (A6), cadence
+      patterns (B2) and sequences (B5) all consume this one type instead of
+      inventing it three times. Schema only at this stage; conditions may be
+      inert until B1/B3 can evaluate them.
+- [ ] **A5 — chart edges using inversions.** True chord-to-chord edges only:
+      `I⁶`, `V⁶`, `vii°⁶`, and the seventh-chord inversions `V⁶₅`/`V⁴₃`/`V⁴₂`.
+      This is where the bass becomes a melodic line. Passing and pedal `⁶₄`
+      are NOT edges — their identity is contextual (V9); author them as spans.
+- [ ] **A6 — descending-bass idioms** as first-class spans: the lament bass,
+      I–V⁶–vi–iii⁶–IV–I⁶–IV–V, fauxbourdon ⁶-chains. Fauxbourdon declares
+      waivers for the parallel-motion rules it deliberately breaks (see B1) —
+      the tool must not red-ink its own content.
+- [ ] **A7 — one alias policy for every baked-in-inversion node** (V5). `V64`
+      is not alone: `N6` is literally named as a first inversion, and `Aug6`
+      encodes an interval above the bass. After A1 each is expressible in
+      figured terms; retiring any is a breaking change, so likely keep all as
+      documented aliases — but decide once, not three times.
+- [ ] **A8 — tests + docs.** Pin that default `nextChord` output is unchanged.
 
 **Blast-radius rule:** as with sevenths, inversions arrive on `dotted` edges
 unless musically principal, so `nextChord` (strong edges only) stays stable.
 Probe before/after and report the delta.
+
+### Stage M-A design record (written before implementation, 2026-08-06)
+
+Answers to the questions that had to be settled before any code was written.
+
+**Q: How does a figured chord flow through `ChordSuggestion`?**
+As two new OPTIONAL fields, `figure` and `bass`. A bare-string edge produces
+neither, so every existing suggestion object is byte-identical. `figure` is the
+ASCII figure (`'6'`, `'65'`, …); `bass` is the realized bass PITCH CLASS
+(`'E'`), not a note with an octave — the suggestion contract has never carried
+octaves for anything but `notes`, and the octave is a placement decision that
+belongs to `parseChordCsvArg`/`nearestVoicing`, not to the graph.
+
+**Q: How does `nextChordDetail` report bass?**
+`name` stays the plain triad/seventh symbol (`'C'`), so name-keyed lookups —
+graph indexing, `nearestVoicing`, the sevenths dedupe in `nextChordDetail`,
+`randomProgression`'s `s.name !== current` check — keep working untouched.
+`roman` carries the figured roman (`'I6'`), because roman is already "how this
+edge is spelled" rather than "which node this is". `figure`/`bass` carry the
+machine-readable form.
+
+**Q: Can `voiceLeadingDistance` consume a figured chord?**
+Yes, unchanged — it resolves `sug.name`, which is still a plain chord symbol.
+A *bass-constrained* distance is deliberately NOT added here: filtering
+`ascendingInversions` to those whose lowest note is the figured bass is a
+one-liner over the existing enumeration, but choosing whether ranking should
+respect the figure is B1's call (it owns doubling and spacing). `bassOf` and
+`figuredVoicings` are exported so B1 can build it without re-deriving anything.
+
+**Q: Does `randomProgression` walk to figured nodes?**
+It walks to their `name`, which is the plain triad — so `I6` leads the walk to
+node `C`, which exists. Figured edges are additional *dotted* edges, so seeded
+walks shift (exactly as the sevenths work already documented), but no walk can
+land on a non-existent node. Figured chords are edges, never nodes: the chart
+is keyed by realized chord name and `C6` is not a chord.
+
+**Q: How does a span reference chart nodes — by roman, by realized name, or
+either?**
+BY ROMAN, always. The charts are roman-keyed and key-independent and spans are
+templates over the charts, so a span written in realized names would be a
+different object per key — the thing the roman layer exists to avoid. A span
+step is exactly the same `FiguredChord` an edge carries, which is what lets
+B2/B5 emit spans and edges from one vocabulary.
+
+**A1 — the schema, and why not a naming convention.**
+An edge is `ChartEdge = string | FiguredChord` where
+`FiguredChord = { chord: string; figure: Figure }`. Additive by construction:
+every existing chart entry is a `string` and takes a byte-identical path.
+Rejected alternatives: (a) slash names (`C/E`) — `/` already means
+tonicization here and `Chord.get('C/E')` is empty; (b) suffix convention
+(`I6`) — collides with real chord suffixes (`C6` is a sixth chord, `V64`
+is an existing node name), and would make the figure unrecoverable from the
+string without a parser that must know which suffixes are figures. The
+structured field needs no parser and cannot collide. `types.ts` stays
+zero-import.
+
+**A4 — the span schema, and why it is this small.**
+`HarmonicSpan` is an ordered `steps: FiguredChord[]` plus `conditions?` and
+`waivers?`. Four downstream streams consume it, so the design rule was: put in
+the fields no stream can add later without breaking the others, and leave out
+everything a stream can add for itself.
+
+- `steps` — the ordered template. Required. Roman-keyed.
+- `conditions` — `{ bass?, soprano?, metric? }`, all per-step, all INERT at
+  this stage: declared and type-checked, never evaluated, because nothing can
+  evaluate them until B1 (voice leading) and B3 (metric weight) exist. They are
+  in the schema now precisely so B1/B3 do not each invent their own shape and
+  force a migration of A6's and B2's authored content.
+- `waivers` — rule ids this span deliberately licenses. B1 consumes this. It is
+  in the schema NOW rather than added by B1 because A6 ships fauxbourdon in this
+  stage, and a span library that cannot say "these parallels are the point"
+  would make B1's first act be to red-ink this stage's own content.
+- `kind` — a coarse tag (`'idiom' | 'cadence' | 'sequence' | 'schema'`) so B2
+  and B5 can filter one registry rather than each keeping a private list.
+
+Deliberately NOT included: generation parameters (B5's `applySequence` needs a
+transposition interval and a repeat count, which only sequences have — B5 can
+extend `HarmonicSpan` structurally); scoring/weights (no stream has a use yet);
+nesting (P5 is deferred and would be a different type).
 
 ---
 
@@ -83,7 +197,7 @@ or the Stage-M-A test suites.
 | Stream | Writes | New tests |
 |---|---|---|
 | B1 voice-leading rules (**P2**) | `partWriting.ts` | `partWriting.test.ts` |
-| B2 cadences + pathfinding (**P4**) | `cadence.ts`, `progressionPath.ts` | own files |
+| B2 cadences, function + pathfinding (**P4**) | `cadence.ts`, `progressionPath.ts`, `harmonicFunction.ts`, `modulation.ts` | own files |
 | B3 metric weight (**P3**) | `harmonicRhythm.ts` | own file |
 | B4 chromatic vocabulary (**P6**) | `graphData/*`, `chromatic.ts` | own file |
 | B5 sequences (**P7**) | `sequences.ts` | own file |
@@ -92,12 +206,25 @@ or the Stage-M-A test suites.
 
 - [ ] `checkVoiceLeading(from: Voicing, to: Voicing, opts?)` → typed violations,
       not booleans: parallel fifths/octaves (and hidden/direct into a perfect
-      interval on the outer voices), unresolved chordal seventh, doubled leading
+      interval on the outer voices), unequal fifths (°5→P5 — widely tolerated,
+      a natural per-rule toggle), unresolved chordal seventh, doubled leading
       tone, unresolved leading tone at a cadence, augmented second (minor),
-      voice crossing/overlap, spacing > octave between upper voices.
-- [ ] `realizeSATB(chordName, opts)` → four-voice realization with correct
-      doubling (double the root; never the leading tone) and tendency-tone
-      resolution.
+      voice crossing/overlap, spacing > octave between upper voices, and the
+      cadential ⁶₄'s defining ⁶₄→⁵₃ resolution over a held bass (B3 covers
+      only its metric half; this is its voice-leading half).
+- [ ] **Context waivers, not context-free nagging.** The checker accepts a
+      waiver set, and spans (A4) carry theirs: fauxbourdon licenses its
+      parallel motion, strict sequences tolerate a doubled leading tone on
+      weak steps. Without this, B1 flags A6's and B5's own content — exactly
+      the nagging that alienates composers who break rules on purpose.
+- [ ] `realizeProgression(chordNames, opts)` → four-voice realization of a
+      *whole progression*: search over doublings and spacings minimizing
+      violations across the span. This is the composer-facing deliverable;
+      per-chord `realizeSATB` is its building block, not the feature.
+- [ ] **Doubling rules are per-figure, not global**: root position doubles the
+      root, the cadential ⁶₄ doubles the bass, diminished triads double the
+      third, first-inversion triads are flexible; never the leading tone.
+      (Another reason B1 depends on M-A: doubling is a function of the figure.)
 - [ ] Compose over the existing contract: `rankByVoiceLeading` sorts, this
       *filters/annotates*. Do NOT fold into `nextChordDetail`'s opts (that
       pattern exists to keep streams independent).
@@ -107,15 +234,32 @@ or the Stage-M-A test suites.
 - [ ] Each rule cites its textbook statement in a comment and is pinned by a
       hand-verified example AND a counter-example.
 
-### B2 — Cadences and pathfinding (P4)
+### B2 — Cadences, function and pathfinding (P4) — the interaction-model change
 
-- [ ] Cadence types as data: PAC, IAC, half, deceptive, plagal, Phrygian half —
-      each a *pattern* (chords + bass/soprano conditions), not just a chord pair.
-- [ ] `pathToCadence(from, cadenceType, bars, key)` — weighted graph search
-      returning ranked progressions of the requested length. This is the
-      interaction-model change: from "what's next" to "get me there."
+- [ ] **T/PD/D function tags — pulled forward from P5.** Tag every chart node
+      tonic / predominant / dominant (`harmonicFunction.ts`). Cheap, and
+      without it weighted search returns wandering, functionally aimless
+      paths — technically legal chains that don't feel goal-directed. This is
+      the P5 down payment; only the hard nesting part stays deferred.
+- [ ] Cadence types as data: PAC, IAC, half, deceptive, plagal, Phrygian
+      half, and the **evaded cadence** (V⁴₂→I⁶) — the phrase-*extension*
+      device; "how do I avoid closing yet" is as valuable to a composer as
+      "how do I close." Each is a span (A4): chords + bass/soprano/metric
+      conditions, not just a chord pair (PAC requires soprano on 1̂ and both
+      chords in root position; the span schema can say so).
+- [ ] `pathToCadence(from, cadenceType, bars, key)` — graph search weighted by
+      harmonic function (prefer T→PD→D→T motion), returning ranked
+      progressions of the requested length. From "what's next" to "get me
+      there."
+- [ ] **Modulation-targeted pathfinding — the headline feature for the
+      target audience, owned here.** `pathToCadence` accepts a `targetKey`:
+      route through `pivotSuggestions` (pivots.ts, already exists — V8) to a
+      cadence in the new key. Diatonic pivots first; B4's enharmonic pairs
+      (Ger⁶↔V⁷, dim⁷ rotations) extend the pivot set later without changing
+      this surface.
 - [ ] `detectCadences(progression, key)` — the inverse query; label what a
-      composer already wrote.
+      composer already wrote. Quietly one of the most delightful features:
+      analysis of the composer's *own* music.
 - [ ] Honest scoping: exact-length paths may not exist; return best-effort with
       a reason, never throw.
 
@@ -123,7 +267,8 @@ or the Stage-M-A test suites.
 
 - [ ] `metricWeight(barDelay, meter)` using existing `tickCounts`/`BAR` (V4).
 - [ ] Constrain the cadential ⁶₄ correctly: strong beat for the ⁶₄, weaker for
-      its V — the device's whole point, currently unmodellable.
+      its V — the device's whole point. Expressed as a metric condition on its
+      span (A4); B1 owns its ⁶₄→⁵₃ voice-leading half.
 - [ ] `suggestHarmonicRhythm(progression, meter)` — where changes should fall.
 
 ### B4 — Chromatic vocabulary (P6)
@@ -136,17 +281,25 @@ or the Stage-M-A test suites.
 
 ### B5 — Sequences as objects (P7)
 
-- [ ] Sequences as *templates* that generate progressions: descending fifths,
-      ascending 5-6, descending 5-6, monte/fonte/ponte.
+- [ ] Sequences are spans (A4) that *generate* progressions: descending fifths
+      (diatonic AND applied-dominant variants), ascending 5-6, descending 5-6,
+      monte/fonte/ponte.
 - [ ] `applySequence(pattern, startChord, length, key)`. Fits the existing
       bar-template machinery conceptually — check whether it can reuse it.
+- [ ] Sequence spans declare their rule waivers (B1): strict sequences license
+      lapses — e.g. a weak-step doubled leading tone — that the checker would
+      otherwise flag on the library's own output.
 
 ---
 
 ## Stage M-C — Integration (SERIAL)
 
-- [ ] Compose the streams: a cadence-targeted path (B2) that is voice-leading
-      legal (B1), metrically placed (B3).
+- [ ] Compose the streams: a modulation-aware, cadence-targeted path (B2) that
+      is voice-leading legal (B1), metrically placed (B3), and realizable in
+      four voices (`realizeProgression`, B1). Acceptance follows the audience
+      ranking in the Premise: the two headline features — modulation-aware
+      targeting and whole-progression realization — must work end-to-end
+      before any API sugar is added.
 - [ ] Decide the `nextChordDetail` surface: which of these become `opts`, which
       stay standalone. (The 0.4.0 lesson: compose first, add sugar later.)
 - [ ] `chord` CLI subcommands for the new capabilities.
@@ -158,12 +311,14 @@ or the Stage-M-A test suites.
 
 ## Deferred — prolongation (P5)
 
-- [?] **Hierarchical/Schenkerian structure is research-grade, not a sprint.**
-      A first-order Markov chain fundamentally cannot represent nesting, where
-      a whole passage prolongs a single tonic. A lightweight down payment is
-      feasible and worth doing first: tag chords by function (T / PD / D),
-      distinguish structural from embellishing, allow nested spans. Full
-      prolongational analysis should be its own project with its own plan.
+- [?] **Hierarchical/Schenkerian structure is research-grade, not a sprint —
+      but its tractable parts are no longer deferred.** The T/PD/D function
+      tags land in B2 (they are what makes pathfinding goal-directed), and
+      spans (A4) give a first, flat notion of "this stretch is one thing."
+      What remains deferred is true recursion — a whole passage prolonging a
+      single tonic, spans within spans — which a first-order Markov chain
+      fundamentally cannot represent. That is its own project with its own
+      plan, and it will start from tags and spans that already exist.
 
 ---
 

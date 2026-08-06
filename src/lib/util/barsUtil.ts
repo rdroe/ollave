@@ -8,7 +8,8 @@ import { setLatestMap } from '../../core/observables/compilationObservable'
 import { mapSongToMidiTicks } from '../mapSongToTicks'
 import { chordNameWithNotes, DynamicChordNames } from '../graphh'
 import { cloneNoteByBar, makeNoteByBar, NoteByBar } from '../schemas'
-import { nearestVoicing } from '../voiceLeading'
+import { bassOf, figuredVoicings, parseFigure } from '../figuredBass'
+import { nearestVoicing, voicingDistance } from '../voiceLeading'
 
 import { isString, isCsvArg, parseCsvArg } from './common'
 import { randId } from './common'
@@ -192,6 +193,22 @@ const parseChordCsvArgDefault = (
   return [raised, tags]
 }
 
+/** Options for {@link parseChordCsvArg}. */
+export type ParseChordCsvArgOptions = {
+  /**
+   * Place the chord in the inversion this figure names, rather than in root
+   * position (Stage M-A, A3).
+   *
+   * Accepts any spelling `parseFigure` accepts, so '6' and '⁶' are the same
+   * request. When the figure does not apply to the chord — a '42' on a triad,
+   * or a chord name that will not resolve — placement falls back to the
+   * default, in keeping with this codebase's "never lose the result you would
+   * otherwise have had" policy. Two tags are added when the figure IS applied:
+   * `figure=` and `bass=`.
+   */
+  figure?: string
+}
+
 /**
  * Resolve a chord csv arg ('Am,3') to notes + tags.
  *
@@ -200,29 +217,79 @@ const parseChordCsvArgDefault = (
  * the least total semitone motion from those notes, rather than the default
  * root-position-at-the-given-octave voicing. Tags are unaffected either way.
  *
- * The param is additive and last, so every existing call site (which passes
- * at most two arguments) takes the untouched default path verbatim —
- * barsUtil.test.ts pins that behavior and must keep passing unchanged.
+ * `opts.figure` is OPT-IN figured placement (Stage M-A): the chord is placed
+ * with the chord tone the figure names in the bass. When both are supplied the
+ * figure WINS on which inversion, and `prevNotes` then chooses among the
+ * octaves of that inversion — a figure is a compositional decision about the
+ * bass line, whereas smoothing is a convenience, so the explicit request
+ * outranks the heuristic.
  *
- * Smoothing degrades to the default whenever it cannot improve on it: an
- * unresolvable chord name, or empty prevNotes.
+ * Both extra params are additive and last, so every existing call site (which
+ * passes at most two arguments) takes the untouched default path verbatim —
+ * `barsUtil.test.ts` pins that behavior and passes unchanged.
+ *
+ * Placement degrades to the default whenever it cannot improve on it: an
+ * unresolvable chord name, empty prevNotes, or an inapplicable figure.
  */
 export const parseChordCsvArg = (
   str: string,
   userScaleAndTonic?: string,
-  prevNotes?: string[]
+  prevNotes?: string[],
+  opts?: ParseChordCsvArgOptions
 ): [notes: string[], tags: string[]] => {
   const [notes, tags] = parseChordCsvArgDefault(str, userScaleAndTonic)
 
-  if (!prevNotes || prevNotes.length === 0) return [notes, tags]
+  const figure = opts?.figure ? parseFigure(opts.figure) : null
+
+  if (!figure && (!prevNotes || prevNotes.length === 0)) return [notes, tags]
 
   const [userTonic, userScale] = userScaleAndTonic
     ? userScaleAndTonic.split(' ')
     : []
-  const [chordName] = parseCsvArg(str) as [string, number]
-  const { voicing } = nearestVoicing(prevNotes, chordName, {
-    scale: userTonic && userScale ? { tonic: userTonic, name: userScale } : undefined,
-  })
+  const scale =
+    userTonic && userScale ? { tonic: userTonic, name: userScale } : undefined
+  const [chordName, oct] = parseCsvArg(str) as [string, number]
+
+  if (figure) {
+    // The chord name in the csv arg may be a roman/function name; the REALIZED
+    // name is what carries the notes a figure indexes into, and the default
+    // parse has already put it in a `chord=` tag.
+    const realized =
+      tags
+        .find((t) => t.startsWith('chord='))
+        ?.slice('chord='.length) ?? chordName
+
+    const candidates = figuredVoicings(realized, figure, {
+      scale,
+      minOctave: oct,
+      maxOctave: oct + 1,
+    })
+
+    if (candidates.length > 0) {
+      // with prevNotes, pick the figured voicing closest to them; without,
+      // take the lowest, which is the figured analogue of the default
+      // root-position-at-the-given-octave placement.
+      const chosen =
+        prevNotes && prevNotes.length > 0
+          ? candidates.reduce((best, cand) =>
+              voicingDistance(prevNotes, cand) < voicingDistance(prevNotes, best)
+                ? cand
+                : best
+            )
+          : candidates[0]
+
+      const bass = bassOf(realized, figure)
+      return [
+        chosen,
+        [...tags, `figure=${figure}`, ...(bass ? [`bass=${bass}`] : [])],
+      ]
+    }
+    // figure did not apply; fall through to the pre-existing behaviour
+  }
+
+  if (!prevNotes || prevNotes.length === 0) return [notes, tags]
+
+  const { voicing } = nearestVoicing(prevNotes, chordName, { scale })
 
   return voicing.length > 0 ? [voicing, tags] : [notes, tags]
 }

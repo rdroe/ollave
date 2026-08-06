@@ -32,11 +32,43 @@
  * return `ChordSuggestion[]` as pure functions.
  */
 export type ChordSuggestion = {
-  /** realized chord name, e.g. 'G#dim', or a chord-function name like 'V64' */
+  /**
+   * Realized chord name, e.g. 'G#dim', or a chord-function name like 'V64'.
+   *
+   * ALWAYS THE PLAIN CHORD SYMBOL, even for an inverted suggestion: a first
+   * inversion of C is `name: 'C'` with `figure: '6'`, never 'C/E'. The name is
+   * the graph's key and is looked up by name throughout (graph indexing,
+   * `nearestVoicing`, the sevenths dedupe, `randomProgression`'s self-loop
+   * check), so encoding the bass in it would break all of them — and
+   * `Chord.get('C/E')` returns no notes anyway.
+   */
   name: string
-  /** the edge's roman, e.g. 'VIIdim' or 'V7/III' — not always the target node's own roman */
+  /**
+   * The edge's roman, e.g. 'VIIdim' or 'V7/III' — not always the target node's
+   * own roman. For an inverted suggestion this is the FIGURED roman, 'I6' or
+   * 'V65', because `roman` has always meant "how this edge is spelled".
+   */
   roman: string
   notes: string[]
+  /**
+   * Figured-bass symbol when this suggestion specifies an inversion (Stage
+   * M-A). ABSENT — not '53' — on ordinary root-position suggestions, so every
+   * suggestion produced before Stage M-A is byte-identical.
+   * The union is spelled out rather than imported as `Figure` from
+   * `graphData/types` because THIS MODULE IS DELIBERATELY ZERO-IMPORT (see the
+   * header) — that property is what breaks the nextChord/voiceLeading cycle,
+   * and a type-only import would erase at compile time but invites a later
+   * value import onto the same line. `figuredBass.test.ts` pins the two unions
+   * identical, so they cannot drift.
+   * @see figuredBass.ts for what each figure means
+   */
+  figure?: '53' | '6' | '64' | '7' | '65' | '43' | '42'
+  /**
+   * Realized bass PITCH CLASS ('E'), no octave. Present exactly when `figure`
+   * is. Which octave the bass lands in is a placement decision owned by
+   * `parseChordCsvArg` / `nearestVoicing`, not by the graph.
+   */
+  bass?: string
   /**
    * Where the suggestion came from. Solid arrows in the source chart are
    * 'strong' and dashed arrows 'dotted'; 'mixture' marks a borrowed chord

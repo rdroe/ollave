@@ -1,14 +1,27 @@
 import fakeCli from 'peprn/fakeCli'
 import { Chord, Note, Mode, Scale, Collection } from 'tonal'
 
+import { bassOf, edgeChord, edgeFigure } from './figuredBass'
 import { minor } from './graphData/minor'
-import type { ProgressionGraphNode } from './graphData/types'
+import type { ChartEdge, Figure, ProgressionGraphNode } from './graphData/types'
 import { dedupeEnharmonicScales } from './scaleList'
 
 // chart data lives in ./graphData (a sibling major.ts can be dropped in);
 // re-exported here because `minor` is public API via the lib barrel
 export { minor }
-export type { ProgressionGraphNode, ProgressionChart } from './graphData/types'
+export type {
+  ChartEdge,
+  Figure,
+  FiguredChord,
+  HarmonicSpan,
+  LineCondition,
+  MetricCondition,
+  ProgressionChart,
+  ProgressionGraphNode,
+  RuleWaiver,
+  SpanConditions,
+  SpanKind,
+} from './graphData/types'
 // re-exported because the curated scale list is public API via the lib barrel
 export {
   conventionalKeys,
@@ -166,7 +179,22 @@ export type EnabledChordNameWithNotes = ChordNameWithNotes & {
   // roman: in A minor Dm's dotted edge to Bdim is Bdim-as-VIIdim/III, while
   // the Bdim node's own identity is IIdim (the two romans realize to the same
   // chord and are merged). Keeping the edge's roman preserves that distinction.
+  //
+  // For a FIGURED edge this carries the figured roman ('I6', 'V65'), because
+  // `roman` has always meant "how this edge is spelled" rather than "which node
+  // this is". The node's `name` stays the plain chord symbol — see below.
   roman: string
+  // Stage M-A (A1). Present ONLY on figured edges; a bare-string edge produces
+  // neither field and is byte-identical to before this existed.
+  //
+  // `name` deliberately stays the plain triad/seventh symbol ('C', not 'C/E'):
+  // it is the graph's key and is looked up by name in half a dozen places
+  // (graph indexing, nearestVoicing, the sevenths dedupe in nextChordDetail,
+  // randomProgression's self-loop check). Putting the bass in the name would
+  // break every one of them.
+  figure?: Figure
+  /** realized bass PITCH CLASS, e.g. 'E' — no octave; see figuredBass.bassOf */
+  bass?: string
 }
 
 export const N6 = function N6(
@@ -573,11 +601,22 @@ export function makeProgNodeTranslator(
      * was the musically honest choice.
      *
      * `kind` appears only in the warning text.
+     *
+     * STAGE M-A: the edge may be a bare string (root position, the normal
+     * form) or a `{ chord, figure }` object. Both are normalized here, so the
+     * figure is a property of the EDGE and never of the node — which is what
+     * keeps every node lookup, and therefore every existing caller, untouched.
      */
     const translateEdge = (
-      romanName: string,
+      edge: ChartEdge,
       kind: 'next' | 'dotted'
     ): EnabledChordNameWithNotes[] => {
+      const romanName = edgeChord(edge)
+      const figure = edgeFigure(edge)
+      // the figured roman is what a composer reads ('I6'); the plain roman is
+      // what the node is called. Only the roman is decorated, never the name.
+      const edgeRoman = figure ? `${romanName}${figure}` : romanName
+
       if (isChordFn(romanName)) {
         const fnRes = fns[romanName](userLetter, userScale)
         return fnRes.map((cnwnFn) => ({
@@ -587,7 +626,7 @@ export function makeProgNodeTranslator(
           // which described nothing about arrival context and so was useless
           // for matching against a caller's recent chords.
           enabler: edgeEnabler,
-          roman: romanName,
+          roman: edgeRoman,
           octMap: cnwnFn.octMap,
         }))
       }
@@ -606,21 +645,46 @@ export function makeProgNodeTranslator(
         return []
       }
 
+      if (!figure) {
+        // the pre-Stage-M-A path, verbatim: no figure/bass keys are added, so
+        // the emitted object is byte-identical to what it was before.
+        return [
+          {
+            ...cnwn,
+            enabler: edgeEnabler,
+            roman: romanName,
+          },
+        ]
+      }
+
+      const bass = bassOf(cnwn.name, figure)
+      if (!bass) {
+        // the figure asks for a tone the chord does not have (e.g. '42' on a
+        // triad). Keep the edge, drop the figure: losing a legitimate chord
+        // over an authoring slip would be worse than silently ignoring the
+        // figure, and `figuredBass.test.ts` pins that the authored library has
+        // no such edge.
+        console.warn(
+          `Ignoring inapplicable figure ${figure} on ${kind} edge ${romanName} (realized: ${realizedName}) of ${progNodeIn.name} in ${userLetter} ${userScale}`
+        )
+        return [{ ...cnwn, enabler: edgeEnabler, roman: romanName }]
+      }
+
       return [
         {
           ...cnwn,
           enabler: edgeEnabler,
-          roman: romanName,
+          roman: edgeRoman,
+          figure,
+          bass,
         },
       ]
     }
 
-    const next = progNodeIn.next.flatMap((romanName) =>
-      translateEdge(romanName, 'next')
-    )
+    const next = progNodeIn.next.flatMap((edge) => translateEdge(edge, 'next'))
 
-    const dotted = progNodeIn?.dotted?.flatMap((romanName) =>
-      translateEdge(romanName, 'dotted')
+    const dotted = progNodeIn?.dotted?.flatMap((edge) =>
+      translateEdge(edge, 'dotted')
     )
 
     return {
