@@ -126,13 +126,24 @@ current branch.
 - [x] **C0 — dotted chord-function edges fixed.** Both branches now share a
       `translateEdge` helper. Probe showed it was worse than documented:
       `V64` didn't return `''`, it mangled into the garbage name `E64`.
-- [x] **C1 — `detectAllScales` enharmonic fallback.** **The suggested chroma
-      normalization was probed and rejected as harmful:** it would take
-      `['A','C','E']` from 6 clean keys to 15 including `Dbb major` and
-      `F## minor`, because `allScales` is built over a note list with double
-      accidentals — breaking F8 and flooding pivot discovery. Shipped
-      instead: name matching stays primary, chroma fallback runs *only* when
-      name matching returns empty. Correctly-spelled input byte-identical.
+- [x] **C1 — `detectAllScales` enharmonic fallback.** The suggested full
+      chroma normalization was probed and shipped only as a *fallback*.
+      **Not a cost issue** — `allScales` is a fixed 189-entry list scanned
+      linearly (0.04 ms/call) either way. The issue is that `allScales` is
+      built over a note-name list containing double accidentals, so it
+      holds *enharmonic duplicate keys*. Chroma matching on `['A','C','E']`
+      returns 15 major/minor names, but the 9 additions are duplicates of
+      the same 6 real keys under unplayable spellings: `Dbb major` (= C
+      major), `F## major` (= G major), `C## minor` (= D minor), and so on.
+      Pivot discovery would offer them as distinct destinations and then run
+      `romanInKey`/`chordGraphCreate` against `Dbb`. Shipped: name matching
+      primary, chroma fallback only when name matching returns empty.
+      Correctly-spelled input byte-identical.
+- [ ] **C1-followup (better fix, deferred — larger than Stage C's scope):**
+      dedupe `allScales` by pitch-class set, preferring conventional
+      spellings. That would make chroma matching safe everywhere and remove
+      the fallback's asymmetry. `allScales` is public API with pinned tests,
+      so it needs its own change with consumer-impact review.
 - [x] **C2 — flat-key N6 spelling fixed.** Root now
       `Note.transpose(tonic, '2m')`. Eb major: `Ab Cb Fb` (was `E G# B`);
       Db major: `Ebb Gb Bbb`. All other keys unchanged, so no pinned test
