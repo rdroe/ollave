@@ -88,6 +88,43 @@ export type {
 // conditions, B3 the metric ones. `waivers` is live data B1 should consume.
 export { spanById, spanRomans, spanWaivedRules, spans, spansOfKind } from './spans'
 
+// part writing — voice-leading legality and four-voice realization (M-B, B1) --
+// `checkVoiceLeading` returns TYPED VIOLATIONS, not booleans, so a caller can
+// say which pair of voices was parallel. It COMPOSES over the existing
+// contract rather than replacing it: `rankByVoiceLeading` sorts by smoothness,
+// these annotate/filter by legality, and neither is folded into
+// `nextChordDetail`'s options.
+// STRICTNESS DEFAULTS TO 'report', which NEVER removes a suggestion — skilled
+// composers break these rules deliberately. 'warn' sorts violations last and
+// 'block' filters; individual rules toggle via `opts.rules`.
+// WAIVERS: pass `spanWaivedRules(span)` as `opts.waivedRules` so the checker
+// does not red-ink the span library's own content (fauxbourdon IS parallel
+// motion). `realizeProgression` is the composer-facing deliverable — a
+// four-voice realization of a WHOLE progression, searched over doublings and
+// spacings; `realizeSATB` is its per-chord building block.
+export {
+  annotateVoiceLeading,
+  checkProgression,
+  checkVoiceLeading,
+  doublingPreference,
+  PART_WRITING_RULES,
+  realizeProgression,
+  realizeSATB,
+  RULE_CITATIONS,
+  waiversFor,
+} from './partWriting'
+export type {
+  Checked,
+  PartWritingOptions,
+  PartWritingRule,
+  RealizedChord,
+  RealizedProgression,
+  RealizeOptions,
+  StrictnessMode,
+  Violation,
+  ViolationSeverity,
+} from './partWriting'
+
 // harmonic rhythm and metric weight (Stage M-B, B3) ------------------------
 // Reads strong/weak position from the timing data that already exists
 // (`tickCounts`/`BAR` and the per-note `barDelay` tag — finding V4); it adds no
