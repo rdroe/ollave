@@ -83,9 +83,12 @@ describe('nextChordDetail', () => {
     const names = (sugs: typeof viaF) => sugs.map((s) => s.name).sort()
     // BOTH return the full list — same set, different order
     expect(names(viaF)).toEqual(names(viaAm))
-    // 8 triad edges plus the two dotted seventh edges of the IIdim node
-    expect(viaF).toHaveLength(10)
-    expect(viaAm).toHaveLength(10)
+    // 8 triad edges, the two dotted seventh edges of the IIdim node, and (since
+    // Stage M-A) its four dotted inversion edges: V6, VIIdim6, V65, V43.
+    // The COUNT is what grew; the never-filters property this test exists to
+    // guard is asserted below and is unchanged.
+    expect(viaF).toHaveLength(14)
+    expect(viaAm).toHaveLength(14)
 
     // arriving from F enables the IIdim (dominant-complex) edges
     expect(viaF.every((s) => s.contextMatch)).toBe(true)
@@ -94,14 +97,20 @@ describe('nextChordDetail', () => {
     expect(viaAm.slice(0, 3).map((s) => s.name)).toEqual(['Edim', 'C7', 'C'])
     expect(viaAm.slice(0, 3).every((s) => s.contextMatch)).toBe(true)
     expect(viaAm.slice(3).every((s) => !s.contextMatch)).toBe(true)
-    expect(viaAm.slice(3).map((s) => s.name)).toEqual([
-      'D#dim',
-      'B',
-      'V64',
-      'G#dim',
-      'E',
-      'G#dim7',
-      'E7',
+    // gated edges, in chart order: the six triad/function edges, the two
+    // sevenths, then the four Stage-M-A inversions of those same chords
+    expect(viaAm.slice(3).map((s) => [s.roman, s.name])).toEqual([
+      ['VIIdim/V', 'D#dim'],
+      ['V/V', 'B'],
+      ['V64', 'V64'],
+      ['VIIdim', 'G#dim'],
+      ['V', 'E'],
+      ['VIIdim7', 'G#dim7'],
+      ['V7', 'E7'],
+      ['V6', 'E'],
+      ['VIIdim6', 'G#dim'],
+      ['V65', 'E7'],
+      ['V43', 'E7'],
     ])
   })
 
@@ -110,8 +119,17 @@ describe('nextChordDetail', () => {
     // gated on [Dm, Bdim], yet Am legally leads to G#dim. Strict filtering
     // would make this query return nothing.
     const sugs = nextChordDetail('G#dim,3', 'A', 'minor', { prev: ['Am'] })
-    // the dominant, plus its seventh as dotted colour
-    expect(sugs.map((s) => s.name)).toEqual(['E', 'E7'])
+    // the dominant, its seventh as dotted colour, and (since Stage M-A) the
+    // vii°6 -> i6 linear resolution and the first-inversion dominant
+    expect(sugs.map((s) => [s.roman, s.name])).toEqual([
+      ['V', 'E'],
+      ['V7', 'E7'],
+      ['Im6', 'Am'],
+      ['V6', 'E'],
+    ])
+    // the property under test: a legal-but-unannotated arrival still returns
+    // a NON-EMPTY list, and the gate is reported rather than applied
+    expect(sugs.length).toBeGreaterThan(0)
     expect(sugs[0].contextMatch).toBe(false)
     expect(sugs[0].enabledBy).toEqual(['Dm', 'Bdim'])
   })
@@ -132,12 +150,20 @@ describe('nextChordDetail', () => {
 
   it('includes dotted edges, marked as such', () => {
     const sugs = nextChordDetail('E,3', 'A', 'minor')
-    expect(sugs.map((s) => [s.name, s.strength])).toEqual([
-      ['Am', 'strong'],
-      ['A', 'dotted'], // the Picardy third
-      ['E7', 'dotted'], // the dominant's own seventh
-      ['Am7', 'dotted'], // the tonic seventh, as arrival colour
+    expect(sugs.map((s) => [s.roman, s.name, s.strength])).toEqual([
+      ['Im', 'Am', 'strong'],
+      ['I', 'A', 'dotted'], // the Picardy third
+      ['V7', 'E7', 'dotted'], // the dominant's own seventh
+      ['Im7', 'Am7', 'dotted'], // the tonic seventh, as arrival colour
+      // Stage M-A inversions, all dotted by the blast-radius rule
+      ['Im6', 'Am', 'dotted'], // resolving onto an inverted tonic
+      ['V65', 'E7', 'dotted'],
+      ['V43', 'E7', 'dotted'],
+      ['V42', 'E7', 'dotted'],
     ])
+    // the property this test guards: EVERY non-first edge is dotted, so
+    // nextChord (strong only) still returns just the one name
+    expect(sugs.slice(1).every((s) => s.strength === 'dotted')).toBe(true)
   })
 
   it('carries the edge roman, not the target node roman', () => {

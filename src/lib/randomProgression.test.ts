@@ -70,10 +70,22 @@ describe('randomProgression determinism', () => {
   })
 
   it('pins a known walk so regressions are visible', () => {
-    // characterization: update deliberately if weighting changes
-    const walk = randomProgression('Am,3', T, S, 8, { seed: 12345 })
+    // CHARACTERIZATION: update deliberately when the edge set changes, as the
+    // sevenths promotion did and Stage M-A (inversions) does now. Adding
+    // dotted edges re-partitions the weighted interval every seed lands in, so
+    // a given seed takes a different — equally legal — path. That is the same
+    // documented consequence recorded for the sevenths in chord-theory.md §7.
+    //
+    // Seed 12345 now runs Am E7 Am V64 E7 A and stops at 6: the Picardy 'A' is
+    // reachable as a destination but has no outgoing edges of its own, so the
+    // walk ends there. A shorter walk with an explicit reason is a legitimate
+    // result, not a truncation — which is precisely why the walk length is
+    // asserted against `stoppedBecause` rather than pinned at 8.
+    const res = randomProgressionDetail('Am,3', T, S, 8, { seed: 12345 })
+    const walk = res.steps.map((s) => s.name)
     expect(walk[0]).toBe('Am')
-    expect(walk).toHaveLength(8)
+    expect(walk).toEqual(['Am', 'E7', 'Am', 'V64', 'E7', 'A'])
+    expect(res.stoppedBecause).toBe('dead-end')
     expectLegalWalk(walk)
   })
 })
@@ -264,9 +276,25 @@ describe('weighting', () => {
         weights: { strong: 1, dotted: 10 },
       })
     ).map((w) => w[1])
-    expect(firsts.filter((n) => n === 'A').length).toBeGreaterThan(
-      firsts.filter((n) => n === 'Am').length
-    )
+    // The property under test is that the WEIGHTING is respected: with dotted
+    // edges weighted 10:1 over strong ones, dotted arrivals must dominate.
+    //
+    // This previously compared one dotted name ('A', the Picardy third)
+    // against the single strong one ('Am'). That comparison only ever held
+    // because E had few dotted edges, so 'A' carried a large share of the
+    // dotted mass on its own; it says nothing about weighting once the
+    // dotted layer has more members. Stage M-A added four (Im6, V65, V43,
+    // V42), and 'A' now draws 15 of the 80 dotted arrivals rather than most
+    // of them — the weighting is if anything MORE clearly respected
+    // (80 dotted vs 20 strong, i.e. 4:1), and the old assertion simply
+    // measured the wrong quantity. Measured: E7 53, Am 20, A 15, Am7 12.
+    //
+    // 'Am' is E's only strong edge, so everything else is a dotted arrival.
+    const strongArrivals = firsts.filter((n) => n === 'Am').length
+    const dottedArrivals = firsts.length - strongArrivals
+    expect(dottedArrivals).toBeGreaterThan(strongArrivals)
+    // and by a wide margin, not a coin flip
+    expect(dottedArrivals).toBeGreaterThan(firsts.length * 0.6)
   })
 
   it('can exclude dotted edges entirely with a zero weight', () => {

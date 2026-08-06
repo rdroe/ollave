@@ -178,6 +178,13 @@ export const edgeFigure = (edge: ChartEdge): Figure | null =>
 export const bassOf = (chordName: string, figure: Figure): string | null => {
   const chord = Chord.get(chordName)
   if (chord.empty || chord.notes.length === 0) return null
+  // ARITY IS CHECKED, not just index existence. A seventh-chord figure on a
+  // triad must fail even when the bass index happens to be in range: '7' maps
+  // to index 0, so an index-only check would cheerfully report that C major in
+  // root position is a `V7` — a wrong ANALYSIS reported with full confidence,
+  // which is worse than the null a caller can handle. Probed: before this
+  // check, `bassOf('C', '7')` returned 'C'.
+  if (chord.notes.length < figureArity(figure)) return null
   const index = figureBassIndex(figure)
   const note = chord.notes[index]
   if (!note) return null
@@ -196,6 +203,29 @@ export const figureFitsChord = (chordName: string, figure: Figure): boolean => {
   const chord = Chord.get(chordName)
   if (chord.empty) return false
   return chord.notes.length >= figureArity(figure)
+}
+
+/**
+ * The roman a composer would actually write for a figured chord.
+ *
+ * The figure is appended, EXCEPT that a seventh-chord figure absorbs a
+ * trailing '7' in the roman: `{ chord: 'V7', figure: '65' }` is `V65`, not
+ * `V765`. Probed before pinning — naive concatenation produced 'V765' and
+ * 'V742', which read as nonsense and would collide with a hypothetical roman
+ * for a chord on degree 7. The figures 65/43/42 already SAY seventh chord, so
+ * the '7' is redundant as well as ambiguous; this is exactly how the notation
+ * works on a page (V⁶₅, never V⁷⁶₅).
+ *
+ * Root-position figures are dropped entirely: '53' and '7' add nothing to a
+ * roman that already spells the chord ('V7' stays 'V7', 'I' stays 'I').
+ */
+export const figuredRoman = (chord: string, figure: Figure | null): string => {
+  if (!figure) return chord
+  if (figure === '53' || figure === '7') return chord
+  if (figureArity(figure) === 4 && chord.endsWith('7')) {
+    return `${chord.slice(0, -1)}${figure}`
+  }
+  return `${chord}${figure}`
 }
 
 /**

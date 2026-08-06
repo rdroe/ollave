@@ -80,9 +80,23 @@ describe('chordGraphCreate', () => {
     const graph = chordGraphCreate('A', 'minor')
     // V resolves to the tonic; the cadential 6/4 and Aug6 now *precede* it
     expect(graph['E'].next.map((n) => n.name)).toEqual(['Am'])
-    // the Picardy third stays a dotted (weak) option, now joined by the
-    // dominant's own seventh and the tonic seventh as arrival colour
-    expect(graph['E'].dotted.map((n) => n.name)).toEqual(['A', 'E7', 'Am7'])
+    // the Picardy third stays a dotted (weak) option, joined by the dominant's
+    // own seventh, the tonic seventh as arrival colour, and (Stage M-A) the
+    // inverted tonic resolution plus the dominant-seventh inversions. Pinned by
+    // ROMAN because a name is no longer unique: E7 appears as V7, V65, V43 and
+    // V42, which are four different bass notes.
+    expect(graph['E'].dotted.map((n) => n.roman)).toEqual([
+      'I',
+      'V7',
+      'Im7',
+      'Im6',
+      'V65',
+      'V43',
+      'V42',
+    ])
+    // every inversion edge is dotted — the blast-radius rule that keeps
+    // nextChord byte-identical
+    expect(graph['E'].next.every((n) => n.figure === undefined)).toBe(true)
   })
 
   it('resolves the cadential 6/4 to the dominant', () => {

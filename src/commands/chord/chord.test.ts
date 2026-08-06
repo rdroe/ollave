@@ -100,11 +100,18 @@ describe('chord next', () => {
       scale: 'minor',
       detail: true,
     })
+    // Stage M-A: the inversions join the dotted layer. Each figured line shows
+    // the chord voiced with the FIGURED bass and names that bass, so the notes
+    // column never contradicts the roman.
     expect(detail.next).toEqual([
       'Am  Im  strong  A3 C4 E4',
       'A  I  dotted  A3 C#4 E4',
       'E7  V7  dotted  E3 G#3 B3 D4',
       'Am7  Im7  dotted  A3 C4 E4 G4',
+      'Am  Im6  dotted  C3 E3 A3  bass=C',
+      'E7  V65  dotted  G#3 B3 D4 E4  bass=G#',
+      'E7  V43  dotted  B3 D4 E4 G#4  bass=B',
+      'E7  V42  dotted  D3 E3 G#3 B3  bass=D',
     ])
   })
 
@@ -239,18 +246,26 @@ describe('chord sketch', () => {
     const a = await fmt('sketch', args)
     const b = await fmt('sketch', args)
     expect(a.progression).toBe(b.progression)
-    // the seeded walk shifted when the sevenths were promoted: the new dotted
-    // edges are extra weighted choices, so a given seed lands differently
-    expect(a.progression).toBe('C Bdim G Cmaj7 Bdim C V64 G')
+    // the seeded walk shifted when the sevenths were promoted, and again when
+    // Stage M-A added the inversion edges: new dotted edges are extra weighted
+    // choices, so a given seed lands differently. Determinism (a === b above)
+    // is the property under test and is unaffected.
+    expect(a.progression).toBe('C G G7 C G C Bdim C')
     expect(a.seed).toBe(42)
   })
 
   it('defaults to eight chords', async () => {
+    // Seed changed from 12345 to 1 for Stage M-A. The default LENGTH is what
+    // this test is about, and eight is still the default — but a walk may
+    // legitimately stop short when it reaches a terminal node, and 12345 now
+    // ends on the Picardy 'A' after six chords (it has no outgoing edges of
+    // its own). Seed 1 completes, so the assertion measures the default rather
+    // than the dead-end policy, which randomProgression.test.ts covers.
     const f = await fmt('sketch', {
       positionalNonCommands: ['Am'],
       tonic: 'A',
       scale: 'minor',
-      seed: 12345,
+      seed: 1,
     })
     expect((f.progression as string).split(' ')).toHaveLength(8)
   })
@@ -289,9 +304,9 @@ describe('chord pivots', () => {
     expect(f.pivots).toEqual([
       'C major  VIm  6 continuations',
       'D minor  Vm  0 continuations',
-      'E minor  IVm  10 continuations',
+      'E minor  IVm  14 continuations',
       'F major  IIIm  7 continuations',
-      'G major  IIm  9 continuations',
+      'G major  IIm  13 continuations',
     ])
   })
 })

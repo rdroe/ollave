@@ -285,7 +285,13 @@ describe('promotion — sevenths are chart nodes, reached only as dotted', () =>
 
   it('nextChordDetail now DOES emit sevenths, as dotted edges', () => {
     const sugs = nextChordDetail('Am,3', 'A', 'minor')
-    const sevenths = sugs.filter((s) => s.notes.length === 4)
+    // ROOT-POSITION sevenths. Since Stage M-A added inversion edges, a
+    // four-note suggestion is no longer necessarily a root-position seventh:
+    // V65/V43/V42 are the SAME chord (E7) with a different bass, and they
+    // carry a `figure`. Filtering them out is what keeps this test asking the
+    // question it was written to ask — "which sevenths does Am reach?" — and
+    // the answer is unchanged.
+    const sevenths = sugs.filter((s) => s.notes.length === 4 && !s.figure)
     expect(sevenths.map((s) => s.name)).toEqual([
       'Am7',
       'Dm7',
@@ -309,9 +315,14 @@ describe("nextChordDetail include: ['sevenths']", () => {
     // Am reaches all five of A minor's sevenths already, so nothing is added
     expect(withSevenths).toEqual(graph)
 
-    const names = withSevenths.map((s) => s.name)
-    expect(new Set(names).size, 'no chord may be reported twice').toBe(
-      names.length
+    // Uniqueness is by (name, figure), not by name alone. Stage M-A made a
+    // chord NAME non-unique on purpose: Am appears as `Im` (root position) and
+    // again as `Im6` (first inversion), which are different bass notes and
+    // different musical objects, exactly as the graph's dedupe key now says.
+    // Probed across Am/C/Dm/F/Bdim in both keys: zero true duplicates.
+    const keys = withSevenths.map((s) => `${s.name}|${s.figure ?? ''}`)
+    expect(new Set(keys).size, 'no chord may be reported twice').toBe(
+      keys.length
     )
   })
 
@@ -350,8 +361,11 @@ describe("nextChordDetail include: ['sevenths']", () => {
     expect(a.slice(graphLen).map((s) => s.strength)).toEqual(
       Array(5).fill('mixture')
     )
-    // the sevenths are present all the same — as graph edges
-    expect(a.filter((s) => s.name === 'G7')).toHaveLength(1)
+    // the sevenths are present all the same — as graph edges. Exactly ONE
+    // root-position G7: since Stage M-A the same chord also appears as its
+    // inversions V65/V43/V42, which is the point of that stage, so the
+    // no-duplicate assertion is about the unfigured entry.
+    expect(a.filter((s) => s.name === 'G7' && !s.figure)).toHaveLength(1)
   })
 
   it('ranks sevenths by voice leading alongside everything else', () => {

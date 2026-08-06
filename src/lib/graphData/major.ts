@@ -88,6 +88,24 @@ import type { ProgressionChart } from './types'
  * and submediant sevenths carry no distinct function, and adding them would
  * make this "every triad also has a seventh" — the bloat the dotted-target
  * rule exists to prevent.
+ *
+ * INVERSIONS (Stage M-A, A5) follow the same three rules the sevenths do, and
+ * the long form of the reasoning is in minor.ts's header. In brief: an edge may
+ * be `{ chord, figure }` rather than a bare string; only TRUE chord-to-chord
+ * inversions are edges (I6, V6, VIIdim6, V65/V43/V42); every inversion edge is
+ * DOTTED, which is what keeps `nextChord` byte-identical; and the passing and
+ * pedal 6/4s are NOT edges, because the chord is the same in all three cases
+ * and only the context differs — they are spans (`spans.ts`).
+ *
+ * V42 -> I6 is the one inversion edge that is a genuinely different move
+ * rather than a re-voicing of an existing one: the chordal seventh sits in the
+ * bass and must resolve DOWN by step, so a V42 can only resolve to a
+ * first-inversion tonic. B2 will recognize the same pair as the evaded cadence,
+ * the phrase-extension device.
+ *
+ * I6 is more useful in major than in minor and is reached more widely here:
+ * from the tonic (beginning a prolongation), from the predominants, and from
+ * the dominant complex (a phrase-internal arrival that keeps the bass moving).
  */
 export const major: ProgressionChart = {
   // Tonic. Free to move anywhere in the cycle: to the tonic-substitute region
@@ -97,8 +115,25 @@ export const major: ProgressionChart = {
     {
       name: 'I',
       next: ['I', 'IIIm', 'VIm', 'IV', 'IIm', 'V64', 'VIIdim', 'V'],
-      // seventh colour on the chords this node already reaches (rule 3)
-      dotted: ['Imaj7', 'IVmaj7', 'IIm7', 'VIIm7b5', 'V7'],
+      // seventh colour on the chords this node already reaches (rule 3),
+      // then the inversions of those same chords (Stage M-A: always dotted)
+      dotted: [
+        'Imaj7',
+        'IVmaj7',
+        'IIm7',
+        'VIIm7b5',
+        'V7',
+        // I -> I6: the harmony holds while the bass steps up to 3, which is
+        // how a tonic prolongation opens
+        { chord: 'I', figure: '6' },
+        // vii°6 — first inversion is the normal form of the leading-tone triad
+        { chord: 'VIIdim', figure: '6' },
+        // the linear dominant, bass on the leading tone
+        { chord: 'V', figure: '6' },
+        { chord: 'V7', figure: '65' },
+        { chord: 'V7', figure: '43' },
+        { chord: 'V7', figure: '42' },
+      ],
     },
   ],
 
@@ -127,7 +162,20 @@ export const major: ProgressionChart = {
     {
       name: 'IV',
       next: ['IIm', 'V64', 'VIIdim', 'V', 'VIIdim/V', 'V/V', 'N6', 'Aug6'],
-      dotted: ['I', 'IIm7', 'VIIm7b5', 'V7', 'Imaj7'],
+      dotted: [
+        'I',
+        'IIm7',
+        'VIIm7b5',
+        'V7',
+        'Imaj7',
+        // IV -> I6 is the plagal move with the bass rising by step rather than
+        // falling a fourth; it is also the hinge of the descending-bass idiom
+        // authored as a span in spans.ts
+        { chord: 'I', figure: '6' },
+        { chord: 'V', figure: '6' },
+        { chord: 'VIIdim', figure: '6' },
+        { chord: 'V7', figure: '65' },
+      ],
     },
   ],
   // ii is the other predominant; the ii -> V motion is the strongest
@@ -138,7 +186,15 @@ export const major: ProgressionChart = {
       name: 'IIm',
       prev: ['I', 'IIIm', 'VIm', 'IV'],
       next: ['V64', 'VIIdim', 'V', 'VIIdim/V', 'V/V', 'N6', 'Aug6'],
-      dotted: ['VIIm7b5', 'V7'],
+      dotted: [
+        'VIIm7b5',
+        'V7',
+        // the inverted dominants this predominant may move to
+        { chord: 'V', figure: '6' },
+        { chord: 'VIIdim', figure: '6' },
+        { chord: 'V7', figure: '65' },
+        { chord: 'V7', figure: '43' },
+      ],
     },
   ],
 
@@ -158,7 +214,14 @@ export const major: ProgressionChart = {
       name: 'VIIdim',
       prev: ['I', 'IV', 'IIm'],
       next: ['I', 'V'],
-      dotted: ['Imaj7', 'V7'],
+      dotted: [
+        'Imaj7',
+        'V7',
+        // vii°6 -> I6, the classic linear pair: both inverted, the bass moving
+        // by step against the soprano in parallel tenths
+        { chord: 'I', figure: '6' },
+        { chord: 'V', figure: '6' },
+      ],
     },
   ],
   V: [
@@ -167,7 +230,18 @@ export const major: ProgressionChart = {
       next: ['I'],
       // deceptive cadence, plus the dominant's own seventh: V -> V7 is the
       // ordinary move of adding the seventh before resolving
-      dotted: ['VIm', 'V7', 'Imaj7'],
+      dotted: [
+        'VIm',
+        'V7',
+        'Imaj7',
+        // resolving onto an inverted tonic keeps the bass moving rather than
+        // landing: a phrase-internal arrival, not a full close
+        { chord: 'I', figure: '6' },
+        // the dominant's own inversions, before resolving
+        { chord: 'V7', figure: '65' },
+        { chord: 'V7', figure: '43' },
+        { chord: 'V7', figure: '42' },
+      ],
     },
   ],
 
@@ -299,7 +373,16 @@ export const major: ProgressionChart = {
     {
       name: 'V7',
       next: ['I'],
-      dotted: ['VIm', 'Imaj7'], // deceptive cadence; tonic seventh as colour
+      dotted: [
+        'VIm',
+        'Imaj7', // deceptive cadence; tonic seventh as colour
+        // V7's own inversions: re-voicing the dominant before it resolves
+        { chord: 'V7', figure: '65' },
+        { chord: 'V7', figure: '43' },
+        { chord: 'V7', figure: '42' },
+        // the inverted resolution — obligatory after V42 (see header)
+        { chord: 'I', figure: '6' },
+      ],
     },
   ],
   // half-diminished leading-tone seventh (B-D-F-A in C). Dominant function,

@@ -1,6 +1,7 @@
 import { Module } from 'peprn/util'
 
 import { mem } from '../../core/mem'
+import { figuredVoicings } from '../../lib/figuredBass'
 import { phaseScale } from '../../lib/helpers'
 import { mixtureSuggestions } from '../../lib/mixture'
 import { nextChord, nextChordDetail } from '../../lib/nextChord'
@@ -152,14 +153,29 @@ const voicingFor = (chord: string, key: Key): string[] | null => {
 const isRanked = (sug: ChordSuggestion): sug is RankedSuggestion =>
   typeof (sug as RankedSuggestion).distance === 'number'
 
-/** one detail line: 'Dm   IVm    strong   D3 F3 A3   d2' */
+/**
+ * one detail line: 'Dm   IVm    strong   D3 F3 A3   d2'
+ *
+ * For a FIGURED suggestion the notes column shows the chord voiced with the
+ * figured bass ('C  I6  dotted  E3 G3 C4  bass=E') rather than in root
+ * position. Showing root-position notes beside the roman 'I6' would state the
+ * inversion and then contradict it, which is the one thing this line must not
+ * do — the bass is the entire content of the suggestion.
+ */
 const formatSuggestion = (sug: ChordSuggestion): string => {
+  const figured =
+    sug.figure && !isRanked(sug)
+      ? figuredVoicings(sug.name, sug.figure, { minOctave: 3, maxOctave: 3 })[0]
+      : undefined
   const parts = [
     sug.name,
     sug.roman,
     sug.strength,
-    (isRanked(sug) ? sug.suggestedVoicing : sug.notes).join(' '),
+    (isRanked(sug) ? sug.suggestedVoicing : (figured ?? sug.notes)).join(' '),
   ]
+  if (sug.bass) {
+    parts.push(`bass=${sug.bass}`)
+  }
   if (isRanked(sug)) {
     parts.push(`d${sug.distance}`)
   }

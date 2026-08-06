@@ -68,14 +68,67 @@ import type { ProgressionChart } from './types'
  * The Im7 node is reachable but leads onward exactly as Im does. Note Im lists
  * ITSELF among its successors, so Im also reaches Im7 — the tonic may take its
  * seventh as a colouring without leaving tonic function.
+ *
+ * INVERSIONS (Stage M-A, A5). An edge may be `{ chord, figure }` instead of a
+ * bare string; the bare string still means root position and is still the
+ * normal form. Only TRUE CHORD-TO-CHORD inversions are edges here — the ones
+ * whose identity is a property of the move itself:
+ *
+ *   Im6      the tonic over its third; the bass as a melodic line rather than
+ *            a pillar. Its function is unchanged, so it goes where Im goes.
+ *   V6       the dominant over the LEADING TONE, which rises a semitone to the
+ *            tonic. A weaker, more linear dominant than root-position V.
+ *   VIIdim6  first inversion is the NORMAL form of the leading-tone triad —
+ *            root position leaves the diminished fifth exposed above the bass.
+ *   V65/V43/V42  the dominant-seventh inversions.
+ *
+ * V42 -> Im6 is the one edge here that is not just "the same move, inverted".
+ * The chordal seventh is in the bass and MUST resolve down by step, so a V42
+ * resolves to a FIRST-INVERSION tonic and cannot resolve to a root-position
+ * one. That obligation is why it gets its own edge rather than riding along
+ * with V7's; B2 will recognize the same pair as the evaded cadence.
+ *
+ * PASSING AND PEDAL 6/4s ARE DELIBERATELY NOT EDGES. A 6/4 between I and I6
+ * with stepwise bass is a passing 6/4; the same two chords with a static bass
+ * is a pedal 6/4; the same sonority on a strong beat resolving to V is the
+ * cadential 6/4 (which this chart carries as the `V64` function node). The
+ * chord is identical in all three — only the CONTEXT differs — so a
+ * first-order edge cannot tell them apart. They are authored as spans instead;
+ * see `spans.ts`.
+ *
+ * EVERY INVERSION EDGE IS DOTTED. This is the same blast-radius rule the
+ * sevenths shipped under: `nextChord` returns strong edges only, so putting
+ * inversions on the dotted layer keeps its output byte-for-byte identical to
+ * before they existed — verified by probe across every node in A minor and
+ * C major. An inversion is a refinement of a motion the chart already offers,
+ * not a new motion, so this is also the musically honest grading: the strong
+ * edge says "go to the dominant", the dotted figured edge says "and you may
+ * put its third in the bass".
  */
 export const minor: ProgressionChart = {
   Im: [
     {
       name: 'Im',
       next: ['Im', 'IVm', 'VII', 'III', 'VI', 'IIdim', 'V64', 'VIIdim', 'V'],
-      // seventh colour on the chords this node already reaches (rule 3)
-      dotted: ['Im7', 'IVm7', 'IIm7b5', 'VIIdim7', 'V7'],
+      // seventh colour on the chords this node already reaches (rule 3),
+      // then the inversions of those same chords (Stage M-A rule: dotted)
+      dotted: [
+        'Im7',
+        'IVm7',
+        'IIm7b5',
+        'VIIdim7',
+        'V7',
+        // the tonic over its third — the bass leaves the root without the
+        // harmony changing, which is how a tonic prolongation begins
+        { chord: 'Im', figure: '6' },
+        // first inversion is the normal form of the leading-tone triad
+        { chord: 'VIIdim', figure: '6' },
+        // the linear dominant: bass on the leading tone
+        { chord: 'V', figure: '6' },
+        { chord: 'V7', figure: '65' },
+        { chord: 'V7', figure: '43' },
+        { chord: 'V7', figure: '42' },
+      ],
     },
   ],
 
@@ -96,7 +149,16 @@ export const minor: ProgressionChart = {
         'VIIdim',
         'V',
       ], // big confusing box
-      dotted: ['VIIdim7', 'V7'],
+      dotted: [
+        'VIIdim7',
+        'V7',
+        // the predominant's inverted continuations into the dominant complex,
+        // plus IVm -> Im6, the plagal move with a rising stepwise bass
+        { chord: 'V', figure: '6' },
+        { chord: 'VIIdim', figure: '6' },
+        { chord: 'V7', figure: '65' },
+        { chord: 'Im', figure: '6' },
+      ],
     },
   ],
   VII: [
@@ -131,7 +193,17 @@ export const minor: ProgressionChart = {
         'VIIdim',
         'V',
       ], // big confusing box
-      dotted: ['VIIdim7', 'V7'],
+      dotted: [
+        'VIIdim7',
+        'V7',
+        // ii°6 is the normal form of the minor-key supertonic (root position
+        // exposes the diminished fifth above the bass), so the inverted
+        // continuations into the dominant complex matter here
+        { chord: 'V', figure: '6' },
+        { chord: 'VIIdim', figure: '6' },
+        { chord: 'V7', figure: '65' },
+        { chord: 'V7', figure: '43' },
+      ],
     },
   ],
   // big confusing box v64 — cadential 6/4, resolves to V (see header note)
@@ -148,7 +220,13 @@ export const minor: ProgressionChart = {
       name: 'VIIdim',
       prev: ['IVm', 'IIdim'],
       next: ['V'],
-      dotted: ['V7'],
+      dotted: [
+        'V7',
+        // vii°6 -> I6 is the classic linear pair: both chords inverted, the
+        // bass moving by step in parallel tenths with the soprano
+        { chord: 'Im', figure: '6' },
+        { chord: 'V', figure: '6' },
+      ],
     },
   ],
   // big confusing box V
@@ -158,7 +236,18 @@ export const minor: ProgressionChart = {
       next: ['Im'],
       // the Picardy third, plus the dominant's own seventh: V -> V7 is the
       // ordinary move of adding the seventh before resolving
-      dotted: ['I', 'V7', 'Im7'],
+      dotted: [
+        'I',
+        'V7',
+        'Im7',
+        // resolving onto an inverted tonic keeps the bass moving rather than
+        // landing; a phrase-internal cadence rather than a full close
+        { chord: 'Im', figure: '6' },
+        // the dominant may also take its own inversions before resolving
+        { chord: 'V7', figure: '65' },
+        { chord: 'V7', figure: '43' },
+        { chord: 'V7', figure: '42' },
+      ],
     },
   ],
   // non-box with sixes N6
@@ -294,7 +383,16 @@ export const minor: ProgressionChart = {
     {
       name: 'V7',
       next: ['Im'],
-      dotted: ['I', 'Im7'], // Picardy third; tonic seventh as arrival colour
+      dotted: [
+        'I',
+        'Im7', // Picardy third; tonic seventh as arrival colour
+        // V7's own inversions: the dominant may be re-voiced before resolving
+        { chord: 'V7', figure: '65' },
+        { chord: 'V7', figure: '43' },
+        { chord: 'V7', figure: '42' },
+        // the inverted resolution — see the V42 note in the header
+        { chord: 'Im', figure: '6' },
+      ],
     },
   ],
   // fully-diminished leading-tone seventh (G#dim7 in A minor — the RAISED

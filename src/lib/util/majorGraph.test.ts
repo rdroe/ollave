@@ -95,14 +95,19 @@ describe('major chord graph', () => {
       'N6',
       'Aug6',
     ])
-    // the plagal cadence stays a weaker option, now alongside the seventh
-    // forms of the chords IV already reaches
-    expect(graph['F'].dotted.map((n) => n.name)).toEqual([
-      'C',
-      'Dm7',
-      'Bm7b5',
-      'G7',
-      'Cmaj7',
+    // the plagal cadence stays a weaker option, alongside the seventh forms of
+    // the chords IV already reaches and (Stage M-A) their inversions. Pinned by
+    // ROMAN: 'C' is now both I and I6, two different bass notes.
+    expect(graph['F'].dotted.map((n) => n.roman)).toEqual([
+      'I',
+      'IIm7',
+      'VIIm7b5',
+      'V7',
+      'Imaj7',
+      'I6',
+      'V6',
+      'VIIdim6',
+      'V65',
     ])
   })
 
@@ -148,8 +153,17 @@ describe('major chord graph', () => {
     const graph = chordGraphCreate('C', 'major')
     expect(graph['G'].next.map((n) => n.name)).toEqual(['C'])
     // V -> vi evades the promised resolution, so it is offered as weaker,
-    // now alongside the dominant's own seventh and the tonic seventh
-    expect(graph['G'].dotted.map((n) => n.name)).toEqual(['Am', 'G7', 'Cmaj7'])
+    // alongside the dominant's own seventh, the tonic seventh and (Stage M-A)
+    // the inverted tonic resolution plus the dominant-seventh inversions
+    expect(graph['G'].dotted.map((n) => n.roman)).toEqual([
+      'VIm',
+      'V7',
+      'Imaj7',
+      'I6',
+      'V65',
+      'V43',
+      'V42',
+    ])
     const deceptive = graph['G'].dotted.find((n) => n.name === 'Am')
     expect(deceptive?.roman).toBe('VIm')
   })
@@ -322,24 +336,35 @@ describe('mode dispatch', () => {
 describe('nextChordDetail in a major key', () => {
   it('suggests the diatonic continuations of the tonic', () => {
     const suggestions = nextChordDetail('C,3', 'C', 'major')
-    const byName = suggestions.map((s) => s.name)
-    // the triads are the strong motions; the sevenths follow as dotted colour
-    expect(byName).toEqual([
-      'C',
-      'Em',
-      'Am',
-      'F',
-      'Dm',
+    // the triads are the strong motions; the sevenths follow as dotted colour,
+    // then (Stage M-A) the inversions — pinned by ROMAN, since a name is no
+    // longer unique (C is both I and I6, G7 is V7/V65/V43/V42)
+    expect(suggestions.map((s) => s.roman)).toEqual([
+      'I',
+      'IIIm',
+      'VIm',
+      'IV',
+      'IIm',
       'V64',
-      'Bdim',
-      'G',
-      'Cmaj7',
-      'Fmaj7',
-      'Dm7',
-      'Bm7b5',
-      'G7',
+      'VIIdim',
+      'V',
+      'Imaj7',
+      'IVmaj7',
+      'IIm7',
+      'VIIm7b5',
+      'V7',
+      'I6',
+      'VIIdim6',
+      'V6',
+      'V65',
+      'V43',
+      'V42',
     ])
+    // the strong set is UNCHANGED by Stage M-A: still exactly the 8 triads
     expect(suggestions.filter((s) => s.strength === 'strong')).toHaveLength(8)
+    expect(
+      suggestions.filter((s) => s.strength === 'strong').map((s) => s.name)
+    ).toEqual(['C', 'Em', 'Am', 'F', 'Dm', 'V64', 'Bdim', 'G'])
     for (const s of suggestions) {
       expect(s.notes.length).toBeGreaterThan(0)
       expect(s.enabledBy).toBeNull()

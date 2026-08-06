@@ -1,7 +1,7 @@
 import fakeCli from 'peprn/fakeCli'
 import { Chord, Note, Mode, Scale, Collection } from 'tonal'
 
-import { bassOf, edgeChord, edgeFigure } from './figuredBass'
+import { bassOf, edgeChord, edgeFigure, figuredRoman } from './figuredBass'
 import { minor } from './graphData/minor'
 import type { ChartEdge, Figure, ProgressionGraphNode } from './graphData/types'
 import { dedupeEnharmonicScales } from './scaleList'
@@ -613,9 +613,12 @@ export function makeProgNodeTranslator(
     ): EnabledChordNameWithNotes[] => {
       const romanName = edgeChord(edge)
       const figure = edgeFigure(edge)
-      // the figured roman is what a composer reads ('I6'); the plain roman is
-      // what the node is called. Only the roman is decorated, never the name.
-      const edgeRoman = figure ? `${romanName}${figure}` : romanName
+      // the figured roman is what a composer reads ('I6', 'V65'); the plain
+      // roman is what the node is called. Only the roman is decorated, never
+      // the name. `figuredRoman` (not naive concatenation) is what turns
+      // { chord: 'V7', figure: '65' } into 'V65' rather than the unreadable
+      // 'V765' — see its doc comment.
+      const edgeRoman = figuredRoman(romanName, figure)
 
       if (isChordFn(romanName)) {
         const fnRes = fns[romanName](userLetter, userScale)
