@@ -88,6 +88,42 @@ export type {
 // conditions, B3 the metric ones. `waivers` is live data B1 should consume.
 export { spanById, spanRomans, spanWaivedRules, spans, spansOfKind } from './spans'
 
+// harmonic rhythm and metric weight (Stage M-B, B3) ------------------------
+// Reads strong/weak position from the timing data that already exists
+// (`tickCounts`/`BAR` and the per-note `barDelay` tag — finding V4); it adds no
+// clock of its own. `spanMetricFit` ACTIVATES the `conditions.metric` field the
+// span library declared inert in Stage M-A, and `cadentialSixFourMetricFit` is
+// the metric half of what distinguishes the three six-fours — the
+// voice-leading half (the 6/4 -> 5/3 resolution over a held bass) is B1's.
+// The weight model is a flat Lerdahl-Jackendoff dot grid; its simplifications
+// (no hypermeter, no grouping structure, no preference rules) are documented
+// on `metricWeight`.
+export {
+  barTicksOf,
+  cadentialSixFourMetricFit,
+  ENGINE_BAR_TICKS,
+  METER_NAMES,
+  METRIC_LEVEL_WEIGHT,
+  meterSpec,
+  metricStrength,
+  metricStronger,
+  metricWeight,
+  spanMetricFit,
+  suggestHarmonicRhythm,
+} from './harmonicRhythm'
+export type {
+  HarmonicRhythmOptions,
+  HarmonicRhythmStep,
+  HarmonicRhythmSuggestion,
+  MeterName,
+  MeterSpec,
+  MetricLevel,
+  MetricPosition,
+  MetricStepFit,
+  SixFourMetricVerdict,
+  SpanMetricFit,
+} from './harmonicRhythm'
+
 export { seventhOf, seventhSuggestions } from './sevenths'
 
 export { pivotSuggestions, romanInKey } from './pivots'
