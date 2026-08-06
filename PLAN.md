@@ -1,16 +1,18 @@
 # Plan: Composer-grade chord assistance
 
-Status legend: `[ ]` pending · `[x]` done · `[?]` awaiting decision
+Status legend: `[x]` done · `[ ]` pending · `[?]` awaiting decision
 
-Structured for multi-agent execution: **Stage A is serial** (one agent — it
-contains all surgery on shared files), **Stage B is a parallel fan-out**
-(worktree-isolated streams with disjoint file ownership), **Stage C is a
-small serial integration pass**. Every stream begins with an empirical
-probe (scratch vitest printing the real data it depends on) and lands
-green (`yarn test` + `npx tsc --noEmit`) before merge.
+**Status as of 2026-08-06: Stages A, B and C are COMPLETE and merged to
+`chord-assist-improvements` (14 commits, not on master). 199 tests passing,
+`npx tsc --noEmit` 0 errors, `yarn ts-build` + `node build.js` clean,
+version 0.4.0. Only Phase 5 (app surface) remains.**
 
-Est. wall time: A ≈ half day → B ≈ 1 day in parallel (vs ~3 serial) → C ≈ hours.
-
+Execution shape used: **Stage A serial** (one agent — all surgery on shared
+files), **Stage B parallel fan-out** (5 worktree-isolated Opus subagents with
+disjoint file ownership), **Stage C serial integration**. Every stream began
+with an empirical probe (scratch vitest printing real data) and landed green
+before merge. Actual wall time was roughly as estimated: A ≈ half day,
+B ≈ 1 day in parallel, C ≈ hours.
 ## Verified findings (probe run 2026-08-06, A-minor graph)
 
 Printed from the live graph, not inferred from reading code:
@@ -52,194 +54,148 @@ Printed from the live graph, not inferred from reading code:
 - **F10 — `optionalRomans = ['IImdim']` is dead config** (not in the chart).
   Exported, so keep the export; deprecation comment in Stage C.
 
-## Stage A — Foundation (SERIAL, one agent; all shared-file surgery)
 
-Owns: `graphh.ts`, `graphUtil.ts`, `nextChord.ts`, new `src/lib/graphData/`,
-and the existing test suites. After A merges, **no Stage B stream edits
-these files** except B1's designated `graphUtil.ts` dispatch.
+## Stage A — Foundation (DONE, serial) — `34258d4` `33d944f` `9dfda1d`
 
-- [?] **A0 — V64 edge direction** (resolve before A5 pins tests, else pin
-      current edges and revisit). As transcribed: `V -> V64` and
-      `V64 -> {N6, Aug6, I, Im}` (probe confirms `V64.next = N6, Aug6, A,
-      Am`; `E.next = V64, Aug6, Am`). Classically the cadential 6/4
-      resolves *to* V and N6/Aug6 *precede* the dominant — i.e.
-      `N6/Aug6 -> V64 -> V -> Im`. **Recommended default if the chart can't
-      be checked:** flip to the classical direction, consistent with the
-      approved V64/Aug6/VIIdim corrections.
-- [ ] **A1 — chart data extraction** (moved from old Phase 2 so it precedes
-      the fan-out): move the `minor` chart to `src/lib/graphData/minor.ts`
-      with provenance comments; `graphh.ts` re-exports `minor` unchanged
-      (public via lib barrel). Prepares a sibling slot for `major.ts` so B1
-      is pure file-addition.
-- [ ] **A2 — fn-edge enabler normalization (F1):** in
-      `makeProgNodeTranslator`, fn edges get the same prev-based enabler as
-      non-fn siblings (`progNodeIn.prev` realized, else null) — `Dm`'s V64
-      edge becomes `[F+Edim+C7]`, `Am`'s becomes null. Internal data unused
-      elsewhere; test pins the new shape.
-- [ ] **A3 — per-edge roman** (additive field on
-      `EnabledChordNameWithNotes`) — disambiguates Dm ⇢ Bdim-as-VIIdim/III
-      vs the Bdim node's IIdim identity (F3).
-- [ ] **A4 — `nextChordDetail`** in `src/lib/nextChord.ts` (existing
-      `nextChord` untouched; its tests already pin output):
+- [x] **A0 — V64 edge direction: flipped to classical** (user decision).
+      Four nodes changed: `V64 -> [V]` (dotted I removed — a 6/4 straight to
+      root-position tonic is a *passing* 6/4, a different object);
+      `V -> [Im]` dotted `[I]` (Picardy); `N6 -> [V64, V]`;
+      `Aug6 -> [V64, V]`. Predominant approaches to V64 (from Im, IVm,
+      IIdim, VIIdim/V, V/V) deliberately kept.
+- [x] **A1** — chart moved to `src/lib/graphData/minor.ts` with provenance
+      comments; `ProgressionGraphNode` + `ProgressionChart` in a zero-import
+      `graphData/types.ts` (that zero-import property is what prevents a
+      cycle); `graphh.ts` re-exports `minor` unchanged for the public barrel.
+- [x] **A2** — fn-edge enablers normalized (F1): `Dm`'s V64 edge now
+      `[F, Edim, C7]`, `Am`'s now `null` (were `['Dm']` / `['Am']`).
+- [x] **A3** — per-edge `roman` on `EnabledChordNameWithNotes`, populated in
+      all four construction sites (fn/non-fn × next/dotted).
+- [x] **A4** — `nextChordDetail` + `ChordSuggestion` shipped; `nextChord`
+      behaviorally byte-identical (shares a `resolveNode` helper).
+- [x] **A5** — tests; 61 → 74.
 
-```ts
-export type ChordSuggestion = {
-  name: string                    // 'G#dim'
-  roman: string                   // edge roman, e.g. 'VIIdim' or 'V7/III'
-  notes: string[]
-  strength: 'strong' | 'dotted'   // Stage B adds 'mixture' via composition
-  enabledBy: string[] | null      // realized names; null = unconditional
-  contextMatch?: boolean          // present only when opts.prev given
-}
+## Stage B — Parallel fan-out (DONE, 5 worktrees, zero merge conflicts)
 
-export const nextChordDetail = (
-  chordCsvArg: string, tonic: string, scale: string,
-  opts?: { prev?: string[] }      // recent chords, most recent last
-): ChordSuggestion[]
-```
+**Provisioning note:** all five worktrees were seeded from an old `master`
+commit, not `chord-assist-improvements`. Each agent detected this
+independently and re-based onto Stage A before starting; no work was lost.
+Worth knowing for future fan-outs — worktree isolation does not inherit the
+current branch.
 
-      Context rule (F2): `contextMatch = enabler === null ||
-      enabler.includes(prev[prev.length - 1])`; sort matches first; **never
-      drop** a suggestion (G#dim-after-Am would otherwise return empty).
-      Only `prev[last]` is consulted. Includes dotted edges; dedupe by
-      `(name, strength)` merging enabler lists (defensive — F4).
-      **`ChordSuggestion[]` is the contract Stage B streams build against —
-      they compose over it as pure functions rather than growing `opts`
-      (that composition rule is what makes the fan-out conflict-free).**
-- [ ] **A5 — tests:** Bdim partition with prev=['F'] vs prev=['Am']; Dm
-      double-box; G#dim-after-Am non-empty regression; dotted visibility
-      (`E ⇢ A`); Dm ⇢ Bdim carries roman 'VIIdim/III'; V64/E edges per A0.
+- [x] **B1 major graph** — `7852fda`, merged `9c5de88`. C major is really
+      major: `C, Em, Am, F, Dm, V64, Bdim, G, N6, Aug6` + secondaries
+      (`A7, C#dim, B7, D#dim, C7, Edim, D, F#dim, E7, G#dim`). Cm is gone.
+      Mode dispatch on `Scale.get(...).type` (F6) + an `empty` guard the
+      plan didn't anticipate (`Scale.get('C maj')` returns `type: ''`).
+      **N6 decision: INCLUDED**, reachable only from IV and IIm (never the
+      tonic) — bII is diatonic to neither mode, so predominant-to-predominant
+      substitution is the honest placement. **Corrected the brief:** the
+      minor chart's `IIdim` realizes to `Ddim` in C major, but ii is *minor*
+      in major keys — used `IIm`/`IIIm`/`VIm`. 25 tests.
+- [x] **B2 voice-leading + smooth voicing** — `a589d76` `4d977d4` `d0b8434`,
+      merged `f3669f5`. `ascendingInversions` built fresh (NOT on
+      `noteInversions`, per F7); symmetric nearest-note mapping for unequal
+      cardinalities; `rankByVoiceLeading` as a pure function.
+      **Declined the brief's instruction to import `pitchHeight`** from
+      `barTemplates/compile.ts` — that would have closed a runtime cycle
+      (`barsUtil → voiceLeading → compile → barsUtil`), the e302ee7 bug
+      class; duplicated the 10-line helper instead, with reasoning
+      commented. Smooth voicing opt-in via `voicing=smooth` tag;
+      `barsUtil.test.ts` verified byte-identical to Stage A (proof the
+      default path is untouched). 27 tests.
+- [x] **B3 mode mixture** — `1657c71`, merged `1112c7a`. C major:
+      `iv=Fm, ii°=Ddim, bIII=Eb, bVI=Ab, bVII=Bb`; A minor: `IV=D` (dorian).
+      Picardy I deliberately NOT duplicated (already a dotted edge).
+      Derived types (`MixtureStrength`/`MixtureSuggestion`) designed to
+      collapse to zero churn once C3 widened the base union. 14 tests.
+- [x] **B4 pivot modulation** — `9898e9a`, merged `e8a5155`.
+      `pivotSuggestions` + `romanInKey`. Rejected `Progression.toRomanNumerals`
+      (returns quality-only garbage when handed a full key name) and
+      reverse-mapping (triad-only, finds nothing for G7); chose degree +
+      quality construction. Ordering by `Key.alteration` distance. 14 tests.
+- [x] **B5 surprise-me walk** — `ea0e6bc`, merged `d4db369`. mulberry32 PRNG
+      (seeded, deterministic); strong:3 / dotted:1 with contextMatch as a
+      ×2 multiplier; dead ends stop early via `stoppedBecause`. **Found what
+      the brief missed:** the Picardy `A` is an edge *target* but not a graph
+      node, so `nextChordDetail('A,3',…)` throws — treated as terminal
+      instead of crashing. 23 tests.
 
-## Stage B — Parallel fan-out (worktree per stream, disjoint files)
+## Stage C — Integration + polish (DONE) — `1bc4766` `b60d6d1` `a65cb7c` `15c47ff`
 
-File-ownership matrix (writes; everything else is read-only). New test
-files per stream — **no stream appends to the Stage-A test suites.**
+- [x] **C0 — dotted chord-function edges fixed.** Both branches now share a
+      `translateEdge` helper. Probe showed it was worse than documented:
+      `V64` didn't return `''`, it mangled into the garbage name `E64`.
+- [x] **C1 — `detectAllScales` enharmonic fallback.** **The suggested chroma
+      normalization was probed and rejected as harmful:** it would take
+      `['A','C','E']` from 6 clean keys to 15 including `Dbb major` and
+      `F## minor`, because `allScales` is built over a note list with double
+      accidentals — breaking F8 and flooding pivot discovery. Shipped
+      instead: name matching stays primary, chroma fallback runs *only* when
+      name matching returns empty. Correctly-spelled input byte-identical.
+- [x] **C2 — flat-key N6 spelling fixed.** Root now
+      `Note.transpose(tonic, '2m')`. Eb major: `Ab Cb Fb` (was `E G# B`);
+      Db major: `Ebb Gb Bbb`. All other keys unchanged, so no pinned test
+      moved.
+- [x] **C3 — `strength` widened** to `'strong' | 'dotted' | 'mixture'`.
+      B3's derived aliases collapsed exactly as designed; kept as
+      `@deprecated` documentation rather than retired (safer for external
+      importers).
+- [x] **Convenience opts** (user decision — `b60d6d1`):
+      `nextChordDetail(chord, tonic, scale, { prev?, include?: 'mixture'[],
+      rankBy?: 'voiceLeading', fromVoicing? })`. Order: graph edges →
+      dedupe → include → prev annotation → rank. `rankBy` without
+      `fromVoicing` **throws** (silently skipping would return a
+      plausible-looking unranked list the caller can't detect). Stage B
+      functions remain exported and ARE the implementation.
+- [x] **Public API surface** (user decision — `a65cb7c`). The four new
+      modules were compiled but unreachable from the `ollave/lib` entry;
+      now exported (named + namespace + all public types). Two aliases avoid
+      colliding with namespace exports: `nextChordNames`,
+      `randomProgressionNames`.
+      **Cycle avoidance — the highest-risk item:** `nextChord.ts` importing
+      voiceLeading/mixture at runtime would have closed a real loop, since
+      `barsUtil` already imports `nearestVoicing` and `nextChord` imports
+      `barsUtil`. Fixed by extracting `ChordSuggestion` into a zero-import
+      leaf module `src/lib/chordSuggestion.ts`. Verified: madge circular
+      deps went 19 → 18 *despite* adding two runtime imports (the
+      `voiceLeading → nextChord` cycle is gone), and the emitted
+      `public/js/lib/*.js` has zero runtime references back to `nextChord`.
+      Two guards added to `importHygiene.test.ts`.
+- [x] **Verified external contract** (independently, not from agent report):
+      esbuild-bundled a consumer importing 10 symbols from the built
+      `public/js/lib/index.js` — clean (esbuild errors on unmatched named
+      exports); real `tsc --strict` on a consumer file using the public
+      types — 0 errors, confirming `MixtureSuggestion` ↔ `ChordSuggestion`
+      mutual assignability.
+- [x] **Housekeeping:** `CustomEvent` shim hoisted to `test/setup.ts`;
+      `optionalRomans` deprecation comment (F10).
+- [x] **0.4.0 + CHANGELOG.md** (user decision — `15c47ff`), documenting the
+      breaking change: existing *major-key* songs keep playing via the
+      plain-chord fallback but lose graph voicing/roman tags, since their
+      stored chords were borrowed-minor names. Minor-key songs unaffected.
 
-| Stream | Writes | New tests |
-|---|---|---|
-| B1 major graph | `graphData/major.ts` (new), `graphUtil.ts` (dispatch only) | `majorGraph.test.ts` |
-| B2 voice-leading + smooth voicing | `voiceLeading.ts` (new), `barsUtil.ts`, `addChord.ts` | `voiceLeading.test.ts` |
-| B3 mode mixture | `mixture.ts` (new) | `mixture.test.ts` |
-| B4 pivot modulation | `pivots.ts` (new) | `pivots.test.ts` |
-| B5 surprise-me walk | `randomProgression.ts` (new) | `randomProgression.test.ts` |
+## Phase 5 — App surface (NOT STARTED; the only remaining work)
 
-Merge order: B1 first (it carries the one behavioral change), then B2–B5 in
-any order — ownership is disjoint so conflicts should be zero. Each stream:
-branch off main *after* Stage A merges; probe first; `yarn test` +
-`npx tsc --noEmit` green before merge. `importHygiene.test.ts` guards
-against any stream reintroducing barrel imports.
+- [?] Suggestion chips after `addChord` (the roman tag is already recorded on
+      note groups), styled by strength/contextMatch, click-to-place with
+      smooth voicing. **Coordination needed:** touches `myapp.ts`/commands
+      where another agent has been working.
+- Note: `public/main.js` currently contains none of the new symbols — correct,
+  since it tree-shakes to what the UI calls. **These APIs are library-facing
+  only until Phase 5 surfaces them.**
 
-### B1 — Real major-key graph (~1 day; the accuracy fix)
+## Completed groundwork (pre-plan, this session)
 
-- [ ] Probe: build the drafted chart for C/G/F#/Eb major, print every
-      node/edge/enabler, eyeball against the source chart before pinning.
-- [ ] Author `major` chart in `graphData/major.ts`: I → iii/vi → IV/ii →
-      V/vii° → I, deceptive V ⇢ vi dotted, cadential V64, Aug6, secondary
-      `V7/x` + `VIIdim/x` for x ∈ {ii, iii, IV, V, vi}.
-- [ ] Mode dispatch in `chordGraphCreate` keyed on
-      `Scale.get(...).type` (F6): `major` → major chart, `minor` → minor
-      chart, else clear error (today: silent borrowed-minor, F5). Aliases
-      dispatch correctly for free; raw-input cache keys unchanged.
-      Parameterize the untranslatable-romans check by chart.
-- [ ] Tests: C-major characterization mirroring A minor; every edge
-      resolves with notes; secondary spellings (vii°/V in C = F#dim);
-      dispatch error for dorian.
-- [?] **N6 in the major chart** — include (as dotted?) or omit.
-- [?] **Confirm consequence:** existing *major-key* songs keep playing
-      (plain-chord fallback) but lose graph voicing/roman tags (their old
-      chords were borrowed-minor names — F5). Minor-key songs unaffected.
-      Suggest 0.4.0 at this merge.
-
-### B2 — Voice-leading engine + smooth voicing (~1 day; single stream
-because placement *needs* the engine's nearest-inversion math)
-
-- [ ] `ascendingInversions(chordName, octaveRange)` producing *true*
-      voicings (pitch-class rotation + correct octave assignment) — reuse
-      `pitchHeight`/`resolveChordPitchesAscending` from
-      `barTemplates/compile.ts`; do NOT build on `noteInversions` (F7).
-- [ ] `voiceLeadingDistance(fromVoicing, toChordName)`: minimal total
-      semitone motion across candidate voicings; nearest-note mapping for
-      unequal cardinalities.
-- [ ] `rankByVoiceLeading(suggestions: ChordSuggestion[], fromVoicing)` —
-      **pure function over the Stage-A contract** (not an opts change to
-      `nextChordDetail`), returning sorted copies carrying `distance` +
-      `suggestedVoicing`.
-- [ ] Smooth voicing on placement — **opt-in via `voicing=smooth` tag** (no
-      `addChord` signature change; tags already flow). `parseChordCsvArg`
-      gains optional `prevNotes` param (additive). Previous-chord lookup:
-      greatest `(barIndex, barDelay)` chord group before the insertion
-      point among `chord=`-tagged notes in the same phase.
-- [ ] Tests: identity distance 0; Am→E prefers the G#-B-E-adjacent
-      arrangement (hand-verified); ranking order; opt-in placement; default
-      placement byte-identical to today.
-
-### B3 — Mode mixture (~half day)
-
-- [ ] `mixtureSuggestions(tonic, scale): ChordSuggestion[]` with
-      `strength: 'mixture'`, interval-based spellings (F9): into major —
-      iv, ii°, bIII, bVI, bVII; into minor — IV (dorian). Picardy I already
-      exists as a dotted edge. Callers concat with `nextChordDetail` output.
-
-### B4 — Pivot modulation (~half day)
-
-- [ ] `pivotSuggestions(chordName, tonic, scale)` via `detectAllScales`
-      filtered to major/minor key names (F8), returning
-      `{ targetKey, romanThere, follow: ChordSuggestion[] }`.
-
-### B5 — Surprise-me walk (~half day)
-
-- [ ] `randomProgression(start, tonic, scale, length, { seed })` — weighted
-      walk over `nextChordDetail` output (strong > dotted), no immediate
-      repeats, seeded LCG (not `Math.random`) so tests are deterministic.
-
-## Stage C — Integration + polish (SERIAL, one agent, ~hours)
-
-- [ ] **C0 (from B1) — dotted chord-function edges are silently dropped.**
-      `makeProgNodeTranslator`'s `dotted` branch calls
-      `romanChordNameToReal` unconditionally, which returns `''` for a
-      function name (V64/N6/Aug6), so every dotted edge to one is dropped
-      with a "Dropping untranslatable dotted chord" warning. The `next`
-      branch handles this via `isChordFn`; the dotted branch must too.
-      Blocks weak N6/Aug6 edges and any future dotted V64.
-- [ ] **C1 (from B4) — `detectAllScales` is spelling-sensitive**, matching
-      note *names* not chromas: `detectAllScales(['C#','F','G#'])` returns
-      ZERO keys (a mis-spelled C# major triad finds no home). Affects pivot
-      discovery for enharmonically-spelled input. Decide: normalize to
-      chroma, or document the requirement.
-- [ ] **C2 (from B1) — N6/Aug6 respell enharmonically in flat keys**
-      (Eb major N6 = G#-B-E rather than Fb-Ab-Cb) due to `Note.simplify`
-      in graphh.ts's helpers. Pitch-correct, spelling-ugly.
-- [ ] **C3 (from B3) — widen `ChordSuggestion['strength']`** to include
-      `'mixture'`; B3's derived `MixtureSuggestion` type then collapses to
-      structurally identical and its aliases can be retired with zero
-      churn by design.
-- [ ] Decide whether `nextChordDetail` gains convenience opts wrapping the
-      B-stream functions (e.g. `include: ['mixture']`,
-      `rankBy: 'voiceLeading'`) or the compositional API stands alone —
-      either way B code is the implementation.
-- [ ] Cross-feature tests (mixture + ranking together; pivot follow lists
-      ranked); README/API notes.
-- [ ] Housekeeping: deprecation comment on `optionalRomans` (F10).
-- [ ] Version: 0.4.0 (B1's behavior change) + changelog line.
-
-## Phase 5 (unchanged, out of the fan-out) — App surface
-
-- [?] Suggestion chips after `addChord` (roman tag already on note groups),
-      styled by strength/contextMatch, click-to-place with smooth voicing.
-      Touches `myapp.ts`/commands where **another agent is currently
-      working** — keep out of Stage B; schedule around their work.
-
-## Completed groundwork (this session, 2026-08-06)
-
-- [x] Vitest infra (`yarn test`), window/fake-indexeddb shims, tests
-      excluded from tsc emit; 61 tests
+- [x] Vitest infra (`yarn test`), window/fake-indexeddb shims, tests excluded
+      from tsc emit
 - [x] Barrel-import hygiene (music.ts Piano no longer loads via mem());
-      importHygiene.test.ts guards it
-- [x] chordGraphCreate return-shape landmine; lookUpGraph null typing;
-      dead dynamic-chord branch; enabler realization; accidental-roman
-      handling; inScale membership; Bdim collision merge; assorted guards
+      `importHygiene.test.ts` guards it
+- [x] chordGraphCreate return-shape landmine; lookUpGraph null typing; dead
+      dynamic-chord branch; enabler realization; accidental-roman handling;
+      inScale membership; Bdim collision merge; assorted guards
 - [x] Musical accuracy: V64 = cadential 6/4; Aug6 = b6-1-#4; secondary
-      VIIdim/x on leading tone; diatonic VIIdim on leading tone
-      (G#dim in A minor)
+      VIIdim/x on leading tone; diatonic VIIdim on leading tone (G#dim in
+      A minor)
 - [x] TypeScript strict mode ON (~149 errors fixed, behavior-preserving)
 - [x] Precision probe of the live A-minor graph → findings F1–F10 above
