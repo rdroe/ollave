@@ -1,6 +1,8 @@
-import { Key } from 'tonal'
+import { Key, Scale } from 'tonal'
 
 import { mem } from '../../core/mem'
+import { major } from '../graphData/major'
+import type { ProgressionChart } from '../graphData/types'
 import {
   combineEntriesByName,
   fns,
@@ -44,11 +46,43 @@ const withFormattedSelfRef = (
   return graph as ChordProgressionGraph & { formatted: ChordProgressionGraph }
 }
 
+/**
+ * Pick the harmonic chart for a key.
+ *
+ * Dispatch is on `Scale.get(...).type`, not on the raw scale string: the type
+ * is what collapses aliases onto their mode, so 'C ionian' and 'C major' both
+ * report `major` and 'A aeolian' and 'A minor' both report `minor`. String
+ * matching would miss those aliases, and they really do reach this function.
+ *
+ * Anything else (dorian, mixolydian, harmonic minor, ...) throws rather than
+ * silently building the borrowed-minor chart on the wrong letters, which is
+ * what used to happen for every non-minor key including plain major.
+ */
+const chartForScale = (
+  userLetter: string,
+  userScale: string
+): ProgressionChart => {
+  const { type, empty } = Scale.get(`${userLetter} ${userScale}`)
+  if (empty) {
+    throw new Error(
+      `Unrecognized scale "${userLetter} ${userScale}": no chord graph can be built for it. Supported modes are major and minor.`
+    )
+  }
+  if (type === 'major') return major
+  if (type === 'minor') return minor
+  throw new Error(
+    `Unsupported mode "${type}" for ${userLetter} ${userScale}: chord graphs exist only for major and minor keys.`
+  )
+}
+
 export function chordGraphCreate(userLetter: string, userScale: string) {
   const lookedUp = lookUpGraph(userLetter, userScale)
 
   if (lookedUp) return withFormattedSelfRef(lookedUp)
-  const names = Object.keys(minor)
+  // cache keys stay the raw input string, so 'C ionian' and 'C major' remain
+  // separate entries even though they resolve to the same chart
+  const chart = chartForScale(userLetter, userScale)
+  const names = Object.keys(chart)
   const untranslatable = names
     .map((romanName) => {
       if (isChordFn(romanName)) {
@@ -65,12 +99,12 @@ export function chordGraphCreate(userLetter: string, userScale: string) {
 
   if (untranslatable.length) {
     throw new Error(
-      `Not all roman names were translatable.Make sure this is a minor key.${JSON.stringify(untranslatable)} ; scale: ${userLetter} ${userScale} `
+      `Not all roman names were translatable.${JSON.stringify(untranslatable)} ; scale: ${userLetter} ${userScale} `
     )
   }
 
   const scaledGraph = new Map<string, ProgressionOptions[]>()
-  for (const [romanName, progNodes] of Object.entries(minor)) {
+  for (const [romanName, progNodes] of Object.entries(chart)) {
     const realizedName = fns[romanName as keyof typeof fns]
       ? romanName
       : romanChordNameToReal(userLetter, userScale, romanName)
