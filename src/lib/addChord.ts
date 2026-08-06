@@ -64,6 +64,55 @@ export const DEFAULT_CHORD_PLACEMENTS = {
   3: DEFAULT_ARP_THREE,
 }
 
+/** the tag that opts a placement into smooth voicing */
+const SMOOTH_VOICING_TAG = 'voicing=smooth'
+
+/**
+ * Notes of the chord group immediately preceding an insertion point, or []
+ * when there is none.
+ *
+ * "Preceding" is the greatest `(barIndex, barDelay)` strictly before
+ * `(barIndex, 0)` — i.e. the last chord group in the nearest earlier bar of
+ * the SAME phase. Only notes carrying a `chord=` tag count, so melody and
+ * percussion layers never masquerade as the previous harmony; grouping is by
+ * `groupId`, which addChord stamps once per chord it places.
+ *
+ * Bars are scanned newest-first and the first bar holding a chord group wins,
+ * so an empty bar between chords is transparent rather than fatal.
+ */
+const previousChordNotes = (phaseName: string, barIndex: number): string[] => {
+  for (let idx = barIndex - 1; idx >= 0; idx--) {
+    const barNotes = mem().notesByBar[`${phaseName}:${idx}`]
+    if (!barNotes || barNotes.length === 0) continue
+
+    const chordNotes = barNotes.filter((note) => !!note.tagsObj?.chord)
+    if (chordNotes.length === 0) continue
+
+    // latest group in this bar = the one whose greatest barDelay is largest
+    const delayOf = (note: NoteByBar): number => {
+      const raw = note.tagsObj?.barDelay?.[0]
+      return typeof raw === 'number' ? raw : 0
+    }
+    let bestGroupId: string | undefined
+    let bestDelay = -Infinity
+    for (const note of chordNotes) {
+      const groupId = note.tagsObj?.groupId?.[0]
+      if (typeof groupId !== 'string') continue
+      const delay = delayOf(note)
+      if (delay > bestDelay) {
+        bestDelay = delay
+        bestGroupId = groupId
+      }
+    }
+    if (!bestGroupId) continue
+
+    return chordNotes
+      .filter((note) => note.tagsObj?.groupId?.[0] === bestGroupId)
+      .map((note) => note.note)
+  }
+  return []
+}
+
 export function addChord(
   chordCsvArg: string,
   phaseName: string,
@@ -127,11 +176,20 @@ export function addChord(
     .concat(tags)
     .concat([groupIdTag, `barId=${barTag}`])
 
+  // Smooth voicing is strictly opt-in: without the tag, prevNotes stays
+  // undefined and parseChordCsvArg takes its untouched default path, so
+  // existing songs place exactly the notes they always have.
+  const wantsSmoothVoicing = tags.includes(SMOOTH_VOICING_TAG)
+  const prevNotes = wantsSmoothVoicing
+    ? previousChordNotes(phaseName, barIndex)
+    : undefined
+
   const [notes, chordTags] = parseChordCsvArg(
     chordCsvArg,
     currentScale.scaleTonic && currentScale.scaleName
       ? `${currentScale.scaleTonic} ${currentScale.scaleName}`
-      : undefined
+      : undefined,
+    prevNotes && prevNotes.length > 0 ? prevNotes : undefined
   )
 
   const allNotes: NoteByBar[] = []
