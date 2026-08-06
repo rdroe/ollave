@@ -294,18 +294,9 @@ describe('addChord placement', () => {
 
   beforeAll(() => {
     chordGraphCreate('A', 'minor')
-    // addChord's compile step dispatches a CustomEvent, which the node test
-    // environment lacks. Local shim: the event is fire-and-forget and no
-    // assertion here depends on it.
-    const g = globalThis as { CustomEvent?: unknown }
-    if (typeof g.CustomEvent === 'undefined') {
-      g.CustomEvent = class extends Event {
-        constructor(type: string, init?: EventInit) {
-          super(type, init)
-        }
-      }
-    }
-    mem().song = { id: 1, name: 'vl', tempo: 120, 'track-ids': [] } as never
+    // the CustomEvent shim addChord's compile step needs now lives in
+    // test/setup.ts, since it is an environment gap rather than a fixture
+    mem().song ={ id: 1, name: 'vl', tempo: 120, 'track-ids': [] } as never
     mem().tracks = [
       {
         id: 1,

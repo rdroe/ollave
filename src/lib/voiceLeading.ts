@@ -4,7 +4,11 @@ import { Chord, Note } from 'tonal'
 // browser-only side effects — cf. importHygiene.test.ts
 import { lookUpGraph } from './util/graphUtil'
 
-import type { ChordSuggestion } from './nextChord'
+// the shared contract, imported from its own leaf module rather than from
+// nextChord.ts: nextChord imports THIS file at runtime for its rankBy option,
+// and barsUtil (which nextChord also imports) imports it too, so naming
+// nextChord here — even type-only — would put a cycle one refactor away.
+import type { ChordSuggestion } from './chordSuggestion'
 
 // letter -> semitone within an octave
 const PITCH_CLASS: { [letter: string]: number } = {

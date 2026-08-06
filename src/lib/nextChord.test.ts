@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { mixtureSuggestions } from './mixture'
 import { nextChord, nextChordDetail } from './nextChord'
+import { rankByVoiceLeading } from './voiceLeading'
 
 describe('nextChord', () => {
   it('builds the graph on first use (no explicit chordGraphCreate needed)', () => {
@@ -162,5 +164,114 @@ describe('nextChordDetail', () => {
     sugs.forEach((s) => {
       expect(s.notes.length, s.name).toBeGreaterThan(0)
     })
+  })
+})
+
+// Convenience options — sugar over the standalone functions, which remain the
+// implementation. Each test asserts the option is EQUIVALENT to hand-composing
+// the same call, so these cannot pass by reimplementing the logic.
+describe('nextChordDetail convenience options', () => {
+  it('preserves existing behavior when opts are absent or only prev is given', () => {
+    const bare = nextChordDetail('Am,3', 'A', 'minor')
+    expect(nextChordDetail('Am,3', 'A', 'minor', {})).toEqual(bare)
+    expect(nextChordDetail('Am,3', 'A', 'minor', { include: [] })).toEqual(bare)
+
+    const withPrev = nextChordDetail('Bdim,3', 'A', 'minor', { prev: ['F'] })
+    expect(withPrev.every((s) => s.contextMatch !== undefined)).toBe(true)
+    // no suggestion is dropped by context
+    expect(withPrev.length).toBe(nextChordDetail('Bdim,3', 'A', 'minor').length)
+  })
+
+  it("include: ['mixture'] appends exactly mixtureSuggestions output", () => {
+    const graphOnly = nextChordDetail('Am,3', 'A', 'minor')
+    const withMixture = nextChordDetail('Am,3', 'A', 'minor', {
+      include: ['mixture'],
+    })
+    expect(withMixture).toEqual([
+      ...graphOnly,
+      ...mixtureSuggestions('A', 'minor'),
+    ])
+    // A minor borrows the dorian IV
+    expect(withMixture.filter((s) => s.strength === 'mixture')).toEqual([
+      expect.objectContaining({ name: 'D', roman: 'IV', enabledBy: null }),
+    ])
+  })
+
+  it('borrowed chords are unconditional, so prev always marks them matching', () => {
+    const sugs = nextChordDetail('Am,3', 'A', 'minor', {
+      include: ['mixture'],
+      prev: ['E'],
+    })
+    const borrowed = sugs.filter((s) => s.strength === 'mixture')
+    expect(borrowed.length).toBeGreaterThan(0)
+    expect(borrowed.every((s) => s.contextMatch === true)).toBe(true)
+  })
+
+  it("rankBy: 'voiceLeading' equals hand-composing rankByVoiceLeading", () => {
+    const from = ['A3', 'C4', 'E4']
+    const viaOpts = nextChordDetail('Am,3', 'A', 'minor', {
+      rankBy: 'voiceLeading',
+      fromVoicing: from,
+    })
+    const handComposed = rankByVoiceLeading(
+      nextChordDetail('Am,3', 'A', 'minor'),
+      from,
+      { scale: { tonic: 'A', name: 'minor' } }
+    )
+    expect(viaOpts.map((s) => s.name)).toEqual(handComposed.map((s) => s.name))
+  })
+
+  it('combines mixture and voice-leading ranking in one call', () => {
+    const from = ['A3', 'C4', 'E4']
+    const viaOpts = nextChordDetail('Am,3', 'A', 'minor', {
+      include: ['mixture'],
+      rankBy: 'voiceLeading',
+      fromVoicing: from,
+    })
+    const handComposed = rankByVoiceLeading(
+      [
+        ...nextChordDetail('Am,3', 'A', 'minor'),
+        ...mixtureSuggestions('A', 'minor'),
+      ],
+      from,
+      { scale: { tonic: 'A', name: 'minor' } }
+    )
+    expect(viaOpts.map((s) => s.name)).toEqual(handComposed.map((s) => s.name))
+    // ranking is a sort, never a filter
+    expect(viaOpts.length).toBe(handComposed.length)
+    expect(viaOpts.some((s) => s.strength === 'mixture')).toBe(true)
+  })
+
+  it('ranks context matches ahead of merely-smooth moves', () => {
+    const sugs = nextChordDetail('Bdim,3', 'A', 'minor', {
+      prev: ['F'],
+      rankBy: 'voiceLeading',
+      fromVoicing: ['B3', 'D4', 'F4'],
+    })
+    const firstNonMatch = sugs.findIndex((s) => s.contextMatch !== true)
+    if (firstNonMatch !== -1) {
+      // once a non-match appears, no match may follow it
+      expect(
+        sugs.slice(firstNonMatch).every((s) => s.contextMatch !== true)
+      ).toBe(true)
+    }
+  })
+
+  it("throws when rankBy is given without fromVoicing", () => {
+    expect(() =>
+      nextChordDetail('Am,3', 'A', 'minor', { rankBy: 'voiceLeading' })
+    ).toThrow(/requires a non-empty opts.fromVoicing/)
+    expect(() =>
+      nextChordDetail('Am,3', 'A', 'minor', {
+        rankBy: 'voiceLeading',
+        fromVoicing: [],
+      })
+    ).toThrow(/requires a non-empty opts.fromVoicing/)
+  })
+
+  it('fromVoicing without rankBy is inert', () => {
+    expect(
+      nextChordDetail('Am,3', 'A', 'minor', { fromVoicing: ['A3', 'C4', 'E4'] })
+    ).toEqual(nextChordDetail('Am,3', 'A', 'minor'))
   })
 })

@@ -1,31 +1,34 @@
 import { Note, Scale } from 'tonal'
 
 import { chordNameWithNotes } from './graphh'
-import type { ChordSuggestion } from './nextChord'
+// the shared contract, from its own leaf module — nextChord.ts imports THIS
+// file at runtime for its `include: ['mixture']` option, so naming nextChord
+// here would be a cycle. See chordSuggestion.ts's header.
+import type { ChordSuggestion } from './chordSuggestion'
 
 /**
- * `ChordSuggestion['strength']` widened with the borrowed-chord tier.
+ * `ChordSuggestion['strength']`.
  *
- * Mixture is an *additive palette*: `mixtureSuggestions` is a pure function
- * over the Stage-A contract that callers concat with `nextChordDetail` output,
- * rather than an option on `nextChordDetail` itself. Because the base union
- * lives in a file this stream does not own, the extra member is added here by
- * derivation instead of by editing `nextChord.ts`.
+ * This alias predates the base union carrying 'mixture' directly. It was
+ * originally written as a DERIVED type (`ChordSuggestion['strength'] |
+ * 'mixture'`) precisely so that widening the base union would collapse it to
+ * an exact alias with no churn — which is what has now happened. It is kept
+ * rather than deleted because both it and `MixtureSuggestion` are exported
+ * public API, and removing them would break external importers for no gain.
  *
- * Derivation (`ChordSuggestion['strength'] | 'mixture'`) rather than a
- * hand-written union is deliberate: when a later integration pass widens the
- * base union to include 'mixture' directly, `MixtureStrength` collapses to
- * exactly `ChordSuggestion['strength']` and `MixtureSuggestion` becomes
- * structurally identical to `ChordSuggestion` — every annotation here stays
- * valid and no call site needs to change. The aliases can then be deleted, or
- * kept as documentation, at zero churn.
+ * @deprecated Use `ChordSuggestion['strength']`; this is now the same type.
  */
-export type MixtureStrength = ChordSuggestion['strength'] | 'mixture'
+export type MixtureStrength = ChordSuggestion['strength']
 
-/** a `ChordSuggestion` whose `strength` may also be 'mixture' */
-export type MixtureSuggestion = Omit<ChordSuggestion, 'strength'> & {
-  strength: MixtureStrength
-}
+/**
+ * A borrowed-chord suggestion.
+ *
+ * Now structurally identical to `ChordSuggestion` (the base union carries
+ * 'mixture'), and kept as documentation of intent at the call site.
+ *
+ * @deprecated Use `ChordSuggestion`; this is now the same type.
+ */
+export type MixtureSuggestion = ChordSuggestion
 
 /**
  * A borrowed chord, described relative to the tonic.
