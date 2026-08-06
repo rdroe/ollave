@@ -4,8 +4,11 @@ import {
   Aug6,
   N6,
   V64,
+  allScales,
   chordNameWithNotes,
+  conventionalKeys,
   detectAllScales,
+  distinctScales,
   makeProgNodeTranslator,
   noteInversions,
   oneIndexedArr,
@@ -310,5 +313,64 @@ describe('noteInversions', () => {
       ['E3', 'G3', 'C3'],
       ['G3', 'C3', 'E3'],
     ])
+  })
+})
+
+// C1-followup. `allScales` is public API — consumers may hold stored names
+// that resolve against it, and `isScaleName`/`properScaleName` search it — so
+// it is deliberately left alone and the curated lists are added alongside.
+describe('scale lists', () => {
+  it('allScales still holds all 189 entries, duplicates included', () => {
+    expect(allScales).toHaveLength(189)
+    const names = allScales.map((s) => s.name)
+    // the double-accidental spellings remain resolvable for back compat
+    expect(names).toContain('Dbb major')
+    expect(names).toContain('F## major')
+    expect(names).toContain('G## minor')
+  })
+
+  it('a picker built from allScales shows 54 major/minor entries', () => {
+    // 20 of them are unplayable double-accidental spellings — the bug that
+    // motivated the curated lists
+    const picker = allScales
+      .map((s) => s.name)
+      .filter((n) => n.endsWith(' major') || n.endsWith(' minor'))
+    expect(picker).toHaveLength(54)
+    expect(picker.filter((n) => /bb|##/.test(n.split(' ')[0]))).toHaveLength(20)
+  })
+
+  it('distinctScales collapses the 189 to 84 with no double accidentals', () => {
+    expect(distinctScales).toHaveLength(84)
+    const bad = distinctScales
+      .map((s) => s.name)
+      .filter((n) => /bb|##/.test(n.split(' ')[0]))
+    expect(bad).toEqual([])
+  })
+
+  it('distinctScales keeps every mode and both relative keys', () => {
+    const names = distinctScales.map((s) => s.name)
+    // 7 modes x 12 sounding pitch sets
+    expect(new Set(names.map((n) => n.split(' ').slice(1).join(' ')))).toEqual(
+      new Set(['major', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'minor', 'locrian'])
+    )
+    // relative major/minor share a pitch-class set but must both survive
+    expect(names).toContain('C major')
+    expect(names).toContain('A minor')
+  })
+
+  it('conventionalKeys is the 30-key list a scale picker should use', () => {
+    expect(conventionalKeys).toHaveLength(30)
+    const names = conventionalKeys.map((s) => s.name)
+    expect(names.filter((n) => n.endsWith(' major'))).toHaveLength(15)
+    expect(names.filter((n) => n.endsWith(' minor'))).toHaveLength(15)
+    // none of the 20 unplayable spellings the raw list would have offered
+    expect(names.filter((n) => /bb|##/.test(n.split(' ')[0]))).toEqual([])
+  })
+
+  it('conventionalKeys covers keys the raw list spells wrong or omits', () => {
+    const names = conventionalKeys.map((s) => s.name)
+    // absent from allScales entirely (noteNames has no 'Cb')
+    expect(allScales.map((s) => s.name)).not.toContain('Cb major')
+    expect(names).toContain('Cb major')
   })
 })
