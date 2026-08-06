@@ -70,10 +70,55 @@ export type PivotKind =
   | 'enharmonic'
   /** RESERVED FOR B4: a chromatic third relation with a common tone. */
   | 'chromatic-mediant'
+  /**
+   * ADDED IN STAGE M-C (C3). A chord that is CHROMATIC at home and DIATONIC in
+   * the target key — the Neapolitan being the case that forced it. ♭II in C
+   * major is the D♭ triad, chromatic here and the tonic there, so it hinges
+   * neither by shared diatonic membership (it is not diatonic at home) nor by
+   * respelling (nothing is respelled; the pitches are read as they are).
+   *
+   * It is its own member rather than being labelled `'chromatic-mediant'`
+   * because a Neapolitan is a SECOND relation, not a third, and calling it a
+   * mediant would be a false claim to anyone switching on the field — which is
+   * what the field is for. Widening the union is safe: `kind` is data a
+   * consumer reads, and nothing in the library switches exhaustively on it.
+   */
+  | 'chromatic'
 
 export type PivotCandidate = {
-  /** realized chord name, e.g. 'Dm' */
+  /**
+   * Realized chord name AS THE HOME KEY SPELLS IT, e.g. 'Dm' — and the node
+   * name the first leg of the search routes to.
+   */
   name: string
+  /**
+   * Realized chord name AS THE TARGET KEY SPELLS IT, when that differs. The
+   * second leg routes FROM this. Omit it for a diatonic pivot, where by
+   * definition the two keys spell the same chord the same way.
+   *
+   * ── ADDED IN STAGE M-C, AND WHY (this field is the whole of C1) ───────────
+   *
+   * B2 built `PivotCandidate` with ONE name, which is exactly right for the
+   * pivot it was built for: a diatonic pivot IS one chord, and `Dm` is a node
+   * in both the A minor and the C major chart. B4 then built enharmonic pivots,
+   * whose entire mechanism is that the two keys spell the sonority DIFFERENTLY
+   * — a German sixth in C major is the chart node `Ger6`, and the same four
+   * pitches in D♭ major are the chart node `Ab7`. Neither stream was wrong;
+   * they had not met.
+   *
+   * PROBED before this field existed, and the failure was silent rather than
+   * loud: an adapter that reported `name: 'Ger6'` got `unreachable-cadence`,
+   * because the second leg looked for a `Ger6` node in the D♭ chart and there
+   * is one — a D♭ German sixth, four entirely different pitches. An adapter
+   * that reported `name: 'Ab7'` failed the other way, the first leg having no
+   * `Ab7` node in C major. One name cannot describe a chord heard two ways,
+   * which is the one thing an enharmonic pivot is.
+   *
+   * OPTIONAL, so every existing caller and every diatonic pivot is unchanged:
+   * `nameThere ?? name` is the second leg's start, and for a diatonic pivot
+   * that is `name`, which is what it always was.
+   */
+  nameThere?: string
   /** its roman in the key being left, e.g. 'IVm' */
   romanHere: string
   /** its roman in the key being entered, e.g. 'IIm' */
@@ -83,6 +128,17 @@ export type PivotCandidate = {
    * How good a hinge this is, LOWER IS BETTER. See `pivotCost`.
    */
   cost: number
+  /**
+   * Prose naming the reinterpretation, when there is one to name.
+   *
+   * Carried so B4's `EnharmonicPivot.explanation` survives the adaptation
+   * rather than being thrown away at the boundary. A diatonic pivot does not
+   * set it: "Dm is iv here and ii there" is already fully stated by the two
+   * roman fields, and prose repeating them would be noise. An enharmonic pivot
+   * is the opposite case — the romans alone say `Ger6` became `V7` without
+   * saying that a ♯4 was respelled as a ♭7, which is the fact a composer needs.
+   */
+  explanation?: string
 }
 
 /**
@@ -224,7 +280,38 @@ const MAX_MODULATION_BARS = 8
  * because it is bad (it is often the point) but because it is a swerve, and a
  * ranking that put it level with a diatonic pivot would bury the smooth option.
  */
-const pivotCost = (romanHere: string, romanThere: string, kind: PivotKind): number => {
+export const PIVOT_KIND_SURCHARGE: { [K in PivotKind]: number } = {
+  diatonic: 0,
+  /**
+   * An enharmonic reinterpretation is a swerve BY DESIGN, and must not outrank
+   * a smooth diatonic hinge in the default ordering. Three is enough to put
+   * every enharmonic pivot below every predominant-arriving diatonic one while
+   * leaving it comfortably reachable — which is the balance the plan asked for
+   * ("reachable without burying smooth diatonic hinges").
+   */
+  enharmonic: 3,
+  'chromatic-mediant': 4,
+  /**
+   * A chromatic-at-home, diatonic-there pivot (the Neapolitan). Priced between
+   * the two: it does not require the ear to rehear a pitch as a different note
+   * the way an enharmonic pivot does, but it does leave the key's diatonic set
+   * on the way out, which a plain diatonic pivot never does.
+   */
+  chromatic: 3,
+}
+
+/**
+ * EXPORTED so `chromaticPivots.ts` scores its candidates on exactly this
+ * scale. `pivotsBetween` does not recompute a source's cost — the number a
+ * source reports IS the number it is ranked on — so a second implementation of
+ * this arithmetic would be a silent misranking waiting to happen. B4's sources
+ * call this function rather than reproducing it.
+ */
+export const pivotCost = (
+  romanHere: string,
+  romanThere: string,
+  kind: PivotKind
+): number => {
   const there = functionOf(romanThere)
   const here = functionOf(romanHere)
 
@@ -233,11 +320,7 @@ const pivotCost = (romanHere: string, romanThere: string, kind: PivotKind): numb
   // resolution owed to it
   if (here === 'D') cost += 2
   else if (here === null) cost += 1
-  // an enharmonic reinterpretation is a swerve by design, and must not
-  // outrank a smooth diatonic hinge in the default ordering
-  if (kind === 'enharmonic') cost += 3
-  else if (kind === 'chromatic-mediant') cost += 4
-  return cost
+  return cost + PIVOT_KIND_SURCHARGE[kind]
 }
 
 /**
@@ -466,8 +549,11 @@ export const pathThroughModulation = (
       const first = pathToChord(from, pivot.name, before, fromTonic, fromScale, opts)
       if (!first) continue
 
+      // The second leg starts from the chord AS THE TARGET KEY SPELLS IT. For
+      // a diatonic pivot that is the same string; for an enharmonic one it is
+      // the respelling, which is the pivot. See `PivotCandidate.nameThere`.
       const second = pathToCadence(
-        pivot.name,
+        pivot.nameThere ?? pivot.name,
         cadenceType,
         after,
         toTonic,

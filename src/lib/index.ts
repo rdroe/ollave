@@ -280,6 +280,8 @@ export {
   diatonicPivots,
   modulationTargets,
   pathThroughModulation,
+  PIVOT_KIND_SURCHARGE,
+  pivotCost,
   pivotsBetween,
 } from './modulation'
 export type {
@@ -290,6 +292,20 @@ export type {
   PivotKind,
   PivotSource,
 } from './modulation'
+
+// the chromatic pivot sources (Stage M-C, C1/C3) — B4's vocabulary reaching
+// B2's pathfinder. `enharmonicPivotSource` is the REAL implementation of the
+// extension point B2 pinned with a stand-in: Ger6 heard as V7, and the four
+// rotations of a diminished seventh. `chromaticNodePivotSource` routes `N6`,
+// which the diatonic scan skips because `pivotSuggestions` throws on chord-
+// FUNCTION node names. Pass `chromaticPivotSources` as `extraPivots` to get
+// both; a chord spelled differently in the two keys reports both spellings, as
+// `PivotCandidate.name` and `.nameThere`.
+export {
+  chromaticNodePivotSource,
+  chromaticPivotSources,
+  enharmonicPivotSource,
+} from './chromaticPivots'
 
 export {
   createRng,
