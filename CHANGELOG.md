@@ -4,23 +4,50 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
-### Added — diatonic seventh chords
+### Added — diatonic seventh chords, as first-class chart nodes
 
-**Diatonic seventh chords.** `seventhSuggestions(tonic, scale)` returns a key's
-idiomatic sevenths, and `seventhOf(chordName, tonic, scale)` answers whether
-one particular chord takes a seventh. Both are pure functions over
-`ChordSuggestion[]`, in the same additive, opt-in shape as
-`mixtureSuggestions`, and `nextChordDetail` gains `include: ['sevenths']` as
-sugar over concatenating them.
+**Diatonic sevenths are now nodes in the chord charts.** `nextChordDetail`
+offers them wherever they're reachable, without opting in; they appear in the
+graph itself, with their own outgoing edges.
 
 Into major: `Imaj7`, `IIm7`, `IVmaj7`, `V7`, `VIIm7b5`.
 Into minor: `Im7`, `IIm7b5`, `IVm7`, `V7`, `VIIdim7`.
 
-`V7` carries `strength: 'strong'`; the rest are `'dotted'`. The strength union
-is unchanged — no `'seventh'` member was added, so existing exhaustive switches
-keep compiling. Sevenths are not chart nodes yet — promoting them requires
-deciding their edges deliberately rather than guessing in data, so they ship
-beside the chart first. Triad behaviour is byte-for-byte unchanged.
+Three rules govern them, stated in full in the chart headers:
+
+1. **A seventh sits beside its triad, never replacing it.** `nextChord('Am,3',
+   'A', 'minor')` still returns `Dm`, not `Dm7`. Both chords are valid and the
+   triad stays the principal motion.
+2. **A seventh's outgoing edges mirror its triad's**, because adding a seventh
+   doesn't change a chord's function. `V7` therefore inherits V's dotted
+   Picardy third (minor) and deceptive cadence (major) alongside its strong
+   resolution to the tonic.
+3. **A seventh is reached over a `dotted` edge**, wherever its triad is
+   reached — including `V7`. Sevenths are colour on top of the principal
+   motion, not a competing one.
+
+**Rule 3 is what makes this non-breaking.** `nextChord` returns only strong
+edges, so its output is byte-for-byte identical to before across every node in
+both charts — verified by probing all 40 pre-existing nodes. `nextChordDetail`
+lists grow, by 44% on average for A minor and C major combined, entirely in
+the dotted layer. Callers that render dotted edges differently (or drop them)
+need no change; callers that render everything will see more chords.
+
+**`seventhSuggestions` and `seventhOf` remain exported and unchanged in
+signature.** `seventhSuggestions` now answers a question the graph can't —
+*what sevenths does this key have*, independent of the current chord — which is
+what a palette or key-summary UI wants. `seventhOf` stays table-driven because
+the triad→seventh relation is precisely what the chart does not record: it
+holds `Dm` and `Dm7` as unrelated nodes.
+
+`nextChordDetail`'s `include: ['sevenths']` still works and now **dedupes
+against the graph edges**, so a chord is never reported twice; the graph edge
+wins, since it carries the real arrival context and edge roman. For a chord
+that already reaches all of the key's sevenths, the option is a no-op.
+
+Seeded walks (`randomProgression`) shift for a given seed: the new dotted edges
+are extra weighted choices. The strength union is unchanged — no `'seventh'`
+member was added, so exhaustive switches keep compiling.
 
 The non-functional diatonic sevenths (`IIIm7`, `VIm7`) are excluded by design;
 `romanChordNameToReal` still resolves them on request.

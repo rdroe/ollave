@@ -186,27 +186,51 @@ succeed.
 
 ---
 
-## 7. Sevenths, and why they aren't on the chart
+## 7. Sevenths, and how they sit on the chart
 
-`seventhSuggestions` returns the key's idiomatic diatonic sevenths. Like
-mixture, it's an additive palette that never touches the graph — and for a
-related but distinct reason.
+The diatonic sevenths **are chart nodes**. They were promoted from an opt-in
+palette once their edges could be answered deliberately rather than guessed,
+and the three answers are worth stating, because they generalize to any chord
+type someone adds next.
 
-The charts currently hold triads plus the three function chords. Promoting `V7`
-and friends to nodes is a legitimate future move, but it needs its edges
-answered deliberately: does `IIm7` go everywhere `IIm` goes? Does `V7` inherit
-V's dotted Picardy edge? Does a seventh node *replace* its triad in the
-suggestion list or sit beside it? Those are answerable — they're just decisions
-nobody has made yet, and guessing them in data would silently widen every
-existing caller's results.
+### The three rules
 
-Offering sevenths beside the chart gets the chords into a composer's hands now
-without pre-empting that design. **If you want them promoted, that's a
-supported direction** — add the nodes to `graphData/`, decide the edges
-explicitly, and retire or re-point `seventhSuggestions`.
+**1. A seventh sits beside its triad, never replacing it.** `nextChord('Am,3',
+'A', 'minor')` still returns `Dm`, not `Dm7`. Both are musically valid, and
+silently swapping one for the other would change every existing caller's
+results without telling them.
 
-The practical consequence today is that triad behaviour is unchanged. Nothing a
-caller already asked for got bigger.
+**2. A seventh's outgoing edges mirror its triad's.** Adding a seventh doesn't
+change what a chord *does*: `IIm7b5` is still the predominant `IIdim` is, so it
+goes exactly where `IIdim` goes. `V7` accordingly inherits V's dotted Picardy
+third in minor and its dotted deceptive cadence in major, alongside the strong
+resolution to the tonic. Where a seventh's function genuinely differed from its
+triad's, that would need its own edges — none of these do.
+
+**3. A seventh is reached over a `dotted` edge.** Every chord that leads to a
+triad also leads to that triad's seventh, weakly. This is the rule that keeps
+the promotion honest: a seventh is colour available *on top of* the principal
+motion, not a competitor to it.
+
+### Why `V7` is not an exception
+
+It's tempting to make `V7` a strong target — it's at least as principal as `V`.
+Measured, that costs about 18% growth in major's default suggestion lists and
+12% in minor's, and buys nothing: `V7`'s own outgoing edges are strong either
+way, so once you take the `V7` edge the cadence it leads to is undiminished.
+The dotted edge already offers the chord. Uniformity is worth more here than a
+special case.
+
+### What this cost existing callers
+
+Nothing, in the default path. `nextChord` returns only strong edges, and rule 3
+puts every new edge in the dotted layer — so its output is byte-for-byte
+identical across all 40 pre-existing nodes in both charts. `nextChordDetail`
+lists grew ~44% on average, entirely in dotted suggestions.
+
+Seeded walks are the one visible change: `randomProgression` weighs dotted
+edges at 1, so new edges shift where a given seed lands. The walks are still
+legal; they're just different walks.
 
 ### What's included, and what isn't
 
@@ -237,15 +261,45 @@ distinct; only the *diminished* VII family gets raised.
 `IIIm7` and `VIm7` are excluded. They're diatonic and legal, but the mediant
 and submediant sevenths carry no distinct function — they're colour on chords
 that are already colour. Including them would make this "every triad also has a
-seventh," which is the suggestion-list bloat the additive design exists to
-avoid. The translator resolves them if you ask by hand.
+seventh," which is the suggestion-list bloat rule 3 exists to contain. The
+translator resolves them if you ask by hand.
 
-### Strength
+### Two gradings, deliberately different
 
-`V7` is `'strong'`; everything else is `'dotted'`. This reuses the existing
-vocabulary rather than adding a `'seventh'` member to the strength union —
-widening that union would break exhaustive switches in existing consumers, and
-it would say nothing the `roman` field doesn't already carry.
+`strength` means different things on a chart edge and in the palette, and the
+difference is not an inconsistency:
+
+- **On a chart edge**, every seventh is `'dotted'`, `V7` included. That grades
+  *this motion from this chord* — and rule 3 says a seventh is never the
+  principal motion.
+- **In `seventhSuggestions`**, `V7` is `'strong'` and the rest `'dotted'`. That
+  grades *the chord's standing in the key*, where there is no edge to weigh and
+  the dominant seventh's standing is plainly principal.
+
+Both reuse the existing vocabulary rather than adding a `'seventh'` member to
+the strength union — widening that union would break exhaustive switches in
+existing consumers, and would say nothing the `roman` field doesn't carry.
+
+### What `sevenths.ts` is still for
+
+`seventhSuggestions` and `seventhOf` remain exported. They answer questions the
+graph structurally cannot:
+
+- **`seventhSuggestions(tonic, scale)`** — *what sevenths does this KEY have*,
+  regardless of where you're standing. No single node's edges can report that;
+  it's what a palette or key-summary UI wants.
+- **`seventhOf(chordName, tonic, scale)`** — *does the chord I'm holding take a
+  seventh?* The chart holds `Dm` and `Dm7` as two independent nodes with no
+  recorded link between them. The triad→seventh **relation** lives only in the
+  tables in `sevenths.ts`, which is why that function stays table-driven by
+  design rather than inertia. `sevenths.test.ts` asserts the tables and the
+  charts agree in both directions, so they can't drift.
+
+`nextChordDetail`'s `include: ['sevenths']` still works and now dedupes against
+the graph edges by name, so no chord is reported twice; the graph edge wins,
+because it carries the real arrival context and edge roman. For a chord that
+already reaches all of the key's sevenths — the tonic of C major, for instance
+— the option is a no-op.
 
 ---
 
@@ -359,6 +413,7 @@ node list in a test, as `majorGraph.test.ts` does.
 | `nextChord`, `nextChordDetail` | `src/lib/nextChord.ts` |
 | Voicings and distance | `src/lib/voiceLeading.ts` |
 | Borrowed chords | `src/lib/mixture.ts` |
-| Diatonic sevenths | `src/lib/sevenths.ts` |
+| Diatonic sevenths — nodes | `src/lib/graphData/` (with the triads) |
+| Diatonic sevenths — key palette, triad→seventh relation | `src/lib/sevenths.ts` |
 | Modulation | `src/lib/pivots.ts` |
 | Seeded walks | `src/lib/randomProgression.ts` |

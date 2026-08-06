@@ -24,7 +24,7 @@ Nine chords that can idiomatically follow A minor in the key of A minor.
 | What can follow this chord? | `nextChord` / `nextChordDetail` |
 | Which of those flow most smoothly? | `rankByVoiceLeading` |
 | What can I borrow for colour? | `mixtureSuggestions` |
-| Can this chord take a seventh? | `seventhSuggestions` / `seventhOf` |
+| Can this chord take a seventh? | on the chart already; `seventhOf` for one chord, `seventhSuggestions` for the key |
 | Where could this chord take me? | `pivotSuggestions` |
 | Just sketch me something. | `randomProgression` |
 
@@ -161,6 +161,44 @@ can never cost you the suggestions you already had.
 
 ## 5. Sevenths
 
+**Sevenths are on the chart, so you get them without asking.** Any seventh
+reachable from where you are shows up in `nextChordDetail` as a dotted
+suggestion:
+
+```js
+nextChordDetail('E,3', 'A', 'minor')
+// Am  / Im  / strong
+// A   / I   / dotted   the Picardy third
+// E7  / V7  / dotted   the dominant's own seventh
+// Am7 / Im7 / dotted   the tonic seventh, as arrival colour
+```
+
+Into major: `Imaj7`, `IIm7`, `IVmaj7`, `V7`, `VIIm7b5`.
+Into minor: `Im7`, `IIm7b5`, `IVm7`, `V7`, `VIIdim7`.
+
+Three things to know about how they behave:
+
+**A seventh never replaces its triad.** `nextChord('Am,3', 'A', 'minor')` still
+gives you `Dm`, not `Dm7`. Both are valid; the triad stays the principal move.
+
+**Sevenths are always dotted edges** — `V7` included. They're colour on top of
+the principal motion. Practically: if your UI already treats dotted edges as
+optional, sevenths slot in with no change, and **`nextChord` output is exactly
+what it was before they existed.**
+
+**A seventh goes wherever its triad goes.** `Dm7` leads where `Dm` leads,
+because the seventh doesn't change the chord's function. `E7` resolves to `Am`
+and takes the Picardy `A`, just like `E`.
+
+Note the two leading-tone chords differ by mode. Major takes the
+**half-diminished** `VIIm7b5` (B–D–F–A in C); minor takes the **fully
+diminished** `VIIdim7` (G♯–B–D–F in A minor), built on the leading tone, not
+the subtonic.
+
+### The whole key's sevenths
+
+For a palette — every seventh the key has, regardless of where you're standing:
+
 ```js
 seventhSuggestions('C', 'major')
 // Imaj7=Cmaj7  IIm7=Dm7  IVmaj7=Fmaj7  V7=G7  VIIm7b5=Bm7b5
@@ -169,15 +207,10 @@ seventhSuggestions('A', 'minor')
 // Im7=Am7  IIm7b5=Bm7b5  IVm7=Dm7  V7=E7  VIIdim7=G#dim7
 ```
 
-The key's idiomatic diatonic sevenths. `V7` carries `strength: 'strong'` —
-adding the seventh to a dominant is the most ordinary move in tonal harmony.
-The rest are `'dotted'`: valid, but a colouring choice rather than a principal
-motion.
-
-Note the two leading-tone chords differ by mode. Major takes the
-**half-diminished** `VIIm7b5` (B–D–F–A in C); minor takes the **fully
-diminished** `VIIdim7` (G♯–B–D–F in A minor), built on the leading tone, not
-the subtonic.
+Here `V7` carries `strength: 'strong'` and the rest `'dotted'` — this grades
+each chord's standing in the *key*, which is a different question from how
+strong a *move* to it is from your current chord. (On the chart, every seventh
+edge is dotted.)
 
 If you're sitting on a chord and just want to know whether it takes a seventh:
 
@@ -196,11 +229,15 @@ chord's function — and it reads the same chord differently in different keys.
 rather than padding every list. `romanChordNameToReal` still resolves them if
 you want them by hand.
 
-Like mixture, it's additive and opt-in:
+`include: ['sevenths']` still works, and now adds only what the graph didn't
+already offer — the key's *other* sevenths, the ones this chord doesn't reach:
 
 ```js
 nextChordDetail('C,3', 'C', 'major', { include: ['sevenths'] })
 ```
+
+Duplicates are dropped, so no chord is ever listed twice. C major's tonic
+already reaches all five, so there the option changes nothing.
 
 Unsupported modes return `[]` rather than throwing, so opting in can never cost
 you the suggestions you already had.
