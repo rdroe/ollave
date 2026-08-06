@@ -391,3 +391,187 @@ describe('chord (bare)', () => {
     expect(res.formatted.usage).toContain('chord next')
   })
 })
+
+// ---------------------------------------------------------------------------
+// Stage M-C — the composed capabilities
+// ---------------------------------------------------------------------------
+
+describe('chord cadence', () => {
+  it('writes a four-bar phrase to a cadence, in four voices and in the bar', async () => {
+    const f = await fmt('cadence', {
+      positionalNonCommands: ['C'],
+      to: 'PAC',
+      bars: 4,
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.key).toBe('C major')
+    expect(f.cadence).toBe('perfect authentic cadence')
+    expect(f.summary).toBe('I - IIm - V - I')
+    // roman, chord, figure, function, four voices, metric placement
+    expect(f.bars).toEqual([
+      'I         C      53  T  C3 C4 E4 G4          b0+0 downbeat',
+      'IIm       Dm     53  PD D3 A3 D4 F4          b0+128 beat',
+      'V         G      53  D  G3 B3 D4 G4          b0+256 secondary',
+      'I         C      53  T  C3 C4 E4 G4          b0+384 beat',
+    ])
+    expect(f.legal).toBe('no voice-leading violations')
+  })
+
+  it('shows the figure in the roman, which is the Phrygian cadence itself', async () => {
+    // routable only because of C2, and the '6' is the device — the bass falls a
+    // semitone from b6 to 5
+    const f = await fmt('cadence', {
+      positionalNonCommands: ['Am'],
+      to: 'phrygian-half',
+      bars: 3,
+      tonic: 'A',
+      scale: 'minor',
+    })
+    expect(f.summary).toBe('Im - IVm6 - V')
+    expect((f.bars as string[])[1]).toBe(
+      'IVm6      Dm     6   PD F2 D3 A3 D4          b0+128 beat'
+    )
+  })
+
+  it('names the cadence types it accepts rather than failing silently', async () => {
+    const f = await fmt('cadence', {
+      positionalNonCommands: ['C'],
+      to: 'bogus',
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.error).toContain('--to must be one of')
+    expect(f.error).toContain('PAC')
+  })
+
+  it('reports an impossible request rather than throwing', async () => {
+    const f = await fmt('cadence', {
+      positionalNonCommands: ['C'],
+      to: 'phrygian-half',
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.incomplete).toContain('does not exist in major')
+    expect(f.bars).toBeUndefined()
+  })
+})
+
+describe('chord modulate', () => {
+  it('names the pivot in BOTH keys — the point of the feature', async () => {
+    const f = await fmt('modulate', {
+      positionalNonCommands: ['Am'],
+      key: 'C major',
+      to: 'PAC',
+      bars: 4,
+      tonic: 'A',
+      scale: 'minor',
+    })
+    expect(f.key).toBe('A minor -> C major')
+    expect(f.summary).toBe('Im - IVm=IIm - V - I')
+    expect(f.pivot).toBe('Dm  IVm / IIm  (diatonic, bar 2)')
+    expect(f.legal).toBe('no voice-leading violations')
+  })
+
+  it('routes the enharmonic modulation, which needs the chromatic pivots', async () => {
+    // C major and Db major share no diatonic chord; without C1's sources this
+    // is `no-pivot-available`. Chromatic sources are on by default here.
+    const f = await fmt('modulate', {
+      positionalNonCommands: ['C'],
+      key: 'Db major',
+      bars: 4,
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.summary).toBe('I - IIm - Ger6=V7 - I')
+    // the two spellings, which is what an enharmonic pivot IS
+    expect(f.pivot).toBe('Ger6 = Ab7  Ger6 / V7  (enharmonic, bar 3)')
+    expect((f.notes as string[]).join(' ')).toContain('respelling F# as Gb')
+  })
+
+  it('--diatonic drops the chromatic sources', async () => {
+    const f = await fmt('modulate', {
+      positionalNonCommands: ['C'],
+      key: 'Db major',
+      bars: 4,
+      diatonic: true,
+      tonic: 'C',
+      scale: 'major',
+    })
+    // and then the modulation is honestly unavailable
+    expect(f.incomplete).toContain('no pivot')
+    expect(f.summary).toBeUndefined()
+  })
+
+  it('explains the --key format rather than guessing', async () => {
+    const f = await fmt('modulate', {
+      positionalNonCommands: ['C'],
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.error).toContain('--key must name the target key')
+  })
+})
+
+describe('chord realize', () => {
+  it('writes four voices for chords the composer already has', async () => {
+    const f = await fmt('realize', {
+      positionalNonCommands: ['C,F,G,C'],
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.bars).toEqual([
+      'C      53  C3 C4 E4 G4          b0+0 downbeat',
+      'F      53  F3 C4 F4 A4          b0+128 beat',
+      'G      53  G3 B3 D4 G4          b0+256 secondary',
+      'C      53  C3 C4 E4 G4          b0+384 beat',
+    ])
+    expect(f.legal).toBe('no voice-leading violations')
+  })
+
+  it("realizes one of the library's own spans, with its own waivers", async () => {
+    const f = await fmt('realize', {
+      span: 'fauxbourdon',
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.span).toBe('fauxbourdon')
+    expect(f.summary).toBe('I6 - VIIdim6 - VIm6 - V6')
+    expect((f.notes as string[]).join(' ')).toContain('waived for this span')
+    // a span is a texture, not a close, so no cadence is claimed for it
+    expect(f.cadence).toBeUndefined()
+  })
+
+  it('lists the spans it knows when given one it does not', async () => {
+    const f = await fmt('realize', { span: 'nope', tonic: 'C', scale: 'major' })
+    expect(f.error).toContain('fauxbourdon')
+    expect(f.error).toContain('descending-fifths')
+  })
+})
+
+describe('chord analyze', () => {
+  it('labels the cadences in music the composer already wrote', async () => {
+    const f = await fmt('analyze', {
+      positionalNonCommands: ['C,F,Dm,G,Am,F,G,C'],
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.progression).toBe('C F Dm G Am F G C')
+    const lines = f.cadences as string[]
+    // the deceptive cadence, at full confidence
+    expect(lines).toContain('bar 4-5  deceptive cadence  V -> VIm  (G Am)  high')
+    // and the closing one, DOWNGRADED with its reason printed rather than
+    // swallowed — refusing to overclaim is the feature
+    expect(lines.some((l) => l.includes('imperfect authentic') && l.includes('medium'))).toBe(true)
+    expect(lines.some((l) => l.includes('No soprano supplied'))).toBe(true)
+  })
+
+  it('says so when nothing closes', async () => {
+    const f = await fmt('analyze', {
+      positionalNonCommands: ['C,Em'],
+      tonic: 'C',
+      scale: 'major',
+    })
+    expect(f.cadences).toContain('no cadence found')
+  })
+})

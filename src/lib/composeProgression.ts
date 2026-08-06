@@ -287,8 +287,13 @@ export type ComposedPhrase = {
   violations: Violation[]
   /** true when the whole phrase is voice-leading legal */
   legal: boolean
-  /** the cadence the phrase arrives at */
-  cadence: CadenceType
+  /**
+   * The cadence the phrase arrives at, or null when it was not built toward
+   * one. `composeSpan` sets null: a fauxbourdon is a texture, not a close, and
+   * labelling it with a cadence type it was never asked for would be a claim
+   * the caller did not make.
+   */
+  cadence: CadenceType | null
   /** the key it starts in */
   fromKey: string
   /** the key it ends in — the same as `fromKey` unless it modulated */
@@ -440,7 +445,7 @@ const assemble = (
   steps: PathStep[],
   tonic: string,
   scale: string,
-  cadence: CadenceType,
+  cadence: CadenceType | null,
   summary: string,
   opts: ComposeOptions | undefined,
   extra: { fromKey: string; toKey: string; pivot?: PivotCandidate; pivotIndex?: number }
@@ -545,7 +550,7 @@ const assemble = (
 /** an empty phrase carrying a reason — the never-throws failure shape */
 const failed = (
   reason: string,
-  cadence: CadenceType,
+  cadence: CadenceType | null,
   fromKey: string,
   toKey: string
 ): ComposedPhrase => ({
@@ -660,7 +665,7 @@ export const composeSpan = (
     if (!name) {
       return failed(
         `'${roman}' could not be resolved in ${key}, so the span '${span.id}' cannot be realized here.`,
-        'PAC',
+        null,
         key,
         key
       )
@@ -680,7 +685,8 @@ export const composeSpan = (
     steps,
     tonic,
     scale,
-    'PAC',
+    // a span is a TEXTURE, not a cadence target — see `ComposedPhrase.cadence`
+    null,
     steps.map((s) => s.roman).join(' - '),
     { ...opts, span },
     { fromKey: key, toKey: key }
