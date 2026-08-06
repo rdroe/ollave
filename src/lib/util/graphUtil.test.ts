@@ -104,17 +104,27 @@ describe('chordGraphCreate', () => {
     expect(graph['B'].next.map((n) => n.name)).toContain('V64')
   })
 
-  it('realizes enabler names instead of leaving them roman', () => {
-    // regression for the old todo at the fn-chord branch: enablers stayed
-    // roman ('V', 'Im') and could never match graph keys
+  it('gives fn edges the same prev-based enabler as their siblings', () => {
+    // regression: fn edges (V64/Aug6/N6) used to carry the *current node's own
+    // name* as the enabler, which described nothing about arrival context
     const graph = chordGraphCreate('A', 'minor')
-    // realized letters, never romans: G#dim's edge is gated on IVm/IIdim,
-    // which must appear as Dm/Bdim so it can match graph keys
-    const eViaG_sharp_dim = graph['G#dim'].next.find((n) => n.name === 'E')
-    expect(eViaG_sharp_dim?.enabler).toEqual(['Dm', 'Bdim'])
-    // fn edges realize too (V is the source node's own name here)
+    // Dm's dominant-complex edges are the double-box node, gated on its prev
+    const v64ViaDm = graph['Dm'].next.find((n) => n.name === 'V64')
+    expect(v64ViaDm?.enabler).toEqual(['F', 'Edim', 'C7'])
+    // Im has no prev, so its V64 edge is unconditional
     const v64ViaAm = graph['Am'].next.find((n) => n.name === 'V64')
-    expect(v64ViaAm?.enabler).toEqual(['Am'])
+    expect(v64ViaAm?.enabler).toBeNull()
+  })
+
+  it('carries the edge roman, which can differ from the target node roman', () => {
+    // Bdim is IIdim in its own right, but Dm's dotted edge reaches it as
+    // VIIdim/III (the two romans realize to the same chord and are merged)
+    const graph = chordGraphCreate('A', 'minor')
+    expect(graph['Bdim'].roman).toBe('IIdim')
+    const dmToBdim = graph['Dm'].dotted.find((n) => n.name === 'Bdim')
+    expect(dmToBdim?.roman).toBe('VIIdim/III')
+    // and a plain diatonic edge carries its own roman
+    expect(graph['Am'].next.find((n) => n.name === 'E')?.roman).toBe('V')
   })
 
   it('merges nodes whose romans realize to the same chord', () => {

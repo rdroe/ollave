@@ -89,6 +89,11 @@ export type ChordNameWithNotes = {
 
 export type EnabledChordNameWithNotes = ChordNameWithNotes & {
   enabler: string[] | null
+  // the edge's ORIGINAL roman, which is not always the target node's own
+  // roman: in A minor Dm's dotted edge to Bdim is Bdim-as-VIIdim/III, while
+  // the Bdim node's own identity is IIdim (the two romans realize to the same
+  // chord and are merged). Keeping the edge's roman preserves that distinction.
+  roman: string
 }
 
 export const N6 = function N6(
@@ -439,15 +444,25 @@ export function makeProgNodeTranslator(
       return null
     }
 
+    // arrival context for every edge this node emits: the chords that may
+    // precede the node, realized to letter names so they can be compared
+    // against graph keys at runtime. null means unconditional.
+    const edgeEnabler = progNodeIn.prev
+      ? progNodeIn.prev.map(realizeName)
+      : null
+
     const next = progNodeIn.next.reduce((accum, romanName) => {
       if (isChordFn(romanName)) {
         const fnRes = fns[romanName](userLetter, userScale)
         const asEnabledArr = fnRes.map((cnwnFn) => {
           return {
             ...cnwnFn,
-            // realized (letter) name so enablers can be compared against
-            // graph keys at runtime; previously this stayed roman
-            enabler: [realizeName(progNodeIn.name)],
+            // fn edges (V64/Aug6/N6) take the same prev-based enabler as their
+            // non-fn siblings. This used to be the *current node's own name*,
+            // which described nothing about arrival context and so was useless
+            // for matching against a caller's recent chords.
+            enabler: edgeEnabler,
+            roman: romanName,
             octMap: cnwnFn.octMap,
           }
         })
@@ -469,7 +484,8 @@ export function makeProgNodeTranslator(
 
       const newNode = {
         ...cnwn,
-        enabler: progNodeIn.prev ? progNodeIn.prev.map(realizeName) : null,
+        enabler: edgeEnabler,
+        roman: romanName,
       }
       return [...accum, newNode]
     }, [] as EnabledChordNameWithNotes[])
@@ -490,7 +506,8 @@ export function makeProgNodeTranslator(
         }
         return {
           ...cnwn,
-          enabler: progNodeIn.prev ? progNodeIn.prev.map(realizeName) : null,
+          enabler: edgeEnabler,
+          roman: romanName,
         }
       })
       .filter((n): n is EnabledChordNameWithNotes => n !== null)
