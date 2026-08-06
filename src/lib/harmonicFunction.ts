@@ -124,7 +124,15 @@ const FUNCTION_BY_ROMAN: { [roman: string]: HarmonicFunction } = {
   // Chromatic predominants. Both exist only to approach the dominant, and the
   // chart gives both exactly the edges of a predominant (-> V64, -> V).
   N6: 'PD',
+  // the augmented-sixth family. `Aug6` is the Italian's alias; It6/Fr6/Ger6
+  // are the explicit trio (chromatic.ts). All are predominants — the whole
+  // point of an augmented sixth is that ♭6 and ♯4 expand outward onto the
+  // dominant, and the charts route every one of them to V or the cadential
+  // 6/4.
   Aug6: 'PD',
+  It6: 'PD',
+  Fr6: 'PD',
+  Ger6: 'PD',
   // Applied dominants OF the dominant. Locally dominant, functionally
   // predominant in the home key — see the header. This is the one place the
   // table deliberately disagrees with a chord's own name, and the chart's edge
