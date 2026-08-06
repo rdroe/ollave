@@ -1,6 +1,6 @@
 import { createApp } from 'peprn/browser'
 
-import { addChord, addNote, arrange, copy, debug, phase, song, tempo } from './commands'
+import { addChord, addNote, arrange, chord, copy, debug, phase, song, tempo } from './commands'
 import {
   deleteAllSongsAndTracks,
   deleteSongAndRelatedTracksAndPhasesBySongId,
@@ -49,6 +49,7 @@ if (location.pathname.includes('songGanttChart')) {
           addNote,
           addChord,
           arrange,
+          chord,
           copy,
           song,
           phase,
