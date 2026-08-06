@@ -25,6 +25,11 @@ merge.
 Baseline at authoring: `master`, 283 tests, strict mode ON, v0.4.0 + unreleased
 sevenths/scale-list work.
 
+**STATUS 2026-08-06: Stage M-A complete; Stage M-B streams B1, B3, B4, B5
+merged and independently verified; B2 in flight. 622 tests green (from 283),
+`npx tsc --noEmit` 0 errors, both builds clean.** Each stream's outcome is
+recorded inline below. Stage M-C is the remaining work.
+
 ---
 
 ## Verified findings (probed 2026-08-06, before planning)
@@ -224,9 +229,9 @@ or the Stage-M-A test suites.
 | B4 chromatic vocabulary (**P6**) | `graphData/*`, `chromatic.ts` | own file |
 | B5 sequences (**P7**) | `sequences.ts` | own file |
 
-### B1 — Voice-leading legality (P2) — highest value in this stage
+### B1 — Voice-leading legality (P2) — MERGED `37241ca`
 
-- [ ] `checkVoiceLeading(from: Voicing, to: Voicing, opts?)` → typed violations,
+- [x] `checkVoiceLeading(from: Voicing, to: Voicing, opts?)` → typed violations,
       not booleans: parallel fifths/octaves (and hidden/direct into a perfect
       interval on the outer voices), unequal fifths (°5→P5 — widely tolerated,
       a natural per-rule toggle), unresolved chordal seventh, doubled leading
@@ -234,27 +239,54 @@ or the Stage-M-A test suites.
       voice crossing/overlap, spacing > octave between upper voices, and the
       cadential ⁶₄'s defining ⁶₄→⁵₃ resolution over a held bass (B3 covers
       only its metric half; this is its voice-leading half).
-- [ ] **Context waivers, not context-free nagging.** The checker accepts a
+- [x] **Context waivers, not context-free nagging.** The checker accepts a
       waiver set, and spans (A4) carry theirs: fauxbourdon licenses its
       parallel motion, strict sequences tolerate a doubled leading tone on
       weak steps. Without this, B1 flags A6's and B5's own content — exactly
       the nagging that alienates composers who break rules on purpose.
-- [ ] `realizeProgression(chordNames, opts)` → four-voice realization of a
+- [x] `realizeProgression(chordNames, opts)` → four-voice realization of a
       *whole progression*: search over doublings and spacings minimizing
       violations across the span. This is the composer-facing deliverable;
       per-chord `realizeSATB` is its building block, not the feature.
-- [ ] **Doubling rules are per-figure, not global**: root position doubles the
+- [x] **Doubling rules are per-figure, not global**: root position doubles the
       root, the cadential ⁶₄ doubles the bass, diminished triads double the
       third, first-inversion triads are flexible; never the leading tone.
       (Another reason B1 depends on M-A: doubling is a function of the figure.)
-- [ ] Compose over the existing contract: `rankByVoiceLeading` sorts, this
+- [x] Compose over the existing contract: `rankByVoiceLeading` sorts, this
       *filters/annotates*. Do NOT fold into `nextChordDetail`'s opts (that
       pattern exists to keep streams independent).
-- [ ] **Strictness is a settable option** (see Decisions): default `'report'`,
+- [x] **Strictness is a settable option** (see Decisions): default `'report'`,
       plus `'warn'` and `'block'`, and per-rule toggles. The default must never
       remove a suggestion.
-- [ ] Each rule cites its textbook statement in a comment and is pinned by a
+- [x] Each rule cites its textbook statement in a comment and is pinned by a
       hand-verified example AND a counter-example.
+
+
+**Outcome.** 14 rules, each citing Aldwell & Schachter, Piston or Fux in
+`RULE_CITATIONS` (pinned so catalogue and citations can't drift). Key-dependent
+rules are **skipped, not guessed**, without `opts.key` — for this audience a
+wrong rule is worse than a missing one. `unequal-fifths` and `parallel-fourths`
+are off by default (both widely tolerated; a false positive would be the first
+thing an expert saw).
+
+- **Waivers verified end-to-end**: a real fauxbourdon texture flags
+  `parallel-fourths` 1× with the rule on and **0×** with the span's own
+  waivers applied. The checker does not red-ink the library's own content.
+- `realizeProgression` is a **beam search** (width 24) over doubling × ordering
+  × octave, scored `1000×errors + 250×warnings + motion + spacing`. A beam
+  rather than greedy because part-writing isn't locally optimal — the smoothest
+  V often forces parallel octaves into I. Waived rules cost **zero**, so
+  waivers steer the search, not just the report. Verified I–IV–V–I in C: root
+  doubled throughout, B3→C4 resolving at the cadence, zero violations.
+- **Spacing is a search PREFERENCE, not a rule.** A probe caught the realizer
+  opening on `C3 E4 G4 C5` — legal, smooth, and nobody writes it. Making it a
+  violation would flag legitimate open-position writing in a composer's own
+  music.
+- The agent **mutation-tested its own counter-examples** (four deliberate
+  breakages, each caught by exactly the test written for it), on the grounds
+  that 79 tests passing first try is weak evidence.
+- Reported three rule ids for `spans.test.ts`'s `KNOWN_RULES` rather than
+  editing a file it didn't own; added in `148dc38`.
 
 ### B2 — Cadences, function and pathfinding (P4) — the interaction-model change
 
@@ -285,32 +317,82 @@ or the Stage-M-A test suites.
 - [ ] Honest scoping: exact-length paths may not exist; return best-effort with
       a reason, never throw.
 
-### B3 — Harmonic rhythm and metric weight (P3)
+### B3 — Harmonic rhythm and metric weight (P3) — MERGED `1450279`
 
-- [ ] `metricWeight(barDelay, meter)` using existing `tickCounts`/`BAR` (V4).
-- [ ] Constrain the cadential ⁶₄ correctly: strong beat for the ⁶₄, weaker for
-      its V — the device's whole point. Expressed as a metric condition on its
-      span (A4); B1 owns its ⁶₄→⁵₃ voice-leading half.
-- [ ] `suggestHarmonicRhythm(progression, meter)` — where changes should fall.
+- [x] `metricWeight(barDelay, meter)` using existing `tickCounts`/`BAR` (V4).
+- [x] Constrain the cadential ⁶₄ correctly: strong beat for the ⁶₄, weaker for
+      its V. `spanMetricFit` ACTIVATES M-A's inert `conditions.metric`.
+- [x] `suggestHarmonicRhythm(progression, meter)`.
 
-### B4 — Chromatic vocabulary (P6)
+**Outcome.** Lerdahl–Jackendoff dot grid (GTTM ch. 2), five ordered levels
+(`downbeat > secondary > beat > division > subdivision`) with `'strong'|'weak'`
+derived for `MetricCondition` compatibility. Honestly scoped in the docs:
+well-formedness only — no hypermeter, grouping, or preference rules.
 
-- [ ] Split `Aug6` into **Italian / French / German** (V6), keeping `Aug6` as a
-      documented alias so nothing breaks.
-- [ ] Common-tone diminished sevenths; chromatic mediants (major-third relations
-      with a common tone); enharmonic reinterpretation pairs (Ger⁶ ↔ V⁷,
-      dim⁷ rotations) — the last also feeds B2-style modulation work.
+Two findings worth keeping:
+- **`tickCounts[BAR]` (512) is the engine's fixed CONTAINER, not the meter's
+  length.** A 3/4 bar is 384 ticks; using the container puts the next downbeat
+  in the wrong place. Hence `barTicksOf(meter)`. Verified independently.
+- **Metric fit must be RELATIVE, not absolute.** Beat 3 → beat 4 is a textbook
+  cadential ⁶₄ though both are absolutely strong; an absolute-only check
+  red-inks correct music. A `some`/`every` bug found mid-work would have
+  accepted a mere descent as a passing-⁶₄ trough — fixed and pinned.
 
-### B5 — Sequences as objects (P7)
+### B4 — Chromatic vocabulary (P6) — MERGED `b8fc7ff`
 
-- [ ] Sequences are spans (A4) that *generate* progressions: descending fifths
-      (diatonic AND applied-dominant variants), ascending 5-6, descending 5-6,
-      monte/fonte/ponte.
-- [ ] `applySequence(pattern, startChord, length, key)`. Fits the existing
-      bar-template machinery conceptually — check whether it can reuse it.
-- [ ] Sequence spans declare their rule waivers (B1): strict sequences license
-      lapses — e.g. a weak-step doubled leading tone — that the checker would
-      otherwise flag on the library's own output.
+- [x] Split `Aug6` into **Italian / French / German** (V6), `Aug6` kept as alias.
+- [x] Common-tone diminished sevenths; chromatic mediants; enharmonic
+      reinterpretation pairs handed to B2.
+
+**Outcome.** Trio verified across 17 tonics in flat and sharp keys; the outer
+interval is pinned at 10 semitones so it can never respell into a ♭7.
+
+- **`Aug6` aliases the ITALIAN, reversing this plan's steer** ("German is most
+  common"). Two facts overrode frequency: `Aug6` appears in saved songs, so
+  aliasing the German silently turns three notes into four in files on disk;
+  and `graphh.test.ts` pins `Aug6('A','minor') === ['F','A','D#']` as a guard
+  against a double-flattening bug fixed once before. The Italian is also the
+  genuine prototype the other two each add one note to. **Independently
+  verified byte-identical in A minor, C/Eb/F#/Db major.**
+- **Chromatic mediants are a function, not chart edges** — decided by the
+  codebase's own test: does it depend on where you're standing (→ node, like
+  sevenths) or only on the key (→ channel, like `mixture.ts`)? Mediants are
+  available from the tonic at any moment, and they side-step the T/PD/D cycle
+  the charts encode. The Aug6 trio went the other way — an augmented sixth
+  *does* have a functional obligation.
+- **`Ger6 → V` is dotted while `It6/Fr6 → V` are strong**: the German's
+  perfect fifth makes a direct move to root-position V parallel fifths, so its
+  strong path is through the cadential ⁶₄.
+- CT°7 vs leading-tone °7 is enforced by common-tone COUNT at runtime, which
+  surfaced a real fact: a minor key gets only `♯v°7` (raising a minor triad's
+  root leaves one common tone, not two).
+- `nextChord` diff: pure additions, 25 → 28 nodes per chart, zero pre-existing
+  nodes changed.
+
+### B5 — Sequences as objects (P7) — MERGED `f21afe5`
+
+- [x] Sequences as spans (A4) that *generate* progressions: descending fifths
+      (diatonic AND applied), ascending/descending 5-6, monte/fonte/ponte.
+- [x] `applySequence(pattern, startChord, length, key)`.
+- [x] Sequence spans declare their rule waivers (B1).
+
+**Outcome.** `SequencePattern = HarmonicSpan & { unit, transposition,
+defaultRepeats }` — an intersection, so every pattern IS a valid span and
+passes to `spanRomans`/`spanWaivedRules` unchanged. Transposition is in
+**signed scale degrees**, not intervals: the varying interval quality is the
+defining feature of a diatonic sequence, not a defect. Monte and fonte differ
+only in the SIGN of the transposition over an identical applied-dominant unit
+— exactly what a generator expresses and a fixed chord list cannot.
+
+- **Bar-template reuse: CHECKED, and the fit is poor.** `BarTemplate` is a
+  zod-validated persistence record bound to a song, keyed by *realized* chord
+  names with tick timings. A sequence is key-independent, roman-keyed,
+  note-free and unpersisted. Reusing it would mean discarding what makes a
+  sequence reusable. `barTemplates` is the right *downstream consumer*, not a
+  dependency. (The plan asked; the answer is no.)
+- Exiting the diatonic set **wraps within the key and reports `wrapped: true`;
+  it never silently modulates** — a sequence that modulated by accident hands
+  back names the caller's key signature can't spell.
 
 ---
 
