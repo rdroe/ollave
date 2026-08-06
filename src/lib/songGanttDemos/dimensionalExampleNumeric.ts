@@ -40,7 +40,7 @@ export const createDimensionalExampleNumeric = () => {
   const getViewableRangeWidth = (): number => {
     try {
       const rangeStore = accessConversionStore(rangeId)
-      const [start, end] = rangeStore.viewableRange.map(convertAlphadex) as RangePair
+      const [start, end] = rangeStore.viewableRange.map((v) => convertAlphadex(v as never)) as RangePair
       return Math.abs(end - start)
     } catch {
       // Fallback to calculated width if store not ready
@@ -356,9 +356,9 @@ export const createDimensionalExampleNumeric = () => {
     viewableValue.textContent = rangeStore.viewableRange.join(', ')
     nextLeftValue.textContent = rangeStore.nextLeftRange.join(', ')
     nextRightValue.textContent = rangeStore.nextRightRange.join(', ')
-    currentTicksValue.textContent = ticksInRange(rangeStore.viewableRange.map(convertAlphadex) as RangePair).join(', ')
-    nextLeftTicksValue.textContent = ticksInRange(rangeStore.nextLeftRange.map(convertAlphadex) as RangePair).join(', ')
-    nextRightTicksValue.textContent = ticksInRange(rangeStore.nextRightRange.map(convertAlphadex) as RangePair).join(', ')
+    currentTicksValue.textContent = ticksInRange(rangeStore.viewableRange.map((v) => convertAlphadex(v as never)) as RangePair).join(', ')
+    nextLeftTicksValue.textContent = ticksInRange(rangeStore.nextLeftRange.map((v) => convertAlphadex(v as never)) as RangePair).join(', ')
+    nextRightTicksValue.textContent = ticksInRange(rangeStore.nextRightRange.map((v) => convertAlphadex(v as never)) as RangePair).join(', ')
     zoomValue.textContent = dimensionalRange.zoom.toString()
     unitSizeValue.textContent = dimensionalRange.unitSize.toString()
     upvwValue.textContent = dimensionalRange.unitsPerViewportWidth.toString()

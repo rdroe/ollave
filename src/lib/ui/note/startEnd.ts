@@ -1,4 +1,4 @@
-import { getNoteById } from '../../../core'
+import { getNoteById } from '../../../core/mem'
 import { quantizeValueToAbbreviation } from '../../../lib/util/abbreviationUtil'
 import { isAbbreviation } from '../../../lib/util/constantsUtil'
 
@@ -44,7 +44,7 @@ const requireNumericValueFromEventTarget = (target: EventTarget) => {
 }
 
 const lookUpQuantizedTagValue = (
-  tagsObj: Record<string, (string | number | boolean)[]>
+  tagsObj: Record<string, (string | number | boolean | null)[]>
 ) => {
   return requireAbbreviation(tagsObj.quantize?.[0])
 }
@@ -73,8 +73,11 @@ export const addStartEnd = async (noteId: string) => {
   startSlider1.max = '1024'
   startSlider1.value = '0'
   startSlider1.addEventListener('input', function (e) {
-
-    const { tagsObj } = getNoteById(noteId)
+    const memNote = getNoteById(noteId)
+    if (!memNote || !e.target) {
+      return
+    }
+    const { tagsObj } = memNote
 
     const value = requireNumericValueFromEventTarget(e.target)
     const quant = lookUpQuantizedTagValue(tagsObj)
@@ -83,25 +86,28 @@ export const addStartEnd = async (noteId: string) => {
     startSlider1.value = newQuantizedValue.toString()
 
     if (newQuantizedValue !== value) {
-      event.preventDefault()
-      event.stopPropagation()
-      event.stopImmediatePropagation()
+      e.preventDefault()
+      e.stopPropagation()
+      e.stopImmediatePropagation()
       return
     }
   })
   // are both listeners needed?
   startSlider1.addEventListener('change', function (e) {
-
-    const { tagsObj } = getNoteById(noteId)
+    const memNote = getNoteById(noteId)
+    if (!memNote || !e.target) {
+      return
+    }
+    const { tagsObj } = memNote
     const value = requireNumericValueFromEventTarget(e.target)
     const quant = lookUpQuantizedTagValue(tagsObj)
     const newQuantizedValue = quantizeValueToAbbreviation(value, quant)
     startSlider1.value = newQuantizedValue.toString()
 
     if (newQuantizedValue !== value) {
-      event.preventDefault()
-      event.stopPropagation()
-      event.stopImmediatePropagation()
+      e.preventDefault()
+      e.stopPropagation()
+      e.stopImmediatePropagation()
       return
     }
   })

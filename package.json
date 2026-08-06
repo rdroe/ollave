@@ -1,6 +1,6 @@
 {
   "name": "ollave",
-  "version": "0.3.18",
+  "version": "0.4.0",
   "repository": "git@github.com:rdroe/ollave.git",
   "license": "MIT",
   "description": "framework for developing musical streams",
@@ -35,9 +35,11 @@
     "@types/react-dom": "^19.0.0",
     "concurrently": "^8.2.2",
     "esbuild": "^0.14.38",
+    "fake-indexeddb": "^6.2.5",
     "madge": "^8.0.0",
     "nodemon": "^2.0.16",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^2"
   },
   "main": "ollave",
   "exports": {
@@ -75,6 +77,8 @@
   },
   "scripts": {
     "note": "echo \"first build typescript; then build javascript, which will work off of typescript output; at any time, build css. to understand the goal of the build, see main.js. main.js imports the results of the build.",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "ts-dev": "tsc -w",
     "ts-build": "tsc",
     "js-build": "node build.js",

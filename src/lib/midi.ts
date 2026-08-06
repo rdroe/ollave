@@ -58,12 +58,13 @@ const isMultiTrack: boolean = true
 export const addEvents = (
   tracks: Midi.Track[],
   events: RelativeNote[],
-  tempo: number,
+  // null for playedMap downloads: the take embeds its own tempo markers
+  tempo: number | null,
   file: Midi.File
 ) => {
   // refresh
   events.forEach((relNote: RelativeNote) => {
-    const noteTrackIdx = isMultiTrack ? relNote[TRACK_IDX_IDX] : 0
+    const noteTrackIdx = (isMultiTrack ? relNote[TRACK_IDX_IDX] : 0) ?? 0
     const isNewMidiTrack = tracks[noteTrackIdx] === undefined
     tracks[noteTrackIdx] = tracks[noteTrackIdx] || new Midi.Track()
     const track = tracks[noteTrackIdx]

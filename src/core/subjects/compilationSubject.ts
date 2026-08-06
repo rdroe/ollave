@@ -17,7 +17,8 @@ window.compilationSubject = new Subject<any>()
 function makeCompilationSubscribe_<RetType>(obj: {
   name: string
   selector: (mem: Mem) => RetType
-  compare?: (a: RetType, b: RetType) => boolean
+  // b is null on the first emission, before prev has been initialized
+  compare?: (a: RetType, b: RetType | null) => boolean
   clone?: (a: RetType) => RetType
 }) {
   let isInitialized: boolean = false
@@ -34,7 +35,7 @@ function makeCompilationSubscribe_<RetType>(obj: {
           const compared = obj.compare(newVal, prev)
           if (!compared || !isInitialized) {
             isInitialized = true
-            prev = (obj.clone || structuredClone)(newVal)
+            prev = obj.clone ? obj.clone(newVal) : structuredClone(newVal)
             subscriber.next(newVal)
           }
         } else {

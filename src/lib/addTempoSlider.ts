@@ -49,7 +49,9 @@ export function handleTempoChangeString() {
       const currTick = exportableTick()
       // const newTempo = tempoFromAirSpeed(newAirSpeed)
       setAirSpeed(newAirSpeed)
-      mem().song.tempo = newTempo
+      const song = mem().song
+      if (!song) return
+      song.tempo = newTempo
       mem().playedMap[currTick] = mem().playedMap[currTick] || []
       mem().playedMap[currTick].push({
         note: `tempo: ${newTempo}`,

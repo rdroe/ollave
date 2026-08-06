@@ -2,9 +2,11 @@ import { ParsedCli } from 'peprn/util'
 import { Scale } from 'tonal'
 import { z } from 'zod'
 
-import { mapSongToMidiTicks, mapSongToTicks, randId } from '..'
 import { Mem, mem } from '../../core/mem'
-import { setLatestMap } from '../../core/observables'
+import { setLatestMap } from '../../core/observables/compilationObservable'
+import { randId } from '../helpers'
+import * as mapSongToTicks from '../mapSongToTicks'
+import { mapSongToMidiTicks } from '../mapSongToTicks'
 import { zeroIndexedArr } from '../graphh'
 import { makeNoteByBar, NoteByBar } from '../schemas'
 
@@ -85,15 +87,18 @@ export const getNotesByEntity = (
 }
 
 export const tuplize = (array: (string | number)[]) => {
-  const allExceptPossiblyLast = array.reduce(function (r, a, i) {
-    if (i % 2) {
-      r[r.length - 1].push(a)
-    } else {
-      r.push([a])
-    }
+  const allExceptPossiblyLast = array.reduce<(string | number | null)[][]>(
+    function (r, a, i) {
+      if (i % 2) {
+        r[r.length - 1].push(a)
+      } else {
+        r.push([a])
+      }
 
-    return r
-  }, [])
+      return r
+    },
+    []
+  )
 
   if (allExceptPossiblyLast[allExceptPossiblyLast.length - 1].length === 1) {
     // when it ends in a number
@@ -120,10 +125,12 @@ export const parseDelayMatrixRow = (
   // non-arp
   // A row like '8th,4th half 4th,16th'
   if (pattern.find((elem) => typeof elem === 'string' && isCsvArg(elem))) {
-    const tuples: [x: number, str: string][] = tuplize(pattern)
+    const tuples = tuplize(pattern) as [x: number, str: string | null][]
     const entries = tuples.map(
       ([noteNth, csvOrSingleFract]: [noteNth: number, csv: string | null]) => {
-        const parsedCsvArg = parseAbbreviationCsv(csvOrSingleFract)
+        // a null (padded) csv has always flowed through here and thrown
+        // inside parseAbbreviationCsv; keep that behavior
+        const parsedCsvArg = parseAbbreviationCsv(csvOrSingleFract as string)
         const tagized = parsedCsvArg.map((elem) => {
           if (isAbbreviation(elem)) {
             const fullName = abbrev[elem]
@@ -193,7 +200,7 @@ export const prepDelayMatrix = (
       }
       return accum
     },
-    [] as (string | number)[]
+    [] as number[]
   )
 
   const entries = countArrs.map((noteIdx: number, idx: number) => {

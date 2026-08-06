@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 
-import { ProgressionOptions } from '../lib'
+import type { ProgressionOptions } from '../lib/graphh'
 import { NoteByBar } from '../lib/schemas'
 import { SongRecord } from '../lib/types'
 import { PhaseRecord } from '../lib/util/phaseTypes'

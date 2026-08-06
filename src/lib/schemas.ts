@@ -147,7 +147,11 @@ export const makeNoteByBar = (
       tagsObj,
     })
     console.error('Failed to parse note by bar: ' + noteByBarSansSettersOutput.error.message)
-    return null
+    // legacy contract: callers treat makeNoteByBar as always succeeding and a
+    // parse failure has always yielded a null element; keep that shape rather
+    // than throwing (behavior change) or rippling `| null` through every
+    // caller (type change)
+    return null as never
   }
   const noteByBarSansSetters = noteByBarSansSettersOutput.data
 

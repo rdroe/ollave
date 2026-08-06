@@ -158,7 +158,8 @@ export default {
         }
         stopCueObservable()
         await loadAndInitSongAndTracks(songId)
-        afterLoadSong(mem().song)
+        const loadedSong = mem().song
+        if (loadedSong) afterLoadSong(loadedSong)
         const result = await initLoadedSong()
         songInvocation.getState().setReady(true)
 
@@ -170,7 +171,8 @@ export default {
         songInvocation.getState().setReady(false)
         await initNewSong()
         const result = await initLoadedSong()
-        afterLoadSong(mem().song)
+        const newSong = mem().song
+        if (newSong) afterLoadSong(newSong)
         songInvocation.getState().setReady(true)
         return result
       },
@@ -181,7 +183,8 @@ export default {
         stopCueObservable()
         const newSongId = await duplicateCurrentSong()
         await loadAndInitSongAndTracks(newSongId)
-        afterLoadSong(mem().song)
+        const duplicatedSong = mem().song
+        if (duplicatedSong) afterLoadSong(duplicatedSong)
         songInvocation.getState().setReady(true)
         return mem().song
       },
@@ -199,7 +202,8 @@ export default {
     init: {
       fn: async () => {
         songInvocation.getState().setReady(false)
-        const shiftedOff = songNames.shift()
+        // same fallback initNewSong uses when the names list is empty
+        const shiftedOff = songNames.shift() ?? `song-${Date.now()}`
 
         const data: Omit<SongRecord, 'id'> = {
           name: shiftedOff,
@@ -212,6 +216,9 @@ export default {
         const refetched = await (
           await browser.userTables.where('song', { id: createdId })
         ).first()
+        if (!refetched) {
+          throw new Error(`created song ${createdId} not found`)
+        }
 
         const parsedSong = songRecordSchema.parse(refetched.data)
 
@@ -221,7 +228,8 @@ export default {
         }
 
         await fakeCli(`song track init`, 'cli')
-        afterLoadSong(mem().song)
+        const initializedSong = mem().song
+        if (initializedSong) afterLoadSong(initializedSong)
         songInvocation.getState().setReady(true)
         return mem().song
       },
@@ -238,13 +246,17 @@ export default {
               'phase-names': [],
               notesByBar: {},
             }
+            const memSong = mem().song
+            if (!memSong) {
+              throw new Error('cannot init a track without a song in memory')
+            }
             const trackId = await browser.userTables.add('track', {
               data: trackRecord,
             })
             await browser.userTables.update(
               'song',
               {
-                id: mem().song.id,
+                id: memSong.id,
                 data: {
                   'song-tracks': [[trackId, 0]],
                 },
@@ -252,8 +264,11 @@ export default {
               {}
             )
 
-            const coll = await userTables.where('song', { id: mem().song.id })
+            const coll = await userTables.where('song', { id: memSong.id })
             const fetched = await coll.first()
+            if (!fetched) {
+              throw new Error(`song ${memSong.id} not found while creating track`)
+            }
             const { 'song-tracks': songTracks } = fetched.data
 
             if (songTracks) {
@@ -265,9 +280,9 @@ export default {
                   notesByBar: {},
                 },
               ]
-              afterLoadSong(mem().song)
+              afterLoadSong(memSong)
             } else {
-              console.error('no tracks for song', mem().song.id)
+              console.error('no tracks for song', memSong.id)
             }
           },
         },
@@ -312,7 +327,11 @@ export default {
       fn: async () => {
         setLatestMap(mapSongToMidiTicks())
 
-        const songPause = mem().songPauses[mem().song.name]
+        const playSong = mem().song
+        if (!playSong) {
+          throw new Error('no song in memory')
+        }
+        const songPause = mem().songPauses[playSong.name]
         if (!songPause) {
           return startCueObservable()
         }
@@ -347,7 +366,11 @@ export default {
         },
       },
       fn: async ({ played = false }) => {
-        const trackTempo = mem().song.tempo
+        const downloadableSong = mem().song
+        if (!downloadableSong) {
+          throw new Error('no song in memory')
+        }
+        const trackTempo = downloadableSong.tempo
         if (!played) {
           downloadSong(trackTempo, mem().latestMap)
         } else {
@@ -358,10 +381,14 @@ export default {
     export: {
       fn: async () => {
           const exportedCore = exportSongAndTracks()
+          const exportableSong = mem().song
+          if (!exportableSong) {
+            throw new Error('no song in memory')
+          }
           // Bar templates live in their own table and used to be omitted, so
           // an imported song kept its placed (locked) notes but lost the
           // templates behind them — no editing, no propagation.
-          const barTemplates = await exportBarTemplatesForSong(mem().song.id)
+          const barTemplates = await exportBarTemplatesForSong(exportableSong.id)
           const exported = { ...exportedCore, barTemplates }
           downloadJson([JSON.stringify(exported, null, 2)], `${exported.song.name.replace(/\ \<\-\ /g, '-from-')}.json`)
           return {

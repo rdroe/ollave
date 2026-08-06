@@ -1,6 +1,6 @@
 import Midi from 'jsmidgen'
 
-import { parseColonTag } from '../commands'
+import { parseColonTag } from './util/parseColonTag'
 import { trackTempo as startTempo } from '../core/observables/masterTicksObservable'
 
 import { MidiMap } from './mapSongToTicks'
@@ -25,7 +25,7 @@ type IncomingEvent =
 
 const downloadEvents = async (
   notes: RelativeNote[],
-  tempo: number = startTempo
+  tempo: number | null = startTempo
 ) => {
   const midiTracks: Midi.Track[] = []
   const file = new Midi.File()
@@ -150,8 +150,9 @@ const songToEvents = async (mappedTicks: MidiMap) => {
     const notes = [...initNotes]
     // get the first note
     const first = notes.shift()
+    if (!first) return
     maxes[first.trackIdx ?? 0] = maxes[first.trackIdx ?? 0] || { num: 0 }
-    const maxRef = maxes[first.trackIdx]
+    const maxRef = maxes[first.trackIdx ?? 0]
     // if the first note is a tempo event, add the tempo event to the relativized notes
     if (first) {
       // if the first note is a tempo event, add the tempo event to the relativized notes
@@ -221,7 +222,7 @@ const songToEvents = async (mappedTicks: MidiMap) => {
 }
 
 export const downloadSong = async (
-  tempo: number = startTempo,
+  tempo: number | null = startTempo,
   midiMap: MidiMap
 ) => {
   const mappedTicks = midiMap

@@ -27,6 +27,15 @@ export const getSongName = () => {
   return song
 }
 
+// these observables only run once a song is loaded; fail loudly otherwise
+const mustSong = () => {
+  const song = mem().song
+  if (!song) {
+    throw new Error('no song in memory')
+  }
+  return song
+}
+
 // Set false at each startCueObservable; the run's tempo marker is stamped
 // alongside its first recorded note (see the recording branch).
 let tempoMarkerStampedThisRun = false
@@ -217,7 +226,7 @@ export const recordLiveNotes = (
   if (Object.keys(playedMap).length === 0) {
     playedMap[baseKey] = [
       {
-        note: `tempo: ${mem().song.tempo}`,
+        note: `tempo: ${mustSong().tempo}`,
         compositionTags: [],
       },
     ]
@@ -302,8 +311,10 @@ export const startCueObservable = (
       const nowMs = Date.now()
       if (nowMs - lastTickDisplayWrite > 33) {
         lastTickDisplayWrite = nowMs
-        document.querySelector('.ollave-ticks').innerHTML =
-          mem().adjustedCursor.toString()
+        const ticksEl = document.querySelector('.ollave-ticks')
+        if (ticksEl) {
+          ticksEl.innerHTML = mem().adjustedCursor.toString()
+        }
       }
       // Lookahead scheduling: hand every not-yet-scheduled note due in
       // (scheduledUpToTick, tick + horizon] to Tone now, each offset to its
@@ -372,7 +383,7 @@ export const startCueObservable = (
                 // Marker first in the bucket, so it precedes the note in the
                 // exported file.
                 mem().playedMap[bookKey].unshift({
-                  note: `tempo: ${mem().song.tempo}`,
+                  note: `tempo: ${mustSong().tempo}`,
                   compositionTags: [],
                 })
               }
@@ -402,7 +413,7 @@ export const startCueObservable = (
 }
 
 export const stopCueObservable = () => {
-  const songName = mem().song.name
+  const songName = mustSong().name
   const publishedCursro = mem().adjustedCursor
   mem().isRunning = false
   const observable = mem().observables[songName]
