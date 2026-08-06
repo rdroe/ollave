@@ -67,6 +67,27 @@ import type { ProgressionChart } from './types'
  * asymmetry in graphh.ts is fixed, a chord function can only be reached over
  * a strong edge. The weaker-than-diatonic character of N6/Aug6 is therefore
  * expressed by *which* chords reach them, not by edge weight.
+ *
+ * DIATONIC SEVENTHS (Imaj7, IIm7, IVmaj7, V7, VIIm7b5) are first-class nodes,
+ * governed by the same three rules stated at length in minor.ts:
+ *
+ *   1. a seventh sits BESIDE its triad, never replacing it;
+ *   2. its OUTGOING edges mirror the triad's, because the seventh does not
+ *      change the chord's function — so V7 inherits V's strong resolution to I
+ *      and its dotted deceptive cadence to VIm alike;
+ *   3. it is REACHED over a dotted edge wherever its triad is reached, which
+ *      keeps `nextChord` (strong edges only) byte-identical to before the
+ *      sevenths existed.
+ *
+ * VIIm7b5 is the half-diminished leading-tone seventh (B-D-F-A in C). In MAJOR
+ * the leading-tone seventh is half-diminished; the fully-diminished VIIdim7
+ * belongs to minor. Both are built on the leading tone and both are matched by
+ * the VII-diminished family rule in `romanChordNameToReal`.
+ *
+ * IIIm7 and VIm7 remain excluded, as they are from `sevenths.ts`: the mediant
+ * and submediant sevenths carry no distinct function, and adding them would
+ * make this "every triad also has a seventh" — the bloat the dotted-target
+ * rule exists to prevent.
  */
 export const major: ProgressionChart = {
   // Tonic. Free to move anywhere in the cycle: to the tonic-substitute region
@@ -76,6 +97,8 @@ export const major: ProgressionChart = {
     {
       name: 'I',
       next: ['I', 'IIIm', 'VIm', 'IV', 'IIm', 'V64', 'VIIdim', 'V'],
+      // seventh colour on the chords this node already reaches (rule 3)
+      dotted: ['Imaj7', 'IVmaj7', 'IIm7', 'VIIm7b5', 'V7'],
     },
   ],
 
@@ -86,14 +109,14 @@ export const major: ProgressionChart = {
     {
       name: 'IIIm',
       next: ['VIm', 'IV', 'IIm'],
-      dotted: ['VIIdim/VIm', 'V7/VIm'],
+      dotted: ['VIIdim/VIm', 'V7/VIm', 'IVmaj7', 'IIm7'],
     },
   ],
   VIm: [
     {
       name: 'VIm',
       next: ['IV', 'IIm'],
-      dotted: ['VIIdim/IIm', 'V7/IIm'],
+      dotted: ['VIIdim/IIm', 'V7/IIm', 'IVmaj7', 'IIm7'],
     },
   ],
 
@@ -104,7 +127,7 @@ export const major: ProgressionChart = {
     {
       name: 'IV',
       next: ['IIm', 'V64', 'VIIdim', 'V', 'VIIdim/V', 'V/V', 'N6', 'Aug6'],
-      dotted: ['I'],
+      dotted: ['I', 'IIm7', 'VIIm7b5', 'V7', 'Imaj7'],
     },
   ],
   // ii is the other predominant; the ii -> V motion is the strongest
@@ -115,6 +138,7 @@ export const major: ProgressionChart = {
       name: 'IIm',
       prev: ['I', 'IIIm', 'VIm', 'IV'],
       next: ['V64', 'VIIdim', 'V', 'VIIdim/V', 'V/V', 'N6', 'Aug6'],
+      dotted: ['VIIm7b5', 'V7'],
     },
   ],
 
@@ -124,6 +148,7 @@ export const major: ProgressionChart = {
     {
       name: 'V64',
       next: ['V'],
+      dotted: ['V7'],
     },
   ],
   // leading-tone triad: dominant function without the root, resolves to I.
@@ -133,13 +158,16 @@ export const major: ProgressionChart = {
       name: 'VIIdim',
       prev: ['I', 'IV', 'IIm'],
       next: ['I', 'V'],
+      dotted: ['Imaj7', 'V7'],
     },
   ],
   V: [
     {
       name: 'V',
       next: ['I'],
-      dotted: ['VIm'], // deceptive cadence
+      // deceptive cadence, plus the dominant's own seventh: V -> V7 is the
+      // ordinary move of adding the seventh before resolving
+      dotted: ['VIm', 'V7', 'Imaj7'],
     },
   ],
 
@@ -149,12 +177,14 @@ export const major: ProgressionChart = {
     {
       name: 'N6',
       next: ['V64', 'V'],
+      dotted: ['V7'],
     },
   ],
   Aug6: [
     {
       name: 'Aug6',
       next: ['V64', 'V'],
+      dotted: ['V7'],
     },
   ],
 
@@ -166,12 +196,14 @@ export const major: ProgressionChart = {
     {
       name: 'V7/IIm',
       next: ['IIm'],
+      dotted: ['IIm7'],
     },
   ],
   'VIIdim/IIm': [
     {
       name: 'VIIdim/IIm',
       next: ['IIm'],
+      dotted: ['IIm7'],
     },
   ],
   'V7/IIIm': [
@@ -190,12 +222,14 @@ export const major: ProgressionChart = {
     {
       name: 'V7/IV',
       next: ['IV'],
+      dotted: ['IVmaj7'],
     },
   ],
   'VIIdim/IV': [
     {
       name: 'VIIdim/IV',
       next: ['IV'],
+      dotted: ['IVmaj7'],
     },
   ],
   // V/V and VIIdim/V are themselves predominants: they lead into the dominant
@@ -204,12 +238,14 @@ export const major: ProgressionChart = {
     {
       name: 'V/V',
       next: ['V64', 'VIIdim', 'V'],
+      dotted: ['VIIm7b5', 'V7'],
     },
   ],
   'VIIdim/V': [
     {
       name: 'VIIdim/V',
       next: ['V64', 'VIIdim', 'V'],
+      dotted: ['VIIm7b5', 'V7'],
     },
   ],
   'V7/VIm': [
@@ -222,6 +258,58 @@ export const major: ProgressionChart = {
     {
       name: 'VIIdim/VIm',
       next: ['VIm'],
+    },
+  ],
+
+  // Diatonic sevenths ------------------------------------------------------
+  // Each mirrors its triad's outgoing edges (rule 2 in the header note), and
+  // is reached only over dotted edges from the triads above (rule 3).
+
+  // tonic seventh — colour on the tonic, not a point of arrival in its own
+  // right. Goes everywhere I goes, including back to the plain tonic.
+  Imaj7: [
+    {
+      name: 'Imaj7',
+      next: ['I', 'IIIm', 'VIm', 'IV', 'IIm', 'V64', 'VIIdim', 'V'],
+      dotted: ['Imaj7', 'IVmaj7', 'IIm7', 'VIIm7b5', 'V7'],
+    },
+  ],
+  // supertonic seventh — the standard predominant, the ii7 of ii7-V7-I. Same
+  // function and same `prev` context as IIm.
+  IIm7: [
+    {
+      name: 'IIm7',
+      prev: ['I', 'IIIm', 'VIm', 'IV'],
+      next: ['V64', 'VIIdim', 'V', 'VIIdim/V', 'V/V', 'N6', 'Aug6'],
+      dotted: ['VIIm7b5', 'V7'],
+    },
+  ],
+  // subdominant seventh — mirrors IV, plagal cadence included.
+  IVmaj7: [
+    {
+      name: 'IVmaj7',
+      next: ['IIm', 'V64', 'VIIdim', 'V', 'VIIdim/V', 'V/V', 'N6', 'Aug6'],
+      dotted: ['I', 'IIm7', 'VIIm7b5', 'V7', 'Imaj7'],
+    },
+  ],
+  // the dominant seventh. Inherits V's strong resolution to I AND its dotted
+  // deceptive cadence to VIm: the seventh sharpens the pull to the tonic, it
+  // does not change which chords the dominant may resolve to.
+  V7: [
+    {
+      name: 'V7',
+      next: ['I'],
+      dotted: ['VIm', 'Imaj7'], // deceptive cadence; tonic seventh as colour
+    },
+  ],
+  // half-diminished leading-tone seventh (B-D-F-A in C). Dominant function,
+  // mirrors VIIdim: resolves to the tonic or passes through V.
+  VIIm7b5: [
+    {
+      name: 'VIIm7b5',
+      prev: ['I', 'IV', 'IIm'],
+      next: ['I', 'V'],
+      dotted: ['Imaj7', 'V7'],
     },
   ],
 }

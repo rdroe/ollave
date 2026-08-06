@@ -27,6 +27,12 @@ const A_MINOR_NODES = [
   'C7',
   'D#dim',
   'B',
+  // diatonic sevenths, promoted to first-class nodes
+  'Am7', // Im7
+  'Bm7b5', // IIm7b5 — HALF-diminished supertonic, not Bdim7
+  'Dm7', // IVm7
+  'E7', // V7
+  'G#dim7', // VIIdim7, on the raised seventh degree
 ]
 
 describe('chordGraphCreate', () => {
@@ -74,8 +80,9 @@ describe('chordGraphCreate', () => {
     const graph = chordGraphCreate('A', 'minor')
     // V resolves to the tonic; the cadential 6/4 and Aug6 now *precede* it
     expect(graph['E'].next.map((n) => n.name)).toEqual(['Am'])
-    // the Picardy third stays a dotted (weak) option
-    expect(graph['E'].dotted.map((n) => n.name)).toEqual(['A'])
+    // the Picardy third stays a dotted (weak) option, now joined by the
+    // dominant's own seventh and the tonic seventh as arrival colour
+    expect(graph['E'].dotted.map((n) => n.name)).toEqual(['A', 'E7', 'Am7'])
   })
 
   it('resolves the cadential 6/4 to the dominant', () => {
@@ -83,7 +90,36 @@ describe('chordGraphCreate', () => {
     // resolves to V rather than straight to a root-position tonic
     const graph = chordGraphCreate('A', 'minor')
     expect(graph['V64'].next.map((n) => n.name)).toEqual(['E'])
-    expect(graph['V64'].dotted.map((n) => n.name)).toEqual([])
+    // the dominant may be taken in its seventh form, as a weaker option
+    expect(graph['V64'].dotted.map((n) => n.name)).toEqual(['E7'])
+  })
+
+  it('reaches each seventh only over a dotted edge', () => {
+    // the promotion rule that keeps `nextChord` output unchanged: sevenths are
+    // colour available on top of the principal motion, never in place of it
+    const graph = chordGraphCreate('A', 'minor')
+    const sevenths = ['Am7', 'Bm7b5', 'Dm7', 'E7', 'G#dim7']
+    for (const [name, node] of Object.entries(graph)) {
+      for (const edge of node.next) {
+        expect(
+          sevenths,
+          `${name} -> ${edge.name} must not be a strong edge`
+        ).not.toContain(edge.name)
+      }
+    }
+  })
+
+  it('gives each seventh its triad-mirroring outgoing edges', () => {
+    // a seventh does not change a chord's function, so it leads where its
+    // triad leads
+    const graph = chordGraphCreate('A', 'minor')
+    const names = (n: string) => graph[n].next.map((e) => e.name)
+    expect(names('Am7')).toEqual(names('Am'))
+    expect(names('Dm7')).toEqual(names('Dm'))
+    expect(names('G#dim7')).toEqual(names('G#dim'))
+    // V7 resolves to the tonic exactly as V does, Picardy third included
+    expect(names('E7')).toEqual(['Am'])
+    expect(graph['E7'].dotted.map((e) => e.name)).toContain('A')
   })
 
   it('routes N6 and Aug6 into the dominant complex', () => {

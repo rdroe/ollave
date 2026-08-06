@@ -85,7 +85,8 @@ describe('chord next', () => {
   })
 
   it('--detail shows dotted edges that the names-only call omits', async () => {
-    // E in A minor has one strong edge (Am) and one dotted (A)
+    // E in A minor has one strong edge (Am); the dotted ones are the Picardy
+    // third and the two sevenths — the names-only call still shows just Am
     const names = await fmt('next', {
       positionalNonCommands: ['E'],
       tonic: 'A',
@@ -99,7 +100,12 @@ describe('chord next', () => {
       scale: 'minor',
       detail: true,
     })
-    expect(detail.next).toEqual(['Am  Im  strong  A3 C4 E4', 'A  I  dotted  A3 C#4 E4'])
+    expect(detail.next).toEqual([
+      'Am  Im  strong  A3 C4 E4',
+      'A  I  dotted  A3 C#4 E4',
+      'E7  V7  dotted  E3 G#3 B3 D4',
+      'Am7  Im7  dotted  A3 C4 E4 G4',
+    ])
   })
 
   it('--mixture implies detail and appends borrowed chords', async () => {
@@ -233,7 +239,9 @@ describe('chord sketch', () => {
     const a = await fmt('sketch', args)
     const b = await fmt('sketch', args)
     expect(a.progression).toBe(b.progression)
-    expect(a.progression).toBe('C V64 G Am Dm Bdim G C')
+    // the seeded walk shifted when the sevenths were promoted: the new dotted
+    // edges are extra weighted choices, so a given seed lands differently
+    expect(a.progression).toBe('C Bdim G Cmaj7 Bdim C V64 G')
     expect(a.seed).toBe(42)
   })
 
@@ -276,12 +284,14 @@ describe('chord pivots', () => {
       tonic: 'A',
       scale: 'minor',
     })
+    // continuation counts include the dotted seventh edges added when the
+    // sevenths became chart nodes
     expect(f.pivots).toEqual([
-      'C major  VIm  4 continuations',
+      'C major  VIm  6 continuations',
       'D minor  Vm  0 continuations',
-      'E minor  IVm  8 continuations',
-      'F major  IIIm  5 continuations',
-      'G major  IIm  7 continuations',
+      'E minor  IVm  10 continuations',
+      'F major  IIIm  7 continuations',
+      'G major  IIm  9 continuations',
     ])
   })
 })

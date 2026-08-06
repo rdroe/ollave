@@ -27,6 +27,12 @@ const C_MAJOR_NODES = [
   'F#dim', // vii°/V
   'E7', // V7/vi
   'G#dim', // vii°/vi
+  // diatonic sevenths, promoted to first-class nodes
+  'Cmaj7', // Imaj7
+  'Dm7', // IIm7
+  'Fmaj7', // IVmaj7
+  'G7', // V7
+  'Bm7b5', // VIIm7b5 — HALF-diminished in major
 ]
 
 describe('major chord graph', () => {
@@ -89,8 +95,15 @@ describe('major chord graph', () => {
       'N6',
       'Aug6',
     ])
-    // the plagal cadence stays a weaker option
-    expect(graph['F'].dotted.map((n) => n.name)).toEqual(['C'])
+    // the plagal cadence stays a weaker option, now alongside the seventh
+    // forms of the chords IV already reaches
+    expect(graph['F'].dotted.map((n) => n.name)).toEqual([
+      'C',
+      'Dm7',
+      'Bm7b5',
+      'G7',
+      'Cmaj7',
+    ])
   })
 
   it('resolves the cadential 6/4 to the dominant, not to the tonic', () => {
@@ -98,7 +111,8 @@ describe('major chord graph', () => {
     // dominant-function (tonic notes over scale degree 5)
     const graph = chordGraphCreate('C', 'major')
     expect(graph['V64'].next.map((n) => n.name)).toEqual(['G'])
-    expect(graph['V64'].dotted.map((n) => n.name)).toEqual([])
+    // the dominant may be taken in its seventh form, as a weaker option
+    expect(graph['V64'].dotted.map((n) => n.name)).toEqual(['G7'])
     // V64 in major takes scale degrees 5, 1, 3 — it needs 'major' passed through
     expect(graph['V64'].translatedSource.notes).toEqual(['G', 'C', 'E'])
   })
@@ -133,10 +147,37 @@ describe('major chord graph', () => {
   it('makes the deceptive cadence a dotted edge', () => {
     const graph = chordGraphCreate('C', 'major')
     expect(graph['G'].next.map((n) => n.name)).toEqual(['C'])
-    // V -> vi evades the promised resolution, so it is offered as weaker
-    expect(graph['G'].dotted.map((n) => n.name)).toEqual(['Am'])
+    // V -> vi evades the promised resolution, so it is offered as weaker,
+    // now alongside the dominant's own seventh and the tonic seventh
+    expect(graph['G'].dotted.map((n) => n.name)).toEqual(['Am', 'G7', 'Cmaj7'])
     const deceptive = graph['G'].dotted.find((n) => n.name === 'Am')
     expect(deceptive?.roman).toBe('VIm')
+  })
+
+  it('reaches each seventh only over a dotted edge', () => {
+    // the promotion rule that keeps `nextChord` output unchanged
+    const graph = chordGraphCreate('C', 'major')
+    const sevenths = ['Cmaj7', 'Dm7', 'Fmaj7', 'G7', 'Bm7b5']
+    for (const [name, node] of Object.entries(graph)) {
+      for (const edge of node.next) {
+        expect(
+          sevenths,
+          `${name} -> ${edge.name} must not be a strong edge`
+        ).not.toContain(edge.name)
+      }
+    }
+  })
+
+  it('gives each seventh its triad-mirroring outgoing edges', () => {
+    const graph = chordGraphCreate('C', 'major')
+    const names = (n: string) => graph[n].next.map((e) => e.name)
+    expect(names('Cmaj7')).toEqual(names('C'))
+    expect(names('Dm7')).toEqual(names('Dm'))
+    expect(names('Fmaj7')).toEqual(names('F'))
+    expect(names('Bm7b5')).toEqual(names('Bdim'))
+    // V7 resolves to I exactly as V does, deceptive cadence included
+    expect(names('G7')).toEqual(['C'])
+    expect(graph['G7'].dotted.map((e) => e.name)).toContain('Am')
   })
 
   it('puts the diatonic vii° on the leading tone and resolves it to I', () => {
@@ -194,7 +235,7 @@ describe('major chord graph', () => {
   it('resolves every node and every edge to non-empty notes', () => {
     for (const key of ['C', 'G', 'F#', 'Eb', 'A', 'Db']) {
       const graph = chordGraphCreate(key, 'major')
-      expect(Object.keys(graph)).toHaveLength(20)
+      expect(Object.keys(graph)).toHaveLength(25)
       for (const [name, node] of Object.entries(graph)) {
         expect(
           node.translatedSource.notes.length,
@@ -282,13 +323,29 @@ describe('nextChordDetail in a major key', () => {
   it('suggests the diatonic continuations of the tonic', () => {
     const suggestions = nextChordDetail('C,3', 'C', 'major')
     const byName = suggestions.map((s) => s.name)
-    expect(byName).toEqual(['C', 'Em', 'Am', 'F', 'Dm', 'V64', 'Bdim', 'G'])
+    // the triads are the strong motions; the sevenths follow as dotted colour
+    expect(byName).toEqual([
+      'C',
+      'Em',
+      'Am',
+      'F',
+      'Dm',
+      'V64',
+      'Bdim',
+      'G',
+      'Cmaj7',
+      'Fmaj7',
+      'Dm7',
+      'Bm7b5',
+      'G7',
+    ])
+    expect(suggestions.filter((s) => s.strength === 'strong')).toHaveLength(8)
     for (const s of suggestions) {
-      expect(s.strength).toBe('strong')
       expect(s.notes.length).toBeGreaterThan(0)
       expect(s.enabledBy).toBeNull()
     }
     expect(suggestions.find((s) => s.name === 'G')?.roman).toBe('V')
+    expect(suggestions.find((s) => s.name === 'G7')?.strength).toBe('dotted')
   })
 
   it('includes the deceptive resolution as a dotted suggestion of V', () => {

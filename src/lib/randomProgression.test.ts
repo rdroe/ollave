@@ -168,10 +168,11 @@ describe('graph legality', () => {
 
 describe('dead ends', () => {
   it('terminates sanely from the near-dead-end G#dim', () => {
-    // G#dim's only edge is to E; E goes to Am or the terminal A
+    // G#dim reaches the dominant only: E strongly, or its seventh E7 as the
+    // one dotted alternative. Either way the walk continues legally.
     const res = randomProgressionDetail('G#dim,3', T, S, 8, { seed: 4 })
     expect(res.steps[0].name).toBe('G#dim')
-    expect(res.steps[1].name).toBe('E')
+    expect(['E', 'E7']).toContain(res.steps[1].name)
     expectLegalWalk(res.steps.map((s) => s.name))
     expect(res.steps.length).toBeLessThanOrEqual(8)
   })
@@ -229,24 +230,31 @@ describe('chord-function nodes', () => {
     expect(traversed.length).toBeGreaterThan(0)
     for (const walk of traversed) {
       expectLegalWalk(walk)
-      // whatever follows V64 must be E, its only continuation
+      // whatever follows V64 must be the dominant, in triad or seventh form
       const i = walk.indexOf('V64')
-      if (i < walk.length - 1) expect(walk[i + 1]).toBe('E')
+      if (i < walk.length - 1) expect(['E', 'E7']).toContain(walk[i + 1])
     }
   })
 })
 
 describe('weighting', () => {
   it('prefers strong edges over dotted ones', () => {
-    // E offers Am (strong) and A (dotted); with 3:1 weighting Am should
-    // dominate across seeds
+    // E offers Am (strong) against three dotted alternatives — the Picardy A,
+    // the dominant seventh E7 and the tonic seventh Am7. With 3:1 weighting
+    // the single strong edge must still beat each dotted one individually.
     const firsts = Array.from({ length: 100 }, (_unused, seed) =>
       randomProgression('E,3', T, S, 2, { seed })
     ).map((w) => w[1])
     const strong = firsts.filter((n) => n === 'Am').length
-    const dotted = firsts.filter((n) => n === 'A').length
+    const dottedNames = ['A', 'E7', 'Am7']
+    const dotted = firsts.filter((n) => dottedNames.includes(n)).length
+    // every walk went somewhere, and only to a real successor of E
     expect(strong + dotted).toBe(100)
-    expect(strong).toBeGreaterThan(dotted)
+    for (const name of dottedNames) {
+      expect(strong, `Am should beat ${name}`).toBeGreaterThan(
+        firsts.filter((n) => n === name).length
+      )
+    }
   })
 
   it('respects an inverted weighting', () => {

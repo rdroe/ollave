@@ -83,8 +83,9 @@ describe('nextChordDetail', () => {
     const names = (sugs: typeof viaF) => sugs.map((s) => s.name).sort()
     // BOTH return the full list — same set, different order
     expect(names(viaF)).toEqual(names(viaAm))
-    expect(viaF).toHaveLength(8)
-    expect(viaAm).toHaveLength(8)
+    // 8 triad edges plus the two dotted seventh edges of the IIdim node
+    expect(viaF).toHaveLength(10)
+    expect(viaAm).toHaveLength(10)
 
     // arriving from F enables the IIdim (dominant-complex) edges
     expect(viaF.every((s) => s.contextMatch)).toBe(true)
@@ -99,6 +100,8 @@ describe('nextChordDetail', () => {
       'V64',
       'G#dim',
       'E',
+      'G#dim7',
+      'E7',
     ])
   })
 
@@ -107,8 +110,8 @@ describe('nextChordDetail', () => {
     // gated on [Dm, Bdim], yet Am legally leads to G#dim. Strict filtering
     // would make this query return nothing.
     const sugs = nextChordDetail('G#dim,3', 'A', 'minor', { prev: ['Am'] })
-    expect(sugs).toHaveLength(1)
-    expect(sugs[0].name).toBe('E')
+    // the dominant, plus its seventh as dotted colour
+    expect(sugs.map((s) => s.name)).toEqual(['E', 'E7'])
     expect(sugs[0].contextMatch).toBe(false)
     expect(sugs[0].enabledBy).toEqual(['Dm', 'Bdim'])
   })
@@ -132,6 +135,8 @@ describe('nextChordDetail', () => {
     expect(sugs.map((s) => [s.name, s.strength])).toEqual([
       ['Am', 'strong'],
       ['A', 'dotted'], // the Picardy third
+      ['E7', 'dotted'], // the dominant's own seventh
+      ['Am7', 'dotted'], // the tonic seventh, as arrival colour
     ])
   })
 
@@ -145,16 +150,20 @@ describe('nextChordDetail', () => {
   })
 
   it('reports the dominant complex in the classical direction', () => {
+    // each still resolves onto the dominant; E7 rides along as dotted colour
     expect(nextChordDetail('V64,3', 'A', 'minor').map((s) => s.name)).toEqual([
       'E',
+      'E7',
     ])
     expect(nextChordDetail('N6,3', 'A', 'minor').map((s) => s.name)).toEqual([
       'V64',
       'E',
+      'E7',
     ])
     expect(nextChordDetail('Aug6,3', 'A', 'minor').map((s) => s.name)).toEqual([
       'V64',
       'E',
+      'E7',
     ])
   })
 

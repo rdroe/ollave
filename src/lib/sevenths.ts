@@ -26,6 +26,13 @@ type SeventhForm = {
 /**
  * Diatonic sevenths of a MAJOR key.
  *
+ * These pairs are now ALSO nodes in `graphData/major.ts`. This table remains
+ * the definition of the triad->seventh RELATION, which the chart does not
+ * record: the chart knows `IIm` and `IIm7` as two independent nodes, but only
+ * this table knows that one is the other's seventh. `seventhOf` needs exactly
+ * that relation, so the table stays. The chart and this table are kept in step
+ * by `sevenths.test.ts`, which asserts every roman here is a real chart node.
+ *
  * Scope is deliberately the common-practice functional sevenths, not the full
  * jazz set of seven. Included:
  *
@@ -142,35 +149,37 @@ const formsFor = (tonic: string, scale: string): SeventhForm[] | null => {
 }
 
 /**
- * The idiomatic diatonic sevenths of a key, as an additive palette.
+ * The idiomatic diatonic sevenths of a key, as a KEY-WIDE palette.
  *
- * Like `mixtureSuggestions`, this is a pure function over `ChordSuggestion[]`
- * that does NOT touch the chord graph, so the triad behaviour of `nextChord` /
- * `nextChordDetail` is byte-for-byte unchanged unless a caller opts in.
- *
- * That is a staging decision, not a permanent boundary. Promoting sevenths to
- * real nodes in `graphData/` is a supported direction; it just requires
- * answering their edges deliberately (does `IIm7` inherit everything `IIm`
- * has? does a seventh node replace its triad in the list or sit beside it?)
- * rather than guessing them in data.
+ * These chords are now first-class nodes in the charts, so most callers no
+ * longer need this function: `nextChordDetail` already offers the sevenths
+ * reachable from the current chord, as dotted edges. This remains exported and
+ * supported for the different question it answers — *what sevenths does this
+ * KEY have*, independent of where you are standing — which is what a palette
+ * or a key-summary UI wants, and which no single node's edges can report.
  *
  * ```ts
- * const all = [
- *   ...nextChordDetail('Am,3', 'A', 'minor'),
- *   ...seventhSuggestions('A', 'minor'),
- * ]
+ * seventhSuggestions('A', 'minor')  // the key's five, regardless of position
+ * nextChordDetail('Am,3', 'A', 'minor')  // the ones reachable from Am
  * ```
  *
  * Into major: Imaj7, IIm7, IVmaj7, V7, VIIm7b5.
  * Into minor: Im7, IIm7b5, IVm7, V7, VIIdim7.
  *
  * `V7` carries `strength: 'strong'`; the rest are `'dotted'`. See
- * `strengthFor`.
+ * `strengthFor`. Note this is the palette's own grading and is deliberately
+ * NOT the same as the chart's: in the chart every seventh is reached over a
+ * dotted edge, including V7, so that promoting them left `nextChord` output
+ * unchanged. Here there is no edge to weigh, only the chord's standing in the
+ * key, and the dominant seventh's standing is principal.
  *
  * Modes other than major and minor return `[]` rather than throwing, for the
  * same reason mixture does: this is an optional additive feature, and a caller
  * concatenating it should degrade to "no sevenths offered" rather than lose
  * the suggestions it already had.
+ *
+ * When passed to `nextChordDetail`'s `include: ['sevenths']`, entries that are
+ * already present as graph edges are deduped away — see that option's note.
  */
 export const seventhSuggestions = (
   tonic: string,
@@ -192,6 +201,11 @@ export const seventhSuggestions = (
  * question a caller sitting on a chord actually has. Returns `null` when the
  * chord has no idiomatic seventh in the scope above (see the exclusions in
  * `MAJOR_SEVENTHS` / `MINOR_SEVENTHS`).
+ *
+ * This is the one thing the chart cannot answer on its own. The chart holds
+ * `Dm` and `Dm7` as separate nodes with no recorded link between them; the
+ * triad->seventh pairing lives only in the tables above. So this function
+ * stays table-driven by design rather than by inertia.
  *
  * Matching is by REALIZED CHORD NAME, not by roman, so a caller can pass what
  * it is holding ('E', 'Bdim') without knowing the chord's function:

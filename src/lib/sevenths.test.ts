@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ChordSuggestion } from './chordSuggestion'
 import { nextChord, nextChordDetail } from './nextChord'
 import { seventhOf, seventhSuggestions } from './sevenths'
+import { chordGraphCreate } from './util/graphUtil'
 
 /** compact `roman:name` view for comparing whole palettes */
 const shape = (suggestions: ChordSuggestion[]) =>
@@ -145,6 +146,53 @@ describe('seventhSuggestions', () => {
   })
 })
 
+describe('the palette and the charts agree', () => {
+  // sevenths.ts keeps the triad->seventh RELATION (which the chart does not
+  // record) while the charts hold the nodes. These must not drift apart.
+  it('every palette seventh is a node in the chart for that key', () => {
+    for (const [tonic, scale] of [
+      ['C', 'major'],
+      ['A', 'minor'],
+      ['F#', 'major'],
+      ['Eb', 'minor'],
+    ] as const) {
+      const graph = chordGraphCreate(tonic, scale)
+      for (const s of seventhSuggestions(tonic, scale)) {
+        expect(
+          Object.keys(graph),
+          `${s.roman} (${s.name}) missing from ${tonic} ${scale}`
+        ).toContain(s.name)
+        // and the node carries the roman the palette claims for it
+        expect(graph[s.name].roman).toBe(s.roman)
+      }
+    }
+  })
+
+  it('every seventh node has a triad it is the seventh of', () => {
+    // the inverse direction: no orphan seventh node crept into a chart
+    for (const [tonic, scale] of [
+      ['C', 'major'],
+      ['A', 'minor'],
+    ] as const) {
+      const paletteRomans = new Set(
+        seventhSuggestions(tonic, scale).map((s) => s.roman)
+      )
+      const graph = chordGraphCreate(tonic, scale)
+      const seventhNodes = Object.values(graph).filter(
+        (n) => n.translatedSource.notes.length === 4
+      )
+      for (const node of seventhNodes) {
+        // secondary dominants (V7/x) are seventh chords but are not diatonic
+        // sevenths of the key; they are excluded by their slash roman
+        if (node.roman.includes('/')) continue
+        expect(paletteRomans, `orphan seventh node ${node.roman}`).toContain(
+          node.roman
+        )
+      }
+    }
+  })
+})
+
 describe('seventhOf', () => {
   it('finds the seventh of a chord by its realized name', () => {
     expect(seventhOf('E', 'A', 'minor')).toMatchObject({
@@ -198,9 +246,10 @@ describe('seventhOf', () => {
   })
 })
 
-describe('additivity — the triad layer is untouched', () => {
-  // the whole point of shipping this as an opt-in function rather than chart
-  // nodes: existing callers must see byte-for-byte what they saw before
+describe('promotion — sevenths are chart nodes, reached only as dotted', () => {
+  // Sevenths are now first-class nodes. The invariant that replaced "the chart
+  // emits no sevenths" is narrower but is the one callers actually depend on:
+  // the STRONG layer is untouched, so `nextChord` returns what it always did.
   it('nextChord is unchanged in minor', () => {
     expect(nextChord('Am,3', 'A', 'minor')).toEqual([
       'Am',
@@ -215,37 +264,69 @@ describe('additivity — the triad layer is untouched', () => {
     ])
   })
 
-  it('nextChordDetail emits no seventh chords of its own', () => {
-    for (const [chord, tonic, scale] of [
-      ['Am,3', 'A', 'minor'],
-      ['E,3', 'A', 'minor'],
-      ['C,3', 'C', 'major'],
-      ['G,3', 'C', 'major'],
+  it('nextChord never offers a seventh, in either mode', () => {
+    // the promotion rule: a seventh is colour on top of the principal motion,
+    // so it is never a strong edge and never reaches the names-only call
+    for (const [tonic, scale] of [
+      ['A', 'minor'],
+      ['C', 'major'],
     ] as const) {
-      for (const s of nextChordDetail(chord, tonic, scale)) {
-        expect(s.notes.length).toBeLessThanOrEqual(3)
+      const graph = chordGraphCreate(tonic, scale)
+      const sevenths = new Set(
+        seventhSuggestions(tonic, scale).map((s) => s.name)
+      )
+      for (const name of Object.keys(graph)) {
+        for (const next of nextChord(`${name},3`, tonic, scale)) {
+          expect(sevenths, `${name} -> ${next}`).not.toContain(next)
+        }
       }
     }
   })
 
-  it('composes with nextChordDetail by concatenation', () => {
-    const graph = nextChordDetail('Am,3', 'A', 'minor')
-    const all = [...graph, ...seventhSuggestions('A', 'minor')]
-    expect(all.length).toBe(graph.length + 5)
-    // and the graph portion is untouched
-    expect(all.slice(0, graph.length)).toEqual(graph)
+  it('nextChordDetail now DOES emit sevenths, as dotted edges', () => {
+    const sugs = nextChordDetail('Am,3', 'A', 'minor')
+    const sevenths = sugs.filter((s) => s.notes.length === 4)
+    expect(sevenths.map((s) => s.name)).toEqual([
+      'Am7',
+      'Dm7',
+      'Bm7b5',
+      'G#dim7',
+      'E7',
+    ])
+    expect(sevenths.every((s) => s.strength === 'dotted')).toBe(true)
   })
 })
 
 describe("nextChordDetail include: ['sevenths']", () => {
-  it('is sugar over concatenating the standalone function', () => {
-    // the documented equivalence, same contract mixture already has
-    expect(
-      nextChordDetail('Am,3', 'A', 'minor', { include: ['sevenths'] })
-    ).toEqual([
-      ...nextChordDetail('Am,3', 'A', 'minor'),
+  it('appends only the sevenths the chord does not already reach', () => {
+    // Since the promotion the palette overlaps the graph edges. Appending it
+    // blindly would report E7 twice for Am — once as the dotted V7 edge, once
+    // as a palette entry — so duplicates by name are dropped, graph edge wins.
+    const graph = nextChordDetail('Am,3', 'A', 'minor')
+    const withSevenths = nextChordDetail('Am,3', 'A', 'minor', {
+      include: ['sevenths'],
+    })
+    // Am reaches all five of A minor's sevenths already, so nothing is added
+    expect(withSevenths).toEqual(graph)
+
+    const names = withSevenths.map((s) => s.name)
+    expect(new Set(names).size, 'no chord may be reported twice').toBe(
+      names.length
+    )
+  })
+
+  it('still adds the sevenths a chord cannot reach', () => {
+    // G (the subtonic VII) leads only to III and the Picardy I, so none of the
+    // key's sevenths are among its edges — the palette contributes all five
+    const graph = nextChordDetail('G,3', 'A', 'minor')
+    const withSevenths = nextChordDetail('G,3', 'A', 'minor', {
+      include: ['sevenths'],
+    })
+    expect(withSevenths).toEqual([
+      ...graph,
       ...seventhSuggestions('A', 'minor'),
     ])
+    expect(withSevenths.length).toBe(graph.length + 5)
   })
 
   it('leaves the result untouched when not requested', () => {
@@ -262,16 +343,15 @@ describe("nextChordDetail include: ['sevenths']", () => {
       include: ['sevenths', 'mixture'],
     })
     expect(a).toEqual(b)
-    // mixture first, then sevenths, both after the graph edges
+    // mixture first, then sevenths, both after the graph edges. C major's
+    // tonic already reaches all five of the key's sevenths as dotted edges,
+    // so the palette is fully deduped away and only mixture is appended.
     const graphLen = nextChordDetail('C,3', 'C', 'major').length
-    expect(a.slice(graphLen).map((s) => s.strength)).toEqual([
-      ...Array(5).fill('mixture'),
-      'dotted',
-      'dotted',
-      'dotted',
-      'strong',
-      'dotted',
-    ])
+    expect(a.slice(graphLen).map((s) => s.strength)).toEqual(
+      Array(5).fill('mixture')
+    )
+    // the sevenths are present all the same — as graph edges
+    expect(a.filter((s) => s.name === 'G7')).toHaveLength(1)
   })
 
   it('ranks sevenths by voice leading alongside everything else', () => {
