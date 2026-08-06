@@ -3,11 +3,20 @@ import { Chord, Note, Mode, Scale, Collection } from 'tonal'
 
 import { minor } from './graphData/minor'
 import type { ProgressionGraphNode } from './graphData/types'
+import { dedupeEnharmonicScales } from './scaleList'
 
 // chart data lives in ./graphData (a sibling major.ts can be dropped in);
 // re-exported here because `minor` is public API via the lib barrel
 export { minor }
 export type { ProgressionGraphNode, ProgressionChart } from './graphData/types'
+// re-exported because the curated scale list is public API via the lib barrel
+export {
+  conventionalKeys,
+  conventionalMajorTonics,
+  conventionalMinorTonics,
+  dedupeEnharmonicScales,
+  isConventionalKeyName,
+} from './scaleList'
 
 export const sharpNoteNames = [
   'C#',
@@ -43,6 +52,19 @@ export const noteNames = [
 
 const allModes = Mode.all()
 
+/**
+ * Every note name crossed with every mode — 189 entries.
+ *
+ * This list contains enharmonic duplicates by construction, because
+ * `noteNames` contains double accidentals: `Dbb major` is C major spelled
+ * unplayably, `F## major` is G major, and so on. 84 of the 189 entries are
+ * such artifacts.
+ *
+ * It is kept unfiltered for backward compatibility — it is public API, callers
+ * may hold stored names that resolve against it, and `isScaleName` /
+ * `properScaleName` search it. **For anything user-facing (a scale picker, a
+ * key dropdown) prefer `conventionalKeys`**, which is the 30 real keys.
+ */
 export const allScales = allModes
   .map((m) => {
     const scales = noteNames.map((nn) => `${nn} ${m.name}`)
@@ -50,6 +72,13 @@ export const allScales = allModes
     return scaleObjs
   })
   .flat()
+
+/**
+ * `allScales` with enharmonic duplicates collapsed — 105 entries, one spelling
+ * per (mode, sounding pitch set). Conventional key spellings win; see
+ * `./scaleList`.
+ */
+export const distinctScales = dedupeEnharmonicScales(allScales)
 
 const inScale = (notes: string[], scale: { notes: string[] }) => {
   // pitch-class membership; the previous ascending-index requirement wrongly

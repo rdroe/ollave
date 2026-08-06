@@ -104,7 +104,18 @@ export {
 } from './util/tagsUtil'
 
 // graphh exports
-export { minor, allScales } from './graphh'
+// `conventionalKeys` is the list to build user-facing scale pickers from;
+// `allScales` is the raw 189-entry list and contains enharmonic duplicates
+export {
+  minor,
+  allScales,
+  distinctScales,
+  conventionalKeys,
+  conventionalMajorTonics,
+  conventionalMinorTonics,
+  dedupeEnharmonicScales,
+  isConventionalKeyName,
+} from './graphh'
 
 // music exports
 export type { Triad, RelativeNote, isReady } from './music'
