@@ -13,7 +13,52 @@ export * as phaseUtil from './util/phaseUtil'
 // Removed cli export to break circular dependency
 export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
+export * as voiceLeading from './voiceLeading'
+export * as mixture from './mixture'
+export * as pivots from './pivots'
+export * as randomProgression from './randomProgression'
+
+// chord assistance -------------------------------------------------------
+// `ChordSuggestion` is the contract every one of these speaks: voice-leading
+// ranking, mode mixture, pivot modulation and random walks are pure functions
+// over `ChordSuggestion[]`, so they compose freely with each other and with
+// `nextChordDetail`. `nextChordDetail`'s `include` / `rankBy` options are
+// sugar over exactly these functions.
 export type { ChordSuggestion } from './nextChord'
+export { nextChord as nextChordNames, nextChordDetail } from './nextChord'
+export type { NextChordDetailOptions } from './nextChord'
+
+export {
+  ascendingInversions,
+  nearestVoicing,
+  rankByVoiceLeading,
+  voiceLeadingDistance,
+  voicingDistance,
+} from './voiceLeading'
+export type {
+  AscendingInversionsOptions,
+  NearestVoicing,
+  RankedSuggestion,
+  Voicing,
+} from './voiceLeading'
+
+export { mixtureSuggestions } from './mixture'
+export type { MixtureStrength, MixtureSuggestion } from './mixture'
+
+export { pivotSuggestions, romanInKey } from './pivots'
+export type { PivotSuggestion } from './pivots'
+
+export {
+  createRng,
+  randomProgression as randomProgressionNames,
+  randomProgressionDetail,
+} from './randomProgression'
+export type {
+  ProgressionResult,
+  ProgressionStep,
+  ProgressionStopReason,
+  RandomProgressionOptions,
+} from './randomProgression'
 
 // Individual function exports for direct access
 // mem-db exports
