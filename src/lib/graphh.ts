@@ -121,6 +121,15 @@ const inScaleByChroma = (notes: string[], scale: { notes: string[] }) => {
  * spelled input never reaches the fallback and sees byte-identical results to
  * before; a caller with mis-spelled input gets the enharmonic answer set
  * instead of silence.
+ *
+ * C1-followup: this deliberately scans `allScales`, NOT the deduped
+ * `distinctScales`, and the fallback stays. Deduping made the *picker* problem
+ * go away but cannot serve detection: a deduped list holds only one spelling
+ * per sounding scale, so `C# major` is absent (it loses its group to
+ * `Db major`), and detecting the correctly-spelled triad C#-E#-G# against it
+ * returns `B lydian` alone — the key the chord is actually in has been
+ * deleted. Faithful name matching needs every spelling present, so the full
+ * list is the right input here even though it is the wrong list for a UI.
  */
 export const detectAllScales = (notes: string[]) => {
   if (notes.length === 0) return []
