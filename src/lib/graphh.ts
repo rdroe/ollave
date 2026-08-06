@@ -59,6 +59,40 @@ const inScale = (notes: string[], scale: { notes: string[] }) => {
   return notes.every((note) => scale.notes.includes(note))
 }
 
+/** enharmonic membership: same sounding pitch, any spelling */
+const inScaleByChroma = (notes: string[], scale: { notes: string[] }) => {
+  if (notes.length === 0) return false
+  const scaleChromas = scale.notes.map((n) => Note.chroma(n))
+  return notes.every((note) => {
+    const c = Note.chroma(note)
+    return c !== undefined && scaleChromas.includes(c)
+  })
+}
+
+/**
+ * Every scale in `allScales` containing all of the given notes.
+ *
+ * MATCHING IS BY NOTE NAME, with an enharmonic fallback.
+ *
+ * Name matching is the primary rule and is what callers should rely on: it
+ * keeps spelling meaningful, so a C-E-G triad reports the six keys that
+ * genuinely contain it (C/F/G major, D/E/A minor) and nothing else. Because
+ * `allScales` is built over a note-name list that includes double accidentals,
+ * matching by pitch instead would report `Dbb major`, `F## major` and
+ * `G## minor` for that same triad — 15 "keys" where 6 are meaningful. Those
+ * are legitimate spellings of the same pitches, but they are not answers any
+ * caller wants, and pivot discovery in particular would drown in them.
+ *
+ * The fallback exists because strict name matching has one genuinely useless
+ * outcome: a mis-spelled input finds NO home at all. `['C#','F','G#']` is an
+ * audible C# major triad written with the third spelled F instead of E#, and
+ * name matching returns an empty array — no key in the universe contains the
+ * literal name 'F' alongside 'C#' and 'G#'. So when, and only when, the
+ * name-based pass finds nothing, we retry by chroma. A caller with correctly
+ * spelled input never reaches the fallback and sees byte-identical results to
+ * before; a caller with mis-spelled input gets the enharmonic answer set
+ * instead of silence.
+ */
 export const detectAllScales = (notes: string[]) => {
   if (notes.length === 0) return []
   let sorted: string[]
@@ -76,9 +110,10 @@ export const detectAllScales = (notes: string[]) => {
   } else {
     sorted = notes
   }
-  return allScales.filter((sc) => {
-    return inScale(sorted, sc)
-  })
+  const byName = allScales.filter((sc) => inScale(sorted, sc))
+  if (byName.length > 0) return byName
+
+  return allScales.filter((sc) => inScaleByChroma(sorted, sc))
 }
 
 export type ChordNameWithNotes = {
@@ -98,10 +133,23 @@ export type EnabledChordNameWithNotes = ChordNameWithNotes & {
 
 export const N6 = function N6(
   tonic: string,
-  scaleName: string
+  // kept for signature parity with the other chord functions in `fns`, which
+  // are all dispatched as (tonic, scale); the Neapolitan root is now derived
+  // from the tonic alone and is the same in either mode.
+  _scaleName?: string
 ): ChordNameWithNotes[] {
-  const secondDegree = Scale.degrees(`${tonic} ${scaleName}`)(2)
-  const neoRoot = Note.simplify(`${secondDegree}b`.replace('#b', ''))
+  // Root = the LOWERED SECOND DEGREE, derived by transposing a minor second up
+  // from the tonic rather than by flattening the scale's own second degree.
+  //
+  // The previous form (`Note.simplify(deg2 + 'b')`) respelled enharmonically in
+  // flat keys: in Eb major it flattened F to Fb and then simplified that to E,
+  // producing the N6 as E-G#-B instead of Fb-Ab-Cb. Pitch-correct but written
+  // in a key signature the piece is not in. `Note.transpose(tonic, '2m')` is
+  // spelling-exact and produces double flats where they genuinely belong
+  // (Db major -> Ebb-Gb-Bbb), which `chordNameWithNotes` resolves without
+  // trouble. In every key whose lowered second is already a single accidental
+  // (C, A minor, G, F# ...) this is byte-identical to the old result.
+  const neoRoot = Note.transpose(tonic, '2m')
   const notes = ['1P', '3M', '5P'].map(Note.transposeFrom(neoRoot))
   if (Note.octave(notes[0]) !== undefined) {
     throw new Error(`Neapolitan chord ${notes} has octave`)
@@ -397,6 +445,15 @@ export const unromanizeSecondaryChords = (
   return [secondaryChord, dominantChord]
 }
 
+/**
+ * @deprecated Dead configuration — nothing reads it and its one entry,
+ * 'IImdim', is not a node in any chart (neither `graphData/minor.ts` nor
+ * `graphData/major.ts`). It described romans that were permitted to be absent
+ * from a chart back when the untranslatable-romans check was a hard error.
+ * Kept only because it is exported through the lib barrel and removing it
+ * would be a breaking change for any external importer; expect it to be
+ * removed in a future major version.
+ */
 export const optionalRomans = ['IImdim']
 export function makeProgNodeTranslator(
   userLetter: string,
@@ -451,23 +508,40 @@ export function makeProgNodeTranslator(
       ? progNodeIn.prev.map(realizeName)
       : null
 
-    const next = progNodeIn.next.reduce((accum, romanName) => {
+    /**
+     * Translate one outgoing edge, whatever kind of arrow it came from.
+     *
+     * Shared by the `next` and `dotted` branches so the two cannot drift. They
+     * previously did: only `next` recognized chord-FUNCTION names (V64 / Aug6 /
+     * N6) via `isChordFn`, while `dotted` called `romanChordNameToReal`
+     * unconditionally. That returns '' for N6/Aug6 and — worse — mangles 'V64'
+     * into the garbage letter name 'E64' (the roman-replacement pass rewrites
+     * the leading 'V'), so every dotted edge to a chord function was silently
+     * discarded with a "Dropping untranslatable dotted chord" warning. Chord
+     * functions could therefore only ever be reached over a strong arrow,
+     * which forced N6/Aug6 onto `next` in the charts even where a weak arrow
+     * was the musically honest choice.
+     *
+     * `kind` appears only in the warning text.
+     */
+    const translateEdge = (
+      romanName: string,
+      kind: 'next' | 'dotted'
+    ): EnabledChordNameWithNotes[] => {
       if (isChordFn(romanName)) {
         const fnRes = fns[romanName](userLetter, userScale)
-        const asEnabledArr = fnRes.map((cnwnFn) => {
-          return {
-            ...cnwnFn,
-            // fn edges (V64/Aug6/N6) take the same prev-based enabler as their
-            // non-fn siblings. This used to be the *current node's own name*,
-            // which described nothing about arrival context and so was useless
-            // for matching against a caller's recent chords.
-            enabler: edgeEnabler,
-            roman: romanName,
-            octMap: cnwnFn.octMap,
-          }
-        })
-        return [...accum, ...asEnabledArr]
+        return fnRes.map((cnwnFn) => ({
+          ...cnwnFn,
+          // fn edges (V64/Aug6/N6) take the same prev-based enabler as their
+          // non-fn siblings. This used to be the *current node's own name*,
+          // which described nothing about arrival context and so was useless
+          // for matching against a caller's recent chords.
+          enabler: edgeEnabler,
+          roman: romanName,
+          octMap: cnwnFn.octMap,
+        }))
       }
+
       const realizedName = romanChordNameToReal(
         userLetter,
         userScale,
@@ -477,40 +551,27 @@ export function makeProgNodeTranslator(
 
       if (cnwn === null || cnwn.notes.length === 0) {
         console.warn(
-          `Dropping untranslatable next chord ${romanName} (realized: ${realizedName}) of ${progNodeIn.name} in ${userLetter} ${userScale}`
+          `Dropping untranslatable ${kind} chord ${romanName} (realized: ${realizedName}) of ${progNodeIn.name} in ${userLetter} ${userScale}`
         )
-        return accum
+        return []
       }
 
-      const newNode = {
-        ...cnwn,
-        enabler: edgeEnabler,
-        roman: romanName,
-      }
-      return [...accum, newNode]
-    }, [] as EnabledChordNameWithNotes[])
-
-    const dotted = progNodeIn?.dotted
-      ?.map((romanName) => {
-        const realizedName = romanChordNameToReal(
-          userLetter,
-          userScale,
-          romanName
-        )
-        const cnwn = chordNameWithNotes(realizedName)
-        if (cnwn === null || cnwn.notes.length === 0) {
-          console.warn(
-            `Dropping untranslatable dotted chord ${romanName} (realized: ${realizedName}) of ${progNodeIn.name} in ${userLetter} ${userScale}`
-          )
-          return null
-        }
-        return {
+      return [
+        {
           ...cnwn,
           enabler: edgeEnabler,
           roman: romanName,
-        }
-      })
-      .filter((n): n is EnabledChordNameWithNotes => n !== null)
+        },
+      ]
+    }
+
+    const next = progNodeIn.next.flatMap((romanName) =>
+      translateEdge(romanName, 'next')
+    )
+
+    const dotted = progNodeIn?.dotted?.flatMap((romanName) =>
+      translateEdge(romanName, 'dotted')
+    )
 
     return {
       roman: progNodeIn.name,
