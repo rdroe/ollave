@@ -307,6 +307,35 @@ export {
   enharmonicPivotSource,
 } from './chromaticPivots'
 
+// THE COMPOSED ENTRY POINT (Stage M-C, integration proper) -----------------
+// Where the streams meet. `composeProgression` runs B2's cadence search, B1's
+// four-voice realization and B3's metric placement as one call;
+// `composeModulation` does the same over a modulation and names the hinge in
+// both keys; `composeSpan` realizes one of the library's own devices with its
+// own waivers applied, so the tool never red-inks its own content.
+//
+// The pieces stay standalone. Nothing here is folded into `nextChordDetail`'s
+// options — that surface answers "what may follow this chord", and a
+// four-voice phrase plan is a different question, not a richer answer to the
+// same one. See docs/chord-assistance.md.
+//
+// TWO TRANSLATIONS live here and nowhere else, both found by probe: chart
+// chord-FUNCTION nodes (`V64`, `N6`, the augmented sixths) become realizable
+// chords, and a non-tertian augmented sixth is voiced from its literal notes
+// rather than through `Chord.detect`, which would respell its #4 as a b7.
+export {
+  composeModulation,
+  composeProgression,
+  composeSpan,
+  resolveStep,
+} from './composeProgression'
+export type {
+  ComposeOptions,
+  ComposedBar,
+  ComposedPhrase,
+  ResolvedStep,
+} from './composeProgression'
+
 export {
   createRng,
   randomProgression as randomProgressionNames,
