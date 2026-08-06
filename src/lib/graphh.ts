@@ -374,25 +374,36 @@ export const Ger6 = function Ger6(
 /**
  * `Aug6` — the generic augmented sixth, kept as a WORKING DOCUMENTED ALIAS.
  *
- * ALIASED TO THE GERMAN (`Ger6`), deliberately. The choice was between the
- * Italian (the three-note prototype every member is built on) and the German
- * (by far the most common in practice), and it is settled by what a caller who
- * typed the unqualified name most likely meant plus what breaks least:
+ * ALIASED TO THE ITALIAN (`It6`), which makes this split PURELY ADDITIVE:
+ * `Aug6` returns exactly the notes it always returned, in every key.
  *
- *   - Nothing regresses either way for the three notes they share, but a
- *     four-voice realization of the Italian must double a tone, and which tone
- *     is a part-writing decision this module has no business making. The German
- *     supplies its own fourth voice.
- *   - The German is the member a composer writing "augmented sixth" without
- *     qualification usually means, and the only member that carries the
- *     enharmonic V⁷ reinterpretation that makes the family interesting for
- *     modulation.
+ * The choice was between the Italian (the three-note prototype every member is
+ * built on) and the German (by far the most common in practice, and the only
+ * member with the enharmonic V⁷ reinterpretation). The German is the better
+ * answer to "which one did the composer mean?", and it was the initial choice
+ * here — but it is the wrong answer to the question that actually governs,
+ * which is what `Aug6` ALREADY MEANS in this codebase:
  *
- * WHAT THIS COSTS: `Aug6` previously returned THREE notes (the Italian's) and
- * now returns four. That is a real change to a live surface, and it is the one
- * deliberate behavioural change in this stream — see chromatic.test.ts, which
- * pins both the new content and the fact that `It6` still gives the old three.
- * A caller who wants the previous behaviour byte-for-byte should name `It6`.
+ *   - **`Aug6` is a live user-facing input.** `isChordCsvArg('Aug6,3')` is
+ *     true, it passes `isDyna`, and the name appears in SAVED SONGS. Aliasing
+ *     the German would silently change three notes into four in songs already
+ *     on disk — the same chord in the file sounding different after an upgrade.
+ *   - **The existing behaviour is pinned as a regression guard**, not
+ *     incidentally: `graphh.test.ts` asserts `Aug6('A','minor')` is `F-A-D#`
+ *     precisely because an earlier version double-flattened minor's already
+ *     lowered sixth. That test is guarding a real bug that was fixed once, and
+ *     it should not have to be rewritten to accommodate an alias decision.
+ *   - **The Italian IS the prototype.** ♭6-1-♯4 is the frame all three share;
+ *     the French and German each add exactly one note to it. So the generic
+ *     name denoting the generic content is also the honest reading.
+ *
+ * A caller who wants the German — including its V⁷ reinterpretation — names
+ * `Ger6`, which is now available and was not before. Nothing is lost and
+ * nothing changes underfoot.
+ *
+ * The name is NOT rewritten to `It6` in the result: a caller round-tripping a
+ * suggestion must get back the name it asked for, and saved songs contain
+ * 'Aug6'.
  *
  * FIGURES DO NOT APPLY TO ANY MEMBER OF THIS FAMILY. The `6` in the name is an
  * INTERVAL ABOVE THE BASS — figured bass in its original sense — not an
@@ -405,7 +416,7 @@ export const Aug6 = function Aug6(
   tonic: string,
   scaleName?: string
 ): ChordNameWithNotes[] {
-  return Ger6(tonic, scaleName).map((c) => ({ ...c, name: 'Aug6' }))
+  return It6(tonic, scaleName).map((c) => ({ ...c, name: 'Aug6' }))
 }
 
 export type ChordFunction =
