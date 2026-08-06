@@ -13,6 +13,7 @@ export * as phaseUtil from './util/phaseUtil'
 // Removed cli export to break circular dependency
 export * as addTempoSlider from './addTempoSlider'
 export * as nextChord from './nextChord'
+export type { ChordSuggestion } from './nextChord'
 
 // Individual function exports for direct access
 // mem-db exports
