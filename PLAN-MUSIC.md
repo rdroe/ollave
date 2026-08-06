@@ -25,10 +25,10 @@ merge.
 Baseline at authoring: `master`, 283 tests, strict mode ON, v0.4.0 + unreleased
 sevenths/scale-list work.
 
-**STATUS 2026-08-06: Stage M-A and ALL FIVE Stage M-B streams merged and
-independently verified. 752 tests green (from 283), `npx tsc --noEmit` 0
-errors, both builds clean.** Each stream's outcome is recorded inline below.
-Stage M-C is the remaining work.
+**STATUS 2026-08-06: COMPLETE. Stage M-A, all five Stage M-B streams, and
+Stage M-C merged and verified. 808 tests green (from 283), `npx tsc --noEmit`
+0 errors, both builds clean, released as 0.6.0.** Each stage's outcome is
+recorded inline below.
 
 ---
 
@@ -436,7 +436,7 @@ file ownership is now lifted):
       dominant, and every chart edge routes them to V or the cadential ⁶₄.
       Fixed in `9f7e1cf`. *This is exactly the failure the cross-stream tests
       exist to catch.*
-- [ ] **C1 — wire B4's `enharmonicPivots` into B2's `extraPivots`.** Both
+- [x] **C1 — wire B4's `enharmonicPivots` into B2's `extraPivots`.** Both
       sides built to the same contract without talking:
       B2 exposes `PivotSource = (fromTonic, fromScale, toTonic, toScale) =>
       PivotCandidate[]` and reserves `PivotKind` `'enharmonic'`; B4 returns
@@ -445,29 +445,95 @@ file ownership is now lifted):
       either side** — B2 pinned this with a contract test using a stand-in
       Ger⁶↔V⁷ source. Enharmonic pivots carry a cost surcharge so they stay
       reachable without burying smooth diatonic hinges.
-- [ ] **C2 — make the minor plagal, minor deceptive and Phrygian half cadences
+- [x] **C2 — make the minor plagal, minor deceptive and Phrygian half cadences
       ROUTABLE.** B2 reports they are detectable but not routable: the minor
       chart lacks the edges (`IVm6` appears nowhere), so `pathToCadence`
       returns `unreachable-cadence`. Needs `graphData/minor.ts` edits, which B2
       didn't own. Blast-radius rule still applies — dotted unless principal.
-- [ ] **C3 — route `N6`/`Aug6` through `extraPivots`.** B2 skips them in the
+- [x] **C3 — route `N6`/`Aug6` through `extraPivots`.** B2 skips them in the
       diatonic scan because `pivotSuggestions` throws on them; they should
       arrive as properly-spelled chromatic pivots instead.
 
 **Integration proper:**
 
-- [ ] Compose the streams: a modulation-aware, cadence-targeted path (B2) that
-      is voice-leading legal (B1), metrically placed (B3), and realizable in
-      four voices (`realizeProgression`, B1). Acceptance follows the audience
-      ranking in the Premise: the two headline features — modulation-aware
-      targeting and whole-progression realization — must work end-to-end
-      before any API sugar is added.
-- [ ] Decide the `nextChordDetail` surface: which of these become `opts`, which
-      stay standalone. (The 0.4.0 lesson: compose first, add sugar later.)
-- [ ] `chord` CLI subcommands for the new capabilities.
-- [ ] Docs: extend `docs/chord-theory.md` (it now has §11 on authoring charts)
-      and `docs/chord-assistance.md`.
-- [ ] Version + CHANGELOG. Likely 0.6.0.
+- [x] Compose the streams into `composeProgression` / `composeModulation` /
+      `composeSpan` (`src/lib/composeProgression.ts`).
+- [x] Decide the `nextChordDetail` surface. **Answer: everything stays
+      standalone.** See the outcome below.
+- [x] `chord` CLI subcommands: `cadence`, `modulate`, `realize`, `analyze`.
+- [x] Docs: `docs/chord-assistance.md` §§11-16 and `docs/chord-theory.md`
+      §§12-15, plus a `docExamples.test.ts` that EXECUTES every doc example.
+- [x] Version + CHANGELOG. Released as 0.6.0.
+
+### Stage M-C outcome
+
+**Both headline features work end to end.** Verified:
+`composeModulation('C','PAC',4,'C','major','Db','major')` returns
+`I - IIm - Ger6=V7 - I` realized as `C - Dm - Ab7 - Db`, four voices, zero
+violations, placed in the bar — a modulation between two keys that share **no
+diatonic chord at all**.
+
+**C1 needed an adapter AND one type change, which the plan did not anticipate.**
+The plan said "no signature changes needed on either side". That was right about
+the *function* signatures and wrong about the *data*: B2's `PivotCandidate` had
+one `name`, which is correct for a diatonic pivot (`Dm` is a node in both charts)
+and cannot describe an enharmonic one, whose entire mechanism is that the two
+keys spell the sonority differently. Probed, and the failure was silent both
+ways — `name: 'Ger6'` made leg two look for a `Ger6` node in the D♭ chart (there
+is one: a D♭ German sixth, four different pitches), and `name: 'Ab7'` made leg
+one look for an `Ab7` in C major. Added optional `nameThere`, plus `explanation`
+so B4's prose survives the boundary. Fully backward-compatible: diatonic pivots
+leave both unset. `PivotKind` also gained `'chromatic'` — a Neapolitan is a
+*second* relation, and labelling it `'chromatic-mediant'` would be a false claim
+to anyone switching on the field.
+
+**`pivotCost` was exported rather than reimplemented.** `pivotsBetween` does not
+recompute a source's cost, so a second implementation of the ranking arithmetic
+would have been a silent misranking waiting to happen.
+
+**C3's honest answer is one pivot, not four.** Probed each chromatic function
+node: only `N6` is a hinge of this kind (♭II in C is the D♭ triad, diatonic to
+six keys). The augmented sixths are not tertian and are diatonic to no key —
+they hinge by respelling, which is C1's job, so routing them here too would
+offer one modulation twice. `V64` is the dominant of one key by definition.
+
+**C2: six edges, all dotted, `nextChord` byte-identical.** `IVm→Im`,
+`IVm→IVm6`, `Im→IVm6`, `V→VI`, `V7→VI`, `IVm7→Im`. Full before/after probe of
+every node in A minor and C major shows zero diff in the strong layer, pinned as
+a snapshot test in `integration.test.ts`. All seven cadence types are now
+routable in minor. Two `progressionPath.test.ts` tests that pinned the *absence*
+(B2 wrote them as honest reports of a gap it did not own) were inverted to pin
+the capability; the `unreachable-cadence` guarantee moved to `Ger6 → plagal`,
+which is unreachable for a musical reason rather than a data gap.
+
+**Integration was not glue.** Two impedance mismatches, both found by probe
+because the types agreed and the data did not: chart chord-FUNCTION node names
+stop `realizeProgression` dead, and `Chord.detect(['F','A','D#'])` returns
+`['F7no5']` — respelling ♯4 as ♭7 and converting an augmented sixth into a
+dominant seventh. The composed call translates the first and voices the second
+from its literal notes, reporting `chord: null` because no chord symbol is
+correct for ♭6-1-♯4.
+
+**The `nextChordDetail` decision: everything stays standalone.** Its `include` /
+`rankBy` options are sugar over functions answering *the same* question — "what
+may follow this chord", with more information. A four-voice phrase plan is a
+**different** question: it takes a goal and a length rather than a current chord,
+and returns bars rather than suggestions. Folding it in would mean one function
+with two return shapes selected by an option, which is two functions wearing one
+name. The 0.4.0 lesson applied: compose first, add sugar later, and only where
+the sugar answers the same question.
+
+**A finding worth recording: the four-voice search is good enough that the span
+waivers rarely bind.** Every span that ships realizes legally in four voices
+without needing its waivers, because the beam is free to choose doublings that
+avoid the parallels. The waivers are wired regardless — they bind the moment a
+caller supplies a starting voicing or works in three voices, which is B1's own
+proof case — and this is stated in the test rather than left as a silent pass.
+
+**`docExamples.test.ts` executes every code example in both docs.** The docs
+promise "every example here is real output", and a promise about output rots
+silently; a drifted example teaches a wrong answer with the authority of
+documentation. All 30-odd are pinned.
 
 ---
 
