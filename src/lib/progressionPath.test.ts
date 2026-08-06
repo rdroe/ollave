@@ -109,27 +109,34 @@ describe('pathToCadence — the weighting does the work', () => {
     }
   })
 
-  it('cannot ROUTE to a Phrygian half cadence — the chart has no iv6 edge', () => {
-    // PROBED, and worth recording because it is a limitation of the DATA rather
-    // than of the search. The minor chart carries first inversions of the
-    // tonic, the dominant and the leading-tone chord, but there is no `IVm6`
-    // edge anywhere in it — so the one chord the Phrygian half cadence is built
-    // from cannot be reached. The device is minor-only AND unreachable, at
-    // every bar count.
+  it('ROUTES to a Phrygian half cadence, on the iv6 edge Stage M-C added', () => {
+    // HISTORY, kept because the delta is the point. This test used to pin the
+    // OPPOSITE — that the Phrygian half cadence was detectable but not
+    // routable, because `IVm6` appeared nowhere in `graphData/minor.ts` and
+    // this stream did not own that file. Stage M-C (C2) added the edge, so the
+    // honest report the test used to guard has been replaced by the capability
+    // it was standing in for. Nothing about the SEARCH changed.
     //
-    // This is NOT worked around here. Adding the edge would mean editing
-    // `graphData/minor.ts`, which this stream does not own, and inventing a
-    // path through a chord the chart does not offer would be exactly the
-    // confident wrong answer the quality bar forbids. The honest report is
-    // what ships; detection handles the device fully, which is the half of the
-    // feature that does not depend on the chart.
+    // The figure is load-bearing and is what the test checks: the cadence's
+    // whole identity is the semitone bass fall from b6 to 5, so an approach
+    // that is `IVm` in root position is not this cadence. `completesCadence`
+    // enforces `approach.figure === '6'`, and the path below must show it.
     for (const bars of [3, 4, 5, 6]) {
       const r = pathToCadence('Am', 'phrygian-half', bars, 'A', 'minor')
-      expect(r.paths).toEqual([])
-      expect(r.reason).toBe('unreachable-cadence')
-      expect(r.exact).toBe(false)
+      expect(r.paths.length, `${bars} bars`).toBeGreaterThan(0)
+      expect(r.reason).toBe('exact')
+      const steps = r.paths[0].steps
+      expect(steps).toHaveLength(bars)
+      // the approach is iv6 — the figure, not just the chord
+      expect(steps[steps.length - 2].figure).toBe('6')
+      expect(steps[steps.length - 2].roman).toBe('IVm6')
+      expect(steps[steps.length - 1].roman).toBe('V')
     }
-    // the detector, which does not depend on chart edges, labels it correctly
+    // the shortest form is exactly the textbook one
+    expect(
+      pathToCadence('Am', 'phrygian-half', 3, 'A', 'minor').paths[0].summary
+    ).toBe('Im - IVm6 - V')
+    // and detection, which never depended on chart edges, still agrees
     expect(
       detectCadences([{ name: 'Dm', figure: '6' }, 'E'], 'A', 'minor')[0].type
     ).toBe('phrygian-half')
@@ -249,17 +256,41 @@ describe('honest scoping — never throw, never hang', () => {
   })
 
   it('reports an unreachable cadence, and explains the chart is not exhaustive', () => {
-    // IVm -> Im is absent from the minor chart, so the pathfinder genuinely
-    // cannot route to a minor plagal cadence — while detectCadences labels one
-    // happily. That divergence is real and the message says so.
-    const r = pathToCadence('Am', 'plagal', 4, 'A', 'minor')
+    // The starting chord used to be `Am` and the cadence `plagal`, because
+    // `IVm -> Im` was absent from the minor chart. Stage M-C (C2) added it, so
+    // that pair is now routable and this test needed a case that is STILL
+    // unreachable — the honest-scoping guarantee is what matters, not which
+    // example demonstrates it.
+    //
+    // `Ger6` to a plagal cadence is the durable one, and it is unreachable for
+    // a musical reason rather than a gap in the data: an augmented sixth's
+    // entire function is to expand b6 and #4 outward onto the DOMINANT, so
+    // every edge it has leads to V or the cadential 6/4. There is no route from
+    // it to a subdominant, and adding one would misrepresent the chord.
+    const r = pathToCadence('Ger6', 'plagal', 4, 'A', 'minor')
     expect(r.paths).toEqual([])
     expect(r.reason).toBe('unreachable-cadence')
     expect(r.message).toMatch(/detectCadences/)
-    // and the claim in that message is TRUE — the detector really does find it
+    // and the claim in that message is TRUE — the detector really does find a
+    // minor plagal cadence, which the pathfinder can now route to as well
     expect(
       detectCadences(['Am', 'Dm', 'Am'], 'A', 'minor').some((c) => c.type === 'plagal')
     ).toBe(true)
+  })
+
+  it('ROUTES to the minor plagal and deceptive cadences (Stage M-C, C2)', () => {
+    // The other two edges C2 added. Both cadences were detectable from the
+    // start and neither was routable, for the same reason: `IVm -> Im` and
+    // `V -> VI` were simply not in the chart.
+    const plagal = pathToCadence('Am', 'plagal', 3, 'A', 'minor')
+    expect(plagal.reason).toBe('exact')
+    expect(plagal.paths[0].summary).toBe('Im - IVm - Im')
+
+    const deceptive = pathToCadence('Am', 'deceptive', 3, 'A', 'minor')
+    expect(deceptive.reason).toBe('exact')
+    expect(deceptive.paths[0].summary).toBe('Im - V - VI')
+    // VI in minor is the MAJOR submediant — F in A minor, not Fm
+    expect(deceptive.paths[0].steps[2].name).toBe('F')
   })
 
   it('rejects a bar count below the length of a cadence', () => {

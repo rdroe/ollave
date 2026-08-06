@@ -161,6 +161,8 @@ describe('nextChordDetail', () => {
       ['I', 'A', 'dotted'], // the Picardy third
       ['V7', 'E7', 'dotted'], // the dominant's own seventh
       ['Im7', 'Am7', 'dotted'], // the tonic seventh, as arrival colour
+      // Stage M-C (C2): the deceptive resolution V -> VI, dotted like the rest
+      ['VI', 'F', 'dotted'],
       // Stage M-A inversions, all dotted by the blast-radius rule
       ['Im6', 'Am', 'dotted'], // resolving onto an inverted tonic
       ['V65', 'E7', 'dotted'],

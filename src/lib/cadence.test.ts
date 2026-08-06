@@ -262,16 +262,20 @@ describe('detectCadences — labelling music already written', () => {
     expect(d1.confidence).toBe('high')
 
     // in minor the deceptive cadence lands on the MAJOR submediant (F in A
-    // minor) and the chart spells it VI — a pair the chart has no edge for
+    // minor) and the chart spells it VI. Stage M-C (C2) gave that pair an edge
+    // so it is routable too; detection never needed one.
     const min = detectCadences(['Am', 'Dm', 'E', 'F'], 'A', 'minor')
     const d2 = min.find((c) => c.type === 'deceptive')!
     expect(d2.romans).toEqual(['V', 'VI'])
     expect(d2.chords).toEqual(['E', 'F'])
   })
 
-  it('finds the plagal cadence in MINOR, which the chart has no edge for', () => {
-    // the case that proves detection must not be chart-driven: IVm -> Im is
-    // absent from the minor chart, and is a completely standard cadence
+  it('finds the plagal cadence in MINOR, which detection never needed the chart for', () => {
+    // The case that proved detection must not be chart-driven. When this test
+    // was written `IVm -> Im` was absent from the minor chart and this was a
+    // completely standard cadence the pathfinder could not route to; Stage M-C
+    // (C2) added the edge. The assertion is unchanged and still load-bearing:
+    // it pins that detection matches ROMANS, so it never depended on the fix.
     const r = detectCadences(['Am', 'Dm', 'Am'], 'A', 'minor')
     const plagal = r.find((c) => c.type === 'plagal')!
     expect(plagal.romans).toEqual(['IVm', 'Im'])

@@ -94,6 +94,9 @@ describe('chordGraphCreate', () => {
       'I',
       'V7',
       'Im7',
+      // Stage M-C (C2): the deceptive resolution. V -> VI was missing from the
+      // chart, so the minor deceptive cadence was detectable but not routable.
+      'VI',
       'Im6',
       'V65',
       'V43',

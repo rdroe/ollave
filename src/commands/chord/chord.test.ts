@@ -108,6 +108,8 @@ describe('chord next', () => {
       'A  I  dotted  A3 C#4 E4',
       'E7  V7  dotted  E3 G#3 B3 D4',
       'Am7  Im7  dotted  A3 C4 E4 G4',
+      // Stage M-C (C2): the deceptive resolution V -> VI
+      'F  VI  dotted  F3 A3 C4',
       'Am  Im6  dotted  C3 E3 A3  bass=C',
       'E7  V65  dotted  G#3 B3 D4 E4  bass=G#',
       'E7  V43  dotted  B3 D4 E4 G#4  bass=B',
@@ -304,10 +306,16 @@ describe('chord pivots', () => {
     // augmented-sixth edges the predominants now carry in BOTH charts. Only
     // the two predominant rows moved (+3 each): Am is iv in E minor and ii in
     // G major, but vi/v/iii elsewhere, and those are not predominants.
+    //
+    // Stage M-C (C2) moved E minor alone, 17 -> 19: Am is `IVm` there and the
+    // minor chart's iv gained two cadence edges (`IVm -> Im`, the plagal
+    // close, and `IVm6`, the Phrygian half cadence's approach). G major is
+    // unchanged because the MAJOR chart was not touched — which is the check
+    // worth having in this row.
     expect(f.pivots).toEqual([
       'C major  VIm  6 continuations',
       'D minor  Vm  0 continuations',
-      'E minor  IVm  17 continuations',
+      'E minor  IVm  19 continuations',
       'F major  IIIm  7 continuations',
       'G major  IIm  16 continuations',
     ])

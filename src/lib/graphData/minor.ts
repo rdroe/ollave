@@ -96,6 +96,23 @@ import type { ProgressionChart } from './types'
  * first-order edge cannot tell them apart. They are authored as spans instead;
  * see `spans.ts`.
  *
+ * CADENCE EDGES (Stage M-C, C2). Three cadences the cadence library has always
+ * been able to DETECT were not ROUTABLE, because the moves they are made of had
+ * no edge here: `IVm -> Im` (plagal), `V -> VI` (deceptive) and `IVm6 -> V`
+ * (Phrygian half — `IVm6` appeared nowhere in this file at all). B2's
+ * `detectCadences` deliberately matches romans rather than chart edges for
+ * exactly this reason, and recorded the gap; `pathToCadence` cannot do that,
+ * because it walks the graph, so it returned `unreachable-cadence`.
+ *
+ * All five new edges (the three above plus their seventh-chord mirrors
+ * `V7 -> VI` and `IVm7 -> Im`) are DOTTED. That is the blast-radius rule, and
+ * here it is also the musically honest grading: a predominant's principal
+ * motion is to the dominant and a dominant's is to the tonic. The plagal close
+ * is a codetta after that, and the deceptive close is a deliberate refusal of
+ * it — both are dashed arrows in any flowchart that draws the principal motion
+ * solid. `nextChord` output is byte-identical, verified by probe across every
+ * node in A minor and C major.
+ *
  * EVERY INVERSION EDGE IS DOTTED. This is the same blast-radius rule the
  * sevenths shipped under: `nextChord` returns strong edges only, so putting
  * inversions on the dotted layer keeps its output byte-for-byte identical to
@@ -121,6 +138,13 @@ export const minor: ProgressionChart = {
         // the tonic over its third — the bass leaves the root without the
         // harmony changing, which is how a tonic prolongation begins
         { chord: 'Im', figure: '6' },
+        // iv6 — the predominant with b6 in the bass. `Im -> IVm` is already a
+        // strong edge; this is its inverted refinement, exactly as V6 below is
+        // the inverted refinement of `Im -> V`. It is also what makes a
+        // three-bar Phrygian half cadence (i - iv6 - V) reachable at all: with
+        // only IVm -> IVm6 the shortest route was four bars, which is a longer
+        // phrase than the cadence needs.
+        { chord: 'IVm', figure: '6' },
         // first inversion is the normal form of the leading-tone triad
         { chord: 'VIIdim', figure: '6' },
         // the linear dominant: bass on the leading tone
@@ -158,6 +182,21 @@ export const minor: ProgressionChart = {
         { chord: 'VIIdim', figure: '6' },
         { chord: 'V7', figure: '65' },
         { chord: 'Im', figure: '6' },
+        // THE MINOR PLAGAL CADENCE (Stage M-C, C2). iv -> i is ordinary music
+        // and `detectCadences` has always labelled it, but the chart had no
+        // edge for it, so `pathToCadence(_, 'plagal', _, _, 'minor')` returned
+        // `unreachable-cadence` — detectable but not routable. Dotted, per the
+        // blast-radius rule and because it is musically honest: the plagal
+        // cadence is a codetta after an authentic close, not the principal
+        // motion out of a predominant, which is still to the dominant.
+        'Im',
+        // THE PHRYGIAN HALF CADENCE (C2). iv6 -> V, the bass falling a
+        // semitone b6 -> 5. That semitone IS the cadence's identity, which is
+        // why the figure is load-bearing here and why `IVm6` had to exist as
+        // an edge at all — it appeared nowhere in this chart before. Dotted:
+        // IVm -> V already exists as a strong edge, and this is the inverted
+        // refinement of it, exactly as every other figured edge here is.
+        { chord: 'IVm', figure: '6' },
         // the augmented-sixth trio (B4). Predominant-to-predominant chromatic
         // substitution: iv is the diatonic chord whose bass note b6 the
         // augmented sixth chromaticizes, so iv -> Aug6 is the smoothest
@@ -255,6 +294,14 @@ export const minor: ProgressionChart = {
         'I',
         'V7',
         'Im7',
+        // THE MINOR DECEPTIVE CADENCE (Stage M-C, C2). V -> VI: the dominant
+        // resolves to the major submediant instead of the tonic, which shares
+        // two of its three notes and so stands in for it just long enough to
+        // disappoint. Absent from this chart until now, so the cadence was
+        // detectable but not routable. Dotted — the dominant's principal
+        // resolution is and remains to the tonic; the deception is the
+        // deliberate departure from it, which is a dashed arrow by definition.
+        'VI',
         // resolving onto an inverted tonic keeps the bass moving rather than
         // landing; a phrase-internal cadence rather than a full close
         { chord: 'Im', figure: '6' },
@@ -430,7 +477,9 @@ export const minor: ProgressionChart = {
       name: 'IVm7',
       prev: ['VI', 'VIIdim/VIm', 'V7/VIm'],
       next: ['VIIdim/V', 'V/V', 'V64', 'VIIdim', 'V'],
-      dotted: ['VIIdim7', 'V7'],
+      // the plagal resolution, mirroring IVm's (rule 2). `IVm7` is one of the
+      // romans the plagal cadence definition accepts as an approach.
+      dotted: ['VIIdim7', 'V7', 'Im'],
     },
   ],
   // the dominant seventh. Inherits V's resolution to Im AND its dotted Picardy
@@ -443,6 +492,11 @@ export const minor: ProgressionChart = {
       dotted: [
         'I',
         'Im7', // Picardy third; tonic seventh as arrival colour
+        // the deceptive resolution, mirroring V's (rule 2: a seventh does not
+        // change a chord's function, so V7 goes where V goes). V7 -> VI is in
+        // fact the commoner form of the minor deceptive cadence, because the
+        // seventh makes the promise of resolution explicit before breaking it.
+        'VI',
         // V7's own inversions: the dominant may be re-voiced before resolving
         { chord: 'V7', figure: '65' },
         { chord: 'V7', figure: '43' },

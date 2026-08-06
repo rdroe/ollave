@@ -251,14 +251,15 @@ describe('chord-function nodes', () => {
 
 describe('weighting', () => {
   it('prefers strong edges over dotted ones', () => {
-    // E offers Am (strong) against three dotted alternatives — the Picardy A,
-    // the dominant seventh E7 and the tonic seventh Am7. With 3:1 weighting
-    // the single strong edge must still beat each dotted one individually.
+    // E offers Am (strong) against four dotted alternatives — the Picardy A,
+    // the dominant seventh E7, the tonic seventh Am7 and (Stage M-C, C2) the
+    // deceptive resolution F. With 3:1 weighting the single strong edge must
+    // still beat each dotted one individually.
     const firsts = Array.from({ length: 100 }, (_unused, seed) =>
       randomProgression('E,3', T, S, 2, { seed })
     ).map((w) => w[1])
     const strong = firsts.filter((n) => n === 'Am').length
-    const dottedNames = ['A', 'E7', 'Am7']
+    const dottedNames = ['A', 'E7', 'Am7', 'F']
     const dotted = firsts.filter((n) => dottedNames.includes(n)).length
     // every walk went somewhere, and only to a real successor of E
     expect(strong + dotted).toBe(100)
