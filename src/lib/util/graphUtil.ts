@@ -8,17 +8,18 @@ import {
   makeProgNodeTranslator,
   minor,
   optionalRomans,
-  ProgressionGraphNode,
   ProgressionOptions,
   romanChordNameToReal,
 } from '../graphh'
 
+export type ChordProgressionGraph = {
+  [chordName: string]: ProgressionOptions
+}
+
 export const lookUpGraph = (
   userTonic: string,
   userScale: string
-): {
-  [chordName: string]: ProgressionOptions
-} => {
+): ChordProgressionGraph | null => {
   const place = mem().graphs[`${userTonic} ${userScale}`]
   if (place) {
     if (place[0]) return place[0]
@@ -26,10 +27,27 @@ export const lookUpGraph = (
   return null
 }
 
+// Historically chordGraphCreate returned `{ formatted }` on first build but
+// the bare graph on cache hits. Both shapes are kept working: the graph is
+// returned with a non-enumerable `formatted` self-reference (non-enumerable
+// so chord-name iteration over the graph is unaffected).
+const withFormattedSelfRef = (
+  graph: ChordProgressionGraph
+): ChordProgressionGraph & { formatted: ChordProgressionGraph } => {
+  if (!('formatted' in graph)) {
+    Object.defineProperty(graph, 'formatted', {
+      value: graph,
+      enumerable: false,
+      writable: false,
+    })
+  }
+  return graph as ChordProgressionGraph & { formatted: ChordProgressionGraph }
+}
+
 export function chordGraphCreate(userLetter: string, userScale: string) {
   const lookedUp = lookUpGraph(userLetter, userScale)
 
-  if (lookedUp) return lookedUp
+  if (lookedUp) return withFormattedSelfRef(lookedUp)
   const names = Object.keys(minor)
   const untranslatable = names
     .map((romanName) => {
@@ -51,42 +69,47 @@ export function chordGraphCreate(userLetter: string, userScale: string) {
     )
   }
 
-  const scaledGraph = Object.entries(minor).reduce(
-    (accum, [romanName, progNodes]) => {
-      const realizedName = fns[romanName as keyof typeof fns]
-        ? romanName
-        : romanChordNameToReal(userLetter, userScale, romanName)
+  const scaledGraph = new Map<string, ProgressionOptions[]>()
+  for (const [romanName, progNodes] of Object.entries(minor)) {
+    const realizedName = fns[romanName as keyof typeof fns]
+      ? romanName
+      : romanChordNameToReal(userLetter, userScale, romanName)
 
-      if (accum.find(([x, _]) => x === realizedName)) {
-        console.error(
-          `prog node already translated; ${romanName} in ${userLetter} ${userScale} ${JSON.stringify({ romanName, realizedName, progNodes }, null, 2)} `
-        )
-      }
+    const realizedOptions = progNodes
+      .map(makeProgNodeTranslator(userLetter, userScale))
+      // a null means the node was untranslatable; keep it out of the graph
+      // rather than letting it poison combineEntriesByName
+      .filter((pOpt): pOpt is ProgressionOptions => pOpt !== null)
 
-      const realizedOptions = progNodes.map(
-        makeProgNodeTranslator(userLetter, userScale)
+    const already = scaledGraph.get(realizedName)
+    if (already) {
+      // two roman nodes can realize to the same chord (e.g. IIdim and
+      // VIIdim/III are both Bdim in A minor); merge their edges instead of
+      // letting the later node overwrite the earlier, which silently dropped
+      // the first node's next-chord options
+      console.warn(
+        `merging progression nodes that realize to the same chord: ${romanName} -> ${realizedName} in ${userLetter} ${userScale}`
       )
+      already.push(...realizedOptions)
+      continue
+    }
+    scaledGraph.set(realizedName, realizedOptions)
+  }
 
-      return [...accum, [realizedName, realizedOptions]]
-    },
-    [] as [romanName: string, progNodes: ProgressionGraphNode][]
-  )
-
-  const combinedScaleGraphEntries = scaledGraph.map(
-    ([name, pOpts]: [nm: string, pOpts: ProgressionOptions[]]) => {
+  const combinedScaleGraphEntries = [...scaledGraph.entries()].map(
+    ([name, pOpts]) => {
       return [name, combineEntriesByName(pOpts)]
     }
   ) as [name: string, pOpt: ProgressionOptions][]
 
-  const formatted = Object.fromEntries(combinedScaleGraphEntries)
+  const formatted: ChordProgressionGraph = Object.fromEntries(
+    combinedScaleGraphEntries
+  )
 
-  const idx =
-    userLetter && userScale ? `${userLetter} ${userScale}` : Date.now()
+  const idx = `${userLetter} ${userScale}`
   mem().graphs[idx] = mem().graphs[idx] || []
   mem().graphs[idx].push(formatted)
-  return {
-    formatted,
-  }
+  return withFormattedSelfRef(formatted)
 }
 
 //

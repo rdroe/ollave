@@ -1,16 +1,19 @@
 import { Chord, ChordType, Note } from 'tonal'
 import { z } from 'zod'
 
-import { mapSongToMidiTicks, phaseCount, phaseExists } from '..'
-import { parseColonTag } from '../../commands/phase/phase'
+// direct imports (not via the lib barrel or commands) to avoid module-init
+// cycles and browser-only side effects (cf. e302ee7)
 import { mem } from '../../core/mem'
-import { setLatestMap } from '../../core/observables'
+import { setLatestMap } from '../../core/observables/compilationObservable'
+import { mapSongToMidiTicks } from '../mapSongToTicks'
 import { chordNameWithNotes, DynamicChordNames } from '../graphh'
 import { cloneNoteByBar, makeNoteByBar, NoteByBar } from '../schemas'
 
 import { isString, isCsvArg, parseCsvArg } from './common'
 import { randId } from './common'
 import { lookUpGraph } from './graphUtil'
+import { parseColonTag } from './parseColonTag'
+import { phaseCount, phaseExists } from './phaseUtil'
 import { parseNoteTags, TagEntries } from './noteParsingUtil'
 import {
   isNoteNameWithoutOctave,
@@ -108,12 +111,17 @@ const raiseOctaveOfChordNotes = (
         return casedNote.startsWith(chordLetter)
       })
     : notes[0]
+  // no identifiable root, or a root without an octave (pitch class): there is
+  // nothing to raise; previously this produced NaN octaves like 'CNaN'
+  if (!root) return notes
   const currOctave = Note.get(root).oct
+  if (typeof currOctave !== 'number') return notes
 
   const diff = currOctave - rootOctave
   if (diff === 0) return notes
   return notes.map((noteName: string) => {
     const [name, oct] = [Note.get(noteName).pc, Note.get(noteName).oct]
+    if (typeof oct !== 'number') return noteName
     return `${name}${oct - diff}`
   })
 }
@@ -159,13 +167,16 @@ export const parseChordCsvArg = (
         const raised = raiseOctaveOfChordNotes(
           notes,
           csv[1],
-          Chord.get(graphChordData.translatedSource.name).tonic
+          Chord.get(graphChordData.translatedSource.name).tonic ?? undefined
         )
         return [raised, tags]
       }
     }
   }
 
+  if (!cnwn) {
+    throw new Error(`${csv[0]} could not be resolved to a chord`)
+  }
   tags.push(`chord=${cnwn.name}`)
   if (!notes) {
     notes = cnwn.notes
@@ -174,7 +185,7 @@ export const parseChordCsvArg = (
   const raised = raiseOctaveOfChordNotes(
     notes,
     csv[1],
-    Chord.get(cnwn.name).tonic
+    Chord.get(cnwn.name).tonic ?? undefined
   )
 
   return [raised, tags]
@@ -230,8 +241,16 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
   tags?: TagEntries,
   move?: boolean
 ) => {
-  const [sourcePhase, sourceBarIndex] = parseColonTag(sourceBarTag)
-  const [targetPhase, targetBarIndex] = parseColonTag(targetBarTag)
+  const sourceParsed = parseColonTag(sourceBarTag)
+  const targetParsed = parseColonTag(targetBarTag)
+  if (!sourceParsed) {
+    throw new Error(`${sourceBarTag} is not a bar tag`)
+  }
+  if (!targetParsed) {
+    throw new Error(`${targetBarTag} is not a bar tag`)
+  }
+  const [sourcePhase, sourceBarIndex] = sourceParsed
+  const [targetPhase, targetBarIndex] = targetParsed
   if (!phaseExists(sourcePhase)) {
     throw new Error(`Source phase ${sourcePhase} does not exist`)
   }
@@ -279,6 +298,9 @@ export const copyBarNotesWithNoteIdsAndGroupIds = (
 
   const clonedNotes = sourceBarNotes.map((note) => {
     const clonedNote = cloneNoteByBar(note)
+    if (!clonedNote) {
+      throw new Error(`could not clone note in ${sourceBarTag}`)
+    }
     const noteGroupId = z.string().parse(note.tagsObj.groupId[0])
     const noteLayerId = z
       .string()
@@ -315,7 +337,11 @@ export const copyBarNotesToEndOfPhase_ = (
   cb?: (barIds: string[]) => void
 ) => {
   for (const barId of barIds) {
-    const [phaseName, _barIndex] = parseColonTag(barId)
+    const parsed = parseColonTag(barId)
+    if (!parsed) {
+      throw new Error(`${barId} is not a bar tag`)
+    }
+    const [phaseName] = parsed
 
     if (!phaseExists(phaseName)) {
       throw new Error(`Phase ${phaseName} does not exist`)
@@ -324,20 +350,18 @@ export const copyBarNotesToEndOfPhase_ = (
     const allPhaseBars = getAllPhaseBars(phaseName)
 
     // Find the first empty bar or create a new one
-    let targetBarId: string
-    let emptyBarFound = false
+    let targetBarId: string | undefined
 
     // Check existing bars for empty ones
     for (const existingBarId of allPhaseBars) {
       const barNotes = mem().notesByBar[existingBarId]
       if (!barNotes || barNotes.length === 0) {
         targetBarId = existingBarId
-        emptyBarFound = true
         break
       }
     }
     // If no empty bar found, create a new one at the end
-    if (!emptyBarFound) {
+    if (targetBarId === undefined) {
       const lastBarIndex =
         allPhaseBars.length > 0
           ? parseInt(allPhaseBars[allPhaseBars.length - 1].split(':')[1])

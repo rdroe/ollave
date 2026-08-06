@@ -1,7 +1,7 @@
 import z from 'zod'
 
 import { isChordCsvArg } from './util/barsUtil'
-import { lookUpGraph } from './util/phaseUtil'
+import { chordGraphCreate, lookUpGraph } from './util/graphUtil'
 import { isScaleNameWithTonic } from './util/scaleUtil'
 
 export const nextChord = (
@@ -21,7 +21,9 @@ export const nextChord = (
     throw new Error(`could not get chord name; instead ${chordCsvArg}`)
   }
 
-  const graph = lookUpGraph(userTonic, userScale)
+  // build the graph on first use; previously a cache miss was a hard error
+  const graph =
+    lookUpGraph(userTonic, userScale) ?? chordGraphCreate(userTonic, userScale)
 
   if (!graph) {
     throw new Error(`could not obtain graph for ${userTonic} ${userScale}`)

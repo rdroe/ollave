@@ -1,5 +1,5 @@
 import fakeCli from 'peprn/fakeCli'
-import { Chord, Note, Mode, Scale, Progression, Collection } from 'tonal'
+import { Chord, Note, Mode, Scale, Collection } from 'tonal'
 
 export const sharpNoteNames = [
   'C#',
@@ -44,29 +44,22 @@ export const allScales = allModes
   .flat()
 
 const inScale = (notes: string[], scale: { notes: string[] }) => {
-  const indexMap = notes.reduce((accum, curr) => {
-    const idx = scale.notes.indexOf(curr)
-    if ((idx > -1 && accum.length === 0) || accum[accum.length - 1] < idx) {
-      return [...accum, idx]
-    }
-    return accum
-  }, [] as number[])
-
-  if (indexMap.length === notes.length && notes.length > 0) {
-    return true
-  }
-  return false
+  // pitch-class membership; the previous ascending-index requirement wrongly
+  // rejected scales whose rotation put the notes "out of order" (e.g. C-E-G
+  // was reported as not in D dorian)
+  if (notes.length === 0) return false
+  return notes.every((note) => scale.notes.includes(note))
 }
 
 export const detectAllScales = (notes: string[]) => {
   if (notes.length === 0) return []
-  let sorted: string[] | null = null
+  let sorted: string[]
   if (Note.get(notes[0]).oct !== undefined) {
     const sortMe = notes.concat()
     sortMe.sort((ntA, ntB) => {
       const ntDataA = Note.get(ntA)
       const ntDataB = Note.get(ntB)
-      return ntDataA.freq - ntDataB.freq
+      return (ntDataA.freq ?? 0) - (ntDataB.freq ?? 0)
     })
 
     sorted = sortMe.map((nt) => {
@@ -109,16 +102,23 @@ export const N6 = function N6(
   ]
 }
 
-export const V64 = function V64(tonic: string): ChordNameWithNotes[] {
-  const [chordName] = Progression.fromRomanNumerals(tonic, ['V'])
-  const V = Chord.get(chordName)?.notes
-  if (Note.octave(V[0]) !== undefined) {
-    throw new Error(`V64 chord ${V} has octave`)
+export const V64 = function V64(
+  tonic: string,
+  scaleName: string = 'minor'
+): ChordNameWithNotes[] {
+  // Cadential 6/4: the tonic triad with the fifth scale degree (the dominant)
+  // in the bass — degrees 5, 1, 3 (e.g. E-A-C in A minor). The previous
+  // version rotated the dominant triad, which produced a first-inversion V
+  // (G#-B-E in A minor) instead.
+  const degrees = Scale.degrees(`${tonic} ${scaleName}`)
+  const notes = [degrees(5), degrees(1), degrees(3)]
+  if (Note.octave(notes[0]) !== undefined) {
+    throw new Error(`V64 chord ${notes} has octave`)
   }
   return [
     {
       name: 'V64',
-      notes: Collection.rotate(1, V),
+      notes,
       octMap: (notes, oct) => notes.map((nt) => `${nt}${oct}`),
     },
   ]
@@ -126,19 +126,23 @@ export const V64 = function V64(tonic: string): ChordNameWithNotes[] {
 
 export const Aug6 = function Aug6(
   tonic: string,
-  scaleName: string
+  _scaleName?: string
 ): ChordNameWithNotes[] {
   /*
 Think of your key as C. The formula for the chord is (using scale degrees) b6, 1, #4, or in C, this would be Ab, C, F#. https://www.reddit.com/r/musictheory/comments/2vhagj/eli5_augmented_sixth_chords/
+
+b6 and #4 are absolute intervals from the tonic (minor sixth, augmented
+fourth), so they are the same pitches in either mode: F and D# in A minor.
+The previous version flattened the *scale's* sixth degree, which
+double-flattened minor's already lowered sixth (producing E natural in
+A minor instead of F).
 */
-  const six = Scale.degrees(`${tonic} ${scaleName}`)(6)
-  const flatSix = Note.simplify(`${six}b`.replace('#b', ''))
-  const one = Scale.degrees(`${tonic} ${scaleName}`)(1)
-  const four = Scale.degrees(`${tonic} ${scaleName}`)(4)
-  const sharpFour = Note.simplify(`${four}#`.replace('b#', ''))
+  const flatSix = Note.transpose(tonic, 'm6')
+  const one = tonic
+  const sharpFour = Note.transpose(tonic, 'A4')
   if (
+    Note.octave(flatSix) !== undefined ||
     Note.octave(one) !== undefined ||
-    Note.octave(four) !== undefined ||
     Note.octave(sharpFour) !== undefined
   ) {
     throw new Error(`Aug6th chord ${[flatSix, one, sharpFour]} has octave`)
@@ -190,6 +194,12 @@ export const scaleLetters = (scaleTonic: string, scaleName: string) => {
   return ten.slice(0, len)
 }
 
+// flatten/sharpen a letter by one accidental (same idiom as N6/Aug6 above)
+const flattenNote = (letter: string) =>
+  Note.simplify(`${letter}b`.replace('#b', ''))
+const sharpenNote = (letter: string) =>
+  Note.simplify(`${letter}#`.replace('b#', ''))
+
 export const romanToLetterEntries = (scaleTonic: string, scaleName: string) => {
   const letters = scaleLetters(scaleTonic, scaleName)
   const romans = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII']
@@ -204,15 +214,24 @@ export const romanToLetterEntries = (scaleTonic: string, scaleName: string) => {
   const all1 = [...entries1, ...entries2]
 
   all1.sort(([lA], [lB]) => lB.length - lA.length)
-  const flatAndSharpRomans = all1
-    .filter(([ltr]) => {
-      return ltr.includes('b') || ltr.includes('#')
+
+  // Accidental romans: bX lowers degree X by a half step, #X raises it
+  // (e.g. bII in A minor -> Bb, the Neapolitan root). These must come first
+  // so e.g. bIII is matched before the plain III entry can mangle it
+  // (previously 'bIII' in A minor produced the garbage name 'bC'). An earlier
+  // enharmonic-based version of this list filtered on the roman instead of
+  // the letter and always came out empty.
+  const accidentalEntries = letters
+    .map((ltr, idx) => {
+      return [
+        [`b${romans[idx]}`, flattenNote(ltr)],
+        [`#${romans[idx]}`, sharpenNote(ltr)],
+      ]
     })
-    .map(([flatOrSharpLetter, roman]) => {
-      const acc = Note.get(flatOrSharpLetter).acc
-      return [`${acc}${roman}`, flatOrSharpLetter]
-    })
-  return all1.concat(flatAndSharpRomans)
+    .flat()
+  accidentalEntries.sort(([lA], [lB]) => lB.length - lA.length)
+
+  return accidentalEntries.concat(all1)
 }
 
 const romanChordNameToReal_ = (
@@ -220,6 +239,13 @@ const romanChordNameToReal_ = (
   scaleName: string,
   romanName: string
 ) => {
+  // vii°: the leading-tone diminished chord sits a half step below the tonic
+  // even in minor keys, where the scale's own seventh degree is the subtonic
+  // (harmonic-minor practice: G#dim, not Gdim, in A minor). Major keys are
+  // unaffected — their seventh degree already is the leading tone.
+  if (romanName === 'VIIdim') {
+    return `${Note.transpose(scaleTonic, '-2m')}dim`
+  }
   const entries = romanToLetterEntries(scaleTonic, scaleName)
   const newName = entries.reduce((accum, curr) => {
     return accum.replace(curr[0], curr[1])
@@ -255,6 +281,11 @@ export const getTriadByRomanNumeral = async (
   const found = progEntries.find(([, progElem]) => {
     return progElem.roman === romanNum
   })
+  if (!found) {
+    throw new Error(
+      `Could not find triad for roman numeral ${romanNum} in ${scaleTonic} ${scaleName}`
+    )
+  }
   return found[1].chordName
 }
 
@@ -300,14 +331,29 @@ export function romanFromProgRoman(progRoman: string) {
 const unromanizeSecondaryChord = (
   tonic: string,
   scale: string,
-  romanChord: string
+  romanChord: string,
+  // true only when resolving the secondary (left) half of a slash roman: a
+  // secondary VII is a leading-tone chord, but a VII *target* (VIIdim/VII)
+  // stays the diatonic subtonic chord
+  asSecondary: boolean = false
 ) => {
   const romGuess1 = romanFromProgRoman(romanChord)
   const type = romanChord.replace(romGuess1, '')
   const letters = scaleLetters(tonic, scale)
   const romanDegreeIndex = romanEntry(romGuess1)
 
-  const letter = letters[romanDegreeIndex[1]]
+  let letter = letters[romanDegreeIndex[1]]
+  if (asSecondary && romGuess1 === 'VII') {
+    // secondary leading-tone chords sit a half step below the tonicized
+    // root even when the target scale's seventh degree is the subtonic
+    // (e.g. VIIdim/VIm in A minor -> Edim, not Ebdim); for major targets
+    // this matches the scale's own seventh degree
+    letter = Note.transpose(tonic, '-2m')
+  } else if (romGuess1.startsWith('b')) {
+    // a flat roman (e.g. bIII) lowers the degree's letter; previously the
+    // accidental was silently dropped and the natural degree was used
+    letter = flattenNote(letter)
+  }
   const finalDom = Chord.getChord(type, letter).symbol
 
   return finalDom
@@ -325,6 +371,11 @@ export const unromanizeSecondaryChords = (
   const secondaryRoman = slashed[0]
   const domData = Chord.get(dominantChord)
   const secondaryTonic = domData.tonic
+  if (!secondaryTonic) {
+    throw new Error(
+      `could not resolve dominant chord ${dominantChord} for ${slashRoman} in ${tonic} ${scale}`
+    )
+  }
   const secondaryScale =
     domData.quality === 'Diminished'
       ? 'minor'
@@ -333,7 +384,8 @@ export const unromanizeSecondaryChords = (
   const secondaryChord = unromanizeSecondaryChord(
     secondaryTonic,
     secondaryScale,
-    secondaryRoman
+    secondaryRoman,
+    true
   )
 
   return [secondaryChord, dominantChord]
@@ -344,6 +396,12 @@ export function makeProgNodeTranslator(
   userLetter: string,
   userScale: string
 ): (progNode: ProgressionGraphNode) => ProgressionOptions | null {
+  // fn names (V64, Aug6, N6) are kept as-is; romans realize to letter names
+  const realizeName = (romanName: string) =>
+    isChordFn(romanName)
+      ? romanName
+      : romanChordNameToReal(userLetter, userScale, romanName)
+
   return (progNodeIn) => {
     let translatedSource: ChordNameWithNotes | undefined
 
@@ -370,7 +428,7 @@ export function makeProgNodeTranslator(
         userScale,
         progNodeIn.name
       )
-      translatedSource = chordNameWithNotes(newName)
+      translatedSource = chordNameWithNotes(newName) ?? undefined
     }
 
     if (!translatedSource) {
@@ -386,12 +444,12 @@ export function makeProgNodeTranslator(
         const asEnabledArr = fnRes.map((cnwnFn) => {
           return {
             ...cnwnFn,
-            enabler: [progNodeIn.name],
+            // realized (letter) name so enablers can be compared against
+            // graph keys at runtime; previously this stayed roman
+            enabler: [realizeName(progNodeIn.name)],
             octMap: cnwnFn.octMap,
           }
         })
-        // todo: error here; enabler is always roman.
-        // when we start enforcing, we will need to enable roman lookup at runtime when we hit these on 'next' usage
         return [...accum, ...asEnabledArr]
       }
       const realizedName = romanChordNameToReal(
@@ -401,15 +459,16 @@ export function makeProgNodeTranslator(
       )
       const cnwn = chordNameWithNotes(realizedName)
 
-      if (cnwn === null || cnwn.notes.length === 0) return accum
+      if (cnwn === null || cnwn.notes.length === 0) {
+        console.warn(
+          `Dropping untranslatable next chord ${romanName} (realized: ${realizedName}) of ${progNodeIn.name} in ${userLetter} ${userScale}`
+        )
+        return accum
+      }
 
       const newNode = {
         ...cnwn,
-        enabler: progNodeIn.prev
-          ? progNodeIn.prev.map((romanName: string) => {
-              return romanChordNameToReal(userLetter, userScale, romanName)
-            })
-          : null,
+        enabler: progNodeIn.prev ? progNodeIn.prev.map(realizeName) : null,
       }
       return [...accum, newNode]
     }, [] as EnabledChordNameWithNotes[])
@@ -422,17 +481,18 @@ export function makeProgNodeTranslator(
           romanName
         )
         const cnwn = chordNameWithNotes(realizedName)
-        if (cnwn === null || cnwn.notes.length === 0) return null
+        if (cnwn === null || cnwn.notes.length === 0) {
+          console.warn(
+            `Dropping untranslatable dotted chord ${romanName} (realized: ${realizedName}) of ${progNodeIn.name} in ${userLetter} ${userScale}`
+          )
+          return null
+        }
         return {
           ...cnwn,
-          enabler: progNodeIn.prev
-            ? progNodeIn.prev.map((romanName: string) => {
-                return romanChordNameToReal(userLetter, userScale, romanName)
-              })
-            : null,
+          enabler: progNodeIn.prev ? progNodeIn.prev.map(realizeName) : null,
         }
       })
-      .filter((n) => n !== null)
+      .filter((n): n is EnabledChordNameWithNotes => n !== null)
 
     return {
       roman: progNodeIn.name,
@@ -673,7 +733,8 @@ export const noteInversions = (
   userOct: number = 3
 ): string[][] => {
   const { tonic: tonicNote, type: chordType } = Chord.get(chordName)
-  const { letter } = Note.get(tonicNote)
+  // a null tonic yields an empty letter and falls into the throw below
+  const { letter } = Note.get(tonicNote ?? '')
 
   const oct = userOct
 
@@ -748,14 +809,20 @@ export const chordNameWithNotes = (
   tonic?: string,
   scaleName?: string
 ): ChordNameWithNotes | null => {
-  if (Object.keys(DynamicChordNames).includes(chordName.toLowerCase())) {
+  // canonical case-insensitive lookup; comparing the lowercased name against
+  // the mixed-case keys previously made this branch unreachable, so dynamic
+  // chords silently fell through to Chord.get and resolved to no notes
+  const dynamicName = (
+    Object.keys(DynamicChordNames) as (keyof typeof DynamicChordNames)[]
+  ).find((key) => key.toLowerCase() === chordName.toLowerCase())
+  if (dynamicName) {
     if (!scaleName || !tonic) {
       throw new Error(
         `Cannot get dynamic chord ${chordName} without tonic and scale name`
       )
     }
 
-    const fnsResult = fns[chordName as keyof typeof fns](tonic, scaleName)[0]
+    const fnsResult = fns[dynamicName](tonic, scaleName)[0]
     return fnsResult
   }
   const simpleChord = Chord.get(chordName)
