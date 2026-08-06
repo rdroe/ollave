@@ -663,7 +663,315 @@ reported as `stoppedBecause: 'dead-end'`, which is a legitimate musical ending
 
 ---
 
-## 12. What this system is not (yet)
+## 12. Harmonic function: T, PD, D
+
+Every roman in both charts is tagged **tonic**, **predominant** or **dominant**.
+Three letters, and they are what turn a graph search from *legal* into
+*goal-directed*: without them the cheapest four-bar route from I to a perfect
+authentic cadence is `I - I - I - V - I`, which is legal, arrives, and is not
+music.
+
+```js
+import { functionOf } from 'ollave/lib'
+
+['I', 'IIm', 'V', 'V64', 'N6', 'Ger6', 'VIIdim7'].map((r) => [r, functionOf(r)])
+// [['I','T'], ['IIm','PD'], ['V','D'], ['V64','D'],
+//  ['N6','PD'], ['Ger6','PD'], ['VIIdim7','D']]
+```
+
+**Tags are keyed by ROMAN, not by scale degree**, and that was settled by probe
+rather than by preference. Degree tagging is simply wrong on many nodes: `A7` in
+C major sits on degree 6, which reads as tonic, but it is `V7/IIm` and functions
+as a dominant. `G#dim` is chromatic, so degree has no answer for it at all — and
+it is A minor's strongest dominant.
+
+Three tags are judgement calls and are documented as such:
+
+- **`V64` is D.** It *spells* a tonic triad and *functions* as a dominant: tonic
+  notes suspended over the fifth degree, resolving down onto V. The chart already
+  encodes this (its only strong edge is to V); the tag agrees with the chart.
+- **Minor `VII` is T.** The subtonic has no leading tone, so it does not pull;
+  the chart routes it to III, which is the relative major's tonic.
+- **`V/V` is PD.** Locally a dominant, functionally a predominant — it is how you
+  get *to* the dominant, which is what a predominant is.
+
+The augmented-sixth trio is **PD**, all three. The whole point of an augmented
+sixth is ♭6 and ♯4 expanding outward onto the dominant, and every chart edge
+they have leads to V or the cadential ⁶₄.
+
+`transitionCost` prices the moves. The three free ones are exactly the arrows of
+the functional cycle — `T→PD`, `PD→D`, `D→T` — and everything else costs:
+
+|  | to T | to PD | to D |
+|---|---|---|---|
+| **from T** | 2 | **0** | 1 |
+| **from PD** | 3 | 2 | **0** |
+| **from D** | **0** | 3 | 2 |
+
+Staying put costs 2, so a search will not pad a phrase by repeating a chord.
+Backward motion (`PD→T`, `D→PD`) costs 3, the most, because it undoes the
+cycle. `T→D` costs only 1 — skipping the predominant is ordinary, not an error.
+That whole table is the weighting; there is nothing else in it.
+
+---
+
+## 13. Cadences, in both directions
+
+A cadence type is authored **once**, as a span (§9), and read two ways:
+`pathToCadence` routes *toward* it, `detectCadences` matches *against* it. One
+definition, so the generator and the analyst cannot disagree about what a
+deceptive cadence is.
+
+```js
+import { cadenceDefinition } from 'ollave/lib'
+
+cadenceDefinition('phrygian-half')
+// { type: 'phrygian-half', specificity: 3,
+//   approach: ['IVm6', 'IVm'], arrival: ['V'],
+//   span: { steps: [{ chord: 'IVm', figure: '6' }, 'V'],
+//           modes: ['minor'],
+//           conditions: { bass: { degrees: [6, 5], motion: 'stepwise-down' },
+//                         metric: ['weak', 'strong'] }, ... } }
+```
+
+Seven types ship: `PAC`, `IAC`, `half`, `deceptive`, `plagal`, `phrygian-half`
+and `evaded`. The last is the phrase-*extension* device — `V⁴₂ → I⁶`, how to
+avoid closing — which is as useful to a composer as any of the closes.
+
+### Detection does not consult the chart
+
+Deliberately. `detectCadences` matches romans, not edges, and the reason is
+concrete: `IVm→Im`, `V→VI` and `IVm6→V` were absent from the minor chart for a
+long time and are perfectly ordinary music. Analysis limited to what the
+generator happens to offer would refuse to see them.
+
+Those three edges now exist (see §14), so the two agree — but detection never
+depended on that, and it should not. A composer's own music is not obliged to
+stay inside the map.
+
+### Confidence, and refusing to overclaim
+
+A wrong label is worse than a missing one, so thin evidence **downgrades** the
+label rather than withholding it:
+
+- `high` — everything the definition asks for was supplied and matched
+- `medium` — the functions match and nothing contradicts, but a condition could
+  not be checked (no soprano given, say)
+- `low` — the pair matches but its context argues against it, e.g. a half
+  cadence in the middle of a phrase
+
+Every label carries a one-line `reason`, and consumers should print it. A
+`V–I` reported as `IAC` at `medium` with "no soprano supplied, so it cannot be
+confirmed as perfect" tells a composer exactly what to supply to get a better
+answer.
+
+`vii°→i` is deliberately left **unlabelled**. It is a real close and it has no
+settled name in the vocabulary these definitions use, and inventing one would be
+worse than the gap.
+
+### Search shape
+
+`pathToCadence` is a bounded depth-first enumeration, not Dijkstra, and that is a
+choice about what a composer wants: several options of an *exact* length, not one
+cheapest path of any length. Ranking is a total order, so results are
+reproducible:
+
+1. **fewer interior closes** — `I - IIm - V - I - V - I` is two three-bar
+   phrases, not one six-bar one, and a composer who asked for six bars had their
+   question answered at bar 4. Penalised rather than forbidden, because a genuine
+   period *does* contain an interior cadence.
+2. functional cost
+3. fewer dotted edges
+4. fewer chromatic chords — `Aug6` once led every five-bar result purely because
+   'A' sorts first, which is a musical claim made by a string comparison
+5. length, then summary alphabetically
+
+---
+
+## 14. Modulation: one chord, two readings
+
+The headline query is "get me from here to a cadence in *that* key, and show me
+the hinge". A modulation is three things in sequence and the result names all
+three, because the joint is the part a composer is actually choosing:
+
+1. a route through the **home** key to a chord both keys share
+2. the **pivot** — one chord, heard two ways
+3. a route through the **target** key to the requested cadence
+
+```js
+pathThroughModulation('Am', 'PAC', 4, 'A', 'minor', 'C', 'major')
+  .plans[0].summary
+// 'Im - IVm=IIm - V - I'
+```
+
+### What makes a good hinge
+
+`pivotCost`, lower is better, and it is the one piece of genuinely new musical
+judgement in the modulation code:
+
+| The pivot's function in the TARGET key | Cost | Why |
+|---|---|---|
+| predominant | 0 | it leads straight into the new dominant, so the new key asserts itself immediately |
+| tonic | 2 | establishes the key by arrival, but spends the arrival before the cadence |
+| dominant | 3 | already the new dominant, so the modulation lands before it was prepared |
+
+Plus 2 if you are leaving home *from its own dominant* — that chord had a
+resolution owed to it, and a pivot snatches it away.
+
+Plans are ranked **by the hinge first**, then by total path cost. Probed, and the
+reason is what the feature is for: ranking on total cost alone let `Bdim` (a
+`vii°` heard as `ii°`, hinge cost 2) tie `Dm` (`iv` heard as `ii`, hinge cost 0)
+for C major → A minor, because Bdim's worse hinge was offset by a cheaper leg
+elsewhere. The surrounding filler is what a composer will rewrite anyway.
+
+### Chromatic pivots, and why `nameThere` had to exist
+
+Some key pairs share **no diatonic chord at all** — C major and D♭ major have
+none. The hinge then has to be a chord that is *respelled*, and that is where a
+one-name pivot breaks down:
+
+```js
+enharmonicPivotSource('C', 'major', 'Db', 'major')[0]
+// { name: 'Ger6',       ← the node in the C major chart
+//   nameThere: 'Ab7',   ← the node in the Db major chart
+//   romanHere: 'Ger6', romanThere: 'V7', kind: 'enharmonic', cost: 6,
+//   explanation: 'The German sixth Ab-C-Eb-F# has a perfect fifth above its
+//     bass, so respelling F# as Gb makes it Ab7 — the dominant seventh of Db,
+//     the Neapolitan degree of C major.' }
+```
+
+Probed before the field existed: reporting only `Ger6` made the *second* leg
+look for a `Ger6` node in the D♭ chart — and there is one, a D♭ German sixth,
+four entirely different pitches. Reporting only `Ab7` made the *first* leg look
+for an `Ab7` in C major, which does not exist. One name cannot describe a chord
+heard two ways, which is the one thing an enharmonic pivot is.
+
+Three rules govern every chromatic source, and they are `diatonicPivots`' rules:
+
+1. **Drive from the home chart.** A pivot the home graph has no node for is not
+   a hinge, it is a hole — the first leg must be able to reach it.
+2. **Require a node in the target chart too**, under the target's own spelling.
+   This drops real cases: `G#dim7` in A minor is enharmonically `Ddim7`, the
+   leading-tone seventh of E♭ — a correct reinterpretation whose `Ddim7` is not a
+   node in the E♭ chart, so the second leg would have nowhere to start.
+3. **Prefer the target chart's own roman.** B4 reports `vii°7`; the chart says
+   `VIIdim7`. The chart's hand-authored label is what `functionOf` and the
+   cadence definitions compare against, so using the other one gives a pivot that
+   routes but whose function tag reads `null`.
+
+### Which chromatic chords are hinges, and which are not
+
+Probed one at a time; the answers are musical rather than mechanical.
+
+**`Ger6` ↔ `V7` — yes, and only the German.** Of the three augmented sixths only
+the German has a perfect fifth above its bass, so only it respells into a real
+dominant seventh:
+
+| | pitches | `Chord.detect` |
+|---|---|---|
+| Italian | ♭6-1-♯4 | `Ab7no5` — no fifth, not a V⁷ |
+| French | ♭6-1-2-♯4 | `Ab7b5` — an altered chord |
+| German | ♭6-1-♭3-♯4 | `Ab7` — a real V⁷ |
+
+`Aug6` aliases the **Italian**, so `enharmonicPivots('Aug6', …)` correctly
+returns `[]`. A caller who wants this pivot names `Ger6`.
+
+**The four rotations of a °7 — yes.** A diminished seventh divides the octave
+evenly, so it is its own inversion in sound: `G#dim7` is also `Bdim7`, `Ddim7`
+and `Fdim7`, and each is the leading-tone seventh of a different key.
+
+**`N6` — yes, but not enharmonically.** ♭II in C major is `F-Ab-Db`, which is the
+**D♭ major triad in first inversion**. A major triad is diatonic to six keys, so
+the Neapolitan is `I` in D♭, `IV` in A♭, `VI` in F minor. Nothing is respelled;
+the pitches are read as they are. That is why it gets its own `kind:
+'chromatic'` rather than being called a mediant — a Neapolitan is a *second*
+relation, and labelling it a third would be a false claim to anyone switching on
+the field.
+
+**The augmented sixths as diatonic pivots — no.** There is no key an augmented
+sixth is diatonic to. It hinges by respelling or not at all.
+
+**`V64` — no.** A cadential six-four is the dominant of *one* key by definition;
+its identity is the resolution that follows it. There is nothing to reinterpret.
+
+**Chromatic pivots pay a surcharge** — +3 enharmonic, +3 Neapolitan, +4
+chromatic mediant — added by the same `pivotCost` the diatonic pivots use, so
+they compete on one scale. The surcharge is not a judgement that the swerve is
+bad; it is often the point. It exists so that a key pair with a good diatonic
+hinge still offers it first.
+
+---
+
+## 15. Composing the layers
+
+Four capabilities — cadence targeting, modulation, four-voice realization,
+metric placement — each built separately and each usable alone.
+`composeProgression` and `composeModulation` run them together.
+
+Composing them was not glue. Two impedance mismatches had to be solved, both
+found by probe, because the *types* agreed and the *data* did not:
+
+**1. The search emits chart node names; the realizer takes chord symbols.** A
+returned path can contain `V64`, `N6`, `Aug6`, `It6`, `Fr6` or `Ger6` — names
+whose pitches exist only relative to a key. Handed to `realizeProgression` they
+stop it dead (`incomplete: "could not realize 'V64' with figure '53'"`). So the
+composed call translates, per §4's alias policy:
+
+| Node | Becomes | Why |
+|---|---|---|
+| `V64` | the tonic triad in ⁶₄ | tonic notes over the fifth degree |
+| `N6` | the ♭2 major triad in ⁶ | the Neapolitan is *named* as a first inversion |
+| `It6` `Fr6` `Ger6` `Aug6` | *nothing* | not tertian — see below |
+
+**2. An augmented sixth cannot go through chord detection.**
+`Chord.detect(['F','A','D#'])` returns `['F7no5']` — it respells D♯ as E♭ and
+turns an outward-resolving augmented sixth into a dominant seventh. That is a
+*wrong analysis delivered with confidence*, which is the failure mode this
+project treats as worse than a gap. So the trio is voiced from its literal note
+list, in real SATB ranges, and the result reports `chord: null` because no chord
+symbol is correct for ♭6-1-♯4.
+
+The composed call **splits the progression** at every such chord, searches the
+tertian runs, and stitches the exact voicings between them — then checks the
+*whole* finished thing, so an augmented sixth that resolves into parallel fifths
+is still reported. Only the search skips them.
+
+### Waivers reach the search, not just the report
+
+`composeSpan` applies `spanWaivedRules(span)` without being asked. Since a waived
+rule costs zero inside the beam, the waivers **steer** the search rather than
+merely hiding its complaints — which is what lets the library realize fauxbourdon
+as fauxbourdon instead of routing around the parallel motion the device is made
+of.
+
+Worth recording honestly: for the spans that ship, the four-voice search finds a
+*legal* setting of the chords without needing the waivers, because the beam is
+free to choose doublings that avoid the parallels. The waivers are wired
+regardless, and they bind the moment a caller supplies a starting voicing or
+works in three voices.
+
+### The `nextChordDetail` decision
+
+Nothing here was folded into `nextChordDetail`'s options, and that is deliberate
+rather than deferred.
+
+`nextChordDetail` answers **"what may follow this chord"**. Its `include` and
+`rankBy` options are sugar over functions (`mixtureSuggestions`,
+`rankByVoiceLeading`) that answer *the same question* with more or better
+information. A four-voice phrase plan is a **different question** — it takes a
+goal and a length rather than a current chord, and it returns bars rather than
+suggestions. Folding it in would mean one function with two return shapes
+selected by an option, which is two functions wearing one name.
+
+So: `composeProgression` and `composeModulation` are their own entry points, and
+every piece they compose stays importable on its own. Use `pathToCadence` if you
+only want chords, `realizeProgression` if you already have them, the composed
+call if you want both. This is the 0.4.0 lesson applied — compose first, add
+sugar later, and only where the sugar answers the same question.
+
+---
+
+## 16. What this system is not (yet)
 
 Worth being explicit, so you know when to override it — and each of these is a
 gap to fill rather than a boundary to respect:
@@ -672,7 +980,8 @@ gap to fill rather than a boundary to respect:
   It doesn't yet know jazz reharmonization, modal writing, pop loops, or
   anything post-tonal — but the chart format can express all of them.
 - **Not exhaustive.** Absent from the map means "not modelled yet," not
-  "wrong." Plenty of good music lives outside it.
+  "wrong." Plenty of good music lives outside it — which is exactly why
+  `detectCadences` matches romans instead of edges (§13).
 - **Not a ranking of quality.** `strong` versus `dotted` marks conventionality,
   not merit. The dotted moves are frequently the more interesting ones.
 - **Major and minor only.** Other modes throw rather than guess, because no
@@ -680,7 +989,7 @@ gap to fill rather than a boundary to respect:
 
 ---
 
-## 13. Adding your own chart
+## 17. Adding your own chart
 
 The data format is the contract. A chart is a plain object mapping a Roman
 numeral to one or more nodes:
@@ -699,8 +1008,15 @@ export const myChart = {
   same chord behaving differently depending on what preceded it)
 - Suffixes are passed to the chord parser, so `IIm7`, `V7`, `VIIm7b5` and
   friends already resolve — a chart may use them freely
-- `V64`, `N6` and `Aug6` are function-name nodes computed per key; a chart can
-  reference them like any other node
+- `V64`, `N6`, `Aug6` and the `It6`/`Fr6`/`Ger6` trio are function-name nodes
+  computed per key; a chart can reference them like any other node. If you add
+  one, tag it in `harmonicFunction.ts` — an exhaustive coverage test will fail
+  otherwise, which is how the Aug6 trio's missing tags were caught
+- New edges arrive **`dotted`** unless the motion is genuinely principal. That
+  keeps `nextChord`, which returns strong edges only, byte-identical — it is how
+  the sevenths, the inversions, the augmented-sixth trio and the minor cadence
+  edges all shipped without changing a single existing suggestion list. Probe
+  `nextChord` for every node before and after, and say what moved
 
 Drop the file in `src/lib/graphData/`, register it in `chartForScale`
 (`src/lib/util/graphUtil.ts`), and it is instantiated into every key for free.
@@ -732,5 +1048,11 @@ node list in a test, as `majorGraph.test.ts` does.
 | Sequences and Galant schemata | `src/lib/sequences.ts` |
 | Diatonic sevenths — nodes | `src/lib/graphData/` (with the triads) |
 | Diatonic sevenths — key palette, triad→seventh relation | `src/lib/sevenths.ts` |
-| Modulation | `src/lib/pivots.ts` |
+| Pivot chords (which keys share this chord) | `src/lib/pivots.ts` |
+| T/PD/D function tags, transition cost | `src/lib/harmonicFunction.ts` |
+| Cadence definitions, detection over your own music | `src/lib/cadence.ts` |
+| Cadence-targeted pathfinding | `src/lib/progressionPath.ts` |
+| Modulation-targeted pathfinding, pivot ranking | `src/lib/modulation.ts` |
+| Chromatic pivot sources (Ger6↔V7, dim7 rotations, N6) | `src/lib/chromaticPivots.ts` |
+| **The composed entry point** | `src/lib/composeProgression.ts` |
 | Seeded walks | `src/lib/randomProgression.ts` |

@@ -29,6 +29,12 @@ Nine chords that can idiomatically follow A minor in the key of A minor.
 | What multi-chord idioms are there? | `spans`, `spansOfKind` |
 | Where could this chord take me? | `pivotSuggestions` |
 | Just sketch me something. | `randomProgression` |
+| **Get me to a cadence in four bars.** | `pathToCadence` — §11 |
+| **Get me to a cadence in another key.** | `pathThroughModulation` — §12 |
+| **Write these chords in four voices.** | `realizeProgression` — §13 |
+| **Where do the bars fall?** | `suggestHarmonicRhythm` — §14 |
+| **All of the above, in one call.** | `composeProgression` / `composeModulation` — §15 |
+| **Label the cadences in what I wrote.** | `detectCadences` — §16 |
 
 All are importable from `ollave/lib`.
 
@@ -486,9 +492,443 @@ are declared but not yet evaluated**; waivers are live data.
 
 ---
 
+## 11. Getting somewhere — cadence targeting
+
+The questions above are all "what may follow this chord". This one is
+different: *get me there*.
+
+```js
+import { pathToCadence } from 'ollave/lib'
+
+pathToCadence('C', 'PAC', 4, 'C', 'major').paths[0].summary
+// 'I - IIm - V - I'
+```
+
+Four bars, ending in a perfect authentic cadence. The search is weighted by
+harmonic function — tonic wants a predominant, a predominant wants a dominant —
+so the paths come back goal-directed rather than merely legal.
+
+Seven cadence types, all routable in both modes:
+
+```js
+pathToCadence('Am', 'plagal', 3, 'A', 'minor').paths[0].summary
+// 'Im - IVm - Im'
+pathToCadence('Am', 'phrygian-half', 3, 'A', 'minor').paths[0].summary
+// 'Im - IVm6 - V'   ← the bass falls a semitone, b6 to 5. That IS the cadence.
+pathToCadence('Am', 'evaded', 3, 'A', 'minor').paths[0].summary
+// 'Im - V42 - Im6'  ← how to NOT close yet
+```
+
+All seven in A minor, three bars each:
+
+| Type | Path |
+|---|---|
+| `PAC` / `IAC` | `Im - V - Im` |
+| `half` | `Im - IIdim - V` |
+| `deceptive` | `Im - V - VI` |
+| `plagal` | `Im - IVm - Im` |
+| `phrygian-half` | `Im - IVm6 - V` |
+| `evaded` | `Im - V42 - Im6` |
+
+### It never throws, and never pretends
+
+Ask for something impossible and you get a reason:
+
+```js
+const r = pathToCadence('C', 'phrygian-half', 4, 'C', 'major')
+r.paths    // []
+r.reason   // 'cadence-unavailable-in-key'
+r.message
+// 'The Phrygian half cadence does not exist in major: iv6 to V in minor: the
+//  bass falls a semitone from 6 to 5. ... Minor only — in major the same chords
+//  give a whole step and the effect is gone.'
+```
+
+That is the rule everywhere in this section: best effort with a stated reason,
+never a confident wrong answer.
+
+### `cadenceOptions` — every close available from here
+
+```js
+import { cadenceOptions } from 'ollave/lib'
+
+cadenceOptions('C', 4, 'C', 'major')
+  .filter((o) => o.best)
+  .map((o) => [o.type, o.best.summary])
+// [['PAC',       'I - IIm - V - I'],
+//  ['IAC',       'I - IIm - V - I'],
+//  ['half',      'I - I - IIm - V'],
+//  ['deceptive', 'I - IIm - V - VIm'],
+//  ['plagal',    'I - I - IV - I'],
+//  ['evaded',    'I - I - V42 - I6']]
+```
+
+`phrygian-half` comes back with `best: null` and the message above — the menu
+tells you what is *not* available too.
+
+---
+
+## 12. Changing key on purpose — modulation
+
+§7 named the chords two keys share. This routes *through* one.
+
+```js
+import { pathThroughModulation } from 'ollave/lib'
+
+const r = pathThroughModulation('Am', 'PAC', 4, 'A', 'minor', 'C', 'major')
+r.plans[0].summary
+// 'Im - IVm=IIm - V - I'
+```
+
+Read `IVm=IIm` as: this chord is `iv` in the key you are leaving and `ii` in the
+key you are entering. **That double reading is the modulation**, so the result
+names it rather than handing back a flat chord list:
+
+```js
+const plan = r.plans[0]
+plan.pivot.name        // 'Dm'
+plan.pivot.romanHere   // 'IVm'
+plan.pivot.romanThere  // 'IIm'
+plan.pivotIndex        // 1 — which bar the hinge is
+```
+
+`Dm` is the textbook hinge for this modulation precisely because it arrives as a
+*predominant* in the new key: the new key can immediately set up its own
+cadence. The ranking encodes that — a predominant-there pivot costs 0, a
+tonic-there 2, a dominant-there 3.
+
+### Enharmonic modulation
+
+C major and D♭ major share **no diatonic chord at all**. The hinge has to be a
+chord that is respelled:
+
+```js
+import { pathThroughModulation, chromaticPivotSources } from 'ollave/lib'
+
+const r = pathThroughModulation('C', 'PAC', 4, 'C', 'major', 'Db', 'major', {
+  extraPivots: chromaticPivotSources,
+})
+r.plans[0].summary        // 'I - IIm - Ger6=V7 - I'
+r.plans[0].pivot.name     // 'Ger6'   ← what C major calls it
+r.plans[0].pivot.nameThere // 'Ab7'   ← what Db major calls it
+r.plans[0].pivot.explanation
+// 'The German sixth Ab-C-Eb-F# has a perfect fifth above its bass, so
+//  respelling F# as Gb makes it Ab7 — the dominant seventh of Db, the
+//  Neapolitan degree of C major.'
+```
+
+That is the most famous enharmonic modulation in the common-practice
+repertoire, and it is why `nameThere` exists: an enharmonic pivot is a chord
+spelled *differently in the two keys*, so one name cannot describe it.
+
+Two families ship, plus the Neapolitan:
+
+```js
+import { pivotsBetween, chromaticPivotSources } from 'ollave/lib'
+
+pivotsBetween('C', 'major', 'Db', 'major', { extraPivots: chromaticPivotSources })
+  .map((p) => [p.name, p.nameThere, p.romanHere, p.romanThere, p.kind, p.cost])
+// [['N6',   'Db',  'N6',   'I',  'chromatic',  5],
+//  ['Ger6', 'Ab7', 'Ger6', 'V7', 'enharmonic', 6]]
+```
+
+and the four rotations of a diminished seventh:
+
+```js
+import { enharmonicPivotSource } from 'ollave/lib'
+
+enharmonicPivotSource('A', 'minor', 'C', 'minor')
+  .map((p) => [p.name, p.nameThere, p.romanThere])
+// [['G#dim7', 'Bdim7', 'VIIdim7']]
+```
+
+Same four pitches, different leading tone, different key.
+
+**Chromatic pivots pay a cost surcharge** (+3 enharmonic, +3 Neapolitan, +4
+chromatic mediant) so they stay reachable without burying a smooth diatonic
+hinge. Ask A minor → C major with the chromatic sources on and the answer is
+unchanged: `Dm` still leads, because there is a good diatonic hinge and a swerve
+should not outrank it.
+
+---
+
+## 13. Four voices
+
+```js
+import { realizeProgression } from 'ollave/lib'
+
+const r = realizeProgression(['C', 'F', 'G', 'C'], {
+  key: { tonic: 'C', mode: 'major' },
+})
+r.chords.map((c) => c.voicing)
+// [['C3','C4','E4','G4'],
+//  ['F3','C4','F4','A4'],
+//  ['G3','B3','D4','G4'],
+//  ['C3','C4','E4','G4']]
+r.legal  // true
+```
+
+Bass, tenor, alto, soprano — low to high. It is a beam search over doublings,
+orderings and octaves, scored so that no amount of smoothness buys a single
+error. The rules it checks (fourteen, each citing Aldwell & Schachter, Piston or
+Fux) are in [the deep dive](./chord-theory.md).
+
+### Checking rather than writing
+
+A composer with their own part-writing wants it checked, not rewritten:
+
+```js
+import { checkVoiceLeading } from 'ollave/lib'
+
+checkVoiceLeading(['C3','E3','G3','C4'], ['D3','F3','A3','D4'])
+  .map((v) => [v.rule, v.severity])
+// [['parallel-fifths', 'error'], ['parallel-octaves', 'error']]
+```
+
+**The default never removes anything.** `strictness` defaults to `'report'`;
+pass `'warn'` to sort violations last or `'block'` to filter. Individual rules
+toggle through `opts.rules`, because a composer may accept hidden fifths and not
+parallel octaves.
+
+### Waivers — the tool must not red-ink its own content
+
+Fauxbourdon *is* parallel motion. A checker that flagged it would be flagging
+this library's own shipped span. So spans declare the rules they license:
+
+```js
+import { spanById, spanWaivedRules } from 'ollave/lib'
+
+spanWaivedRules(spanById('fauxbourdon'))
+// ['parallel-fourths', 'parallel-fifths', 'doubled-leading-tone']
+```
+
+Pass that as `waivedRules` and those rules stop firing — and stop *steering the
+search*, since a waived rule costs zero. `composeSpan` (§15) does it for you.
+
+---
+
+## 14. Where the bars fall
+
+```js
+import { suggestHarmonicRhythm } from 'ollave/lib'
+
+suggestHarmonicRhythm(['C', 'Dm', 'G', 'C'], '3/4').steps
+  .map((s) => [s.chord, s.bar, s.barDelay, s.position.level])
+// [['C',  0, 0,   'downbeat'],
+//  ['Dm', 0, 128, 'beat'],
+//  ['G',  0, 256, 'beat'],
+//  ['C',  1, 0,   'downbeat']]
+```
+
+`barDelay` is in the engine's own ticks, ready to hand to `addChord`. A 3/4 bar
+is 384 ticks, so the fourth chord starts the next bar and lands on a downbeat —
+which is where a cadence wants to be.
+
+Harmonic rhythm is a *compositional parameter*, not a derived quantity: this
+suggests a placement and explains its reasoning in `notes`, which is a starting
+point to edit rather than an answer. It models a flat metric grid only — no
+hypermeter, no grouping structure.
+
+---
+
+## 15. All of it, in one call
+
+Everything above composes. `composeProgression` runs the cadence search, the
+four-voice realization and the metric placement together, and translates between
+their vocabularies:
+
+```js
+import { composeProgression } from 'ollave/lib'
+
+const p = composeProgression('C', 'PAC', 4, 'C', 'major')
+
+p.summary
+// 'I - IIm - V - I'
+
+p.bars.map((b) => [b.roman, b.chord, b.function, b.voicing.join(' '),
+                   `b${b.placement.bar}+${b.placement.barDelay}`])
+// [['I',   'C',  'T',  'C3 C4 E4 G4', 'b0+0'],
+//  ['IIm', 'Dm', 'PD', 'D3 A3 D4 F4', 'b0+128'],
+//  ['V',   'G',  'D',  'G3 B3 D4 G4', 'b0+256'],
+//  ['I',   'C',  'T',  'C3 C4 E4 G4', 'b0+384']]
+
+p.legal  // true
+```
+
+And with a modulation:
+
+```js
+import { composeModulation } from 'ollave/lib'
+
+const m = composeModulation('C', 'PAC', 4, 'C', 'major', 'Db', 'major')
+
+m.summary       // 'I - IIm - Ger6=V7 - I'
+m.pivot.name    // 'Ger6'
+m.pivotIndex    // 2
+m.bars.map((b) => [b.roman, b.chord, b.voicing.join(' ')])
+// [['I',   'C',   'C3 E3 E4 G4'],
+//  ['IIm', 'Dm',  'D3 A3 D4 F4'],
+//  ['V7',  'Ab7', 'Ab2 Ab3 C4 Eb4'],
+//  ['I',   'Db',  'Db3 Ab3 Db4 F4']]
+m.legal  // true
+```
+
+Chromatic pivots are **on by default** in `composeModulation`, because the
+modulations you most want help with are the ones a diatonic scan cannot find.
+Pass `extraPivots: []` for diatonic hinges only.
+
+### It handles the chords that aren't chord symbols
+
+`V64`, `N6` and the augmented sixths are chart nodes, not chord names (§"Chord
+names that aren't chord names"). Handed straight to `realizeProgression` they
+stop it dead. The composed call resolves them and tells you:
+
+```js
+const p = composeProgression('Am', 'half', 4, 'A', 'minor')
+p.summary  // 'Im - IIdim - V64 - V'
+
+p.bars[2]
+// { node: 'V64', chord: 'Am', figure: '64', roman: 'V64',
+//   voicing: ['E3','A3','E4','C5'], resolvedFrom: 'V64', ... }
+
+p.notes[0]
+// 'V64 is a chord-function node, not a chord symbol; realized as Am in 64 —
+//  the same pitches, named so they can be voiced.'
+```
+
+A cadential ⁶₄ is tonic notes over the *fifth* degree, so `V64` in A minor
+becomes `Am` in ⁶₄ position — bass on E, and E doubled, which is the required
+doubling for this chord.
+
+**Augmented sixths are different, and the difference matters.** ♭6-1-♯4 is not a
+stack of thirds, so no chord symbol is correct for it — and `Chord.detect` gives
+a *wrong* one, respelling the ♯4 as a ♭7 and turning an outward-resolving
+augmented sixth into a dominant seventh. So they are voiced from their literal
+notes:
+
+```js
+const g = composeProgression('Ger6', 'half', 3, 'A', 'minor')
+g.bars[0].chord    // null — there is no correct chord symbol, so none is invented
+g.bars[0].voicing  // ['F2','A2','C4','D#4']   ← D#, not Eb. b6 in the bass, #4 on top.
+g.legal            // true
+```
+
+### `composeSpan` — the library's own devices
+
+```js
+import { composeSpan, spanById } from 'ollave/lib'
+
+const f = composeSpan(spanById('fauxbourdon'), 'C', 'major')
+f.summary  // 'I6 - VIIdim6 - VIm6 - V6'
+f.bars.map((b) => b.voicing.join(' '))
+// ['E3 G3 C4 E4', 'D3 F3 B3 F4', 'C3 E3 C4 A4', 'B2 D3 D4 G4']
+f.legal    // true
+f.notes[0]
+// 'waived for this span (fauxbourdon): parallel-fourths, parallel-fifths,
+//  doubled-leading-tone — the device deliberately breaks these, so they are
+//  not reported as defects.'
+```
+
+The span's waivers are applied without you asking: naming the device *is* the
+declaration.
+
+### Nothing was folded into `nextChordDetail`
+
+`nextChordDetail` answers "what may follow this chord", and its `include` /
+`rankBy` options are sugar over functions that also stand alone. A four-voice
+phrase plan is a **different question**, not a richer answer to the same one —
+so `composeProgression` is its own entry point and the pieces it composes stay
+importable on their own. Use whichever grain you need.
+
+---
+
+## 16. Reading music you already wrote
+
+The inverse query, and quietly one of the most useful things here — analysis of
+your own music rather than suggestions for music you have not written.
+
+```js
+import { detectCadences } from 'ollave/lib'
+
+detectCadences(['C','F','Dm','G','Am','F','G','C'], 'C', 'major')
+  .map((c) => [c.index, c.type, c.romans.join('-'), c.confidence])
+// [[2, 'half',      'IIm-V',  'low'],
+//  [3, 'deceptive', 'V-VIm',  'high'],
+//  [5, 'half',      'IV-V',   'low'],
+//  [6, 'IAC',       'V-I',    'medium']]
+```
+
+**Confidence is the feature.** A wrong label is worse than a missing one, so
+thin evidence downgrades the label rather than withholding it, and `reason` says
+why:
+
+```js
+// the closing V-I:
+// 'V to I: an authentic cadence. No soprano supplied, so it cannot be
+//  confirmed as perfect'
+
+// the mid-phrase IIm-V:
+// 'IIm to V mid-phrase: a half cadence only if the phrase stops here'
+```
+
+Supply a soprano and the perfect authentic cadence can be confirmed:
+
+```js
+detectCadences([{ name: 'G', soprano: 'D' }, { name: 'C', soprano: 'C' }],
+               'C', 'major')[0].type   // 'PAC'
+```
+
+Detection **does not consult the chart's edges**, deliberately: it matches
+romans. `IVm→Im` and `V→VI` were absent from the minor chart for a long time and
+are perfectly ordinary music, and analysis must not be limited by what the
+generator happens to offer.
+
+---
+
+## At the command line
+
+Every capability above has a subcommand. Real output:
+
+```
+$ chord cadence C --to PAC --bars 4 --tonic C --scale major
+key       C major
+cadence   perfect authentic cadence
+summary   I - IIm - V - I
+meter     4/4
+bars      I         C      53  T  C3 C4 E4 G4          b0+0 downbeat
+          IIm       Dm     53  PD D3 A3 D4 F4          b0+128 beat
+          V         G      53  D  G3 B3 D4 G4          b0+256 secondary
+          I         C      53  T  C3 C4 E4 G4          b0+384 beat
+legal     no voice-leading violations
+```
+
+```
+$ chord modulate C --key "Db major" --tonic C --scale major
+key       C major -> Db major
+summary   I - IIm - Ger6=V7 - I
+pivot     Ger6 = Ab7  Ger6 / V7  (enharmonic, bar 3)
+bars      I         C      53  T  C3 E3 E4 G4          b0+0 downbeat
+          IIm       Dm     53  PD D3 A3 D4 F4          b0+128 beat
+          V7        Ab7    53  D  Ab2 Ab3 C4 Eb4       b0+256 secondary
+          I         Db     53  T  Db3 Ab3 Db4 F4       b0+384 beat
+```
+
+```
+$ chord analyze C,F,Dm,G,Am,F,G,C --tonic C --scale major
+cadences  bar 3-4  half cadence  IIm -> V  (Dm G)  low — IIm to V mid-phrase: a half cadence only if the phrase stops here
+          bar 4-5  deceptive cadence  V -> VIm  (G Am)  high
+          bar 6-7  half cadence  IV -> V  (F G)  low — IV to V mid-phrase: a half cadence only if the phrase stops here
+          bar 7-8  imperfect authentic cadence  V -> I  (G C)  medium — V to I: an authentic cadence. No soprano supplied, so it cannot be confirmed as perfect
+```
+
+Also: `chord realize C,F,G,C` for four voices over chords you already have, and
+`chord realize --span fauxbourdon` for one of the library's own devices. The key
+comes from the current phase unless you pass `--tonic` and `--scale`.
+
+---
+
 ## Related
 
 - [Deep dive: the theory](./chord-theory.md) — where the map comes from, what
   the dotted arrows mean, how the unusual chords work
-- `CHANGELOG.md` — what changed in 0.4.0, including one breaking change for
-  major keys
+- `CHANGELOG.md` — what changed in 0.6.0, and in 0.4.0 before it

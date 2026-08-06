@@ -4,6 +4,248 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added — the part-writing assistant
+
+This is the largest release since 0.4.0 and it changes what the library is *for*.
+Before it, every question was a variation on "what may follow this chord?".
+Now you can say **"get me from A minor to a perfect authentic cadence in C major
+in four bars, show me the hinge, write it in four voices, and tell me where the
+bars fall"** — and get an answer.
+
+Entirely additive. No breaking changes, and `nextChord` output is byte-identical
+in every key, verified by probing every node in A minor and C major before and
+after every change that touched a chart.
+
+#### Harmonic function — T, PD, D
+
+Every roman in both charts is tagged tonic, predominant or dominant
+(`functionOf`, `functionMap`, `transitionCost`). Three letters, and they are
+what makes graph search *goal-directed* rather than merely legal: without them
+the cheapest four-bar route from I to a perfect authentic cadence is
+`I - I - I - V - I`.
+
+Tags are keyed by **roman, not scale degree**, settled by probe: `A7` in C major
+sits on degree 6 (which reads as tonic) but is `V7/IIm`; `G#dim` is chromatic, so
+degree has no answer for A minor's strongest dominant. Three judgement calls are
+documented — `V64` is D (spells a tonic, functions as a dominant), minor `VII` is
+T (no leading tone), `V/V` is PD (locally dominant, functionally predominant).
+The augmented-sixth trio is PD, all three.
+
+#### Cadences, in both directions
+
+Seven types, authored **once** as spans and read two ways — `pathToCadence`
+routes toward them, `detectCadences` matches against them, so the generator and
+the analyst cannot disagree about what a deceptive cadence is: `PAC`, `IAC`,
+`half`, `deceptive`, `plagal`, `phrygian-half`, and the **evaded** cadence
+(`V⁴₂ → I⁶`), the phrase-*extension* device — "how do I avoid closing yet" is as
+useful to a composer as "how do I close".
+
+```js
+pathToCadence('C', 'PAC', 4, 'C', 'major').paths[0].summary  // 'I - IIm - V - I'
+pathToCadence('Am', 'phrygian-half', 3, 'A', 'minor').paths[0].summary
+// 'Im - IVm6 - V'
+```
+
+`detectCadences` labels music **you already wrote**, with a confidence and a
+reason. A wrong label being worse than a missing one, thin evidence *downgrades*
+the label instead of withholding it: `V–I` with no soprano comes back as `IAC` at
+`medium` because "no soprano supplied, so it cannot be confirmed as perfect".
+`vii°→i` is left deliberately unlabelled rather than given invented vocabulary.
+
+Detection **does not consult the chart's edges**, deliberately — it matches
+romans, so analysis is not limited to what the generator happens to offer.
+
+#### Modulation-targeted pathfinding
+
+The headline feature. `pathThroughModulation` routes through a pivot to a cadence
+in another key, and names the hinge **in both keys**, because that double reading
+*is* the modulation:
+
+```js
+pathThroughModulation('Am', 'PAC', 4, 'A', 'minor', 'C', 'major').plans[0]
+// summary: 'Im - IVm=IIm - V - I', pivot: Dm — 'IVm' here, 'IIm' there
+```
+
+Pivots are ranked by how good a *hinge* they are before total path cost, because
+the composer asking for a modulation is choosing the joint — the surrounding
+filler is what they will rewrite anyway. A predominant in the target key costs 0
+(the new key can immediately set up its own cadence), a tonic 2, a dominant 3.
+
+#### Chromatic pivots — modulations with no shared diatonic chord
+
+C major and D♭ major share **no diatonic chord at all**. `chromaticPivotSources`
+supplies the hinges that make such modulations possible:
+
+```js
+pathThroughModulation('C', 'PAC', 4, 'C', 'major', 'Db', 'major',
+                      { extraPivots: chromaticPivotSources }).plans[0].summary
+// 'I - IIm - Ger6=V7 - I'
+```
+
+Three families: **Ger⁶ ↔ V⁷** (the German sixth of C respelled as the dominant
+seventh of D♭ — the most famous enharmonic modulation in the repertoire, and
+available from the German alone, since only it has a perfect fifth above its
+bass), **the four rotations of a diminished seventh**, and the **Neapolitan**,
+which is chromatic at home and a plain diatonic triad in six other keys.
+
+Chromatic pivots pay a **cost surcharge** (+3 enharmonic, +3 Neapolitan, +4
+chromatic mediant) so they stay reachable without burying a smooth diatonic
+hinge. A minor → C major still leads with `Dm`.
+
+#### Voice-leading legality and four-voice realization
+
+`realizeProgression` writes a **whole progression** in four voices — a beam
+search over doublings, orderings and octaves, scored so that no amount of
+smoothness buys a single error:
+
+```js
+realizeProgression(['C','F','G','C'], { key: { tonic: 'C', mode: 'major' } })
+  .chords.map((c) => c.voicing)
+// [['C3','C4','E4','G4'], ['F3','C4','F4','A4'],
+//  ['G3','B3','D4','G4'], ['C3','C4','E4','G4']]
+```
+
+`checkVoiceLeading` returns **typed violations, not booleans** — fourteen rules,
+each citing Aldwell & Schachter, Piston or Fux: parallel fifths and octaves,
+hidden/direct motion into a perfect interval on the outer voices, unequal fifths,
+unresolved chordal seventh, doubled and unresolved leading tone, augmented
+second, voice crossing and overlap, spacing, and the cadential ⁶₄'s defining
+⁶₄→⁵₃ resolution.
+
+**The default never removes a suggestion.** `strictness` defaults to `'report'`;
+`'warn'` sorts violations last and `'block'` filters. Individual rules toggle, and
+`unequal-fifths` and `parallel-fourths` are **off by default** because both are
+widely tolerated and a false positive is the first thing an expert would see.
+
+**Key-dependent rules are skipped, not guessed,** without `opts.key`. For this
+audience a wrong rule is worse than a missing one.
+
+**Spacing is a search preference, not a rule.** A probe caught the realizer
+opening on `C3 E4 G4 C5` — legal, smooth, and nobody writes it. Making that a
+violation would have flagged legitimate open-position writing in a composer's own
+music.
+
+#### Waivers — the tool does not red-ink its own content
+
+Fauxbourdon *is* parallel motion. Spans declare the rules they license
+(`spanWaivedRules`), the checker honours them (`waivedRules`), and because a
+waived rule costs **zero inside the search**, waivers *steer* the realizer rather
+than merely hiding its complaints.
+
+#### Harmonic rhythm and metric weight
+
+`metricWeight` reads strong/weak position from the timing data that already
+existed; `suggestHarmonicRhythm` proposes a placement and explains its reasoning.
+Five ordered levels on a flat Lerdahl–Jackendoff grid. Honestly scoped: no
+hypermeter, no grouping structure, no preference rules.
+
+Two findings worth keeping. **`tickCounts[BAR]` (512) is the engine's fixed
+container, not the meter's length** — a 3/4 bar is 384 ticks, and using the
+container puts the next downbeat in the wrong place, hence `barTicksOf(meter)`.
+And **metric fit must be relative, not absolute**: beat 3 → beat 4 is a textbook
+cadential ⁶₄ though both are absolutely strong.
+
+#### Chromatic vocabulary
+
+The augmented sixth, previously one generic `Aug6` node, is now the
+**Italian / French / German** trio, verified across 17 tonics in flat and sharp
+keys with the outer interval pinned at 10 semitones so it can never respell into
+a ♭7. `Ger6 → V` is dotted while `It6/Fr6 → V` are strong: the German's perfect
+fifth makes a direct move to a root-position V parallel fifths, so its strong
+path is through the cadential ⁶₄.
+
+**`Aug6` aliases the ITALIAN**, reversing the original plan. Two facts overrode
+frequency: `Aug6` appears in saved songs, so aliasing the German would silently
+turn three notes into four in files on disk; and an existing test pins
+`Aug6('A','minor') === ['F','A','D#']` as a guard against a double-flattening bug
+fixed once before. Verified byte-identical in A minor and C/E♭/F♯/D♭ major.
+
+Also: `chromaticMediants` and `commonToneDim7s`, both additive non-graph channels
+on the `mixtureSuggestions` model. A common-tone °7 is told from a leading-tone
+°7 by common-tone **count at runtime**, which surfaced a real fact: a minor key
+gets only `♯v°7`, because raising a minor triad's root leaves one common tone,
+not two.
+
+#### Sequences that generate
+
+`applySequence` realizes a pattern rather than replaying a fixed chord list:
+descending fifths (diatonic and applied), ascending and descending 5-6, and
+monte/fonte/ponte. Transposition is in **signed scale degrees**, not intervals —
+the varying interval quality is the defining feature of a diatonic sequence, not
+a defect. Monte and fonte differ only in the *sign* of the transposition over an
+identical applied-dominant unit.
+
+A sequence that runs past the end of the diatonic set **wraps within the key and
+reports `wrapped: true`; it never silently modulates.**
+
+#### The minor chart gains six cadence edges
+
+Three cadences were detectable but not **routable**, because the moves they are
+made of had no edge: `IVm → Im` (plagal), `V → VI` (deceptive), and `IVm⁶ → V`
+(Phrygian half — `IVm6` appeared nowhere in the chart at all). Added, with their
+seventh-chord mirrors `V7 → VI` and `IVm7 → Im` and the `Im → IVm6` edge that
+makes a three-bar Phrygian half cadence reachable.
+
+All six arrive **dotted**, which is the blast-radius rule and is also the honest
+grading: a predominant's principal motion is to the dominant and a dominant's is
+to the tonic; the plagal close is a codetta after that and the deceptive close is
+a deliberate refusal of it. `nextChord` is byte-identical across every node in
+both keys. All seven cadence types are now routable in minor.
+
+#### `composeProgression` — all of it in one call
+
+```js
+composeProgression('C', 'PAC', 4, 'C', 'major')
+composeModulation('C', 'PAC', 4, 'C', 'major', 'Db', 'major')
+composeSpan(spanById('fauxbourdon'), 'C', 'major')
+```
+
+Each returns bars carrying the roman, the realized chord, the figure, the
+function tag, a four-voice voicing, its metric placement and any violations.
+Chromatic pivots are on by default in `composeModulation`, since the modulations
+you most want help with are the ones a diatonic scan cannot find.
+
+Two translations live here and nowhere else, both found by probe:
+
+- **Chord-function node names become realizable chords.** `V64`, `N6` and the
+  augmented sixths are chart nodes, not chord symbols; handed straight to
+  `realizeProgression` they stop it dead. `V64` becomes the tonic triad in ⁶₄,
+  `N6` the ♭2 major triad in ⁶ — and the caller is *told*, in `notes`.
+- **Augmented sixths are voiced from their literal notes.**
+  `Chord.detect(['F','A','D#'])` returns `['F7no5']`, respelling D♯ as E♭ and
+  turning an outward-resolving augmented sixth into a dominant seventh. So no
+  chord symbol is invented for them: `chord` is `null` and the voicing is exact.
+
+**Nothing was folded into `nextChordDetail`.** Its options are sugar over
+functions answering *the same* question ("what may follow this chord"); a
+four-voice phrase plan is a different question, taking a goal and a length and
+returning bars. The composed calls are their own entry points and every piece
+they compose stays importable alone.
+
+#### CLI
+
+Four new `chord` subcommands: `cadence`, `modulate`, `realize` and `analyze`.
+
+```
+$ chord modulate C --key "Db major" --tonic C --scale major
+key       C major -> Db major
+summary   I - IIm - Ger6=V7 - I
+pivot     Ger6 = Ab7  Ger6 / V7  (enharmonic, bar 3)
+bars      I         C      53  T  C3 E3 E4 G4          b0+0 downbeat
+          IIm       Dm     53  PD D3 A3 D4 F4          b0+128 beat
+          V7        Ab7    53  D  Ab2 Ab3 C4 Eb4       b0+256 secondary
+          I         Db     53  T  Db3 Ab3 Db4 F4       b0+384 beat
+legal     no voice-leading violations
+```
+
+#### Everything is honestly scoped
+
+No function added in this release throws on a request it cannot satisfy. An
+unreachable cadence, a cadence that does not exist in the mode, a chord that
+cannot be voiced, a key with no chart — each returns a result with a machine-
+readable reason and a sentence explaining it. `pathToCadence('C',
+'phrygian-half', 4, 'C', 'major')` says the device is minor-only *and why*.
+
 ### Added — inversions, figured bass, and the span schema
 
 **A chord can now say which note is in its bass.** Before this the data model
