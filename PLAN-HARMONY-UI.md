@@ -11,9 +11,10 @@ discrepancy — do not improvise.
 publish 0.7.0, then Workstream A (the redwood app) against the published
 package.** The app pins `ollave ^0.3.18` today.
 
-**Publish blocker, known in advance:** `npm whoami` currently returns E401
-(not logged in). Steps O8.1–O8.4 are automatable; O8.5 (`npm publish`)
-requires the user to `npm login` first. Registry currently has 0.3.18.
+**STATUS 2026-08-07: Workstream O COMPLETE (845 tests, all gates) and
+`ollave@0.7.0` PUBLISHED to npm (verified via `npm view`). Tarball slimmed
+71.5 → 10.8 MB by excluding `.yarn/` cache and `public/transfer-songs.json`.
+Workstream A is the remaining work, now unblocked.**
 
 ---
 
