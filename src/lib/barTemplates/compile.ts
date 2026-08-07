@@ -1,15 +1,20 @@
+import { Note } from 'tonal'
+
 import { randId } from '../util/common'
 import { parseChordCsvArg } from '../util/barsUtil'
 import { isNoteNameWithOctave } from '../util/noteValidationUtil'
 import { chordGraphCreate } from '../util/graphUtil'
 
 import {
+  Attack,
+  BASE_BAR_TICKS,
   CompileCtx,
   CompiledNote,
   CompileError,
   CompileResult,
   GESTURE_ID_TAG,
   Gesture,
+  NoteSelection,
   RollPattern,
   TIGHT_SPREAD_TICKS,
   stepTicks,
@@ -81,6 +86,17 @@ const resolvePitches = (
     return { pitches: [note], sourceTags: [] }
   }
 
+  if (gesture.source.kind === 'voicing') {
+    // A voicing source is only meaningful through the attacks branch (O3);
+    // the legacy mode/spread/scope fields have no defined semantics against
+    // an explicit pitch list. Reaching here means a voicing-source gesture
+    // was compiled with no `attacks` — a non-fatal CompileError, like a bad
+    // chord name.
+    throw new Error(
+      'a "voicing" source gesture requires `attacks` to compile'
+    )
+  }
+
   // chord source — mirror addChord's usage of chordGraphCreate +
   // parseChordCsvArg (node_modules/ollave/src/lib/addChord.ts).
   // Per-gesture octave wins over the ctx default.
@@ -96,6 +112,225 @@ const resolvePitches = (
     throw new Error(`Chord "${chordName}" resolved to no notes`)
   }
   return { pitches, sourceTags: chordTags }
+}
+
+/**
+ * Ascending source pitches P for the attacks branch (O3). Mirrors
+ * `resolvePitches` per source kind but always returns ascending order (by
+ * `Note.midi`, tonal) plus provenance tags:
+ *  - `voicing` source: `pitches` sorted ascending by Note.midi; an
+ *    unparsable pitch throws (caught by the caller as a non-fatal
+ *    CompileError for the gesture, matching bad-chord handling). Provenance
+ *    tags come from the source's own `chord`/`roman` fields, not the graph.
+ *  - `chord` source: existing resolution via `resolveChordPitchesAscending`
+ *    with the gesture octave (already ascending); sourceTags come from
+ *    `parseChordCsvArg`.
+ *  - `note` source: single-element array, no sourceTags.
+ */
+const resolveAscendingSourcePitches = (
+  gesture: Gesture,
+  ctx: CompileCtx
+): { pitches: string[]; sourceTags: string[] } => {
+  if (gesture.source.kind === 'note') {
+    const { note } = gesture.source
+    if (!isNoteNameWithOctave(note)) {
+      throw new Error(`"${note}" is not a valid note name with octave`)
+    }
+    return { pitches: [note], sourceTags: [] }
+  }
+
+  if (gesture.source.kind === 'voicing') {
+    const { pitches, chord, roman } = gesture.source
+    for (const p of pitches) {
+      if (Note.midi(p) === undefined || Note.midi(p) === null) {
+        throw new Error(`"${p}" is not a valid note name with octave`)
+      }
+    }
+    const ascending = [...pitches].sort(
+      (a, b) => (Note.midi(a) ?? 0) - (Note.midi(b) ?? 0)
+    )
+    const sourceTags: string[] = []
+    if (roman) sourceTags.push(`roman=${roman}`)
+    if (chord) sourceTags.push(`chord=${chord}`)
+    return { pitches: ascending, sourceTags }
+  }
+
+  // chord source
+  const { chordName } = gesture.source
+  const octave =
+    gesture.octave !== undefined ? String(gesture.octave) : ctx.octave
+  chordGraphCreate(ctx.scaleTonic, ctx.scaleName)
+  const [pitches, chordTags] = parseChordCsvArg(
+    `${chordName},${octave}`,
+    `${ctx.scaleTonic} ${ctx.scaleName}`
+  )
+  if (!pitches || pitches.length === 0) {
+    throw new Error(`Chord "${chordName}" resolved to no notes`)
+  }
+  const ascending = [...pitches].sort(
+    (a, b) => pitchHeight(a) - pitchHeight(b)
+  )
+  return { pitches: ascending, sourceTags: chordTags }
+}
+
+/**
+ * Selection -> subset of indices into ascending source pitches P, per O3's
+ * exact rules. `note-indexes` reuses the SAME defense as legacy `toneOrder`:
+ * drop duplicates and out-of-range; an empty result after defense throws
+ * (non-fatal CompileError for this gesture, caught by the caller).
+ */
+const selectionIndices = (
+  selection: NoteSelection,
+  pCount: number
+): number[] => {
+  switch (selection.kind) {
+    case 'all':
+      return Array.from({ length: pCount }, (_, i) => i)
+    case 'note-indexes': {
+      const seen = new Set<number>()
+      const indexes = selection.indexes.filter(
+        (i) => i >= 0 && i < pCount && !seen.has(i) && !!seen.add(i)
+      )
+      if (indexes.length === 0) {
+        throw new Error('note-indexes selection is empty after defense')
+      }
+      return indexes
+    }
+    case 'bass': {
+      const count = Math.min(selection.count ?? 1, pCount)
+      return Array.from({ length: count }, (_, i) => i)
+    }
+    case 'treble': {
+      const count = Math.min(selection.count ?? 1, pCount)
+      return Array.from({ length: count }, (_, i) => pCount - count + i)
+    }
+  }
+}
+
+/**
+ * Order a selection's indices for a strum action: `down` = ascending, `up` =
+ * descending, `custom` = `customOrder` with the toneOrder defense (drop
+ * duplicate/out-of-range against the SELECTION, i.e. only indices present in
+ * `indices`), then any missing selection indices appended ascending.
+ */
+const orderSelectionForStrum = (
+  indices: number[],
+  direction: 'down' | 'up' | 'custom',
+  customOrder: number[] | undefined
+): number[] => {
+  if (direction === 'up') {
+    return [...indices].reverse()
+  }
+  if (direction === 'down' || !customOrder) {
+    return [...indices]
+  }
+  // custom
+  const allowed = new Set(indices)
+  const seen = new Set<number>()
+  const ordered = customOrder.filter(
+    (i) => allowed.has(i) && !seen.has(i) && !!seen.add(i)
+  )
+  for (const i of indices) {
+    if (!seen.has(i)) {
+      ordered.push(i)
+      seen.add(i)
+    }
+  }
+  return ordered
+}
+
+/**
+ * Compile one gesture through the attacks branch (O3). Attacks are applied
+ * in array order; each attack sounds a selected subset S of the gesture's
+ * ascending source pitches P.
+ */
+const compileGestureAttacks = (
+  gesture: Gesture,
+  attacks: Attack[],
+  ctx: CompileCtx
+): CompiledNote[] => {
+  const { pitches: P, sourceTags } = resolveAscendingSourcePitches(
+    gesture,
+    ctx
+  )
+  const gestureStartTick = gesture.startStep * stepTicks(ctx.barSizeMultiplier)
+  const barTicks = BASE_BAR_TICKS * ctx.barSizeMultiplier
+
+  const out: CompiledNote[] = []
+
+  attacks.forEach((attack, attackIdx) => {
+    const base = gestureStartTick + attack.offsetTicks
+    const indices = selectionIndices(attack.selection, P.length)
+
+    const velocity = attack.velocity ?? gesture.velocity
+
+    const groupId = randId('', 6)
+    const layerId = randId('', 3)
+
+    if (attack.action.kind === 'pluck') {
+      // every note of S sounds at base (simultaneous; a multi-note S is a pinch)
+      indices.forEach((pIdx) => {
+        const relativeTick = base
+        const durationTicks = attack.letRing
+          ? Math.max(1, barTicks - relativeTick)
+          : attack.durationTicks ?? gesture.durationTicks
+        out.push({
+          note: P[pIdx],
+          tags: [
+            `noteId=${randId('', 6)}`,
+            `groupId=${groupId}`,
+            `layer=${layerId}`,
+            `barDelay=${Math.round(relativeTick)}`,
+            `duration=${durationTicks}`,
+            `velocity=${velocity}`,
+            'quantize=0th',
+            `${GESTURE_ID_TAG}=${gesture.id}`,
+            ...sourceTags,
+          ],
+        })
+      })
+      return
+    }
+
+    // strum
+    const ordered = orderSelectionForStrum(
+      indices,
+      attack.action.direction,
+      attack.action.customOrder
+    )
+    const n = ordered.length
+    ordered.forEach((pIdx, i) => {
+      const spreadTicks = attack.action.kind === 'strum' ? attack.action.spreadTicks : 0
+      const spreadShape =
+        attack.action.kind === 'strum'
+          ? attack.action.spreadShape ?? 'even'
+          : 'even'
+      const relativeTick =
+        base + rollPositionFraction(spreadShape, i, n) * spreadTicks
+      const durationTicks = attack.letRing
+        ? Math.max(1, Math.round(barTicks - relativeTick))
+        : attack.durationTicks ?? gesture.durationTicks
+      out.push({
+        note: P[pIdx],
+        tags: [
+          `noteId=${randId('', 6)}`,
+          `groupId=${groupId}`,
+          `layer=${layerId}`,
+          `barDelay=${Math.round(relativeTick)}`,
+          `duration=${durationTicks}`,
+          `velocity=${velocity}`,
+          'quantize=0th',
+          `${GESTURE_ID_TAG}=${gesture.id}`,
+          ...sourceTags,
+        ],
+      })
+    })
+    // attackIdx currently unused beyond iteration order (kept for clarity /
+    // potential future per-attack diagnostics)
+    void attackIdx
+  })
+
+  return out
 }
 
 const orderPitchesForGesture = (
@@ -216,6 +451,11 @@ export function compileGesturesToNotes(
 
   for (const gesture of gestures) {
     try {
+      if (gesture.attacks && gesture.attacks.length > 0) {
+        notes.push(...compileGestureAttacks(gesture, gesture.attacks, ctx))
+        continue
+      }
+
       const { pitches, sourceTags } = resolvePitches(gesture, ctx)
       const orderedPitches = orderPitchesForGesture(pitches, gesture)
 

@@ -89,8 +89,55 @@ export type RollPattern = z.infer<typeof rollPatternSchema>
 export const gestureSourceSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('chord'), chordName: z.string().min(1) }),
   z.object({ kind: z.literal('note'), note: z.string().min(1) }),
+  z.object({
+    kind: z.literal('voicing'),
+    /** explicit note names WITH octaves, e.g. ['C3','C4','E4','G4'] */
+    pitches: z.array(z.string().min(1)).min(1),
+    /** provenance: realized chord symbol this voicing came from */
+    chord: z.string().min(1).optional(),
+    /** provenance: roman at creation time */
+    roman: z.string().min(1).optional(),
+  }),
 ])
 export type GestureSource = z.infer<typeof gestureSourceSchema>
+
+/**
+ * Attacks — the strummed-bar-document model (bar > gesture > attack sounds a
+ * selected part of a voicing). A `NoteSelection` picks which indices of the
+ * gesture's ascending source pitches sound; an `AttackAction` says how.
+ */
+export const noteSelectionSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('all') }),
+  z.object({
+    kind: z.literal('note-indexes'),
+    indexes: z.array(z.number().int().min(0)).min(1),
+  }),
+  z.object({ kind: z.literal('bass'), count: z.number().int().min(1).optional() }), // absent = 1
+  z.object({ kind: z.literal('treble'), count: z.number().int().min(1).optional() }), // absent = 1
+])
+export type NoteSelection = z.infer<typeof noteSelectionSchema>
+
+export const attackActionSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('strum'),
+    direction: z.enum(['down', 'up', 'custom']),
+    spreadTicks: z.number().int().min(0),
+    spreadShape: rollPatternSchema.optional(), // absent = 'even'
+    customOrder: z.array(z.number().int().min(0)).optional(),
+  }),
+  z.object({ kind: z.literal('pluck') }),
+])
+export type AttackAction = z.infer<typeof attackActionSchema>
+
+export const attackSchema = z.object({
+  offsetTicks: z.number().int().min(0), // relative to the gesture's start tick
+  selection: noteSelectionSchema,
+  action: attackActionSchema,
+  velocity: z.number().int().min(0).max(127).optional(), // absent = gesture.velocity
+  durationTicks: z.number().int().positive().optional(), // absent = gesture.durationTicks
+  letRing: z.boolean().optional(),
+})
+export type Attack = z.infer<typeof attackSchema>
 
 export const gestureSchema = z.object({
   id: z.string().min(1),
@@ -148,6 +195,16 @@ export const gestureSchema = z.object({
    * ascending order. Ignored for pluck and note sources.
    */
   toneOrder: z.array(z.number().int().min(0)).optional(),
+  /**
+   * When present, this gesture compiles via the attacks model instead of the
+   * legacy mode/spread/scope path: bar > gesture > attacks, where each
+   * attack sounds a selected part of the gesture's source voicing. When
+   * `attacks` is present, the legacy fields `mode`, `spread`, `scopeSteps`,
+   * `rollPattern`, `pluckIndex`, `toneOrder`, `mutedToneIndices` are IGNORED
+   * (gesture-level `velocity`/`durationTicks` remain the attack defaults);
+   * when absent, behavior is exactly today's.
+   */
+  attacks: z.array(attackSchema).min(1).optional(),
 })
 export type Gesture = z.infer<typeof gestureSchema>
 
