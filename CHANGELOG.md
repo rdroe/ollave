@@ -2,7 +2,11 @@
 
 All notable changes to this project are documented here.
 
-## Unreleased
+## 0.7.0
+
+_Aggregates everything since 0.3.18 — the last version published to npm — in
+one release heading: the 0.5.x/0.6.0-era part-writing assistant work below,
+plus the bar-template voicing/attacks/`chordContextAt` work above it._
 
 ### Added — bar templates: voicing sources, attacks, and `chordContextAt`
 
