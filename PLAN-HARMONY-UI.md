@@ -11,10 +11,29 @@ discrepancy — do not improvise.
 publish 0.7.0, then Workstream A (the redwood app) against the published
 package.** The app pins `ollave ^0.3.18` today.
 
-**STATUS 2026-08-07: Workstream O COMPLETE (845 tests, all gates) and
-`ollave@0.7.0` PUBLISHED to npm (verified via `npm view`). Tarball slimmed
-71.5 → 10.8 MB by excluding `.yarn/` cache and `public/transfer-songs.json`.
-Workstream A is the remaining work, now unblocked.**
+**STATUS 2026-08-07: PLAN COMPLETE.** Workstream O (845 tests, all gates)
+shipped and `ollave@0.7.0` published (tarball slimmed 71.5 → 10.8 MB).
+Workstream A shipped in the app (commits d26ed54 → 91463d7 + 2b8a7ab):
+HarmonyPanel, SongLocationStrip (gap model, key badge), Plan-a-phrase with
+both apply targets, figurations/hand-nudge/Patterns. App typecheck: 8
+pre-existing errors, none in new code; every new module transforms through
+the running dev server.
+
+**Outstanding (not blocking):**
+1. HUMAN CLICK-THROUGH of the panel flows — automated verification was
+   compile-level (the same functions the handlers call); the chrome-devtools
+   browser was locked by another session both times.
+2. FOLLOW-UP FOR ollave 0.7.1 — confirmed by both the O implementer and the
+   A consumer: arp presets do not degrade gracefully (a single out-of-range
+   note-index attack kills the WHOLE gesture via the spec'd empty-selection
+   CompileError; `arpDownAttacks` hits this for every voicing under 4 notes).
+   Fix direction: per-attack skip (or preset clamp) instead of gesture-level
+   error. Also: add `"type": "module"` for plain-Node consumers, and export a
+   ranked return type from `nextChordDetail` (the distance/suggestedVoicing
+   fields exist at runtime but not in the declared type — second consumer to
+   hit this).
+3. The app works around all three (arp count sized to voicing; Alberti
+   disabled below 3 notes; subpath imports throughout).**
 
 ---
 
