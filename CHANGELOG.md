@@ -4,6 +4,49 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added — bar templates: voicing sources, attacks, and `chordContextAt`
+
+Bar templates (`ollave/lib/barTemplates`) can now source a gesture's pitches
+from an explicit `voicing` (with provenance — the chord/roman it was realized
+from) instead of only a chord name to resolve at compile time, and can time
+and select those pitches with `attacks`: an ordered list of
+`{ offsetTicks, selection, action }` entries, each picking a subset of the
+gesture's ascending source pitches (`all` / `note-indexes` / `bass` /
+`treble`) and sounding them together (`pluck`) or spread out (`strum`, with
+`spreadTicks` and an optional roll `spreadShape`). A gesture with `attacks`
+present ignores the legacy `mode`/`spread`/`scopeSteps`/`rollPattern`/
+`pluckIndex`/`toneOrder`/`mutedToneIndices` fields; a gesture without
+`attacks` compiles exactly as it always has. Entirely additive — every
+existing template parses and compiles unchanged (verified by a legacy golden
+compile test pinned before this change).
+
+`attackPresets.ts` builds common `attacks` arrays without knowing the
+eventual voicing size: `blockAttack` (chorale — every voice together),
+`arpUpAttacks` / `arpDownAttacks` / `arpUpDownAttacks` (cycling
+note-indexes), `albertiAttacks` (classical low-high-middle-high). Worked
+example:
+
+```js
+import { arpUpAttacks, compileGesturesToNotes } from 'ollave/lib/barTemplates'
+
+const gesture = {
+  id: 'g1', startStep: 0,
+  source: { kind: 'voicing', pitches: ['C3', 'C4', 'E4', 'G4'], chord: 'C', roman: 'I' },
+  mode: 'strum', direction: 'down', spread: 'tight',
+  velocity: 90, durationTicks: 128,
+  attacks: arpUpAttacks({ count: 4, subdivisionTicks: 32 }),
+}
+compileGesturesToNotes([gesture], ctx).notes.map(n => n.note)
+// ['C3', 'C4', 'E4', 'G4'] — one pluck per 32-tick step, ascending
+```
+
+Also new: `chordContextAt(notesByBar, phaseName, gapIndex)` (from
+`ollave/lib`), a pure song-context helper for a harmony-assistance UI to ask
+"what chord comes before/after this point in the song" — a gap-based cursor
+model (gap `g` sits before bar `g`), returning every prior chord group
+chronologically and the first chord group at or after the gap. Pure: no
+`mem()`, safe to call from outside a loaded song.
+
 ### Added — the part-writing assistant
 
 This is the largest release since 0.4.0 and it changes what the library is *for*.

@@ -8,6 +8,9 @@ import { suggestHarmonicRhythm } from './harmonicRhythm'
 import { detectCadences, cadenceDefinition } from './cadence'
 import { spanById, spanWaivedRules } from './spans'
 import { functionOf } from './harmonicFunction'
+import { arpUpAttacks } from './barTemplates/attackPresets'
+import { compileGesturesToNotes } from './barTemplates/compile'
+import { CompileCtx, Gesture } from './barTemplates/schemas'
 
 /**
  * Every code example in `docs/chord-assistance.md` and `docs/chord-theory.md`,
@@ -102,5 +105,24 @@ describe('every doc example is real output', () => {
     const cm = pivotsBetween('C','major','A','minor')
     expect(cm.find(p=>p.name==='Dm')!.cost).toBe(0)
     expect(cm.find(p=>p.name==='Bdim')!.cost).toBe(2)
+  })
+  it('assistance — voicings and attacks in bar templates', () => {
+    const ctx: CompileCtx = {
+      phaseName: 'verse',
+      scaleTonic: 'C',
+      scaleName: 'major',
+      barSizeMultiplier: 1,
+      octave: '3',
+    }
+    const gesture: Gesture = {
+      id: 'doc1',
+      startStep: 0,
+      source: { kind: 'voicing', pitches: ['C3', 'C4', 'E4', 'G4'], chord: 'C', roman: 'I' },
+      mode: 'strum', direction: 'down', spread: 'tight',
+      velocity: 90, durationTicks: 128,
+      attacks: arpUpAttacks({ count: 4, subdivisionTicks: 32 }),
+    }
+    expect(compileGesturesToNotes([gesture], ctx).notes.map(n => n.note))
+      .toEqual(['C3', 'C4', 'E4', 'G4'])
   })
 })

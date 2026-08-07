@@ -885,6 +885,47 @@ generator happens to offer.
 
 ---
 
+## Voicings and attacks in bar templates
+
+Bar templates (`ollave/lib/barTemplates`) gained a second way to source a
+gesture's pitches, and a second way to time and select which of those pitches
+sound. A `voicing` source gives a gesture EXPLICIT pitches (with provenance —
+the chord/roman it was realized from) instead of naming a chord to resolve at
+compile time; `attacks` replaces the legacy mode/spread/scope fields with an
+ordered list of `{ offsetTicks, selection, action }` entries, each picking a
+subset of the gesture's ascending source pitches and sounding them together
+(`pluck`) or spread out (`strum`).
+
+`selection` names WHICH pitches: `all`, `note-indexes` (explicit ascending
+indices), `bass`/`treble` (lowest/highest N). The figuration presets in
+`attackPresets.ts` build common `attacks` arrays without knowing the eventual
+voicing size — `blockAttack` (chorale), `arpUpAttacks`/`arpDownAttacks`/
+`arpUpDownAttacks`, `albertiAttacks`.
+
+```js
+import { arpUpAttacks } from 'ollave/lib/barTemplates'
+import { compileGesturesToNotes } from 'ollave/lib/barTemplates'
+
+const gesture = {
+  id: 'doc1',
+  startStep: 0,
+  source: { kind: 'voicing', pitches: ['C3', 'C4', 'E4', 'G4'], chord: 'C', roman: 'I' },
+  mode: 'strum', direction: 'down', spread: 'tight',
+  velocity: 90, durationTicks: 128,
+  attacks: arpUpAttacks({ count: 4, subdivisionTicks: 32 }),
+}
+
+compileGesturesToNotes([gesture], ctx).notes.map(n => n.note)
+// ['C3', 'C4', 'E4', 'G4'] — one pluck per 32-tick step, ascending
+```
+
+A gesture with `attacks` present ignores the legacy `mode`/`spread`/
+`scopeSteps`/`rollPattern`/`pluckIndex`/`toneOrder`/`mutedToneIndices` fields
+entirely; a gesture without `attacks` compiles exactly as it always has —
+this is purely additive.
+
+---
+
 ## At the command line
 
 Every capability above has a subcommand. Real output:
