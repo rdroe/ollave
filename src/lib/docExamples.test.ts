@@ -6,6 +6,7 @@ import { chromaticPivotSources, enharmonicPivotSource } from './chromaticPivots'
 import { realizeProgression, checkVoiceLeading } from './partWriting'
 import { suggestHarmonicRhythm } from './harmonicRhythm'
 import { detectCadences, cadenceDefinition } from './cadence'
+import { nextChordDetail } from './nextChord'
 import { spanById, spanWaivedRules } from './spans'
 import { functionOf } from './harmonicFunction'
 import { arpUpAttacks } from './barTemplates/attackPresets'
@@ -31,6 +32,49 @@ import { CompileCtx, Gesture } from './barTemplates/schemas'
  * the doc keeps claiming the old value.
  */
 describe('every doc example is real output', () => {
+  it('assistance §1/§2 — the ChordSuggestion contract, literally', () => {
+    // §1: the first suggestion, exactly as printed in the doc
+    expect(nextChordDetail('Am,3', 'A', 'minor')[0]).toEqual({
+      name: 'Am',
+      roman: 'Im',
+      notes: ['A3', 'C4', 'E4'],
+      strength: 'strong',
+      enabledBy: null,
+    })
+
+    // §2: literal first element with prev context
+    const fromF = nextChordDetail('Bdim,3', 'A', 'minor', { prev: ['F'] })
+    expect(fromF[0]).toEqual({
+      name: 'D#dim',
+      roman: 'VIIdim/V',
+      notes: ['D#3', 'F#3', 'A3'],
+      strength: 'strong',
+      enabledBy: ['F'],
+      contextMatch: true,
+    })
+
+    // §2: the condensed name:contextMatch views, both prev variants.
+    // The doc marks these as a condensed view of the 17-element array.
+    const view = (s: (typeof fromF)[number]) =>
+      `${s.name}${s.figure ? '(' + s.figure + ')' : ''}:${s.contextMatch}`
+    expect(fromF.map(view)).toEqual([
+      'D#dim:true','B:true','V64:true','G#dim:true','E:true','Edim:true',
+      'C7:true','C:true','G#dim7:true','E7:true','E(6):true','G#dim(6):true',
+      'E7(65):true','E7(43):true','It6:true','Fr6:true','Ger6:true',
+    ])
+    const fromAm = nextChordDetail('Bdim,3', 'A', 'minor', { prev: ['Am'] })
+    expect(fromAm.map(view)).toEqual([
+      'Edim:true','C7:true','C:true','D#dim:false','B:false','V64:false',
+      'G#dim:false','E:false','G#dim7:false','E7:false','E(6):false',
+      'G#dim(6):false','E7(65):false','E7(43):false','It6:false','Fr6:false',
+      'Ger6:false',
+    ])
+    // "context never removes": same membership either way
+    expect(fromAm.map((s) => s.name).sort()).toEqual(
+      fromF.map((s) => s.name).sort()
+    )
+  })
+
   it('assistance §11', () => {
     expect(pathToCadence('C','PAC',4,'C','major').paths[0].summary).toBe('I - IIm - V - I')
     expect(pathToCadence('Am','plagal',3,'A','minor').paths[0].summary).toBe('Im - IVm - Im')

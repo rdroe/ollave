@@ -102,23 +102,50 @@ weaker options that were previously invisible.
 
 Some chords behave differently depending on what preceded them. Pass `prev`
 (most recent last) and each suggestion gets a `contextMatch` flag, with matches
-sorted first:
+sorted first.
+
+The return is always an **array of `ChordSuggestion` objects** — the same
+shape as §1, now carrying `contextMatch`. The first element, literally:
+
+```js
+nextChordDetail('Bdim,3', 'A', 'minor', { prev: ['F'] })[0]
+// {
+//   name: 'D#dim',
+//   roman: 'VIIdim/V',
+//   notes: ['D#3', 'F#3', 'A3'],
+//   strength: 'strong',
+//   enabledBy: ['F'],
+//   contextMatch: true
+// }
+```
+
+The full call returns 17 such objects. Summarized as `name:contextMatch`
+(a condensed view, **not** the literal return):
 
 ```js
 nextChordDetail('Bdim,3', 'A', 'minor', { prev: ['F'] })
-// D#dim:true  B:true  V64:true  G#dim:true  E:true  Edim:true  C7:true  C:true
+// 17 suggestions; as name:contextMatch —
+// D#dim:true B:true V64:true G#dim:true E:true Edim:true C7:true C:true
+// G#dim7:true E7:true E⁶:true G#dim⁶:true E7⁶₅:true E7⁴₃:true
+// It6:true Fr6:true Ger6:true
 
 nextChordDetail('Bdim,3', 'A', 'minor', { prev: ['Am'] })
-// Edim:true  C7:true  C:true  |  D#dim:false  B:false  V64:false  G#dim:false  E:false
+// same 17; matches first —
+// Edim:true C7:true C:true | D#dim:false B:false V64:false G#dim:false
+// E:false G#dim7:false E7:false E⁶:false G#dim⁶:false E7⁶₅:false
+// E7⁴₃:false It6:false Fr6:false Ger6:false
 ```
 
 Same chord, same key — but arriving from `F` versus `Am` reorders what's most
-idiomatic.
+idiomatic. (The figured entries like `E⁶`/`E7⁶₅` carry `figure` and `bass`
+fields — see §9; the superscripts here are display shorthand for those
+fields.)
 
-**Context never removes an option.** Both calls return all eight suggestions;
-only the order and the flag change. The map records arrival context for just a
-few chords, so a `false` means "not specifically recommended here," not
-"forbidden." Filtering on it would hide legitimate moves.
+**Context never removes an option.** Both calls return all seventeen
+suggestions; only the order and the flag change. The map records arrival
+context for just a few chords, so a `false` means "not specifically
+recommended here," not "forbidden." Filtering on it would hide legitimate
+moves.
 
 ---
 
