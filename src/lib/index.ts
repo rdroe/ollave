@@ -428,5 +428,14 @@ export * as util from './util'
 export { addSongLoadCallback, onLoadSongCallbacks } from './util/songUtil'
 export { DEFAULT_VELOCITY } from './shared/midiMappingCore'
 
+// chordContextAt — pure song-context helper for the harmony panel (Workstream O)
+export { chordContextAt } from './util/chordContextUtil'
+export type {
+  ContextNote,
+  NotesByBarLike,
+  ChordGroupRef,
+  ChordContext,
+} from './util/chordContextUtil'
+
 // greek women exports
 export * from './greek-women'
