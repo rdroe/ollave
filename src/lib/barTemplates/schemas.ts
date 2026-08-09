@@ -136,6 +136,14 @@ export const attackSchema = z.object({
   velocity: z.number().int().min(0).max(127).optional(), // absent = gesture.velocity
   durationTicks: z.number().int().positive().optional(), // absent = gesture.durationTicks
   letRing: z.boolean().optional(),
+  /**
+   * Musical/user tags to carry onto every note this attack emits, so
+   * synthesizing a bar document from legacy notes preserves tags compilation
+   * does not regenerate. Identity and placement keys are STRIPPED before these
+   * are appended (see IDENTITY_TAG_KEYS in compile.ts) — a passthrough tag can
+   * never forge a noteId, groupId, barId or template linkage.
+   */
+  passthroughTags: z.array(z.string()).optional(),
 })
 export type Attack = z.infer<typeof attackSchema>
 
@@ -215,12 +223,29 @@ export const compiledNoteSchema = z.object({
 })
 export type CompiledNote = z.infer<typeof compiledNoteSchema>
 
+/**
+ * Two distinct things share the barTemplate table:
+ *
+ * - 'reusable'     — a named template that may be PLACED into many bars and
+ *                    propagates to its instances when edited.
+ * - 'bar-document' — the editable document for ONE specific song bar. Never
+ *                    propagates; identity is (songId, barId), not the name.
+ *
+ * Absent means 'reusable' so every pre-0.8.0 row keeps its meaning.
+ */
+export const barTemplatePurposeSchema = z.enum(['reusable', 'bar-document'])
+export type BarTemplatePurpose = z.infer<typeof barTemplatePurposeSchema>
+
 export const barTemplateSchema = z.object({
   /** user-tables row id; absent until first save. */
   id: z.number().optional(),
   songId: z.number(),
   /** Display name; unique per song by slug (see slugifyTemplateName). */
   name: z.string().min(1),
+  /** Absent means 'reusable' — see barTemplatePurposeSchema. */
+  purpose: barTemplatePurposeSchema.optional(),
+  /** `${phaseName}:${barIndex}`. Required only for a bar-document. */
+  barId: z.string().optional(),
   /** Phase this template was built against (scale/chord context). */
   phaseName: z.string(),
   /** Captured from the phase at creation time; bar length may not be 512. */

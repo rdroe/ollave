@@ -25,6 +25,14 @@ export const slugifyTemplateName = (name: string): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
+/**
+ * A row with no `purpose` is a pre-0.8.0 reusable template, so absent counts
+ * as 'reusable'. Never test the name or its slug for this.
+ */
+export const isReusableTemplate = (t: {
+  purpose?: BarTemplate['purpose']
+}): boolean => (t.purpose ?? 'reusable') === 'reusable'
+
 export async function listBarTemplates(
   songId: number
 ): Promise<BarTemplate[]> {
@@ -190,8 +198,93 @@ export async function deleteBarTemplate(
 }
 
 /**
+ * Reusable templates only — what a template manager should list. Bar
+ * documents live in the same table but are per-bar editing state, not
+ * something a user places.
+ */
+export async function listReusableTemplates(
+  songId: number
+): Promise<BarTemplate[]> {
+  const all = await listBarTemplates(songId)
+  return all.filter(isReusableTemplate)
+}
+
+/** The one bar document for a bar, or null. Identity is (songId, barId). */
+export async function getBarDocument(
+  songId: number,
+  barId: string
+): Promise<BarTemplate | null> {
+  const all = await listBarTemplates(songId)
+  return (
+    all.find((t) => !isReusableTemplate(t) && t.barId === barId) ?? null
+  )
+}
+
+/**
+ * Upsert a bar document by (songId, barId).
+ *
+ * NEVER calls propagateTemplateToSong: editing one song bar must not rewrite
+ * any other bar. That is the whole distinction between a bar document and a
+ * reusable template, so it is enforced here rather than left to callers.
+ */
+export async function saveBarDocument(doc: BarTemplate): Promise<number> {
+  if (!doc.barId) {
+    throw new Error('a bar document requires a barId')
+  }
+  const validated = barTemplateSchema.parse({
+    ...doc,
+    purpose: 'bar-document' as const,
+  })
+
+  const existing = await getBarDocument(validated.songId, validated.barId!)
+  const targetId = validated.id ?? existing?.id
+
+  if (targetId !== undefined) {
+    const next = { ...validated, id: targetId }
+    await browser.userTables.update(
+      BAR_TEMPLATE_TABLE,
+      {
+        id: targetId,
+        data: next,
+        a: String(next.songId),
+        b: next.phaseName,
+      },
+      { id: targetId }
+    )
+    return targetId
+  }
+
+  const createdId = await browser.userTables.add(BAR_TEMPLATE_TABLE, {
+    data: validated,
+    a: String(validated.songId),
+    b: validated.phaseName,
+  })
+  await browser.userTables.update(
+    BAR_TEMPLATE_TABLE,
+    { id: createdId, data: { id: createdId } },
+    { id: createdId }
+  )
+  return createdId as number
+}
+
+/** Remove a bar's document, e.g. when the bar itself is deleted. */
+export async function deleteBarDocument(
+  songId: number,
+  barId: string
+): Promise<void> {
+  const existing = await getBarDocument(songId, barId)
+  if (!existing || existing.id === undefined) {
+    return
+  }
+  await browser.userTables.delete(BAR_TEMPLATE_TABLE, { id: existing.id })
+}
+
+/**
  * Templates for a song, stripped of row ids, ready to embed in a song export.
  * Ids are dropped deliberately: the importing database assigns its own.
+ *
+ * Includes BOTH reusable templates and bar documents: a song that exported
+ * only its reusable rows would lose every per-bar edit on import.
  */
 export async function exportBarTemplatesForSong(
   songId: number
@@ -221,7 +314,11 @@ export async function importBarTemplatesForSong(
       console.warn(`Skipping invalid imported barTemplate "${t.name}"`, parsed.error)
       continue
     }
-    const newId = await saveBarTemplate({ ...parsed.data, songId })
+    // Bar documents go through saveBarDocument: they are keyed by barId (not
+    // by unique name), and must not trigger propagation on import.
+    const newId = isReusableTemplate(parsed.data)
+      ? await saveBarTemplate({ ...parsed.data, songId })
+      : await saveBarDocument({ ...parsed.data, songId })
     const oldId = oldIdsByName[t.name]
     if (oldId !== undefined) {
       idMap[oldId] = newId
