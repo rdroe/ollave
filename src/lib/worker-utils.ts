@@ -2,6 +2,8 @@
 // These are copies of the utility functions needed by the web worker
 
 import { DEFAULT_DURATION } from 'jsmidgen'
+
+import { buildPhaseSchedule } from './shared/phaseSchedule'
 // const DEFAULT_DURATION = 128
 export const DEFAULT_VELOCITY = 90
 
@@ -177,65 +179,67 @@ export function mapSongToMidiTicksCore(
   phases: GenericPhases,
   notesByBar: GenericNotesByBar,
   getAllPhaseBarNotes: (phaseName: string) => GenericNoteByBar[][],
-  getFollowingPhases: (phaseName: string) => [string, GenericPhase][],
+  // Retained for signature compatibility with every existing caller; the DAG
+  // scheduler derives follower order from 'follows-ids' itself.
+  _getFollowingPhases: (phaseName: string) => [string, GenericPhase][],
   tickCountsObj: any = tickCounts,
   parseNoteTagsFn: any = parseNoteTags,
   quantizeNoteFn: any = quantizeNote
 ): MidiMappingResult {
-  const mapPhaseTicksCore = function mapPhaseTicksCore(
-    phaseName: string,
-    phase: GenericPhase,
-    startTick: number,
-    collector: MidiMap[] = [],
-    phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks = {
-      phases: {},
-      bars: {},
-    },
-    getAllPhaseBarNotes: (phaseName: string) => GenericNoteByBar[][],
-    getFollowingPhases: (phaseName: string) => [string, GenericPhase][],
-    tickCountsObj: any = tickCounts,
-    parseNoteTagsFn: any = parseNoteTags,
-    quantizeNoteFn: any = quantizeNote
-  ): {
-    map: MidiMap[]
-    phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks
-  } {
-    // add phase start tick
-    phaseAndBarStartAndEndTicks.phases[phaseName] = [startTick, -1]
-    const barTickFactor = tickCountsObj.bar
+  // One topological pass replaces the old recursive walk from every root: it
+  // accumulates parent start ticks and multipliers, visits a multi-parent
+  // child once, and terminates on cycles. See shared/phaseSchedule.ts.
+  const barNotesByPhase: { [phaseName: string]: GenericNoteByBar[][] } = {}
+  const barCountOf = (phaseName: string) => {
+    if (!barNotesByPhase[phaseName]) {
+      barNotesByPhase[phaseName] = getAllPhaseBarNotes(phaseName)
+    }
+    return barNotesByPhase[phaseName].length
+  }
 
-    // get the bar-sorted bar notes
-    const phaseBars = getAllPhaseBarNotes(phaseName)
-    // initialize the midi map where we will put each note on a numeric midi property
-    const phaseMidi: MidiMap = {}
+  const schedule = buildPhaseSchedule(phases, barCountOf)
+  schedule.problems.forEach((problem) => {
+    if (problem.kind === 'missing-parent') {
+      console.warn(
+        `phase "${problem.phaseName}" follows missing phase id ${problem.parentId}; treating it as a root`
+      )
+    } else {
+      console.warn(
+        `phase cycle detected among ${problem.phaseNames.join(', ')}; scheduling them after their resolvable parents`
+      )
+    }
+  })
 
-    // for each bar, use the bar semantic "tags" property to determine which notes to play on that midi tick.
+  const phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks = {
+    phases: {},
+    bars: {},
+  }
+  const midiMap: MidiMap = {}
+
+  Object.entries(schedule.phases).forEach(([phaseName, scheduled]) => {
+    phaseAndBarStartAndEndTicks.phases[phaseName] = [
+      scheduled.startTick,
+      scheduled.endTick,
+    ]
+
+    const phaseBars = barNotesByPhase[phaseName] ?? []
+    const barTickFactor = tickCountsObj.bar * scheduled.barSizeMultiplier
+
     phaseBars.forEach((barNotes, barIndex) => {
-      // loop (not just multiplying by index) because later bars may have a different bar size multiplier each
-      const thisBarOffset =
-        barIndex *
-        barTickFactor *
-        (typeof phase?.barSizeMultiplier === 'number'
-          ? phase.barSizeMultiplier
-          : 1)
-
-      phaseAndBarStartAndEndTicks.bars[`${barIndex}`] = [
-        startTick + thisBarOffset,
-        startTick +
-          thisBarOffset +
-          barTickFactor *
-            (typeof phase?.barSizeMultiplier === 'number'
-              ? phase.barSizeMultiplier
-              : 1),
+      const barStart = scheduled.startTick + barIndex * barTickFactor
+      // Keyed by FULL bar id: bare '0'/'1' keys let phases overwrite each
+      // other's timings, which is why a second phase's bars used to vanish.
+      phaseAndBarStartAndEndTicks.bars[`${phaseName}:${barIndex}`] = [
+        barStart,
+        barStart + barTickFactor,
       ]
 
       // INTERPRETING INDIVIDUAL NOTES TO REAL TIMING
       barNotes.forEach((note) => {
         const parsedTags = parseNoteTagsFn(note.tags)
-        const thisNoteTick =
-          quantizeNoteFn(parsedTags) + startTick + thisBarOffset
-        if (!phaseMidi[thisNoteTick]) {
-          phaseMidi[thisNoteTick] = []
+        const thisNoteTick = quantizeNoteFn(parsedTags) + barStart
+        if (!midiMap[thisNoteTick]) {
+          midiMap[thisNoteTick] = []
         }
         const durationRaw = note.tags
           .find((tag) => tag.startsWith('duration='))
@@ -247,7 +251,7 @@ export function mapSongToMidiTicksCore(
           ?.split('=')?.[1]
           ?.split(',')?.[0]
         const parsedVelocity = parseInt(velocityRaw ?? '')
-        phaseMidi[thisNoteTick].push({
+        midiMap[thisNoteTick].push({
           note: note.note,
           compositionTags: note.tags,
           velocity: !isNaN(parsedVelocity)
@@ -258,80 +262,8 @@ export function mapSongToMidiTicksCore(
             : workerBall.DEFAULT_DURATION,
         })
       })
-
-      // if last bar, add phase end tick
-      if (barIndex === phaseBars.length - 1) {
-        phaseAndBarStartAndEndTicks.phases[phaseName] = [
-          startTick + thisBarOffset,
-          startTick +
-            thisBarOffset +
-            barTickFactor *
-              (typeof phase?.barSizeMultiplier === 'number'
-                ? phase.barSizeMultiplier
-                : 1),
-        ]
-      }
     })
-
-    collector.push(phaseMidi)
-    const followsPhases = getFollowingPhases(phaseName)
-
-    followsPhases.forEach(([followsPhaseName, followsPhase]) => {
-      mapPhaseTicksCore(
-        followsPhaseName,
-        followsPhase,
-        phaseBars.length * barTickFactor,
-        collector,
-        phaseAndBarStartAndEndTicks,
-        getAllPhaseBarNotes,
-        getFollowingPhases,
-        tickCountsObj,
-        parseNoteTagsFn,
-        quantizeNoteFn
-      )
-    })
-
-    return { map: collector, phaseAndBarStartAndEndTicks }
-  }
-
-  const firstPhases = Object.entries(phases).filter(([_, phase]) => {
-    // Handle cases where follows-ids might be undefined or missing
-    const followsIds = phase['follows-ids']
-    return !followsIds || followsIds.length === 0
   })
-
-  const collector: MidiMap[] = []
-  const phaseAndBarStartAndEndTicks: PhaseAndBarStartAndEndTicks = {
-    phases: {},
-    bars: {},
-  }
-
-  firstPhases.forEach(([phaseName, phase]) => {
-    mapPhaseTicksCore(
-      phaseName,
-      phase,
-      0,
-      collector,
-      phaseAndBarStartAndEndTicks,
-      getAllPhaseBarNotes,
-      getFollowingPhases,
-      tickCountsObj,
-      parseNoteTagsFn,
-      quantizeNoteFn
-    )
-  })
-
-  // phase-level massaging here.
-  const midiMap: MidiMap = collector.reduce((acc, curr) => {
-    Object.entries(curr).forEach(([tickRaw, notes]) => {
-      const tick = parseInt(tickRaw)
-      if (!acc[tick]) {
-        acc[tick] = []
-      }
-      acc[tick].push(...notes)
-    })
-    return acc
-  }, {} as MidiMap)
 
   return { map: midiMap, phaseAndBarStartAndEndTicks }
 }
