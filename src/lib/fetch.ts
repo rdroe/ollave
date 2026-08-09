@@ -1,7 +1,10 @@
 import { browser } from 'user-tables'
 
 import { mem } from '../core/mem'
-import { setLatestMap } from '../core/observables'
+// Specific module, NOT the '../core/observables' barrel: the barrel re-exports
+// songObservables, which imports lib/music.ts and constructs a Tone.js Piano at
+// module scope. Importing fetch.ts should not start loading audio samples.
+import { setLatestMap } from '../core/observables/compilationObservable'
 import {
   deleteCueObservable,
   startCueObservable,
@@ -72,7 +75,10 @@ export async function loadAndInitSongAndTracks(songId: number) {
       ...parsedSong,
       'track-ids': parsedSong['track-ids'] || [],
     }
-    mem().tracks = [latestSong.tracks[0]]
+    // Every track, not just the first: truncating here silently discarded the
+    // other tracks' phases and notes, and saveSongAndTracks() then wrote that
+    // truncated mem() back over the stored song.
+    mem().tracks = latestSong.tracks
     mem().phases = latestSong.phases.reduce(
       (acc, phase) => {
         // id/name/'follows-ids'/barSizeMultiplier are always present on the
@@ -155,7 +161,8 @@ export async function loadAndInitLatestSongAndTracks() {
       id: validSong.id,
       'track-ids': validSong['track-ids'] || [],
     }
-    mem().tracks = [latestSong.tracks[0]]
+    // Every track — see loadAndInitSongAndTracks above.
+    mem().tracks = latestSong.tracks
     mem().phases = latestSong.phases.reduce(
       (acc, phase) => {
         acc[phase.name] = {

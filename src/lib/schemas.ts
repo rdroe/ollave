@@ -219,4 +219,27 @@ export const trackRecordSchema = z.object({
   'phase-ids': z.array(z.number()),
   'phase-names': z.array(z.string()),
   notesByBar: notesByBarSchema,
+  /**
+   * Optional so every existing IndexedDB row still parses untouched. Absent
+   * means "derive it" — see trackLabel/trackChannel — rather than a stored
+   * default, so old rows are never rewritten just to gain metadata.
+   */
+  name: z.string().optional(),
+  channel: z.number().int().min(0).max(15).optional(),
 })
+
+/** Display label for a track: its stored name, else its 1-based position. */
+export const trackLabel = (
+  track: { name?: string },
+  trackIndex: number
+): string => track.name ?? `Track ${trackIndex + 1}`
+
+/**
+ * MIDI channel for a track: its stored channel, else its index clamped to the
+ * 16-channel range. Channel 9 (percussion) is deliberately NOT skipped in this
+ * release — see the plan's deferred list.
+ */
+export const trackChannel = (
+  track: { channel?: number },
+  trackIndex: number
+): number => track.channel ?? Math.min(trackIndex, 15)
