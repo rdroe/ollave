@@ -230,7 +230,7 @@ export const trackRecordSchema = z.object({
 
 /** Display label for a track: its stored name, else its 1-based position. */
 export const trackLabel = (
-  track: { name?: string },
+  track: { name?: string | undefined },
   trackIndex: number
 ): string => track.name ?? `Track ${trackIndex + 1}`
 
@@ -240,6 +240,6 @@ export const trackLabel = (
  * release — see the plan's deferred list.
  */
 export const trackChannel = (
-  track: { channel?: number },
+  track: { channel?: number | undefined },
   trackIndex: number
 ): number => track.channel ?? Math.min(trackIndex, 15)

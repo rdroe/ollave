@@ -44,6 +44,10 @@ export type Mem = {
     'phase-ids': number[]
     'phase-names': string[]
     notesByBar: Record<string, NoteByBar[]>
+    // Optional, mirroring trackRecordSchema: absent means "derive it" (see
+    // trackLabel/trackChannel), so old rows need no migration.
+    name?: string
+    channel?: number
   }[]
   phases: {
     [phaseName: string]: PhaseRecord

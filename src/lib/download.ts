@@ -3,10 +3,12 @@ import Midi from 'jsmidgen'
 import { parseColonTag } from './util/parseColonTag'
 import { trackTempo as startTempo } from '../core/observables/masterTicksObservable'
 
+import { mem } from '../core/mem'
+
 import { MidiMap } from './mapSongToTicks'
-import { addEvents, saveRaw } from './midi'
+import { addEvents, ensureTracks, saveRaw } from './midi'
 import { DEFAULT_TRACK_IDX, RelativeNote } from './music'
-import { tagsObjSchema } from './schemas'
+import { tagsObjSchema, trackChannel } from './schemas'
 
 type IncomingEvent =
   | {
@@ -25,11 +27,16 @@ type IncomingEvent =
 
 const downloadEvents = async (
   notes: RelativeNote[],
-  tempo: number | null = startTempo
+  tempo: number | null = startTempo,
+  trackCount: number = 0,
+  channels: number[] = []
 ) => {
   const midiTracks: Midi.Track[] = []
   const file = new Midi.File()
-  addEvents(midiTracks, notes, tempo, file)
+  // Declared song-track order, before any event is written, so track order is
+  // the song's rather than first-note-encounter order.
+  ensureTracks(midiTracks, trackCount, tempo, file)
+  addEvents(midiTracks, notes, tempo, file, channels)
   const midi = file.toBytes()
   saveRaw(midi)
   return { downloaded: notes }
@@ -69,12 +76,6 @@ const addNoteEvent = (
     })
   }
 }
-const pushUnique = (Array: string[], item: string): string[] => {
-  if (!Array.includes(item)) {
-    Array.push(item)
-  }
-  return Array
-}
 const findBarId = (compositionTags: string[]) => {
   // convert tag list to tagsObj
   const tagsObj = tagsObjSchema.parse(compositionTags)
@@ -91,22 +92,56 @@ const getPhaseId = (compositionTags: string[]): string | null => {
   }
   return parsed[0]
 }
-const songToEvents = async (mappedTicks: MidiMap) => {
-  const uniqueTrackNames: string[] = []
 
+/**
+ * phaseName -> song track index, from the song's own track order.
+ *
+ * Replaces first-note-encounter numbering, which made a note's MIDI track
+ * depend on playback order rather than on which track actually owns its phase.
+ */
+export const buildPhaseTrackIndex = (
+  tracks: { 'phase-names': string[] }[]
+): { [phaseName: string]: number } => {
+  const map: { [phaseName: string]: number } = {}
+  tracks.forEach((track, trackIdx) => {
+    track['phase-names'].forEach((phaseName) => {
+      map[phaseName] = trackIdx
+    })
+  })
+  return map
+}
+
+const songToEvents = async (
+  mappedTicks: MidiMap,
+  phaseTrackIndex: { [phaseName: string]: number } = {}
+) => {
   const noteEvents: {
     [tick: number]: IncomingEvent[]
   } = {}
+
+  const warnedPhases = new Set<string>()
 
   const relativized: RelativeNote[] = []
   // go through all the tickes, each of which has a list of notes
   Object.entries(mappedTicks).forEach(([tickRaw, notes]) => {
     notes.forEach((n) => {
-      // get the track index for the note
-      const trackName = getPhaseId(n.compositionTags)
-      const trackIdx = trackName
-        ? pushUnique(uniqueTrackNames, trackName).indexOf(trackName)
-        : DEFAULT_TRACK_IDX
+      // Resolve the note's owning track through its phase.
+      const phaseName = getPhaseId(n.compositionTags)
+      let trackIdx = DEFAULT_TRACK_IDX
+      if (phaseName !== null) {
+        const mapped = phaseTrackIndex[phaseName]
+        if (typeof mapped === 'number') {
+          trackIdx = mapped
+        } else if (!warnedPhases.has(phaseName)) {
+          // An unknown phase means the note's bar id names a phase no track
+          // claims — a data defect. Fall back to track 0 rather than dropping
+          // the note, but say so once per phase.
+          warnedPhases.add(phaseName)
+          console.warn(
+            `MIDI export: phase "${phaseName}" belongs to no track; writing its notes to track 0`
+          )
+        }
+      }
       // if the note is a tempo event, add the tempo event to the note events
       if (n.note.startsWith('tempo:')) {
         const [l, r] = n.note.split(': ')
@@ -226,6 +261,11 @@ export const downloadSong = async (
   midiMap: MidiMap
 ) => {
   const mappedTicks = midiMap
-  const events = await songToEvents(mappedTicks)
-  return downloadEvents(events, tempo)
+  // Track membership and channels are read HERE and threaded downward, so
+  // midi.ts stays free of mem().
+  const tracks = mem().tracks
+  const phaseTrackIndex = buildPhaseTrackIndex(tracks)
+  const channels = tracks.map((track, idx) => trackChannel(track, idx))
+  const events = await songToEvents(mappedTicks, phaseTrackIndex)
+  return downloadEvents(events, tempo, tracks.length, channels)
 }
