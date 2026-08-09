@@ -38,6 +38,43 @@ export type SongFixture = {
 }
 
 /**
+ * Install a minimal no-op `document` for song load/save paths.
+ *
+ * initLoadedSong() removes leftover `.note-slider` elements, which needs a
+ * document to exist. This is OPT-IN per suite rather than global setup: some
+ * modules (lib/songGanttDemos/*) feature-detect `typeof document === 'undefined'`
+ * to skip browser-only work, and defining it globally makes them run their DOM
+ * bodies under node and break unrelated suites.
+ *
+ * Returns a restore function; call it in afterAll to leave the global as found.
+ */
+export const installStubDocument = (): (() => void) => {
+  const g = globalThis as unknown as { document?: unknown }
+  if (g.document !== undefined) {
+    return () => undefined
+  }
+  const noopElement = () => ({
+    id: '',
+    style: {},
+    remove: () => undefined,
+    click: () => undefined,
+    appendChild: () => undefined,
+    querySelector: () => null,
+    querySelectorAll: () => [] as unknown[],
+  })
+  g.document = {
+    querySelector: () => null,
+    querySelectorAll: () => [] as unknown[],
+    getElementById: () => null,
+    createElement: () => noopElement(),
+    body: noopElement(),
+  }
+  return () => {
+    delete g.document
+  }
+}
+
+/**
  * Wipe every row so each test starts from an empty database.
  *
  * Deliberately NOT xxxClearAndRestart(): that helper does not await its own

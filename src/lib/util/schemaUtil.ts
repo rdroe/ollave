@@ -214,6 +214,10 @@ export function exportSongAndTracks(): {
       'phase-ids': track['phase-ids'],
       'phase-names': track['phase-names'],
       notesByBar: track.notesByBar,
+      // Only when set, so an export of pre-0.8.0 tracks stays byte-identical
+      // to what it was and the importer keeps deriving the defaults.
+      ...(track.name === undefined ? {} : { name: track.name }),
+      ...(track.channel === undefined ? {} : { channel: track.channel }),
     })),
     phases: Object.values(mem().phases).map((phase) => ({
       id: phase.id,

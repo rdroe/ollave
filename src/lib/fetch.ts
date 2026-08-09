@@ -29,7 +29,12 @@ import { phaseCountInner, phaseFollowsPhaseInner } from './util/phaseUtil'
 // bundle (blank page, "Cannot access X before initialization").
 import { importBarTemplatesForSong } from './barTemplates/fetch'
 import { BarTemplate } from './barTemplates/schemas'
-import { compileTracksToNotesByBar } from './util/schemaUtil'
+import {
+  compileNotesByBarToTracks,
+  compileTracksToNotesByBar,
+  saveSongAndTracksAwaited,
+} from './util/schemaUtil'
+import { createTrack } from './songApi'
 import { namesPromise } from './util/songNamesUtil'
 
 export const fetchLatestSongAndTracks = async () => {
@@ -251,6 +256,12 @@ export async function initNewSong() {
     throw new Error(`created song ${createdId} not found`)
   }
   mem().song = songRecordSchema.parse(refetched.data)
+  // Switching songs: drop the previous song's tracks/phases before creating
+  // the new song's first track. initNewTrack() appends, so leaving them would
+  // make the new song inherit the old song's tracks.
+  mem().tracks = []
+  mem().phases = {}
+  mem().notesByBar = {}
   await initNewTrack()
   return createdId
 }
@@ -331,23 +342,165 @@ export async function initLatestOrNewSong() {
   return initLoadedSong()
 }
 
-export async function duplicateCurrentSong() {
-  const origMem = {
-    ...mem(),
+/**
+ * The shape duplicate and import both rebuild from: ordered tracks, each with
+ * its phases in order, plus the flattened bar map.
+ */
+type RebuildSource = {
+  tracks: {
+    name?: string
+    channel?: number
+    phases: {
+      name: string
+      barCount: number
+      /** Names of the phases this one follows, resolved in a second pass. */
+      followsNames: string[]
+      scaleName?: string | null
+      scaleTonic?: string | null
+      speed?: number | null
+      barSizeMultiplier?: number | null
+    }[]
+  }[]
+  notesByBar: Record<string, NoteByBar[]>
+}
+
+/**
+ * Rebuild a song's tracks/phases into the CURRENTLY LOADED (freshly created)
+ * song, preserving track membership and follows edges.
+ *
+ * Three passes, deliberately sequential:
+ *   1. create every target track, so a phase can be attached to the right one;
+ *   2. create every phase, recording old name -> new id;
+ *   3. apply follows edges, which can only be resolved once every id exists.
+ *
+ * The old code did one concurrent pass through phaseCountInner() with no
+ * track id, which put every phase of every track onto track 0.
+ */
+async function rebuildSongFromSource(source: RebuildSource) {
+  const memSong = mem().song
+  if (!memSong) {
+    throw new Error('cannot rebuild: no song in memory')
   }
+
+  // initNewSong() already made one empty track; reuse it as track 0 so the
+  // rebuilt song has exactly as many tracks as the source.
+  const trackIds: number[] = mem().tracks.map((t) => t.id)
+
+  for (let i = 0; i < source.tracks.length; i += 1) {
+    const spec = source.tracks[i]
+    if (i < trackIds.length) {
+      const existing = mem().tracks[i]
+      if (spec.name !== undefined) existing.name = spec.name
+      if (spec.channel !== undefined) existing.channel = spec.channel
+      await browser.userTables.update(
+        'track',
+        { id: existing.id, data: existing },
+        {}
+      )
+    } else {
+      const created = await createTrack({
+        name: spec.name,
+        channel: spec.channel,
+      })
+      trackIds.push(created)
+    }
+  }
+
+  // Pass 2: phases, onto their own tracks, as roots for now.
+  const newPhaseIdByName: { [phaseName: string]: number } = {}
+  for (let i = 0; i < source.tracks.length; i += 1) {
+    const trackId = trackIds[i]
+    for (const phase of source.tracks[i].phases) {
+      const newPhaseId = await phaseCountInner(
+        phase.name,
+        phase.barCount,
+        true,
+        trackId
+      )
+      if (newPhaseId != null) {
+        newPhaseIdByName[phase.name] = newPhaseId
+      }
+      const created = mem().phases[phase.name]
+      if (created) {
+        created.scaleName = phase.scaleName ?? created.scaleName
+        created.scaleTonic = phase.scaleTonic ?? created.scaleTonic
+        created.speed = phase.speed ?? created.speed
+        created.barSizeMultiplier =
+          phase.barSizeMultiplier ?? created.barSizeMultiplier
+        if (created.id != null) {
+          newPhaseIdByName[phase.name] = created.id
+        }
+      }
+    }
+  }
+
+  // Pass 3: follows edges, now that every phase has an id.
+  for (const track of source.tracks) {
+    for (const phase of track.phases) {
+      if (!phase.followsNames.length) continue
+      const target = mem().phases[phase.name]
+      if (!target) continue
+      target['follows-ids'] = phase.followsNames
+        .map((parentName) => newPhaseIdByName[parentName])
+        .filter((id): id is number => typeof id === 'number')
+    }
+  }
+
+  mem().notesByBar = source.notesByBar
+  // Bars belong to the track that owns their phase; without this the flattened
+  // map never reaches the per-track rows that get saved.
+  compileNotesByBarToTracks()
+  await saveSongAndTracksAwaited()
+}
+
+/** Snapshot the loaded song into the rebuild shape. */
+const rebuildSourceFromMem = (): RebuildSource => {
+  const phaseNameById: { [id: number]: string } = {}
+  Object.values(mem().phases).forEach((phase) => {
+    phaseNameById[phase.id] = phase.name
+  })
+
+  const notesByBar = Object.fromEntries(
+    Object.entries(mem().notesByBar).map(([barId, notes]) => [
+      barId,
+      notes.map((note) => makeNoteByBar(note.note, note.tags)),
+    ])
+  )
+
+  return {
+    tracks: mem().tracks.map((track) => ({
+      name: track.name,
+      channel: track.channel,
+      phases: track['phase-names'].map((phaseName) => {
+        const phase = mem().phases[phaseName]
+        const barCount = Object.keys(notesByBar).filter((barId) =>
+          barId.startsWith(`${phaseName}:`)
+        ).length
+        return {
+          name: phaseName,
+          barCount,
+          followsNames: (phase?.['follows-ids'] ?? [])
+            .map((id) => phaseNameById[id])
+            .filter((name): name is string => typeof name === 'string'),
+          scaleName: phase?.scaleName,
+          scaleTonic: phase?.scaleTonic,
+          speed: phase?.speed,
+          barSizeMultiplier: phase?.barSizeMultiplier,
+        }
+      }),
+    })),
+    notesByBar,
+  }
+}
+
+export async function duplicateCurrentSong() {
   const origSong = mem().song
   if (!origSong) {
     throw new Error('cannot duplicate: no song in memory')
   }
   const origName = origSong.name
-  const notesByBar = Object.fromEntries(
-    Object.entries(mem().notesByBar).map(([barId, notes]) => [
-      barId,
-      notes.map((note) => {
-        return makeNoteByBar(note.note, note.tags)
-      }),
-    ])
-  )
+  const source = rebuildSourceFromMem()
+
   const newSongId = await initNewSong()
   await initLoadedSong()
   const loaded = await loadAndInitSongAndTracks(newSongId)
@@ -358,41 +511,17 @@ export async function duplicateCurrentSong() {
     song: { name: newName },
   } = loaded
 
-  // init phases for each current phase.
-  const newPhaseToNameHash: Record<number, string> = {}
-  const oldPhaseToNameHash: Record<number, string> = {}
-  await Promise.all(
-    Object.entries(origMem.phases).map(async ([phaseName, phase]) => {
-      oldPhaseToNameHash[phase.id] = phaseName
-      // get phase count by looking at notesByBar; increment for every bar starting with phaseNane:
-      const phaseCount = Object.keys(notesByBar).filter((barId) => {
-        return barId.startsWith(phaseName)
-      }).length
-      const newPhaseId = await phaseCountInner(phaseName, phaseCount, true)
-      mem().phases[phaseName].scaleName = phase.scaleName
-      mem().phases[phaseName].scaleTonic = phase.scaleTonic
-      mem().phases[phaseName].speed = phase.speed
-      mem().phases[phaseName].barSizeMultiplier = phase.barSizeMultiplier
-      if (newPhaseId != null) {
-        newPhaseToNameHash[newPhaseId] = phaseName
-      }
-    })
-  )
-  await Promise.all(
-    Object.entries(oldPhaseToNameHash).map(async ([_, oldPhaseName]) => {
-      const phase = origMem.phases[oldPhaseName]
-      const followsIds = phase['follows-ids'] || []
-      const subjectNames = followsIds.map((followId) => {
-        return oldPhaseToNameHash[followId]
-      })
-      await phaseFollowsPhaseInner(oldPhaseName, subjectNames)
-    })
-  )
+  await rebuildSongFromSource(source)
+
   const duplicatedSong = mem().song
   if (duplicatedSong) {
     duplicatedSong.name = `${newName} <- ${origName}`
+    await browser.userTables.update(
+      'song',
+      { id: duplicatedSong.id, data: duplicatedSong },
+      {}
+    )
   }
-  mem().notesByBar = notesByBar
 
   await setLatestMap(mapSongToMidiTicks())
   return newSongId
@@ -415,6 +544,47 @@ export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord
           })
       })
   })
+  // Phase id -> name, from the EXPORTED phase rows, so follows edges can be
+  // remapped by name onto the new ids. The old code keyed this hash by the
+  // phase's array index while looking it up by stored id, so any song whose
+  // phase ids were not 0,1,2… lost its follows edges on import.
+  const exportedPhaseNameById: { [id: number]: string } = {}
+  phases.forEach((phase) => {
+    const id = (phase as PhaseRecord).id
+    if (typeof id === 'number') {
+      exportedPhaseNameById[id] = phase.name
+    }
+  })
+
+  const phaseByName: { [name: string]: Omit<PhaseRecord, 'id'> } = {}
+  phases.forEach((phase) => {
+    phaseByName[phase.name] = phase
+  })
+
+  const source: RebuildSource = {
+    tracks: tracks.map((track) => ({
+      name: track.name,
+      channel: track.channel,
+      phases: track['phase-names'].map((phaseName) => {
+        const phase = phaseByName[phaseName]
+        return {
+          name: phaseName,
+          barCount: Object.keys(notesByBar).filter((barId) =>
+            barId.startsWith(`${phaseName}:`)
+          ).length,
+          followsNames: (phase?.['follows-ids'] ?? [])
+            .map((id) => exportedPhaseNameById[id])
+            .filter((name): name is string => typeof name === 'string'),
+          scaleName: phase?.scaleName,
+          scaleTonic: phase?.scaleTonic,
+          speed: phase?.speed,
+          barSizeMultiplier: phase?.barSizeMultiplier,
+        }
+      }),
+    })),
+    notesByBar,
+  }
+
   const newSongId = await initNewSong()
   await initLoadedSong()
   const loaded = await loadAndInitSongAndTracks(newSongId)
@@ -425,45 +595,18 @@ export async function importSongAndTracks(songAndTracks: { song: Omit<SongRecord
       song: { name: newName },
     } = loaded
   const origName = song.name
-  // init phases for each current phase.
-  const newPhaseToNameHash: Record<number, string> = {}
-  const oldPhaseToNameHash: Record<number, string> = {}
-  await Promise.all(
-    Object.entries(memPhases).map(async ([_, phase], idx) => {
-      const phaseName = phase.name
-      oldPhaseToNameHash[idx] = phaseName
-      // get phase count by looking at notesByBar; increment for every bar starting with phaseNane:
-      const phaseCount = Object.keys(notesByBar).filter((barId) => {
-        return barId.startsWith(phaseName)
-      }).length
-      const newPhaseId = await phaseCountInner(phaseName, phaseCount, true)
-      mem().phases[phaseName].scaleName = phase.scaleName
-      mem().phases[phaseName].scaleTonic = phase.scaleTonic
-      mem().phases[phaseName].speed = phase.speed
-      mem().phases[phaseName].barSizeMultiplier = phase.barSizeMultiplier
-      if (newPhaseId != null) {
-        newPhaseToNameHash[newPhaseId] = phaseName
-      }
-    })
-  )
 
-  await Promise.all(
-    Object.entries(oldPhaseToNameHash).map(async ([_, oldPhaseName]) => {
-
-      const phase = memPhases[oldPhaseName]
-      const followsIds = phase?.['follows-ids'] || []
-      const subjectNames = followsIds.map((followId) => {
-        return oldPhaseToNameHash[followId]
-      })
-      await phaseFollowsPhaseInner(oldPhaseName, subjectNames)
-    })
-  )
+  await rebuildSongFromSource(source)
 
   const importedSong = mem().song
   if (importedSong) {
     importedSong.name = `${newName} <- imported <- ${origName}`
+    await browser.userTables.update(
+      'song',
+      { id: importedSong.id, data: importedSong },
+      {}
+    )
   }
-  mem().notesByBar = notesByBar
 
   // Bar templates: recreate them under the new song and repoint the
   // customBarId tags on placed notes at the new row ids, so the imported
