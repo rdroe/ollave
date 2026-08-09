@@ -43,6 +43,13 @@ type MemSnapshot = Pick<
 
 const barId = (phaseName: string) => `${phaseName}:0`
 
+/**
+ * Negative sentinels, like SCRATCH_SONG_ID: a stray persist would target rows
+ * that cannot exist, so it modifies nothing.
+ */
+const SCRATCH_TRACK_ID = -999998
+const SCRATCH_PHASE_ID = -999997
+
 // Module-level singleton: only one scratch song may be mounted at a time.
 // Mounting again tears down whatever is currently mounted first.
 let activeTeardown: (() => void) | null = null
@@ -73,12 +80,26 @@ export function mountScratchSong(ctx: ScratchCtx): ScratchHandle {
     id: SCRATCH_SONG_ID,
     name: SCRATCH_SONG_NAME,
     tempo: ctx.tempo,
-    'track-ids': [],
+    // Declares the scratch track below. The second value is the reserved slot
+    // and stays 0, as in every real song.
+    'track-ids': [[SCRATCH_TRACK_ID, 0]],
   }
-  mem().tracks = []
+  // One VALID track that actually owns the scratch phase, rather than [].
+  // An empty track array makes the scratch song structurally unlike every real
+  // song: anything that resolves a phase through track membership (MIDI track
+  // mapping, compileNotesByBarToTracks) finds no owner. The snapshot/restore
+  // below still puts the real song's tracks back on teardown.
+  mem().tracks = [
+    {
+      id: SCRATCH_TRACK_ID,
+      'phase-ids': [SCRATCH_PHASE_ID],
+      'phase-names': [ctx.phaseName],
+      notesByBar: {},
+    },
+  ]
   mem().phases = {
     [ctx.phaseName]: {
-      id: -1,
+      id: SCRATCH_PHASE_ID,
       name: ctx.phaseName,
       'follows-ids': [],
       speed: 1,
