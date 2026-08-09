@@ -1,4 +1,5 @@
 import { browser } from 'user-tables'
+import { z } from 'zod'
 
 import { mem } from '../core/mem'
 // Specific module, NOT the '../core/observables' barrel: the barrel re-exports
@@ -274,12 +275,20 @@ async function initNewTrack() {
     { id: trackId, data: { id: trackId } },
     {}
   )
+  // APPEND: writing a fresh single-element array here dropped every track the
+  // song already had. Harmless for the brand-new song this is called for, but
+  // the array is the authoritative track order, so it must never be replaced.
+  const existingTrackIds = memSong['track-ids'] ?? []
+  const nextTrackIds: [number, number][] = [
+    ...existingTrackIds,
+    [z.number().parse(trackId), 0],
+  ]
   await browser.userTables.update(
     'song',
     {
       id: memSong.id,
       data: {
-        'track-ids': [[trackId, 0]],
+        'track-ids': nextTrackIds,
       },
     },
     {}
@@ -293,10 +302,16 @@ async function initNewTrack() {
   const validSong = songRecordSchema.parse(fetched.data)
   const { 'track-ids': songTracks } = validSong
 
-  if (songTracks) {
+  if (songTracks?.length) {
+    memSong['track-ids'] = songTracks
+    // Only the track just created is appended to mem(); the rest are left
+    // alone. This is called on a brand-new song, so mem().tracks is normally
+    // empty — rebuilding every entry as an empty track would blank the
+    // phases/notes of any track that did exist.
     mem().tracks = [
+      ...mem().tracks,
       {
-        id: songTracks[0][0],
+        id: z.number().parse(trackId),
         'phase-ids': [],
         'phase-names': [],
         notesByBar: {},

@@ -157,6 +157,36 @@ export function saveSongAndTracks() {
     browser.userTables.update('track', { id: track.id, data: track }, {})
   })
 }
+
+/**
+ * saveSongAndTracks(), but awaiting every write.
+ *
+ * The sync version fires its updates without awaiting them, so a caller that
+ * reads a row straight afterwards can observe the pre-save state. Its
+ * signature and its many existing callers are left alone; new APIs that
+ * promise "the write finished" use this instead.
+ */
+export async function saveSongAndTracksAwaited(): Promise<void> {
+  const song = mem().song
+  if (!song) {
+    throw new Error('cannot save: no song in memory')
+  }
+  await browser.userTables.update('song', { id: song.id, data: song }, {})
+  for (const phase of Object.values(mem().phases)) {
+    await browser.userTables.update(
+      'phase',
+      { id: phase.id, data: phase },
+      { id: phase.id }
+    )
+  }
+  for (const track of mem().tracks) {
+    await browser.userTables.update(
+      'track',
+      { id: track.id, data: track },
+      {}
+    )
+  }
+}
 /**
  * Bar templates are fetched separately (async, from their own table) and
  * attached by the export command — see exportBarTemplatesForSong. Kept out of

@@ -42,7 +42,11 @@ export async function phaseFollowsPhaseInner(
     phases[subject] = {
       id: z.number().parse(phaseId),
       name: subject,
-      'follows-ids': [],
+      // The SAME ids that were just persisted. This used to be [], so the row
+      // said "follows X" while memory said "root" — a drift that only healed
+      // on the next reload, and that made duplicate/import lose follows edges
+      // whenever they read the freshly created phase back out of mem().
+      'follows-ids': phaseData['follows-ids'],
       barSizeMultiplier: null,
       speed: 1,
       scaleName: 'major',
