@@ -415,22 +415,31 @@ export const startCueObservable = (
 export const stopCueObservable = () => {
   const songName = mustSong().name
   const publishedCursro = mem().adjustedCursor
+  const wasRunning = mem().isRunning
   mem().isRunning = false
-  const observable = mem().observables[songName]
+  const observables = mem().observables[songName]
 
-  if (observable) {
-    mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
-    Object.entries(mem().observables[songName] || {}).forEach(
-      ([_, observable]) => {
-        observable.unsubscribe()
-      }
-    )
-  } else {
-    console.error('no observable found for song', songName)
+  if (!observables) {
+    // Nothing subscribed for this song. That is the NORMAL state for a song
+    // that has been loaded but never played, and load stops the outgoing song
+    // unconditionally — so this fired on every song switch and read as a
+    // failure when nothing was wrong. Only a song that believed it was running
+    // has any business lacking subscriptions.
+    if (wasRunning) {
+      console.error('no observable found for running song', songName)
+    }
+    return
   }
 
-  Object.entries(mem().functions[songName] || {}).forEach(([fnName, fn]) => {
-    mem().observables[songName][fnName]?.unsubscribe()
+  mem().songPauses[songName] = barsAtMidi(publishedCursro)[0]
+  // This unsubscribes EVERY subscription for the song, the tick one and the
+  // per-function ones alike: startCueObservable stores them in this one object
+  // keyed by 'tick' and by function name. (A second pass over mem().functions
+  // used to follow, re-unsubscribing the same objects — and it indexed
+  // mem().observables[songName] unguarded, so it would have thrown here in the
+  // no-observable case had any function ever been registered.)
+  Object.values(observables).forEach((subscription) => {
+    subscription.unsubscribe()
   })
 }
 
