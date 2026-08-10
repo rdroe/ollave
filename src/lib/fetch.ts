@@ -27,7 +27,10 @@ import { phaseCountInner, phaseFollowsPhaseInner } from './util/phaseUtil'
 // pulls in compile.ts, which imports the lib index — a cycle that left
 // startCueObservable/compilationObservable uninitialized in the production
 // bundle (blank page, "Cannot access X before initialization").
-import { importBarTemplatesForSong } from './barTemplates/fetch'
+import {
+  importBarTemplatesForSong,
+  listBarTemplates,
+} from './barTemplates/fetch'
 import { BarTemplate } from './barTemplates/schemas'
 import {
   compileNotesByBarToTracks,
@@ -493,6 +496,57 @@ const rebuildSourceFromMem = (): RebuildSource => {
   }
 }
 
+/**
+ * Recreate the source song's templates under the duplicate and repoint the
+ * copy's `customBarId=` placements at the new rows.
+ *
+ * Simpler than the import equivalent in one way: the source rows still exist,
+ * so their old ids come straight off the records instead of being recovered
+ * from the placements. The repointing itself is identical — a placement left
+ * pointing at the ORIGINAL song's template would make edits to one song
+ * silently rewrite bars in the other.
+ */
+async function copyBarTemplatesToDuplicate(
+  sourceSongId: number | undefined,
+  newSongId: number
+) {
+  if (sourceSongId === undefined) return
+  const sourceTemplates = await listBarTemplates(sourceSongId)
+  if (!sourceTemplates.length) return
+
+  const oldIdsByName: { [name: string]: number } = {}
+  sourceTemplates.forEach((t) => {
+    if (t.id !== undefined) oldIdsByName[t.name] = t.id
+  })
+  const stripped = sourceTemplates.map(({ id: _id, ...rest }) => ({
+    ...rest,
+    songId: newSongId,
+  }))
+  const idMap = await importBarTemplatesForSong(
+    newSongId,
+    stripped,
+    oldIdsByName
+  )
+  if (!Object.keys(idMap).length) return
+
+  const notesByBar = mem().notesByBar
+  Object.entries(notesByBar).forEach(([barId, notes]) => {
+    notesByBar[barId] = notes.map((note) => {
+      const tags = note.tags || []
+      const idx = tags.findIndex((t: string) => t.startsWith('customBarId='))
+      if (idx === -1) return note
+      const oldId = Number(tags[idx].slice('customBarId='.length))
+      const newId = idMap[oldId]
+      if (newId === undefined) return note
+      const rebuilt = [...tags]
+      rebuilt[idx] = `customBarId=${newId}`
+      // Rebuilt, not mutated: makeNoteByBar keeps tags/_tags/tagsObj in sync.
+      return makeNoteByBar(note.note, rebuilt)
+    })
+  })
+  compileNotesByBarToTracks()
+}
+
 export async function duplicateCurrentSong() {
   const origSong = mem().song
   if (!origSong) {
@@ -512,6 +566,12 @@ export async function duplicateCurrentSong() {
   } = loaded
 
   await rebuildSongFromSource(source)
+
+  // Bar templates and bar documents travel with the copy, exactly as they do
+  // through export/import. Without this a duplicated song kept its locked
+  // notes but lost the templates behind them, so those bars could no longer
+  // be edited or propagated — and every focused bar document was gone.
+  await copyBarTemplatesToDuplicate(origSong.id, newSongId)
 
   const duplicatedSong = mem().song
   if (duplicatedSong) {

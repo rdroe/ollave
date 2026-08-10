@@ -12,6 +12,11 @@ vi.mock('./music', () => ({
 import { mem } from '../core/mem'
 
 import {
+  listBarTemplates,
+  saveBarDocument,
+  saveBarTemplate,
+} from './barTemplates/fetch'
+import {
   duplicateCurrentSong,
   importSongAndTracks,
   loadAndInitSongAndTracks,
@@ -131,6 +136,42 @@ describe('duplicateCurrentSong', () => {
 
     const song = await readSongRow(newSongId)
     song['track-ids']?.forEach(([, reserved]) => expect(reserved).toBe(0))
+  })
+
+  it('carries bar templates and bar documents onto the copy', async () => {
+    const fixture = await loadFixture()
+    await saveBarTemplate({
+      songId: fixture.songId,
+      name: 'intro-chord',
+      phaseName: 'intro',
+      barSizeMultiplier: 1,
+      gestures: [],
+      compiledNotes: [],
+    })
+    await saveBarDocument({
+      songId: fixture.songId,
+      name: 'bar intro:0',
+      purpose: 'bar-document',
+      barId: 'intro:0',
+      phaseName: 'intro',
+      barSizeMultiplier: 1,
+      gestures: [],
+      compiledNotes: [],
+    })
+
+    const newSongId = await duplicateCurrentSong()
+
+    const copied = await listBarTemplates(newSongId)
+    expect(copied.map((t) => t.name).sort()).toEqual([
+      'bar intro:0',
+      'intro-chord',
+    ])
+    // The document must still point at its bar, or the focused editor would
+    // resynthesize and quietly discard the user's edits in the copy.
+    const doc = copied.find((t) => t.purpose === 'bar-document')
+    expect(doc?.barId).toBe('intro:0')
+    // and the source song keeps its own rows
+    expect(await listBarTemplates(fixture.songId)).toHaveLength(2)
   })
 
   it('remaps follows edges to the new phase ids', async () => {
