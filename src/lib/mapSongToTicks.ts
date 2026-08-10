@@ -187,23 +187,33 @@ export const barsAtMidi = (songTick: number): BarTagPercent[] => {
 }
 
 export const midiAtBarUtil = (memArg: Mem) => {
-  const { bars } = buildPhaseSchedule(memArg.phases, (phaseName) => {
-    const nbb = memArg.notesByBar
-    return Object.keys(nbb).filter((barTag) =>
-      barTag.startsWith(`${phaseName}:`)
-    ).length
+  // One pass over notesByBar for every phase at once. Filtering the whole key
+  // list per phase re-walked the song once per phase.
+  const barCountByPhase: { [phaseName: string]: number } = {}
+  Object.keys(memArg.notesByBar).forEach((barTag) => {
+    const phaseName = barTag.slice(0, barTag.lastIndexOf(':'))
+    if (!phaseName) return
+    barCountByPhase[phaseName] = (barCountByPhase[phaseName] ?? 0) + 1
   })
 
+  const { bars } = buildPhaseSchedule(
+    memArg.phases,
+    (phaseName) => barCountByPhase[phaseName] ?? 0
+  )
+
+  // `bars` is already keyed by bar id, so the lookup is a direct index. It
+  // used to rebuild an entries array and linear-scan it on EVERY call, and the
+  // UI calls this once per bar — quadratic in song length, which showed up as
+  // a multi-hundred-millisecond stall (and late notes) while scrolling a long
+  // song. The null case wants the earliest bar, resolved once up front.
+  const firstBarId = Object.keys(bars)[0]
+
   return (soughtTagName: string, percent: number): number => {
-    const entries = Object.entries(bars)
-    const match =
-      soughtTagName === null
-        ? entries[0]
-        : entries.find(([barId]) => barId === soughtTagName)
-    if (!match) {
+    const span = bars[soughtTagName ?? firstBarId]
+    if (!span) {
       return 0
     }
-    const [, [barStart, barEnd]] = match
+    const [barStart, barEnd] = span
     const len = barEnd - barStart
     return barStart + Math.round((percent * len) / 100)
   }
