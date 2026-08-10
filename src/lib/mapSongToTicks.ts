@@ -168,17 +168,39 @@ export const currentPhaseSchedule = () =>
     (phaseName) => getAllPhaseBarNotes(phaseName).length
   )
 
+/**
+ * The bar spans to search, preferring the schedule already computed at compile
+ * time over rebuilding one.
+ *
+ * `currentPhaseSchedule()` walks and SORTS every bar in the song. `barsAtMidi`
+ * runs on every stop and every seek — and a loop wrap is a stop plus a seek —
+ * so on a long song each wrap rebuilt the whole schedule twice and blocked the
+ * main thread for ~150 ms, which is felt as the transport hitching at the loop
+ * point. The compiled map is refreshed on every compile (and by scratch mode),
+ * so it is authoritative whenever it is populated.
+ */
+export const barSpansForLookup = () => {
+  const cached = mem().latestPhaseAndBarStartAndEndTicks?.bars
+  if (cached && Object.keys(cached).length > 0) return cached
+  return currentPhaseSchedule().bars
+}
+
 export const barsAtMidi = (songTick: number): BarTagPercent[] => {
-  const { bars } = currentPhaseSchedule()
+  const bars = barSpansForLookup()
 
   const ret: BarTagPercent[] = []
-  Object.entries(bars).forEach(([barId, [barStart, barEnd]]) => {
+  // `for...in` rather than Object.entries: this runs per stop/seek on songs
+  // with hundreds of bars, and entries() allocates a pair array every call.
+  for (const barId in bars) {
+    const span = bars[barId]
+    if (!span) continue
+    const [barStart, barEnd] = span
     if (barStart < songTick && barEnd > songTick) {
       const len = barEnd - barStart
       const percent = ((songTick - barStart) * 100) / len
       ret.push([barId, Math.round(percent)])
     }
-  })
+  }
 
   if (ret.length === 0) {
     ret.push([null, 0])
