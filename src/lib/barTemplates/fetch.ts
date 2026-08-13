@@ -45,9 +45,17 @@ export async function listBarTemplates(
   for (const row of rows) {
     const parsed = barTemplateSchema.safeParse(row.data)
     if (!parsed.success) {
-      console.warn(
-        `Skipping invalid barTemplate row (id=${row.id}):`,
-        parsed.error
+      // console.error, NOT warn. A row that no longer parses vanishes from
+      // every lookup built on this list — `getBarDocument` included — and the
+      // bar it belonged to silently falls back to resynthesis, which destroys
+      // its gesture structure while leaving the notes intact. That is exactly
+      // the failure a user cannot see. Hosts route console.error into a
+      // visible alert; a warning is only ever read by a developer.
+      console.error(
+        `[ollave] bar template row ${row.id} (song ${songId}) could not be read and was SKIPPED — any bar it belongs to will fall back to resynthesis: ` +
+          parsed.error.issues
+            .map((i) => `${i.path.join('.') || '(root)'} ${i.message}`)
+            .join('; ')
       )
       continue
     }
@@ -79,10 +87,11 @@ export async function saveBarTemplate(t: BarTemplate): Promise<number> {
   if (validated.id !== undefined) {
     // user-tables update() folds every non-`data` key into the Dexie search
     // criteria, so a/b here both locate AND rewrite the indexed columns.
-    // Consequence: changing phaseName on an existing row would no-op (b
-    // wouldn't match the stored row). The editor never rewrites phaseName,
-    // so this holds for now.
-    await browser.userTables.update(
+    // Consequence: changing phaseName on an existing row matches nothing and
+    // writes nothing. The editor never rewrites phaseName, so this holds for
+    // now — but it is checked rather than assumed, because a save that
+    // silently changed nothing and reported success is how edits disappear.
+    const modified = await browser.userTables.update(
       BAR_TEMPLATE_TABLE,
       {
         id: validated.id,
@@ -92,6 +101,11 @@ export async function saveBarTemplate(t: BarTemplate): Promise<number> {
       },
       { id: validated.id }
     )
+    if (modified === 0) {
+      throw new Error(
+        `bar template "${validated.name}" was not saved: no row ${validated.id} in song ${validated.songId} phase "${validated.phaseName}" — the row was deleted, or its phase changed (which this path cannot rewrite)`
+      )
+    }
     // Live sync: placed instances mirror their template. Saving IS the
     // propagation trigger — no-ops when the template was never placed.
     await propagateTemplateToSong(validated)
@@ -215,9 +229,47 @@ export async function getBarDocument(
   barId: string
 ): Promise<BarTemplate | null> {
   const all = await listBarTemplates(songId)
-  return (
-    all.find((t) => !isReusableTemplate(t) && t.barId === barId) ?? null
+  const matches = all.filter(
+    (t) => !isReusableTemplate(t) && t.barId === barId
   )
+  if (matches.length > 1) {
+    // Two rows claiming one bar means every write lands on one of them and
+    // the reader may pick the other. Loud, because the symptom — an edit that
+    // "does not stick" — is otherwise indistinguishable from a UI bug.
+    console.error(
+      `[ollave] ${matches.length} bar documents claim song ${songId} bar "${barId}" (rows ${matches
+        .map((m) => m.id)
+        .join(', ')}); using row ${matches[0].id}. The others are unreachable.`
+    )
+  }
+  return matches[0] ?? null
+}
+
+/**
+ * Create the row for a bar document and stamp the generated id into its data.
+ *
+ * Any `id` on the incoming document is DROPPED: this is a create, and a
+ * carried-over id would leave `data.id` disagreeing with the row it now lives
+ * in. (The stamp below would fix it anyway; dropping it says so.)
+ */
+const createBarDocumentRow = async (doc: BarTemplate): Promise<number> => {
+  const { id: _discarded, ...withoutId } = doc
+  const createdId = await browser.userTables.add(BAR_TEMPLATE_TABLE, {
+    data: withoutId,
+    a: String(doc.songId),
+    b: doc.phaseName,
+  })
+  const stamped = await browser.userTables.update(
+    BAR_TEMPLATE_TABLE,
+    { id: createdId, data: { id: createdId } },
+    { id: createdId }
+  )
+  if (stamped === 0) {
+    console.error(
+      `[ollave] bar document row ${createdId} for bar "${doc.barId}" could not be stamped with its own id`
+    )
+  }
+  return createdId as number
 }
 
 /**
@@ -236,35 +288,41 @@ export async function saveBarDocument(doc: BarTemplate): Promise<number> {
     purpose: 'bar-document' as const,
   })
 
+  // The (songId, barId) LOOKUP is the authority on which row to write, never
+  // `doc.id`. A caller legitimately holds a document it loaded earlier, and
+  // that row may since have been deleted (bar-document invalidation after an
+  // external change to the bar) or replaced (a renumber deletes and recreates
+  // every document in the phase). Targeting the id it remembers writes into a
+  // row that is not there — and user-tables' update() is a Dexie `.modify()`
+  // over the search collection, so zero matches means zero writes and NO
+  // error. That is how a bar's whole gesture structure used to vanish while
+  // the UI said "saved": the notes were rewritten, the document never was, and
+  // the next open resynthesized one gesture per note.
   const existing = await getBarDocument(validated.songId, validated.barId!)
-  const targetId = validated.id ?? existing?.id
+  const targetId = existing?.id
 
   if (targetId !== undefined) {
     const next = { ...validated, id: targetId }
-    await browser.userTables.update(
+    // Searched by row id ALONE. user-tables folds every non-`data` key into
+    // the search criteria, so passing a/b here would make the write
+    // conditional on the indexed columns still matching — another silent
+    // no-op waiting to happen. Neither column can go stale on a bar document:
+    // `a` is the songId we just looked the row up by, and `b` is the phase,
+    // which `barId` encodes and therefore cannot change under a fixed barId.
+    const modified = await browser.userTables.update(
       BAR_TEMPLATE_TABLE,
-      {
-        id: targetId,
-        data: next,
-        a: String(next.songId),
-        b: next.phaseName,
-      },
+      { id: targetId, data: next },
       { id: targetId }
     )
-    return targetId
+    if (modified > 0) return targetId
+    // Deleted between the lookup and the write. Recreating is the only
+    // outcome that does not throw the user's edit away.
+    console.error(
+      `[ollave] bar document row ${targetId} for bar "${validated.barId}" disappeared mid-save; recreating it`
+    )
   }
 
-  const createdId = await browser.userTables.add(BAR_TEMPLATE_TABLE, {
-    data: validated,
-    a: String(validated.songId),
-    b: validated.phaseName,
-  })
-  await browser.userTables.update(
-    BAR_TEMPLATE_TABLE,
-    { id: createdId, data: { id: createdId } },
-    { id: createdId }
-  )
-  return createdId as number
+  return createBarDocumentRow(validated)
 }
 
 /** Remove a bar's document, e.g. when the bar itself is deleted. */

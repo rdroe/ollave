@@ -53,6 +53,20 @@ const doc = (overrides: Partial<BarTemplate> = {}): BarTemplate => ({
   ...overrides,
 })
 
+/** A three-note chord gesture — the structure the resynthesis fallback loses. */
+const gesture = () => ({
+  id: 'g1',
+  startStep: 0,
+  source: { kind: 'chord' as const, chordName: 'C' },
+  mode: 'strum' as const,
+  direction: 'down' as const,
+  spread: 'tight' as const,
+  velocity: 90,
+  durationTicks: 128,
+})
+
+const note = (n: string) => ({ note: n, tags: ['gestureId=g1'] })
+
 const reusable = (overrides: Partial<BarTemplate> = {}): BarTemplate => ({
   songId: SONG,
   name: 'strum pattern',
@@ -137,6 +151,70 @@ describe('bar document CRUD', () => {
     expect(found?.compiledNotes).toHaveLength(1)
   })
 
+  /**
+   * The regression this file exists for.
+   *
+   * A caller (the focused bar editor) holds the document it loaded, including
+   * its row id. Anything that invalidates the bar — a chord dropped on it, a
+   * template placed into it, a renumber — DELETES that row. The next save
+   * must not aim at the id the caller remembers: user-tables' update() is a
+   * Dexie .modify() over the search collection, so an id that matches nothing
+   * writes nothing and reports no error. The bar's notes get rewritten, the
+   * document does not, and the next open resynthesizes one gesture per note —
+   * a three-note chord gesture comes back as three single-note gestures.
+   */
+  it('recreates the row when the caller holds an id that was deleted', async () => {
+    const firstId = await saveBarDocument(
+      doc({ gestures: [gesture()], compiledNotes: [note('c3'), note('e3'), note('g3')] })
+    )
+    // Exactly what invalidateBarDocument does.
+    await browser.userTables.delete(BAR_TEMPLATE_TABLE, { id: firstId })
+
+    const savedId = await saveBarDocument(
+      doc({
+        id: firstId,
+        gestures: [gesture()],
+        compiledNotes: [note('c3'), note('e3'), note('g3')],
+      })
+    )
+
+    const found = await getBarDocument(SONG, 'intro:0')
+    expect(found).not.toBeNull()
+    expect(found?.gestures).toHaveLength(1)
+    expect(found?.id).toBe(savedId)
+    // A fresh row, and exactly one of them.
+    expect(await listBarTemplates(SONG)).toHaveLength(1)
+  })
+
+  it('ignores a caller id that names some other row', async () => {
+    const otherId = await saveBarTemplate(reusable({ name: 'someone else' }))
+
+    await saveBarDocument(doc({ id: otherId, name: 'bar intro:0' }))
+
+    // The reusable row is untouched...
+    const others = await listReusableTemplates(SONG)
+    expect(others).toHaveLength(1)
+    expect(others[0].name).toBe('someone else')
+    // ...and the bar document got its own row.
+    const found = await getBarDocument(SONG, 'intro:0')
+    expect(found).not.toBeNull()
+    expect(found?.id).not.toBe(otherId)
+  })
+
+  it('still updates in place when the caller id is stale but a row exists', async () => {
+    const realId = await saveBarDocument(doc())
+
+    // A caller that remembers a long-dead id must not create a duplicate:
+    // the (songId, barId) lookup wins.
+    const savedId = await saveBarDocument(
+      doc({ id: realId + 4242, gestures: [gesture()] })
+    )
+
+    expect(savedId).toBe(realId)
+    expect(await listBarTemplates(SONG)).toHaveLength(1)
+    expect((await getBarDocument(SONG, 'intro:0'))?.gestures).toHaveLength(1)
+  })
+
   it('keeps documents for different bars separate', async () => {
     await saveBarDocument(doc({ barId: 'intro:0', name: 'bar intro:0' }))
     await saveBarDocument(doc({ barId: 'intro:1', name: 'bar intro:1' }))
@@ -170,6 +248,59 @@ describe('bar document CRUD', () => {
     expect(await getBarDocument(1, 'intro:0')).not.toBeNull()
     expect(await getBarDocument(2, 'intro:0')).not.toBeNull()
     expect(await listBarTemplates(1)).toHaveLength(1)
+  })
+})
+
+/**
+ * Whatever else goes wrong, it must not go wrong QUIETLY. Each of these was a
+ * path that dropped or skipped a row while reporting success.
+ */
+describe('loud failures', () => {
+  beforeEach(async () => {
+    await clearTemplates()
+    vi.mocked(propagateTemplateToSong).mockClear()
+  })
+
+  it('reports a row it cannot parse as an error, not a warning', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    await browser.userTables.add(BAR_TEMPLATE_TABLE, {
+      data: { songId: SONG, name: 'broken' }, // no phaseName/gestures/…
+      a: String(SONG),
+      b: 'intro',
+    })
+
+    expect(await listBarTemplates(SONG)).toHaveLength(0)
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('could not be read and was SKIPPED')
+    )
+    spy.mockRestore()
+  })
+
+  it('reports two documents claiming one bar', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    // Only a direct write can make this state; saveBarDocument upserts.
+    for (const name of ['one', 'two']) {
+      await browser.userTables.add(BAR_TEMPLATE_TABLE, {
+        data: { ...doc({ name }), id: undefined },
+        a: String(SONG),
+        b: 'intro',
+      })
+    }
+
+    expect(await getBarDocument(SONG, 'intro:0')).not.toBeNull()
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('bar documents claim song')
+    )
+    spy.mockRestore()
+  })
+
+  it('refuses to report success for a template save that wrote nothing', async () => {
+    const id = await saveBarTemplate(reusable())
+    await browser.userTables.delete(BAR_TEMPLATE_TABLE, { id })
+
+    await expect(saveBarTemplate(reusable({ id }))).rejects.toThrow(
+      /was not saved/
+    )
   })
 })
 
