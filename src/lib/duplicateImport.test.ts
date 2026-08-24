@@ -6,6 +6,9 @@ vi.mock('./music', () => ({
   isReady: () => true,
   TRACK_IDX_IDX: 4,
   DEFAULT_TRACK_IDX: 0,
+  setTrackInstruments: () => undefined,
+  setTrackInstrument: () => undefined,
+  getTrackInstrument: () => 'piano',
   isRelativeMusicNote: (note: unknown[]) => typeof note[0] === 'string',
 }))
 

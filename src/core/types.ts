@@ -48,6 +48,7 @@ export type Mem = {
     // trackLabel/trackChannel), so old rows need no migration.
     name?: string
     channel?: number
+    instrument?: string
   }[]
   phases: {
     [phaseName: string]: PhaseRecord

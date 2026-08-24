@@ -1,4 +1,4 @@
-import Midi, { MidiChannel } from 'jsmidgen'
+import Midi, { MidiChannel, MidiParameterValue } from 'jsmidgen'
 
 import {
   isRelativeMusicNote,
@@ -67,6 +67,11 @@ const isMultiTrack: boolean = true
  * what gets written into the event. They were the same number before channels
  * were configurable, and conflating them is why a 17th track produced an
  * invalid channel.
+ *
+ * `programs` maps track index -> GM program number (0-based), written as a
+ * program-change at time 0 on that track. Only indexes that actually carry a
+ * number emit one, so a call without `programs` produces byte-identical output
+ * to before program changes existed.
  */
 export const addEvents = (
   tracks: Midi.Track[],
@@ -74,7 +79,8 @@ export const addEvents = (
   // null for playedMap downloads: the take embeds its own tempo markers
   tempo: number | null,
   file: Midi.File,
-  channels?: number[]
+  channels?: number[],
+  programs: number[] = []
 ) => {
   const channelFor = (trackIdx: number): MidiChannel => {
     const configured = channels?.[trackIdx]
@@ -82,6 +88,25 @@ export const addEvents = (
       typeof configured === 'number' ? configured : Math.min(trackIdx, 15)
     return Math.max(0, Math.min(15, resolved)) as MidiChannel
   }
+
+  // One program-change per track, at time 0, before any note of that track.
+  const programmed = new Set<number>()
+  const setProgram = (trackIdx: number) => {
+    if (programmed.has(trackIdx)) return
+    programmed.add(trackIdx)
+    const program = programs[trackIdx]
+    if (typeof program !== 'number') return
+    const clamped = Math.max(0, Math.min(127, Math.round(program)))
+    tracks[trackIdx].setInstrument(
+      channelFor(trackIdx),
+      clamped as MidiParameterValue,
+      0
+    )
+  }
+
+  // Tracks pre-created by ensureTracks get their program stamped right after
+  // the tempo, mirroring where a DAW expects it, even if they carry no notes.
+  tracks.forEach((_track, trackIdx) => setProgram(trackIdx))
 
   // refresh
   events.forEach((relNote: RelativeNote) => {
@@ -100,6 +125,7 @@ export const addEvents = (
       }
       file.addTrack(track)
     }
+    setProgram(noteTrackIdx)
 
     const channel = channelFor(noteTrackIdx)
 

@@ -12,7 +12,7 @@ vi.mock('./music', () => ({
   isRelativeMusicNote: (note: unknown[]) => note[2] !== 'tempo',
 }))
 
-import { buildPhaseTrackIndex } from './download'
+import { buildPhaseTrackIndex, programForInstrument } from './download'
 import { addEvents, ensureTracks } from './midi'
 import { RelativeNote } from './music'
 
@@ -31,6 +31,7 @@ import { RelativeNote } from './music'
 // ---------------------------------------------------------------------------
 
 type ParsedNote = { type: 'on' | 'off'; channel: number; pitch: number }
+type ParsedProgram = { channel: number; program: number }
 
 const toBytes = (s: string): number[] =>
   Array.from(s, (ch) => ch.charCodeAt(0) & 0xff)
@@ -67,8 +68,11 @@ const parseMidi = (raw: string) => {
     return [value, p]
   }
 
+  const programsPerTrack: ParsedProgram[][] = []
   const notesPerTrack = trackChunks.map((data) => {
     const notes: ParsedNote[] = []
+    const programs: ParsedProgram[] = []
+    programsPerTrack.push(programs)
     let p = 0
     let running = 0
     while (p < data.length) {
@@ -103,7 +107,12 @@ const parseMidi = (raw: string) => {
         })
         continue
       }
-      if (high === 0xc0 || high === 0xd0) {
+      if (high === 0xc0) {
+        programs.push({ channel, program: data[p] })
+        p += 1
+        continue
+      }
+      if (high === 0xd0) {
         p += 1
         continue
       }
@@ -112,7 +121,7 @@ const parseMidi = (raw: string) => {
     return notes
   })
 
-  return { format, declaredTracks, trackChunks, notesPerTrack }
+  return { format, declaredTracks, trackChunks, notesPerTrack, programsPerTrack }
 }
 
 /** Build a file the same way download.ts does, and return its parsed bytes. */
@@ -120,12 +129,13 @@ const renderMidi = (
   events: RelativeNote[],
   trackCount: number,
   channels: number[],
-  tempo: number | null = 120
+  tempo: number | null = 120,
+  programs: number[] = []
 ) => {
   const tracks: Midi.Track[] = []
   const file = new Midi.File()
   ensureTracks(tracks, trackCount, tempo, file)
-  addEvents(tracks, events, tempo, file, channels)
+  addEvents(tracks, events, tempo, file, channels, programs)
   return parseMidi(file.toBytes())
 }
 
@@ -290,5 +300,130 @@ describe('one-track backward compatibility', () => {
       'off',
       'off',
     ])
+  })
+})
+
+describe('MIDI program changes', () => {
+  /**
+   * A track's instrument reaches a DAW as a program-change at time 0 on that
+   * track's channel. GM program 27 is the electric (clean) guitar; 0 is the
+   * acoustic grand the app plays by default.
+   */
+  it('writes each track program on its own channel', () => {
+    const parsed = renderMidi(
+      [on('c3', 0), off('c3', 0), on('e4', 1), off('e4', 1)],
+      2,
+      [0, 1],
+      120,
+      [0, 27]
+    )
+
+    expect(parsed.programsPerTrack[0]).toEqual([{ channel: 0, program: 0 }])
+    expect(parsed.programsPerTrack[1]).toEqual([{ channel: 1, program: 27 }])
+  })
+
+  it('writes the program before the track first note', () => {
+    const parsed = renderMidi([on('c3', 0), off('c3', 0)], 1, [0], 120, [42])
+    const [chunk] = parsed.trackChunks
+
+    const programAt = chunk.findIndex((b) => b === 0xc0)
+    const noteOnAt = chunk.findIndex((b) => b === 0x90)
+
+    expect(programAt).toBeGreaterThan(-1)
+    expect(noteOnAt).toBeGreaterThan(programAt)
+  })
+
+  it('stamps a declared track that has no notes', () => {
+    const parsed = renderMidi([on('c3', 0), off('c3', 0)], 2, [0, 1], 120, [
+      0, 40,
+    ])
+
+    expect(parsed.programsPerTrack[1]).toEqual([{ channel: 1, program: 40 }])
+  })
+
+  it('writes exactly one program change per track', () => {
+    const parsed = renderMidi(
+      [on('c3', 0), on('e3', 0), off('c3', 0), off('e3', 0)],
+      1,
+      [0],
+      120,
+      [27]
+    )
+
+    expect(parsed.programsPerTrack[0]).toHaveLength(1)
+  })
+
+  it('clamps an out-of-range program into 0-127', () => {
+    const parsed = renderMidi([on('c3', 0), off('c3', 0)], 1, [0], 120, [999])
+
+    expect(parsed.programsPerTrack[0]).toEqual([{ channel: 0, program: 127 }])
+  })
+
+  it('writes no program change when none is configured', () => {
+    // Byte-compat: an export from before instruments existed is unchanged.
+    const parsed = renderMidi([on('c3', 0), off('c3', 0)], 1, [0])
+
+    expect(parsed.programsPerTrack[0]).toEqual([])
+  })
+})
+
+describe('instrument names to GM programs', () => {
+  /**
+   * A track's instrument is either a sampled name (GM_PROGRAM table) or the
+   * `gm:<0-127>` encoding. Both must reach a DAW as a program change; anything
+   * else falls back to program 0 rather than writing a garbage byte.
+   */
+  const render = (instruments: string[]) =>
+    renderMidi(
+      [on('c3', 0), off('c3', 0)],
+      instruments.length,
+      instruments.map((_, i) => i),
+      120,
+      instruments.map(programForInstrument)
+    )
+
+  it('resolves a gm: name to its program number', () => {
+    expect(render(['gm:40']).programsPerTrack[0]).toEqual([
+      { channel: 0, program: 40 },
+    ])
+  })
+
+  it('resolves the gm: range boundaries', () => {
+    expect(programForInstrument('gm:0')).toBe(0)
+    expect(programForInstrument('gm:127')).toBe(127)
+    expect(render(['gm:0', 'gm:127']).programsPerTrack).toEqual([
+      [{ channel: 0, program: 0 }],
+      [{ channel: 1, program: 127 }],
+    ])
+  })
+
+  it('falls back to program 0 for a malformed gm: name', () => {
+    expect(programForInstrument('gm:999')).toBe(0)
+    expect(programForInstrument('gm:abc')).toBe(0)
+    expect(programForInstrument('gm:')).toBe(0)
+    expect(programForInstrument('not-an-instrument')).toBe(0)
+    expect(render(['gm:999']).programsPerTrack[0]).toEqual([
+      { channel: 0, program: 0 },
+    ])
+  })
+
+  it('still resolves a sampled name through GM_PROGRAM', () => {
+    expect(programForInstrument('guitar-electric')).toBe(27)
+    expect(render(['guitar-electric']).programsPerTrack[0]).toEqual([
+      { channel: 0, program: 27 },
+    ])
+  })
+
+  it('mixes sampled and gm: tracks, each on its own channel', () => {
+    const parsed = renderMidi(
+      [on('c3', 0), off('c3', 0), on('e4', 1), off('e4', 1)],
+      2,
+      [0, 1],
+      120,
+      ['guitar-electric', 'gm:56'].map(programForInstrument)
+    )
+
+    expect(parsed.programsPerTrack[0]).toEqual([{ channel: 0, program: 27 }])
+    expect(parsed.programsPerTrack[1]).toEqual([{ channel: 1, program: 56 }])
   })
 })

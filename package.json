@@ -1,6 +1,6 @@
 {
   "name": "ollave",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "repository": "git@github.com:rdroe/ollave.git",
   "license": "MIT",
   "description": "framework for developing musical streams",
@@ -21,6 +21,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "rxjs": "^7.8.2",
+    "spessasynth_lib": "^4.3.14",
     "tonal": "^5.0.0",
     "tone": "14.6.1",
     "user-tables": "^0.0.20",

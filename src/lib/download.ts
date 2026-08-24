@@ -7,8 +7,13 @@ import { mem } from '../core/mem'
 
 import { MidiMap } from './mapSongToTicks'
 import { addEvents, ensureTracks, saveRaw } from './midi'
+import { gmProgramOf } from './gmPrograms'
+import { GM_PROGRAM, InstrumentName } from './instrumentSamples'
 import { DEFAULT_TRACK_IDX, RelativeNote } from './music'
-import { tagsObjSchema, trackChannel } from './schemas'
+import { trackChannel, trackInstrument } from './schemas'
+import { buildPhaseTrackIndex, getPhaseId } from './trackResolve'
+
+export { buildPhaseTrackIndex } from './trackResolve'
 
 type IncomingEvent =
   | {
@@ -29,14 +34,15 @@ const downloadEvents = async (
   notes: RelativeNote[],
   tempo: number | null = startTempo,
   trackCount: number = 0,
-  channels: number[] = []
+  channels: number[] = [],
+  programs: number[] = []
 ) => {
   const midiTracks: Midi.Track[] = []
   const file = new Midi.File()
   // Declared song-track order, before any event is written, so track order is
   // the song's rather than first-note-encounter order.
   ensureTracks(midiTracks, trackCount, tempo, file)
-  addEvents(midiTracks, notes, tempo, file, channels)
+  addEvents(midiTracks, notes, tempo, file, channels, programs)
   const midi = file.toBytes()
   saveRaw(midi)
   return { downloaded: notes }
@@ -75,40 +81,6 @@ const addNoteEvent = (
       trackIdx,
     })
   }
-}
-const findBarId = (compositionTags: string[]) => {
-  // convert tag list to tagsObj
-  const tagsObj = tagsObjSchema.parse(compositionTags)
-  return tagsObj.barId?.[0]
-}
-const getPhaseId = (compositionTags: string[]): string | null => {
-  const barId = findBarId(compositionTags)
-  if (!barId || typeof barId !== 'string') {
-    return null
-  }
-  const parsed = parseColonTag(barId)
-  if (!parsed) {
-    return null
-  }
-  return parsed[0]
-}
-
-/**
- * phaseName -> song track index, from the song's own track order.
- *
- * Replaces first-note-encounter numbering, which made a note's MIDI track
- * depend on playback order rather than on which track actually owns its phase.
- */
-export const buildPhaseTrackIndex = (
-  tracks: { 'phase-names': string[] }[]
-): { [phaseName: string]: number } => {
-  const map: { [phaseName: string]: number } = {}
-  tracks.forEach((track, trackIdx) => {
-    track['phase-names'].forEach((phaseName) => {
-      map[phaseName] = trackIdx
-    })
-  })
-  return map
 }
 
 const songToEvents = async (
@@ -256,6 +228,14 @@ const songToEvents = async (
   return relativized
 }
 
+/**
+ * GM program for an instrument name: the sampled-instrument table first, then
+ * the `gm:<0-127>` encoding. Unknown, absent, or malformed names export as
+ * program 0 (acoustic piano), which is what those tracks sound like in the app.
+ */
+export const programForInstrument = (instrument: string): number =>
+  GM_PROGRAM[instrument as InstrumentName] ?? gmProgramOf(instrument) ?? 0
+
 export const downloadSong = async (
   tempo: number | null = startTempo,
   midiMap: MidiMap
@@ -266,6 +246,9 @@ export const downloadSong = async (
   const tracks = mem().tracks
   const phaseTrackIndex = buildPhaseTrackIndex(tracks)
   const channels = tracks.map((track, idx) => trackChannel(track, idx))
+  const programs = tracks.map((track, idx) =>
+    programForInstrument(trackInstrument(track, idx))
+  )
   const events = await songToEvents(mappedTicks, phaseTrackIndex)
-  return downloadEvents(events, tempo, tracks.length, channels)
+  return downloadEvents(events, tempo, tracks.length, channels, programs)
 }

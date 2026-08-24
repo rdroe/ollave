@@ -3,7 +3,8 @@ import { Observable, Subscription } from 'rxjs'
 
 import { DEFAULT_VELOCITY } from '../../lib'
 import { barsAtMidi, BarTagPercent } from '../../lib/mapSongToTicks'
-import { playTriads } from '../../lib/music'
+import { DEFAULT_TRACK_IDX, playTriads } from '../../lib/music'
+import { buildPhaseTrackIndex, getPhaseId } from '../../lib/trackResolve'
 import { lastTick } from '../../lib/util/startEndUtil'
 import { Mem, mem } from '../mem'
 import { makeTickSubscribe } from '../subjects/masterTicksSubject'
@@ -328,6 +329,8 @@ export const startCueObservable = (
       for (let schedTick = fromTick; schedTick <= toTick; schedTick++) {
         const schedCursor = getSongCursor(schedTick)
         const aheadTicks = schedTick - tick
+        // O(phases) per scheduled tick — cheap, and never stale when phases move.
+        const phaseTrackIndex = buildPhaseTrackIndex(mem().tracks ?? [])
         mem().latestMap[schedCursor]?.forEach(
           (note: {
             note: string
@@ -358,8 +361,18 @@ export const startCueObservable = (
               : 0.5
 
             recordNoteTrigger(note.note, schedCursor, aheadTicks * mpt)
+            const phaseName = getPhaseId(note.compositionTags)
+            const trackIdx =
+              (phaseName !== null ? phaseTrackIndex[phaseName] : undefined) ??
+              DEFAULT_TRACK_IDX
             playTriads([
-              [note.note, rasterDuration, (aheadTicks * mpt) / 1000 + 0.01, velocity],
+              [
+                note.note,
+                rasterDuration,
+                (aheadTicks * mpt) / 1000 + 0.01,
+                velocity,
+                trackIdx,
+              ],
             ])
             // Debug log of what actually sounded. push + cap, NOT unshift:
             // unshift is O(n) per note and the array previously grew without

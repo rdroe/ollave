@@ -13,11 +13,13 @@ import {
 } from '../core/observables/songObservables'
 
 import { mapSongToMidiTicks } from './mapSongToTicks'
+import { setTrackInstruments } from './music'
 import {
   makeNoteByBar,
   NoteByBar,
   phaseRecordSchema,
   songRecordSchema,
+  trackInstrument,
   trackRecordSchema,
 } from './schemas'
 import { SongRecord, TrackRecord } from './types'
@@ -88,6 +90,7 @@ export async function loadAndInitSongAndTracks(songId: number) {
     // other tracks' phases and notes, and saveSongAndTracks() then wrote that
     // truncated mem() back over the stored song.
     mem().tracks = latestSong.tracks
+    setTrackInstruments(mem().tracks.map((t, i) => trackInstrument(t, i)))
     mem().phases = latestSong.phases.reduce(
       (acc, phase) => {
         // id/name/'follows-ids'/barSizeMultiplier are always present on the
@@ -172,6 +175,7 @@ export async function loadAndInitLatestSongAndTracks() {
     }
     // Every track — see loadAndInitSongAndTracks above.
     mem().tracks = latestSong.tracks
+    setTrackInstruments(mem().tracks.map((t, i) => trackInstrument(t, i)))
     mem().phases = latestSong.phases.reduce(
       (acc, phase) => {
         acc[phase.name] = {

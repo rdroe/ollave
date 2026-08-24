@@ -3875,6 +3875,7 @@ __metadata:
     react: "npm:^19.0.0"
     react-dom: "npm:^19.0.0"
     rxjs: "npm:^7.8.2"
+    spessasynth_lib: "npm:^4.3.14"
     tonal: "npm:^5.0.0"
     tone: "npm:14.6.1"
     typescript: "npm:^5.0.0"
@@ -4761,6 +4762,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"spessasynth_core@npm:latest":
+  version: 4.3.20
+  resolution: "spessasynth_core@npm:4.3.20"
+  dependencies:
+    stb-vorbis: "npm:latest"
+  checksum: c07afe852cb2521d760f5cae8da3114e952fdca5189a65ff92782606a66de3e22ece6cea88fc7238c4a180e2b79868589df20b0a69936283476b60b66d5a4c9b
+  languageName: node
+  linkType: hard
+
+"spessasynth_lib@npm:^4.3.14":
+  version: 4.3.14
+  resolution: "spessasynth_lib@npm:4.3.14"
+  dependencies:
+    spessasynth_core: "npm:latest"
+  checksum: 2efb09e953c79cd60885cd87bead5f115d45333343372e06e7393a83717f1872515ffdc8b0c15e06ebf6e9aff562368a4c8860c549e1dad27ecdaf189ac791dc
+  languageName: node
+  linkType: hard
+
 "ssri@npm:^9.0.0":
   version: 9.0.1
   resolution: "ssri@npm:9.0.1"
@@ -4785,6 +4804,13 @@ __metadata:
     automation-events: "npm:^2.0.19"
     tslib: "npm:^2.0.1"
   checksum: adffeb58e37f87086561bea2b5a3694d83b19146f12a08c35e8e540a1e2d148e7d9f334a3fa60b74c2bb22d07e39b72f5ccc0b115a2f3d7c6ab65f35a4cdb74a
+  languageName: node
+  linkType: hard
+
+"stb-vorbis@npm:latest":
+  version: 0.0.6
+  resolution: "stb-vorbis@npm:0.0.6"
+  checksum: bfe7b750ed0b3dcf07eebe5628c697793d5ea42f2db8f1ec98037443fd3029cd90924eba3804a09156fc7330187e3d85be41b97c63df4cd7b5f6857ee6170947
   languageName: node
   linkType: hard
 

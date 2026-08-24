@@ -226,6 +226,7 @@ export const trackRecordSchema = z.object({
    */
   name: z.string().optional(),
   channel: z.number().int().min(0).max(15).optional(),
+  instrument: z.string().optional(),
 })
 
 /** Display label for a track: its stored name, else its 1-based position. */
@@ -243,3 +244,10 @@ export const trackChannel = (
   track: { channel?: number | undefined },
   trackIndex: number
 ): number => track.channel ?? Math.min(trackIndex, 15)
+
+/** Playback instrument for a track: its stored choice, else piano. */
+export const trackInstrument = (
+  track: { instrument?: string | undefined },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  trackIndex: number
+): string => track.instrument ?? 'piano'
