@@ -54,6 +54,69 @@ let lastTickDisplayWrite = 0
 const NOTE_LOOKAHEAD_MS = 180
 let scheduledUpToTick = -1
 
+// ---- Loop boundary ---------------------------------------------------------
+// A loop region is ENFORCED by the caller — it rewinds the transport when the
+// cursor passes the end — but enforcement alone cannot keep a loop clean.
+// Notes are handed to Tone up to NOTE_LOOKAHEAD_MS ahead of their due time, so
+// the downbeat of the bar AFTER the loop end is already committed to the audio
+// clock before any watcher could possibly see the cursor reach the end, and
+// nothing here can cancel a note once scheduled. The audible symptom is the
+// first note of the excluded bar sounding on every pass of the loop.
+//
+// The boundary therefore has to be known where the scheduling decision is
+// made. While it is set, no note from outside the region is ever handed to
+// Tone; the caller keeps doing the rewinding.
+let playbackLoop: { start: number; end: number } | null = null
+
+/**
+ * Constrain scheduling to a loop region, or pass null to lift the constraint.
+ *
+ * Ticks are SONG cursor ticks — what `getSongCursor` returns, and what a UI's
+ * bar grid is expressed in — NOT raw engine ticks. A degenerate or inverted
+ * region is treated as no region rather than as a region nothing can play in.
+ */
+export const setPlaybackLoop = (
+  loop: { start: number; end: number } | null
+): void => {
+  playbackLoop =
+    loop && loop.end > loop.start
+      ? { start: loop.start, end: loop.end }
+      : null
+}
+
+/** The region currently constraining scheduling, if any. */
+export const getPlaybackLoop = (): { start: number; end: number } | null =>
+  playbackLoop === null ? null : { ...playbackLoop }
+
+/**
+ * May a note due at `schedCursor` be handed to Tone?
+ *
+ * Pure, and exported so the rule can be exercised without driving the tick
+ * engine. Two ways a note reachable by the lookahead horizon can be outside
+ * the region:
+ *
+ *  - PAST THE END: the ordinary case. The bar the loop excludes sits inside
+ *    the horizon for the whole last NOTE_LOOKAHEAD_MS of every pass, which is
+ *    why its downbeat used to sound on each wrap.
+ *  - WRAPPED PAST THE SONG: `getSongCursor` wraps modulo the song length, so a
+ *    loop ending at the song's own end sees the horizon come back round onto
+ *    the song's opening notes.
+ *
+ * The wrap case is only excluded once the cursor is genuinely inside the
+ * region, so playing INTO the loop from earlier in the song still sounds
+ * everything on the way in.
+ */
+export const isInsidePlaybackLoop = (
+  schedCursor: number,
+  adjustedCursor: number,
+  loop: { start: number; end: number } | null
+): boolean => {
+  if (loop === null) return true
+  if (schedCursor >= loop.end) return false
+  if (adjustedCursor >= loop.start && schedCursor < loop.start) return false
+  return true
+}
+
 // ---- Note-lag instrumentation --------------------------------------------
 // Documents mis-timed notes end to end. Two probe points:
 //   1. TRIGGER (here, synchronous with the tick): captures the wall time the
@@ -328,6 +391,11 @@ export const startCueObservable = (
       const toTick = tick + horizonTicks
       for (let schedTick = fromTick; schedTick <= toTick; schedTick++) {
         const schedCursor = getSongCursor(schedTick)
+        // Never hand Tone a note from outside the loop region; see
+        // `isInsidePlaybackLoop` for why the horizon reaches outside it.
+        if (!isInsidePlaybackLoop(schedCursor, adjustedCursor, playbackLoop)) {
+          continue
+        }
         const aheadTicks = schedTick - tick
         // O(phases) per scheduled tick — cheap, and never stale when phases move.
         const phaseTrackIndex = buildPhaseTrackIndex(mem().tracks ?? [])
