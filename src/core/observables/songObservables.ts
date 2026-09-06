@@ -4,6 +4,7 @@ import { Observable, Subscription } from 'rxjs'
 import { DEFAULT_VELOCITY } from '../../lib'
 import { barsAtMidi, BarTagPercent } from '../../lib/mapSongToTicks'
 import { DEFAULT_TRACK_IDX, playTriads } from '../../lib/music'
+import { trackMuted } from '../../lib/schemas'
 import { buildPhaseTrackIndex, getPhaseId } from '../../lib/trackResolve'
 import { lastTick } from '../../lib/util/startEndUtil'
 import { Mem, mem } from '../mem'
@@ -114,6 +115,37 @@ export const isInsidePlaybackLoop = (
   if (loop === null) return true
   if (schedCursor >= loop.end) return false
   if (adjustedCursor >= loop.start && schedCursor < loop.start) return false
+  return true
+}
+
+/**
+ * Whether a scheduled note should sound at all.
+ *
+ * Extracted for the same reason as `isInsidePlaybackLoop`: the decision is
+ * worth testing, and the tick subscription it lives in cannot be driven
+ * without the whole audio stack.
+ *
+ * Three independent ways a note stays silent, in order of specificity:
+ *  - the note itself is tagged `muted=true`;
+ *  - the TRACK owning the note's phase is muted (a mixer mute — see
+ *    `trackMuted`), which is coarser and does not touch the notes;
+ *  - exclusive-play mode is on and this note is not the exclusive one.
+ *
+ * A silenced note is dropped rather than triggered at zero velocity: a silent
+ * trigger still costs a Tone voice, and it would still land in
+ * `played`/`playedMap`, polluting the debug log and getting captured into
+ * realtime recordings.
+ */
+export const shouldPlayNote = (
+  compositionTags: string[],
+  trackIsMuted: boolean,
+  exclusivePlayMode: boolean
+): boolean => {
+  if (compositionTags.includes('muted=true')) return false
+  if (trackIsMuted) return false
+  if (exclusivePlayMode && !compositionTags.includes('playExclusively=true')) {
+    return false
+  }
   return true
 }
 
@@ -399,6 +431,11 @@ export const startCueObservable = (
         const aheadTicks = schedTick - tick
         // O(phases) per scheduled tick — cheap, and never stale when phases move.
         const phaseTrackIndex = buildPhaseTrackIndex(mem().tracks ?? [])
+        // Rebuilt per scheduled tick for the same reason: a mute toggled
+        // mid-playback must take effect on the next note that gets scheduled,
+        // not on the next song load. Indexed by track index, matching
+        // `phaseTrackIndex`'s values.
+        const mutedTracks = (mem().tracks ?? []).map(trackMuted)
         mem().latestMap[schedCursor]?.forEach(
           (note: {
             note: string
@@ -406,17 +443,21 @@ export const startCueObservable = (
             duration?: number
             compositionTags: string[]
           }) => {
-            let doPlay = true
-            if (note.compositionTags.includes('muted=true')) {
-              doPlay = false
-            }
+            // Resolved before the doPlay checks so a muted track can drop
+            // its notes here. Pure lookups, so hoisting them costs nothing on
+            // the notes that do sound.
+            const phaseName = getPhaseId(note.compositionTags)
+            const trackIdx =
+              (phaseName !== null ? phaseTrackIndex[phaseName] : undefined) ??
+              DEFAULT_TRACK_IDX
+
             if (
-              mem().exclusivePlayMode &&
-              !note.compositionTags.includes('playExclusively=true')
+              !shouldPlayNote(
+                note.compositionTags,
+                mutedTracks[trackIdx] ?? false,
+                Boolean(mem().exclusivePlayMode)
+              )
             ) {
-              doPlay = false
-            }
-            if (!doPlay) {
               return
             }
             if (ignoreNote(schedCursor, note)) {
@@ -429,10 +470,6 @@ export const startCueObservable = (
               : 0.5
 
             recordNoteTrigger(note.note, schedCursor, aheadTicks * mpt)
-            const phaseName = getPhaseId(note.compositionTags)
-            const trackIdx =
-              (phaseName !== null ? phaseTrackIndex[phaseName] : undefined) ??
-              DEFAULT_TRACK_IDX
             playTriads([
               [
                 note.note,

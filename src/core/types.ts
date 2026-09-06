@@ -49,6 +49,7 @@ export type Mem = {
     name?: string
     channel?: number
     instrument?: string
+    muted?: boolean
   }[]
   phases: {
     [phaseName: string]: PhaseRecord

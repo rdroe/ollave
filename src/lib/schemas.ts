@@ -227,6 +227,7 @@ export const trackRecordSchema = z.object({
   name: z.string().optional(),
   channel: z.number().int().min(0).max(15).optional(),
   instrument: z.string().optional(),
+  muted: z.boolean().optional(),
 })
 
 /** Display label for a track: its stored name, else its 1-based position. */
@@ -244,6 +245,17 @@ export const trackChannel = (
   track: { channel?: number | undefined },
   trackIndex: number
 ): number => track.channel ?? Math.min(trackIndex, 15)
+
+/**
+ * Whether a track is muted. Absent means audible, so a song saved before mute
+ * existed plays exactly as it did before.
+ *
+ * Mute is a property of the track, not of its notes: the per-note `muted=true`
+ * composition tag is a separate, finer-grained thing and the two compose (a
+ * note tagged muted stays silent on an unmuted track).
+ */
+export const trackMuted = (track: { muted?: boolean | undefined }): boolean =>
+  track.muted ?? false
 
 /** Playback instrument for a track: its stored choice, else piano. */
 export const trackInstrument = (
